@@ -1,0 +1,307 @@
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t
+#+options: broken-links:nil c:nil creator:nil d:(not "LOGBOOK") date:t e:t
+#+options: email:nil f:t inline:t num:t p:nil pri:nil prop:nil stat:t tags:t
+#+options: tasks:t tex:t timestamp:t title:t toc:nil todo:t |:t
+#+options: html5-fancy:t
+#+TITLE: An Infix Backtick Operator for C++
+#+SUBTITLE: Any function can be a binary operator
+#+AUTHOR: Steve Downey
+#+EMAIL: sdowney@gmail.com
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+DESCRIPTION:
+#+KEYWORDS:
+#+DATE: {{{modification-time(%Y-%m-%d, VC)}}}
+#+STARTUP: showall
+#+OPTIONS: html-link-use-abs-url:nil html-postamble:nil html-preamble:t
+#+OPTIONS: html-scripts:n html-style:nil html5-fancy:nil tex:t
+#+HTML_DOCTYPE: xhtml-strict
+#+HTML_CONTAINER: div
+#+DESCRIPTION:
+#+KEYWORDS:
+#+HTML_LINK_HOME:
+#+HTML_LINK_UP:
+#+HTML_MATHJAX:
+#+HTML_HEAD:
+#+HTML_HEAD_EXTRA:
+#+SUBTITLE:
+#+INFOJS_OPT:
+#+MACRO: TEASER_END #+HTML:<!-- TEASER_END -->
+
+
+
+#+begin_abstract
+I am working on a proposal to let any callable be written between two backticks
+as an infix binary operator: =x `f` y= means exactly =f(x, y)=. It is borrowed
+from Haskell, it desugars to an ordinary call, and I have it working in both
+Clang and GCC. This post is the announcement and the design tour.
+#+end_abstract
+
+{{{TEASER_END}}}
+
+* The pitch in one line
+
+C++ lets you spell a handful of binary operations infix — =a + b=, =a < b=,
+=a | b= — and lets you overload them. Everything else is a call: =min(a, b)=,
+=dot(u, v)=, =gcd(m, n)=, =approx_equal(x, y)=. The proposal is to erase that
+distinction at the call site. Put a callable between backticks and it becomes a
+binary operator:
+
+#+begin_src c++
+a `plus` b              // plus(a, b)
+a `std::min` b          // std::min(a, b)
+m `at` k                // at(m, k)
+u `dot` v               // dot(u, v)
+x `approx_equal` y      // approx_equal(x, y)
+#+end_src
+
+The text between the backticks is not a name the language knows about. It is an
+arbitrary call-eligible expression, and the whole thing is *defined* to be the
+call you would have written anyway. There is no new overloadable
+=operator`= , no operator table to register, no fixity declarations. =x `f` y=
+is =f(x, y)=, and that is the entire semantic.
+
+Haskell programmers will recognise this immediately: =`div`=, =`mod`=, =`elem`=
+are exactly this construction. The backtick is available in C++ because today it
+has no meaning outside string, character, and raw-string literals, all of which
+are lexed before the punctuator stage and are therefore untouched.
+
+* It desugars to a call, and that is the whole point
+
+The single most important design decision is that the operator lowers to a
+*call expression* in the front end, before overload resolution runs. It is not a
+macro, not a syntactic rewrite with its own rules, not a new AST category with
+its own type rules. It builds the same call node the compiler would build for
+=f(x, y)=.
+
+That one choice means the feature inherits, for free and correctly:
+
+- overload resolution and ADL,
+- templates and SFINAE,
+- =constexpr= evaluation,
+- conversions, value categories, and lifetime,
+- code generation.
+
+None of it is re-implemented. If =f(x, y)= compiles and does a thing, then
+=x `f` y= compiles and does the same thing. If =f(x, y)= is ambiguous or
+ill-formed, so is the backtick form, with the same diagnostic. The feature has
+essentially no semantics of its own to get wrong, which is exactly what you want
+from sugar.
+
+A few consequences fall straight out of "it is just the call":
+
+#+begin_src c++
+x `T` y                 // == T(x, y) : functional-style construction; CTAD applies
+a `std::pair` b         // == std::pair(a, b)
+#+end_src
+
+A type name is callable, so a type in the slot constructs. Evaluation order is
+the call's evaluation order: operand order is unspecified, and since C++17 the
+callee — here, the thing between the backticks — is sequenced before both
+operands, even though it is written between them. Nothing new to learn; if you
+know how a call behaves, you know how this behaves.
+
+* How it parses
+
+Two questions decide how an infix operator feels: how tightly it binds, and how
+a chain groups.
+
+*Precedence.* Backtick is the highest-precedence *binary* operator — tighter
+than =*=, looser than the unary/prefix operators. Both operands are
+cast-expressions, so prefix operators attach symmetrically:
+
+#+begin_src c++
+-a `f` -b               // f(-a, -b)     symmetric, like every other binary op
+a * b `f` c             // a * f(b, c)   binds tighter than *
+#+end_src
+
+I considered making it bind tighter than unary minus so that =-x `f` y= would
+mean =-f(x, y)=. That was rejected: it would make backtick the only operator in
+the language where a leading =-= floats *out* of its operand, so =-a `f` -b=
+would mean =-f(a, -b)= — asymmetric and hard to teach. Matching every other
+binary operator won.
+
+*Associativity.* Left, like reading order:
+
+#+begin_src c++
+a `f` b `g` c           // g(f(a, b), c)
+#+end_src
+
+*The slot.* The thing between the backticks is parsed as an
+assignment-expression — anything you could write as the callee of a call,
+excluding a top-level comma. Qualified names, member-access expressions, even a
+lambda, are all fine.
+
+* The one genuinely tricky part
+
+The open and close delimiter are the same token. A naive parser, having read
+=x `f=, would see the closing backtick and think a *second* backtick operator
+was starting. C++ already has exactly this problem with =>= inside template
+argument lists — =vector<vector<int>>= — and solves it with a parser flag that
+says "right now, =>= is not an operator." I do the same thing: a
+=BacktickIsOperator= flag in Clang (modelled on =GreaterThanIsOperator=), a
+=backtick_is_operator_p= in GCC (modelled on =greater_than_is_operator_p=),
+false while parsing the slot and restored inside nested parentheses.
+
+A side effect of the same-token delimiter is that there is no such thing as a
+bare nested backtick. The first interior backtick always closes the slot, so
+what looks like "nesting" is *token-identical* to an ordinary left-associative
+chain — and a chain is exactly what it parses as. To actually nest, you
+parenthesise:
+
+#+begin_src c++
+x `f `g` h` y           // a chain:  h(f(x, g), y)
+x `(f `g` h)` y         // nested:   (g(f, h))(x, y)
+#+end_src
+
+This is the same answer-changes-on-regrouping situation as =a - b - c= versus
+=a - (b - c)=, which no compiler diagnoses because subtraction is
+left-associative and the parentheses just override the grouping. Backtick is no
+different. The language defends against honest mistakes, not against someone who
+builds a type that is simultaneously callable, value-convertible, and
+asymmetric and then omits the parentheses on purpose.
+
+* A second use for the same token: escaping keywords
+
+Because the proposal claims the backtick as a punctuator, it is worth asking
+what *else* the token could do, and there is one obvious companion use: escaping
+a keyword so it can name an entity. This is the escape hatch that lets a
+*future* keyword avoid breaking existing code that already used that word as an
+identifier — Swift's =`class`=, Kotlin's backtick identifiers, F#'s
+double-backtick names, Rust's =r#= raw identifiers all do a version of it.
+
+#+begin_src c++
+void `new`();           // declares a function named "new"
+`new`(a, b);            // calls it
+obj.`delete`();         // member named "delete"
+#+end_src
+
+The two uses never collide because they live in mutually exclusive grammatical
+positions. In operand, primary, or declarator position the grammar wants a name,
+so a backtick opens a keyword-escape. In post-operand position the grammar wants
+a binary operator, so a backtick is the infix operator. This is the same
+position-based disambiguation C++ already does for =*=, =&=, and =<=. The escape
+yields an ordinary identifier, so lookup, mangling, linkage, and ABI are
+unchanged — =void `new`();= links as a function named =new=.
+
+The two uses share one lexical token and one committee, so I am proposing them
+together, in one paper, rather than letting two independent designs drift into
+contradiction.
+
+* What it is good for
+
+The shallow answer is readability for binary operations that read better infix:
+=lo `clamp` hi=, =a `gcd` b=, =p `implies` q=, =lhs `approx_equal` rhs=,
+=set_a `intersect` set_b=. Named operations stop being visually second-class to
+the dozen built-in symbols.
+
+The deeper answer is that the slot is an arbitrary callable and the operator
+chains, and those two facts reach further than they first appear. A one-line
+helper turns backtick into a left-to-right threading operator:
+
+#+begin_src c++
+inline constexpr auto pipe =
+    [](auto&& x, auto&& f) -> decltype(auto)
+    { return std::invoke(std::forward<decltype(f)>(f),
+                         std::forward<decltype(x)>(x)); };
+
+x `pipe` f `pipe` g `pipe` h        // h(g(f(x))) — data-flow order
+#+end_src
+
+The decisive case is that this drives the *existing* range adaptor closures
+unchanged. =views::filter(pred)= and =views::transform(fn)= are already unary
+callables — =c | a= is defined as =a(c)= — so =pipe= feeds them directly, same
+result and same laziness as the =|= pipe, with no bespoke =operator|= overloads
+involved:
+
+#+begin_src c++
+r `pipe` views::filter(pred) `pipe` views::transform(fn)
+#+end_src
+
+And it reopens something the language otherwise reserves to a fixed set of
+built-ins. You cannot get short-circuit evaluation back by overloading =&&= or
+=||= — an overloaded one evaluates both sides. But a helper whose right operand
+is a *callable* controls whether and when that side runs:
+
+#+begin_src c++
+// short-circuiting logical implication:  p ==> q  ≡  !p || q
+inline constexpr auto implies =
+    [](bool p, auto&& q) -> bool { return !p || q(); };
+
+p `implies` [&]{ return expensive(); }   // q() runs only when p holds
+#+end_src
+
+The monadic / fallible chain is just the zero-ceremony special case of this,
+where the stages are already functions:
+
+#+begin_src c++
+parse(s) `mbind` validate `mbind` store;   // stops at the first error
+#+end_src
+
+None of these helpers are part of the proposal — the paper is language-only, and
+each helper is a few lines of ordinary user code. They are here as *motivation*,
+to show the operator's reach. Field experience can later decide which, if any,
+earn a place in a library.
+
+* It is not the pipeline operator, and does not want to be
+
+The obvious neighbour is Barry Revzin's =|>= (P2011, the "pizza" operator). Both
+bottom out in a call and their two-argument cases coincide — =a `plus` b=,
+=a |> plus(b)=, and =plus(a, b)= are the same call. But they are different
+shapes and they compose rather than compete:
+
+- Backtick is *symmetric binary infix*: the callee sits between two operands,
+  the result is an overload-resolved call, and the right-hand side is a single
+  value. Beyond two operands it cannot thread.
+- =|>= is a *non-overloadable syntactic rewrite*: =x |> f(a, b, c)= prepends =x=
+  to an arbitrary-arity call. It binds low, threads through stages, and is the
+  right tool for chains.
+
+So backtick supplies infix detail *inside* a pipeline stage, =|>= threads the
+value *between* stages:
+
+#+begin_src c++
+r |> filter([](auto e){ return e `mod` 2 `eq` 0; }) |> sum()
+//                              \____ eq(mod(e, 2), 0) ____/
+#+end_src
+
+Backtick deliberately leaves the =|>= spelling unspelled so the two can coexist
+in one program.
+
+* Implementation status
+
+This is not a paper design with a hand-wave at implementability. The operator
+and the keyword-escape are both prototyped, gated behind an opt-in =-fbacktick=
+flag, in *two* independent compilers. Both forks are public, on a =backtick=
+branch:
+
+- *Clang* ([[https://github.com/steve-downey/llvm-project/tree/backtick][steve-downey/llvm-project @ backtick]]) — lexer token, precedence
+  level, parser hook, Sema desugar to a =CallExpr=, driver flag, a transparent
+  AST wrapper so =-ast-print= round-trips the surface syntax, and clang-format
+  support for both uses. Full ADL. Tests live under
+  [[https://github.com/steve-downey/llvm-project/tree/backtick/clang/test][=clang/test/=]] (the =backtick-*= files in =Parser/=, =Lexer/=, and
+  =SemaCXX/=).
+- *GCC* ([[https://github.com/steve-downey/gcc/tree/backtick][steve-downey/gcc @ backtick]]) — =libcpp= token, parser precedence
+  and slot handling, desugar via =finish_call_expr=, the same flag, and full ADL
+  on the slot. Tests live under
+  [[https://github.com/steve-downey/gcc/tree/backtick/gcc/testsuite/g%2B%2B.dg/backtick][=gcc/testsuite/g++.dg/backtick/=]].
+
+Two independent implementations that agree is the strongest evidence of
+implementability I can bring to EWG/CWG. Every pipeline pattern above was
+compiled and run against the built =-fbacktick= Clang, so the §"what it is good
+for" claims are implementation experience, not assertion.
+
+* What I am proposing, and what comes next
+
+A pure core-language feature, targeting C++29: the infix backtick operator plus
+the keyword-escape, in one paper, with no standard-library additions. The
+desugar-to-a-call MVP is the whole language change; the AST wrapper and a
+Compiler Explorer deployment strengthen the story but do not block it.
+
+If you have a binary operation that has always read worse as =f(x, y)= than it
+would as =x `f` y= — a domain predicate, a metric, a combinator — that is the
+use case, and I would like to hear about it. The two compiler forks linked above
+are public if you want to build the branch and try it; comments, objections, and
+motivating examples are all welcome — reach me at [[mailto:sdowney@gmail.com][sdowney@gmail.com]] — before this
+goes in front of the committee.

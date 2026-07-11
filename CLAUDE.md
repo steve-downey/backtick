@@ -1,0 +1,124 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code when working with code in this repository.
+
+## What this repository is
+
+This repo holds **only the design, plan, and operational record** for adding an
+infix backtick operator (and a backtick keyword-escape) to C++ — a WG21
+proposal prototyped in two real compilers. It contains **no compiler source**.
+The actual implementation lives in two external git worktrees (see below); this
+repo was split out of the Clang worktree (`[backtick] move planning docs & ops
+into standalone repo`). **This repo is the authoritative copy** of the `docs/`
+and `ops/` trees — the duplicate copies in the LLVM worktree are being removed,
+so make all design-doc / plan / handoff / deviation edits here.
+
+The thesis being tested: `x `op` y` is sugar for `op(x, y)`, desugared in the
+front end so overload resolution, ADL, templates, constexpr, and codegen are
+all inherited rather than reimplemented. See `docs/backtick-operator-design.md`.
+
+**Current state:** both implementation tracks are fully checked off — Clang
+S00–S12 and GCC G01–G10. There is no "next unchecked step" to pick up; the
+work now is paper writing (see `docs/infix-backtick-operator.org`), reconciling
+open DEVIATIONS rows back into the design doc, and follow-up edits. Treat the
+`ops/` step machinery as a completed record unless a *new* step is added to a
+`PLAN.md`.
+
+## Layout
+
+- `docs/backtick-operator-design.md` — the canonical design + decisions log
+  (D1–D16), precedence rationale (§4), the same-delimiter parsing problem (§5),
+  per-compiler implementation plans (§6 Clang, §7 clang-format, §8 GCC), and
+  post-implementation clarifications (§17). This is the source of truth the
+  paper is written from; deviations get reconciled back into it.
+- `docs/infix-backtick-operator.org` (+ `.meta`) — the actual WG21 proposal /
+  blog post prose, org-mode source with a Nikola `.meta` sidecar. This is the
+  reader-facing deliverable the design doc feeds; the `.org` is the paper, the
+  design doc is its rationale/worklog. Prefer the `voice` skill when drafting or
+  editing this prose.
+- `ops/PLAN.md` — master operational checklist (Clang phases A–C, then GCC).
+- `ops/gcc/PLAN.md` — the GCC sub-plan (G01–G10).
+- `ops/AGENT_PROTOCOL.md` — the one-step-per-agent execution loop. **Read it
+  before doing any plan step.**
+- `ops/steps/NN-*.md`, `ops/gcc/steps/GNN-*.md` — one self-contained spec per
+  step (the "Do" and the verification gate).
+- `ops/handoffs/`, `ops/gcc/handoffs/` — one handoff per completed step. The
+  previous step's handoff (its "Forward notes" / "Discoveries") **overrides the
+  step file where they conflict** and carries the real symbol names, paths, and
+  build/test invocations the next agent needs.
+- `ops/DEVIATIONS.md`, `ops/gcc/DEVIATIONS.md` — ledger of every place build
+  reality contradicted the design (DEV-NN / DEV-GNN), including cross-compiler
+  divergences, with reconciliation status.
+
+## The implementation worktrees (where the code actually is)
+
+| Track | Source worktree (branch `backtick`) | Build dir | Tests |
+|-------|-------------------------------------|-----------|-------|
+| Clang | `~/src/llvm/backtick` | `~/src/llvm/build-backtick` | `clang/test/**/backtick-*.cpp`, `clang/test/Driver/fbacktick.c`, `clang/unittests/Format/` |
+| GCC   | `~/bld/gcc/gcc-backtick` | `~/bld/gcc/gcc-backtick-build` | `gcc/testsuite/g++.dg/backtick/*.C` |
+
+The Clang worktree may still carry stale copies of these `docs/` and `ops/`
+trees pending their removal; ignore them and treat this repo as authoritative.
+The maintainer's pristine main build is `~/src/llvm/build-main` (`~/src/llvm/main`)
+— do **not** disturb it; all feature work happens in the `backtick` worktree/build.
+
+## Build & test
+
+Clang (dev build has assertions on; flag is `-fbacktick`):
+```bash
+ninja -C ~/src/llvm/build-backtick clang                 # build
+ninja -C ~/src/llvm/build-backtick check-clang           # full regression gate
+~/src/llvm/build-backtick/bin/llvm-lit -v \
+    ~/src/llvm/backtick/clang/test/Parser/backtick-infix.cpp   # one test
+```
+
+GCC (dev build is `--disable-bootstrap --enable-languages=c,c++`):
+```bash
+cd ~/bld/gcc/gcc-backtick-build && make -j18 all-gcc      # build cc1plus
+# quick syntax check — use cc1plus directly; xg++ fails (no liblto_plugin.so / cc1 in dev build):
+~/bld/gcc/gcc-backtick-build/gcc/cc1plus -fbacktick -std=c++23 -fsyntax-only file.cc
+# regression gate (dejagnu), one dir or one file:
+make -C gcc check-c++ RUNTESTFLAGS="dg.exp=g++.dg/backtick/*.C"
+```
+
+## Working conventions
+
+- **One step per agent, no improvising on process.** Follow `ops/AGENT_PROTOCOL.md`
+  exactly: orient → load context (step file + prior handoff + named design
+  sections) → execute the "Do" → run the gate → only then tick the box, append a
+  Status-log row, commit, and write the next handoff (after reading the next
+  step's file). Never start the next step.
+- **No green, no check.** A step's checkbox in `PLAN.md` is ticked only after its
+  verification gate passes (`check-clang` must stay green for Clang steps). If it
+  can't pass: leave it unchecked, write a `BLOCKED` handoff, stop.
+- **Everything gated behind the flag.** All new behavior sits behind `-fbacktick`
+  (Clang `LangOptions` `Backtick`; GCC `flag_backtick` / `OPT_fbacktick`). A
+  default build (flag off) must behave exactly as upstream. Keep diffs minimal —
+  touch only what the step names.
+- **Commit messages** (in *this* repo and the worktrees): `[backtick] SNN: <title>`
+  for Clang-track work, `[backtick][gcc] GNN: <title>` for GCC-track, `docs: …`
+  for design-doc edits, `ops: …` for plan/ledger bookkeeping.
+- **Feedback loop.** When build reality contradicts the design doc, append a row
+  to the relevant `DEVIATIONS.md` and reference it in the handoff; the design-doc
+  author reconciles it into §3 / the affected section. Record cross-compiler
+  divergences in `ops/gcc/DEVIATIONS.md` — they are exactly what CWG/EWG ask about.
+
+## Design facts worth knowing before editing
+
+- **Precedence (D2/§4):** highest-precedence *binary* operator — tighter than
+  `*`, looser than unary/prefix; operands are cast-expressions, so `-a `f` -b` ==
+  `f(-a, -b)` (symmetric). The slot is an assignment-expression (D4).
+- **Same-delimiter problem (§5):** open and close are the same token. Suppress
+  the operator interpretation inside the slot — Clang `BacktickIsOperator`
+  (modeled on `GreaterThanIsOperator`), GCC `backtick_is_operator_p` (modeled on
+  `greater_than_is_operator_p`).
+- **Nesting vs. chaining (D3/§17.1):** "bare nesting" is *token-identical* to a
+  left-associative D1 chain and therefore correctly accepted, not diagnosed, by
+  both compilers (DEV-04 / DEV-G04). To nest, parenthesize the slot.
+- **Keyword-escape (D10/§12):** the same backtick token, disambiguated purely by
+  grammatical position (operand/declarator position → escaped identifier;
+  post-operand position → infix operator). Yields an ordinary identifier;
+  lookup/mangling/ABI unchanged.
+- **ADL is normative (§17.4):** the slot must get the same ADL as the plain call.
+  Clang carries it as an `UnresolvedLookupExpr`; GCC resolves a bare-name slot
+  via explicit `perform_koenig_lookup` (the DEV-G05 defect, fixed in G10).
