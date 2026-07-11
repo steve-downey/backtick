@@ -261,6 +261,9 @@ and port.
   as deliberate restrictions with rationale.
 - Carry this decisions log forward; record each EWG/CWG poll outcome
   against its decision ID.
+- Carry the **anticipated-objections rebuttals** (§18) — wrapper-type
+  alternative answered with P0543's own precedent — alongside §13.5's
+  spelling rebuttals.
 
 ---
 
@@ -1009,3 +1012,58 @@ name at parse time, so pure-ADL and ADL-augmentation fail (DEV-G05). That is a
 **defect to correct** in the in-progress GCC track — carry the slot as an
 unresolved/dependent name into `finish_call_expr` — not a permitted
 cross-compiler difference.
+
+---
+
+## 18. Anticipated objections — pre-loaded rebuttals
+
+Motivation-tier objections raised against the operator as such (not against
+its shape — those live with their decision IDs, and spelling lives in §13).
+Same purpose as §13.5: the answer ready before EWG asks. Carried in the
+paper's "Anticipated objections" section.
+
+### 18.1 "Define `*` on a type instead" (the wrapper-type alternative)
+
+**The objection.** Named binary operations don't need infix spelling;
+overload the operator on a type. `saturating_multiplication` doesn't need
+`a `mul_sat` b` — it needs a `Saturating<double>` whose `operator*`
+saturates.
+
+**Rebuttals:**
+
+1. **The lift is mandatory, not a lighter alternative.** Overloaded
+   operators require a class/enum operand ([over.oper]), so `double *
+   double` cannot be re-meant at all. Inventing a type is the *only* move
+   the language offers; the objection proposes the heavyweight path as if a
+   lightweight one existed.
+2. **The committee already chose names, on this exact example.** C++26
+   saturation arithmetic (P0543R3) is `std::add_sat` / `std::sub_sat` /
+   `std::mul_sat` / `std::div_sat` — named free functions in `<numeric>`,
+   not a saturating wrapper type. Likewise `std::gcd`/`std::lcm` (C++17),
+   `std::midpoint` (P0811, C++20), `std::lerp` (C++20). The library keeps
+   choosing names because the type encodes the wrong thing.
+3. **Types are not free in C++.** Haskell's `newtype Sat = Sat Double` is
+   one line and guaranteed zero-cost — and even there the wrap/unwrap is
+   felt as ceremony (`Sum`/`Product`). C++ has no `newtype`. A usable
+   `Saturating<T>` is: constructor set; conversion policy (`explicit` =
+   safe + noisy, implicit = quiet + dangerous); the rest of the operator
+   zoo forwarded; interop debt everywhere (`is_arithmetic` false,
+   `numeric_limits` unspecialized, `.value()` at every `double` interface).
+   A real class to design, review, and maintain, as a workaround for one
+   function lacking an infix spelling.
+4. **Wrong scope, and it can't compose.** Wrapping makes *every* operation
+   saturating while the wrapper is on; the intent was one multiplication in
+   one expression. Saturate/wrap/trap is a property of an *operation*, not
+   an *object*. And `operator*` can mean only one thing per type, so one
+   expression needing a saturating multiply *and* a wrapping add has
+   nowhere to stand; `a `mul_sat` b `add_wrap` c` states each choice at the
+   site it applies.
+5. **The lift is noise where the objection claims to remove it.**
+   `Saturating{a} * b` reads worse than `a `std::mul_sat` b` and
+   misdirects: it marks the data as special when the operation is. The
+   reader must go find what `Saturating` does to `*`; the named function
+   said it in the expression.
+
+**Landing:** the wrapper type is what we write today because the call
+syntax reads worse than the operator syntax. The proposal fixes the syntax
+instead.
