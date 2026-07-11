@@ -199,6 +199,254 @@ standardized form drops the gate. Under the flag off, every existing valid
 program is untouched — backtick remains, as today, a character with no
 meaning outside literals.
 
+# Motivation, past the call site
+
+The Before/After tables carry the shallow case: binary operations read
+better infix, and named operations stop being visually second-class to the
+dozen built-in symbols. The deeper case rests on two properties the tables
+barely use — the operator slot is an *arbitrary callable expression*, and
+the operator chains left-associatively. Those two facts reach further than
+they first appear. Everything in this section is the operator plus a few
+lines of ordinary user code; none of it is proposed for the standard
+library (the paper is language-only), and all of it was compiled and run
+under the built Clang.
+
+## Short-circuiting returns to user code
+
+C++ reserves non-strict evaluation to a fixed set of built-ins — `&&`,
+`||`, `?:`, `,`. Overloading does not get it back: an overloaded
+`operator&&` evaluates both operands, which is the classic footgun and the
+reason the guidance is to not overload it at all. This is a capability
+boundary, not a style preference, and it has been closed since C++98.
+
+A backtick helper whose right operand is a *callable* reopens it, because
+the helper decides whether — and when — that operand runs:
+
+```cpp
+// short-circuiting logical implication:  p ==> q  ≡  !p || q
+inline constexpr auto implies =
+    [](bool p, auto&& q) -> bool { return !p || q(); };
+
+p `implies` [&]{ return expensive(); }   // runs only when p holds
+```
+
+The same shape gives lazy defaults (``opt `or_else` [&]{ return costly(); }``),
+guarded effects, and bespoke control operators — any binary operation that
+must not evaluate its right side unconditionally. Chaining fallible steps
+is the zero-ceremony special case: the stages are already functions, so no
+thunk is written and the short-circuit falls out:
+
+```cpp
+inline constexpr auto mbind =
+    [](auto&& m, auto&& f)
+    { return std::forward<decltype(m)>(m)
+                 .and_then(std::forward<decltype(f)>(f)); };
+
+parse(s) `mbind` validate `mbind` store;   // stops at the first error
+```
+
+The concession, stated plainly: a bare-*expression* right operand still
+evaluates eagerly, because backtick desugars to a call and calls evaluate
+their arguments. The thunk is the price of generality. A dedicated
+implication operator — Walter Brown has proposed `==>` — pays that price
+differently, by building the laziness into the operator; what it buys over
+the backtick spelling is the ergonomics of omitting the thunk in the common
+boolean case, not a capability user code otherwise lacks.
+
+## One helper makes it a pipeline — and the ranges closures already fit
+
+A two-line helper turns the operator into left-to-right value threading:
+
+```cpp
+inline constexpr auto pipe =
+    [](auto&& x, auto&& f) -> decltype(auto)
+    { return std::invoke(std::forward<decltype(f)>(f),
+                         std::forward<decltype(x)>(x)); };
+
+x `pipe` f `pipe` g `pipe` h        // h(g(f(x))) — data-flow order
+```
+
+The decisive case is that this drives the *existing* range adaptor closures
+unchanged. `views::filter(pred)` and `views::transform(fn)` are already
+unary callables — `c | a` is *defined* as `a(c)` — so `pipe` feeds them
+directly:
+
+```cpp
+r `pipe` views::filter(pred) `pipe` views::transform(fn)
+// identical result and laziness to:
+r |  views::filter(pred) |  views::transform(fn)
+```
+
+Same closure objects, same lazy views, verified identical output on the
+built compiler. The per-library `operator|` overloads exist only to choose
+the `|` *syntax*; the closures themselves need nothing, so they work under
+backtick for free.
+
+## Stages with extra arguments — the honest gap
+
+A free function that takes the threaded value first plus extra arguments
+needs its trailing arguments fixed, with `std::bind_back` (C++23) or a
+lambda, before it is a unary stage:
+
+```cpp
+r `pipe` std::bind_back(filter, pred) `pipe` std::bind_back(transform, fn)
+// == transform(filter(r, pred), fn)
+```
+
+This is the case P2011's `|>` writes more directly, with the arguments
+inline. Same outcome, more ceremony — and it is precisely why backtick does
+not make `|>` redundant. The boundary is drawn exactly in the next section.
+
+## Reusable, point-free composition
+
+Compose stages into a named pipeline once, apply it many times:
+
+```cpp
+inline constexpr auto then =
+    [](auto f, auto g)
+    { return [=](auto&&... a) -> decltype(auto)
+        { return g(f(std::forward<decltype(a)>(a)...)); }; };
+
+auto clean = trim `then` lower `then` dedup;   // a reusable callable
+clean(s);
+```
+
+Left association gives left-to-right composition, mirroring a reusable
+adaptor chain.
+
+## Motivation, not a library proposal
+
+None of `pipe`, `then`, `mbind`, or `implies` is proposed. Each is a few
+lines of user code the operator makes worth writing; standardizing them
+would add an LEWG track to an EWG/CWG paper and double the committee cost
+for no enabling gain. Land the language feature, let usage show which
+helpers earn a place, and bring those in a companion library paper with
+field experience behind them rather than ahead. The patterns are here so
+the room can see the operator's reach before approving any of it.
+Direction without commitment.
+
+# Neither replaces the other: P2011's `|>`
+
+The obvious neighbor is the pipeline-rewrite operator, `|>`
+[@P2011R1]. Both constructs bottom out in a call expression, and their
+two-argument cases coincide — `` a `plus` b ``, `a |> plus(b)`, and
+`plus(a, b)` are the same call — so the relationship has to be stated
+explicitly: they are orthogonal, complementary, and neither subsumes the
+other.
+
+What each one is:
+
+- **Backtick** — `` x `f` y `` desugars to `f(x, y)`: symmetric binary
+  infix application of a callable. The callee sits between two operands,
+  and the result is an ordinary overload-resolved call.
+- **`|>`** — `x |> f(a, b)` is *rewritten* to `f(x, a, b)`: a syntactic
+  rewrite that prepends the left operand to the call written on its right.
+  There is no `operator|>`; it is not overloadable, by design, and the
+  right-hand call has any arity.
+
++-----------------+-----------------------------+-----------------------------------+
+|                 | backtick `` x `f` y ``      | pipeline `x |> f(...)`            |
++=================+=============================+===================================+
+| Shape           | symmetric binary infix      | directional prepend-the-argument  |
++-----------------+-----------------------------+-----------------------------------+
+| Right-hand side | a single operand            | a call with its own arguments     |
++-----------------+-----------------------------+-----------------------------------+
+| Resulting arity | exactly 2                   | any N                             |
++-----------------+-----------------------------+-----------------------------------+
+| Mechanism       | desugar to a normal call    | pure syntactic rewrite            |
++-----------------+-----------------------------+-----------------------------------+
+| Overloadable    | yes — it *is* a call        | no, by design                     |
++-----------------+-----------------------------+-----------------------------------+
+| Precedence      | highest binary              | low                               |
++-----------------+-----------------------------+-----------------------------------+
+| Native idiom    | operations: `` a `min` b `` | chains: `r |> filter(p) |> sum()` |
++-----------------+-----------------------------+-----------------------------------+
+
+The overlap stops at two arguments. Beyond that, each can do what the other
+cannot:
+
+- Backtick cannot thread. `x |> f(a, b, c)` prepends `x` to an
+  arbitrary-arity call; backtick's right-hand side is a single operand, not
+  an argument list, so there is no backtick spelling of `f(x, a, b, c)`.
+  Beyond two operands, only `|>` threads.
+- `|>` cannot write an operation *between* its operands. `` a `min` b ``
+  becomes `a |> min(b)`, which reads as a pipeline stage, not an operation.
+  For `x op y` notation — predicates, arithmetic, metrics — backtick is the
+  spelling.
+
+And they compose: backtick supplies infix detail inside a stage, `|>`
+threads the value between stages:
+
+```cpp
+r |> filter([](auto e){ return e `mod` 2 `eq` 0; }) |> sum()
+//                             \____ eq(mod(e, 2), 0) ____/
+```
+
+This proposal deliberately declines the `|>` spelling for itself (see the
+appendix) so that both can coexist in one program. Backtick says "this is a
+binary operation"; `|>` says "thread this value through these stages."
+Different sentences.
+
+# Prior art
+
+Both uses have shipped elsewhere, repeatedly. Neither is invented here; the
+design work in this paper is fitting them into C++'s grammar, not
+discovering them.
+
+## Infix application of named callables
+
+Haskell has spelled it this way since the first Haskell Report (1990): an
+ordinary identifier enclosed in grave accents is an infix operator, and
+`` x `div` y ``, `` x `mod` y ``, `` xs `elem` ys `` are everyday Haskell.
+The descendants kept it —
+[PureScript](https://book.purescript.org/chapter3.html) and
+[Idris](https://docs.idris-lang.org/en/latest/tutorial/typesfuns.html) both
+apply any function infix with backticks, as do the Haskell-family dialects.
+PureScript is worth a sentence more: asked where backtick operators should
+sit, it settled on *left-associative, highest precedence* — independently,
+the same answer this paper's D1 and D2 give. Two language communities
+starting from the same construct arrived at the same fixity.
+
+Two languages adopted the construct and then removed it, and the survey is
+worth having honestly.
+[Elm dropped backticks in 0.18](https://github.com/elm-lang/elm-platform/blob/master/upgrade-docs/0.18.md),
+citing that in practice a single function (`andThen`) accounted for the
+use, that the form was redundant with Elm's `|>` pipeline, and that the
+glyph is confusable with a quote in some fonts.
+[Unison likewise removed it](https://github.com/unisonweb/unison/pull/2570).
+But both are pipeline-first functional languages, where the dominant
+backtick idiom was monadic chaining — exactly the use `|>` covers directly,
+so the feature was carrying one idiom that already had a spelling. The
+motivating set here — `gcd`, `dot`, `mul_sat`, `approx_equal` — is binary
+operations, not chains, and the P2011 section of this paper keeps the
+pipeline and the infix operator as different constructs precisely so
+neither has to absorb the other's uses. Elm folding backtick *into* its
+pipe is evidence for that separation, not against infix. The
+font-confusability complaint is real, small, and filed where it belongs, in
+Appendix A.1.
+
+The demand for named infix also keeps surfacing under other spellings:
+Kotlin's [`infix fun`](https://kotlinlang.org/docs/functions.html#infix-notation),
+Scala's bare method infix, R's `%op%` operators, Miranda's `$fn` — the
+direct ancestor of the Haskell backtick — and Fortress's named operators.
+Languages keep reinventing the feature and disagree only on its spelling.
+Backtick is the spelling with the deepest working precedent.
+
+## Escaping keywords as identifiers
+
+Every language that kept evolving past 1.0 installed an escape hatch:
+Swift's `` `class` ``, Kotlin's backtick identifiers, F#'s double-backtick
+names, C#'s `@`-verbatim identifiers, Nim's backtick stropping, and Rust's
+[`r#` raw identifiers](https://doc.rust-lang.org/edition-guide/rust-2018/module-system/raw-identifiers.html)
+— the last introduced specifically so the 2018 edition could take `try`,
+`async`, and `await` as keywords while 2015-edition code kept compiling and
+kept calling functions with those names. Editions plus raw identifiers are
+how Rust made keyword adoption routine rather than traumatic. C++ is the
+outlier: no escape, so every new keyword breaks real code, and the
+committee's coping strategies are `co_`-circumlocution and
+context-sensitive grammar. The hatch is standard equipment. C++ never
+installed it.
+
 # Design choices and decisions
 
 The implementation work was run against a numbered decisions log; the
@@ -239,6 +487,9 @@ where a leading prefix operator floats *out* of its operand, so
 `` -a `f` -b `` would mean `-f(a, -b)`. Asymmetric, and hard to teach.
 Consistency with every other binary operator won. The sole cost is that
 `` -x `f` y `` is `f(-x, y)` — which is the consistent reading anyway.
+PureScript, which took the same construct from Haskell, independently
+settled on the same fixity: backtick operators are left-associative, at
+the highest precedence.
 
 ## Left-associative (D1)
 
@@ -331,8 +582,10 @@ alternative token. The objections to backtick — it is Markdown's inline-code
 delimiter, and a dead key on some keyboard layouts — are real and minor, and
 neither is a capability gap: CommonMark's multi-backtick spans already
 express `` x `f` y `` in running prose, and fenced blocks (the dominant case)
-are unaffected. That workaround renders correctly today on GitHub and on the
-committee's own Mattermost server. Against that, a second spelling doubles
+are unaffected. That workaround renders correctly today on GitHub, on the
+committee's own Mattermost server, and throughout the source of this very
+paper — which is written in Markdown, and is by now littered with inline
+renderings of the single-backtick form. Against that, a second spelling doubles
 the teaching, formatting, pretty-printing, and tooling surface permanently,
 and fragments the one-recognizable-form idiom the readability argument rests
 on. Trigraphs were removed in C++17; digraphs are vestigial. We decline to
@@ -417,7 +670,7 @@ Backtick has no meaning in C++ source today outside string literals,
 character literals, and raw-string delimiters — all of which are handled in
 translation phase 3 before punctuator recognition, and are therefore
 unaffected. A stray backtick in program text is ill-formed in every current
-compiler ("stray '`' in program", in GCC's words). Only three printable ASCII
+compiler (`` stray '`' in program ``, in GCC's words). Only three printable ASCII
 characters are unclaimed at all: the backtick, the dollar sign, and the
 commercial at. And the other two are compromised — the dollar is an
 identifier character under the default-on `-fdollars-in-identifiers` in both
@@ -494,3 +747,206 @@ reinforcement. Position alone suffices.
 Because the escape yields an ordinary identifier, nothing downstream of the
 parser changes: no new lookup rules, no mangling scheme, no ABI surface.
 `` void `new`(); `` links as a function named `new`.
+
+# Implementation experience
+
+This is not a paper design with a hand-wave at implementability. The infix
+operator and the keyword escape are both implemented, gated behind an
+opt-in `-fbacktick` flag, in two independent compilers. Both forks are
+public, on a `backtick` branch:
+
+- **Clang** ([steve-downey/llvm-project @ backtick](https://github.com/steve-downey/llvm-project/tree/backtick))
+  — lexer token, the new binary precedence level, a parser branch modeled
+  on the ternary operator (the closest existing delimited-middle operator),
+  Sema desugaring to a `CallExpr`, the driver flag, a transparent AST
+  wrapper so `-ast-print` round-trips the surface syntax, and clang-format
+  support for both uses (canonical spacing, plus a break policy that
+  hard-forbids breaks adjacent to the backticks). The slot reaches overload
+  resolution as an `UnresolvedLookupExpr`, so ADL is the call's. Tests live
+  under `clang/test/` (the `backtick-*` files in `Parser/`, `Lexer/`, and
+  `SemaCXX/`, plus `Driver/` and the Format unit tests), and the full
+  `check-clang` regression gate stays green with the flag off and on.
+- **GCC** ([steve-downey/gcc @ backtick](https://github.com/steve-downey/gcc/tree/backtick))
+  — `libcpp` token (replacing today's `` stray '`' in program `` diagnostic),
+  parser precedence level and slot handling, desugaring via
+  `finish_call_expr`, the same flag, and full ADL on the slot. Tests live
+  under `gcc/testsuite/g++.dg/backtick/`.
+
+## What the second implementation bought
+
+Two implementations that agree is evidence; the place they briefly
+*disagreed* is more instructive, and every divergence was recorded in a
+ledger as it was found — which is exactly the record CWG asks after.
+
+The instructive one is lookup fidelity. GCC's first cut resolved a
+bare-name slot at parse time, so calls that depend on pure ADL — the
+callee's name visible in no enclosing scope, only in an argument's
+namespace — compiled under the Clang implementation and failed under GCC.
+That was recorded as a defect, not a permitted difference, and fixed by
+routing the slot through the same Koenig lookup the plain call performs.
+The episode is why this paper states ADL fidelity as normative rather than
+leaving it implied: `` x `f` y `` must not have quietly weaker lookup than
+`f(x, y)`.
+
+The parsers also confirmed the grammar's shape independently. Both
+implementations, built separately from the same design, accept the bare
+"nested" form as a left-associative chain — because the token stream for
+the two readings is identical. What the design predicted on paper, two
+unrelated parser architectures reproduced. Nesting-is-chaining is a
+consequence of the grammar, not an implementation accident.
+
+The motivation section is implementation experience too, not assertion.
+Every pattern there — `pipe` threading, the range-adaptor closures, the
+`bind_back` stages, `then` composition, the short-circuiting `implies` and
+the `mbind` chain — was compiled and run against the built `-fbacktick`
+Clang, C++23, `-Wall -Wextra` clean. The ranges comparison in particular
+was verified to produce identical results and laziness through `|` and
+through `` `pipe` ``, on the same closure objects.
+
+# Appendix A: alternative spellings, and the lexical inventory
+
+Backtick is the sole proposed spelling (D11). This appendix carries the
+analysis behind that decision: why alternatives get raised, the lexical
+filter any candidate must pass, the candidates themselves, and the wider
+inventory of what ASCII actually remains — so that if the spelling question
+is raised, it can be settled against this record in this paper, not
+reopened in a future one.
+
+## A.1 Why alternatives get raised
+
+Two reasons, both real, both minor. A single backtick is Markdown's
+inline-code delimiter, so `` x `f` y `` in running prose fights the markup.
+And backtick is a dead key or awkward on some non-US keyboard layouts — it
+was one of the ISO-646-variant characters, alongside `# [ ] { } | ~ ^ \`.
+
+Neither is a capability gap. CommonMark's multi-backtick spans already
+delimit code containing backticks — writing ``` `` x `f` y `` ``` renders
+as `` x `f` y `` — and fenced blocks, the dominant case for code, are
+unaffected entirely. The span form renders correctly on GitHub and on
+Mattermost, the committee's own chat server (author-verified). In the very
+forum where the operator would most often be typed in running text, the
+friction is a solved problem. What an alternative spelling buys is
+ergonomics for the minority case, inline prose. Nothing more.
+
+There is also a self-test on the record: the source of this paper is pandoc
+Markdown, and by this point it is littered with inline renderings of the
+single-backtick form — every `` x `f` y `` in its running prose is a
+multi-backtick span in the source. The friction is real; each inline
+example costs the doubled delimiters and a padding space. It is also,
+demonstrably, survivable: a Markdown paper *about* the backtick operator is
+the worst case the objection can construct, and the one you are reading
+renders.
+
+## A.2 The filter a candidate must pass
+
+An alternative spelling is an additional token lexed by maximal munch, like
+the existing digraphs. To be viable, the sequence must never appear
+adjacent in a valid current program. Three traps, each of which has bitten
+a real token before:
+
+1. **Maximal-munch theft.** After a binary operator or `<`, a
+   unary-capable character is already valid: `a < -b`, `a * *p`, `!!x`.
+   Minting the two-character form silently changes meaning.
+2. **The `::` neighborhood.** `a<:b` needed the `<::` carve-out in
+   [lex.pptoken] because `vector<::std::string>` broke. Any new
+   `<`-prefixed token lives next to that scar.
+3. **Universal-character-name munch.** `\uXXXX` can begin an identifier,
+   so a candidate whose second character is `\` can split a UCN — a
+   non-obvious break.
+
+## A.3 The candidates
+
+| Spelling | Lexically clean? | Verdict |
+|---|---|---|
+| `\< … \>` | yes — `\` is no token today, and `\<` cannot start a UCN | front-runner, if ever forced (A.4) |
+| `<\| … \|>` | yes | blocked socially: `\|>` is P2011's operator, and it reads as "pipe" |
+| `<\ … \>` | no — UCN munch (trap 3) | inferior twin of `\< … \>`; reject |
+| `(\| … \|)` | yes | heavy; Haskell "banana bracket" connotation; reads worse than backtick |
+| `x \op\ y` | yes | visually too light; symmetric, so it keeps the same-delimiter machinery |
+| `$ … $`{.raw} | no — `$` is an identifier character under default-on `-fdollars-in-identifiers` | reject |
+| `@ … @`{.raw} | clean in C++ | the Objective-C sigil, in a lexer Clang shares; reject |
+| `<: :>` `<% %>` | — | already digraphs for brackets and braces |
+
+## A.4 The front-runner is not an alias
+
+One candidate deserves honesty: `\< … \>` is lexically bulletproof *and*
+asymmetric. Distinct open and close tokens would eliminate the
+same-delimiter problem outright — no `BacktickIsOperator` flag — and with
+it the nesting rule, since `x \<f \<g\> h\> y` parses unambiguously with no
+parentheses. That is, on engineering grounds, a better-designed operator
+than the backtick.
+
+It is therefore important to state plainly what adopting it would mean:
+not adding an alias, but choosing a *different primary spelling* — a
+different operator with a different feel and none of the Haskell lineage.
+The decision taken here is backtick as the single spelling. We considered
+the better-engineered stranger and chose the familiar borrowed idiom, on
+purpose.
+
+## A.5 The rebuttals, pre-loaded
+
+1. **It is ergonomics, not capability.** Inline prose works today via
+   CommonMark spans (A.1); fenced blocks cover code.
+2. **Two spellings is a permanent tax.** Teaching doubles; clang-format
+   must pick a canonical form and normalize to it; `-ast-print` must
+   choose; grep, linters, and tooling grow a second case — forever, for a
+   cosmetic win.
+3. **Direction of travel.** Trigraphs were removed in C++17; digraphs are
+   vestigial and periodically floated for removal. A new alternative token
+   invites "and will you deprecate this one too?"
+4. **It fragments the idiom.** The readability case rests on one
+   recognizable form; two camps undercut it.
+5. **None reads better.** Backtick is the established infix-quote idiom.
+   The alternatives carry foreign connotations — pipe, escape, banana.
+6. **If the markup clash warranted a change, it would argue against the
+   primary, not for a second spelling.** We weighed that and chose
+   backtick-primary anyway. An alias is the worst of both worlds.
+7. **"Add it later if needed" is not a cheap option.** A follow-up spelling
+   costs its own paper, an EWG poll, CWG wording, and a ballot cycle — and
+   risks shipping the operator first and bolting a second spelling on
+   after. Deferral buys no option value. The question is settled here.
+
+## A.6 The wider inventory: what ASCII actually remains
+
+The same availability analysis generalizes, and it is what gets asked in
+the room, so it is recorded. A sequence `XY` is mintable only if `XY` is
+not a token or token-prefix today *and* `Y` cannot validly follow `X` in a
+current program. The second clause is the surprising one: after any binary
+operator or `<`, the unary-capable characters `- + * & ~ !` are already
+legal, so `<-`, `<+`, `<*`, `**`, `!!`, `~~` are all blocked — `a * *p`
+and `!!x` are the cautionary idioms. `<|` survives only because `|` is the
+one bar with no unary form.
+
+Free standalone characters: exactly three, as noted in the grammar section
+— backtick (claimed by this proposal), `\` (free as a token but the
+line-continuation and UCN lead-in, usable only with care), and `@`/`$`
+(compromised by Objective-C and `-fdollars-in-identifiers` respectively).
+
+Clean two-or-more-character sequences of note: `=>`, `==>`, `<==`, `<==>`,
+`<|`, `~>`, and `%%` are mintable today; `|>` is lexically clean but is
+P2011's; `<=>` is spaceship; and `^^` — available by the same analysis
+until recently — was claimed by reflection [@P2996R5], which itself moved
+from single `^` to `^^` after running exactly this exercise. The lesson
+from that precedent: doubling an operator with no unary form is the
+reliable way to find clean real estate, and doubling one that has a unary
+form never is.
+
+## A.7 Why the demand for that inventory evaporates
+
+This proposal is, in effect, a general infix-operator facility: any named
+binary operation is `` x `op` y `` with no new punctuator. So the standing
+demand for new operator tokens — which is what previously justified
+spending scarce lexical real estate — largely evaporates. `` x `implies` y ``,
+`` x `pow` y ``, `` x `dot` y `` all work today under the feature, and the
+table in A.6 can stay unspent.
+
+The residual cases where a dedicated punctuator still earns its keep are
+the ones a desugar-to-call cannot express: non-strict evaluation with a
+bare-expression right operand (Walter Brown's `==>` implication — though
+the motivation section shows a thunk recovers the capability, leaving the
+dedicated operator an ergonomic win rather than a necessary one), custom
+precedence or associativity outside the single backtick level, and
+operations frequent enough that even `` `op` `` is too much ceremony — a
+high bar. Everything else is a backtick call. The inventory above is what
+remains technically possible; this proposal removes most of the motivation
+to spend it.
