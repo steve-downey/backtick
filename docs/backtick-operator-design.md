@@ -1067,3 +1067,56 @@ saturates.
 **Landing:** the wrapper type is what we write today because the call
 syntax reads worse than the operator syntax. The proposal fixes the syntax
 instead.
+
+---
+
+## 19. Prior art survey (both uses)
+
+Carried in the paper's "Prior art" section. Sources verified 2026-07-11.
+
+### 19.1 Infix application of named callables — adopters and removers
+
+**Adopters (current):**
+
+- **Haskell** — since the first Report (1990): an ordinary identifier in
+  grave accents is an infix operator (`` x `div` y ``).
+- **PureScript** — any function infix via backticks; **independently settled
+  on left-associative, highest precedence** — the same fixity as D1/D2.
+  Corroborating *design* precedent, not just lexical.
+  [book.purescript.org/chapter3.html]
+- **Idris** — same construct, in the official tutorial.
+  [docs.idris-lang.org/en/latest/tutorial/typesfuns.html]
+- Haskell-family dialects (Frege, Curry) inherit it.
+
+**Removers (the objection EWG will find — pre-loaded):**
+
+- **Elm** removed backticks in 0.18 (2016). Stated reasons: in practice one
+  function (`andThen`) accounted for usage; redundant with Elm's `|>`;
+  glyph confusable with quotes in some fonts.
+  [github.com/elm-lang/elm-platform/blob/master/upgrade-docs/0.18.md]
+- **Unison** removed backtick infix application.
+  [github.com/unisonweb/unison/pull/2570]
+
+**Why the removals don't transfer:** both are pipeline-first functional
+languages whose dominant backtick idiom was monadic chaining — exactly what
+`|>` covers, so backtick carried one idiom that already had a spelling. The
+C++ motivating set (`gcd`, `dot`, `mul_sat`, `approx_equal`) is binary
+operations, not chains; §15 keeps backtick and `|>` distinct precisely so
+neither absorbs the other. Elm folding backtick *into* its pipe supports
+that separation. Font-confusability files under §13.1 ergonomics.
+
+**Adjacent spellings of the same demand:** Kotlin `infix fun`; Scala bare
+method infix; R `%op%`; Miranda `$fn` (the direct ancestor of Haskell's
+backtick); Fortress named operators. The demand recurs; only the spelling
+varies. Backtick has the deepest working precedent.
+
+### 19.2 Keyword escapes
+
+Swift `` `class` ``; Kotlin backtick identifiers; F# double-backtick names;
+C# `@`-verbatim identifiers; Nim backtick stropping; **Rust `r#` raw
+identifiers** — added specifically so the 2018 edition could take `try` /
+`async` / `await` as keywords while 2015-edition code kept compiling
+(editions + raw identifiers make keyword adoption routine).
+[doc.rust-lang.org/edition-guide/rust-2018/module-system/raw-identifiers.html]
+C++ is the outlier: no escape, so new keywords break code and the coping
+strategies are `co_`-circumlocution and context-sensitive grammar.
