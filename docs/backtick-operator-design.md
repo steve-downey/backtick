@@ -534,8 +534,8 @@ clean to mint under a flag; "blocked" = breaks valid code or already taken.
 
 | Seq | Available? | Note |
 |-----|-----------|------|
-| `=>` | yes | `a = >b` is ill-formed today. Strong "arrow/lambda" connotation (C#, JS, Rust). |
-| `==>` | yes | `a == >b` ill-formed today. Natural spelling for **logical implication** (§14.4). |
+| `=>` | yes | `a = >b` is ill-formed today. Strong "arrow/lambda" connotation (C#, JS, Rust). **P2971 (Brown) proposes it as the implication operator** (§14.4). |
+| `==>` | yes | `a == >b` ill-formed today. Arrow-like spelling for **logical implication** — though P2971 actually proposes single `=>` (§14.4). |
 | `<==` | yes | Munches cleanly (`<=` then `=` is ill-formed today). Converse implication, if ever wanted. |
 | `<==>` | yes | Biconditional / "iff", if ever wanted. |
 | `<\|` | yes | Reverse-pipe; the only clean `<X`. |
@@ -565,18 +565,20 @@ The residual cases where a *dedicated* operator still earns its keep are the
 ones a desugar-to-call **cannot** express:
 
 - **Non-strict / short-circuit evaluation.** A call evaluates all arguments.
-  **Walter Brown's logical-implication operator** is the canonical example:
-  `p ==> q` ≡ `!p || q`, whose RHS is **not evaluated when `p` is false**.
+  **Walter Brown's implication operator** (P2971R3, `operator=>`) is the
+  canonical example: `p => q` ≡ `!p || q`, whose RHS is **not evaluated when
+  `p` is false** (P2971 §7.3 proposes short-circuit evaluation; the paper
+  also gives it low precedence, just below `||`, and right-associativity).
   `p `implies` q` desugared to `implies(p, q)` evaluates `q` unconditionally
   — observably different (side effects, cost, well-definedness) *when `q` is a
   bare expression*. **But** a helper taking the RHS as a *thunk*
   (`p `implies` [&]{ q }`) recovers the short-circuit (§16.5), and that is a
   general user-space capability the language otherwise reserves to `&&`/`||`
   (which overloading cannot restore). So the residual value of a dedicated
-  `==>` is *ergonomic* — omitting the per-call thunk for the common boolean
-  case — not a hard capability gap. It remains a reasonable candidate; `==>`
-  is lexically available (14.3) and mnemonic for `⟹` (the missing
-  short-circuit sibling of `&&`/`||`).
+  `=>` is *ergonomic* — omitting the per-call thunk for the common boolean
+  case — not a hard capability gap. It remains a reasonable candidate;
+  P2971's `=>` is lexically available (14.3), as is the more arrow-like
+  `==>`, mnemonic for `⟹` (the missing short-circuit sibling of `&&`/`||`).
 - **Custom precedence/associativity** that the single backtick level (§4)
   cannot give.
 - **Ultra-high-frequency** operations where `x `op` y` ceremony genuinely
@@ -808,9 +810,9 @@ short-circuit framing above and present this as "chaining fallible steps" — th
 capability is the point, not the vocabulary.)
 
 This refines §14.4: backtick **can** express short-circuiting implication after
-all — when the right operand is passed as a thunk. What a dedicated `==>` adds
-is only the *ergonomics* of omitting that thunk for the common boolean case; it
-is not a hard capability gap. A bare-*expression* RHS still evaluates eagerly
+all — when the right operand is passed as a thunk. What a dedicated `=>`
+(P2971R3) adds is only the *ergonomics* of omitting that thunk for the common
+boolean case; it is not a hard capability gap. A bare-*expression* RHS still evaluates eagerly
 (backtick desugars to a call), so the thunk is the price of generality.
 
 ### 16.6 What this recovers — and the one thing it doesn't
