@@ -24,6 +24,10 @@ open DEVIATIONS rows back into the design doc, and follow-up edits. Treat the
 `ops/` step machinery as a completed record unless a *new* step is added to a
 `PLAN.md`.
 
+Maintenance rebases (R-prefixed rows in the `ops/PLAN.md` Status log) are not
+plan steps and do not follow `ops/AGENT_PROTOCOL.md`; they still get a handoff
+and a Status-log row so base-commit changes are not lost.
+
 ## Layout
 
 - `docs/backtick-operator-design.md` — the canonical design + decisions log
@@ -52,25 +56,62 @@ open DEVIATIONS rows back into the design doc, and follow-up edits. Treat the
 
 ## The implementation worktrees (where the code actually is)
 
-| Track | Source worktree (branch `backtick`) | Build dir | Tests |
-|-------|-------------------------------------|-----------|-------|
-| Clang | `~/src/llvm/backtick` | `~/src/llvm/build-backtick` | `clang/test/**/backtick-*.cpp`, `clang/test/Driver/fbacktick.c`, `clang/unittests/Format/` |
-| GCC   | `~/bld/gcc/gcc-backtick` | `~/bld/gcc/gcc-backtick-build` | `gcc/testsuite/g++.dg/backtick/*.C` |
+The Clang track is maintained on **two parallel branches** — one on the LLVM 23
+release branch, one on trunk. They carry a byte-identical feature diff and
+differ only in their final clang-format-conformance commit; see
+`ops/handoffs/13-rebase-release-23x.handoff.md` and
+`ops/handoffs/14-rebase-trunk.handoff.md`.
 
-The Clang worktree may still carry stale copies of these `docs/` and `ops/`
+| Track | Branch | Base | Source worktree | Build dir |
+|-------|--------|------|-----------------|-----------|
+| Clang | `backtick-23` | `upstream/release/23.x` (llvmorg-23.1.0-rc2) | `~/src/llvm/backtick` | `~/src/llvm/build-backtick` |
+| Clang | `backtick-trunk` | `upstream/main` | `~/src/llvm/backtick-trunk` | `~/src/llvm/build-backtick-trunk` |
+| GCC   | `backtick` | GCC trunk `c9ee2c5ab6c` | `~/bld/gcc/gcc-backtick` | `~/bld/gcc/gcc-backtick-build` |
+
+Clang tests for both branches: `clang/test/**/backtick-*.cpp`,
+`clang/test/Driver/fbacktick.c`, `clang/unittests/Format/`.
+GCC tests: `gcc/testsuite/g++.dg/backtick/*.C`.
+
+Note the worktree directory `~/src/llvm/backtick` holds branch **`backtick-23`**,
+not a branch named `backtick` — the directory name predates the split and was
+kept so `~/src/llvm/build-backtick` stays valid. There is no branch named plain
+`backtick` on any LLVM remote; it was deleted when the two lines were split.
+
+**A change to the Clang implementation must be applied to both branches.** Do the
+work on one, verify its gate, then cherry-pick and re-verify on the other — the
+two bases drift independently, so a clean cherry-pick is not proof of a passing
+gate (see the clang-format trap in `ops/handoffs/13-rebase-release-23x.handoff.md`).
+
+The Clang worktrees may still carry stale copies of these `docs/` and `ops/`
 trees pending their removal; ignore them and treat this repo as authoritative.
 The maintainer's pristine main build is `~/src/llvm/build-main` (`~/src/llvm/main`)
-— do **not** disturb it; all feature work happens in the `backtick` worktree/build.
+— do **not** disturb it; all feature work happens in the backtick worktrees/builds.
 
 ## Build & test
 
-Clang (dev build has assertions on; flag is `-fbacktick`):
+Clang (dev build has assertions on; flag is `-fbacktick`). Substitute
+`build-backtick-trunk` / `backtick-trunk` for the trunk branch:
 ```bash
 ninja -C ~/src/llvm/build-backtick clang                 # build
 ninja -C ~/src/llvm/build-backtick check-clang           # full regression gate
 ~/src/llvm/build-backtick/bin/llvm-lit -v \
     ~/src/llvm/backtick/clang/test/Parser/backtick-infix.cpp   # one test
 ```
+
+Two gotchas that make a failed gate look green — both cost real time already:
+
+- **`ninja … | tail` reports `tail`'s exit code, not ninja's.** Redirect and
+  check explicitly: `ninja check-clang > gate.log 2>&1; echo "EXIT=$?"`.
+- **`check-clang` self-formats `clang/lib/Format/`** and aborts at ~step 81/970,
+  before any lit test runs, if the backtick edits there don't match the current
+  LLVM style. A conflict-free rebase does not imply a passing gate.
+
+`check-clang` has one **env-only known failure**,
+`Clang :: Format/dump-config-objc-stdin.m`: a stray `Language: Cpp` config at
+`/home/sdowney/src/.clang-format` (dated 2018, outside any repo) is picked up by
+clang-format walking up the directory tree. It fails identically on the pristine
+`build-main` binary. Exactly that one failure means the gate is green — do not
+"fix" it by touching that file.
 
 GCC (dev build is `--disable-bootstrap --enable-languages=c,c++`):
 ```bash
