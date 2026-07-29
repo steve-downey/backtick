@@ -113,8 +113,9 @@ stop the notification.
   two implementations now sit on different vintages of their compilers; re-sync
   before any fresh cross-compiler divergence testing.
 - `backtick-pre-23-rebase` (`8b3e32b81aed`) is the common ancestor of both
-  branches and is **local only**. Both branches' pre-rebase history is
-  unreachable on the remotes; keep the tag until you are sure neither line needs
-  redoing.
+  branches — the state both were rebased from, and the only ref reaching the 44
+  pre-rebase commits. Pushed to `origin` and `ceridwen`, so it survives a local
+  disk loss. Do not delete it from the remotes until you are sure neither line
+  needs redoing; without it that history is unreachable and eligible for GC.
 - Carried forward from S10: `err_backtick_nested_requires_parens` remains dead
   code, and the D8 slot-interior SplitPenalty bump is still unimplemented.
