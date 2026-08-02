@@ -50,7 +50,7 @@ Vec operator⊖(Vec const&);          // one parameter -> unary prefix form
 | U7 | Gated behind its own flag, `-funicode-operators`, independent of and composable with `-fbacktick` | **Proposed** | Same D5 rationale: opt-in prototype vehicle, default build byte-identical to upstream. A separate flag because the features are separable proposals with separable fates; a translation unit may enable either, both, or neither, and U4's shared precedence level must parse identically whichever subset is on. |
 | U8 | Mangling: Itanium **vendor-extended operator** (`v <arity> <source-name>`) with a code-point-derived source-name, e.g. `⊞` binary → `v2` + `op_u229E` | **Proposed — open (ABI)** | The `v` production exists precisely for operators the grammar didn't anticipate; precedent for naming-by-derived-source-name is `li<name>` for literal-operator suffixes, and precedent for retrofitting a real code is `aw` for `co_await`. A standardized feature would want a first-class `<operator-name>` production keyed by code point, which needs cross-vendor agreement — flagged open, not resolved. MSVC mangling unexamined. |
 | U9 | **No user-declared precedence or associativity, ever** | **Proposed** | Fixity is the rock other designs founder on. A declared precedence is a semantic property that must travel with the name across headers, modules, and translation units; two TUs disagreeing about `a ⊕ b ⊗ c` is an ODR/IFNDR factory, and the parse of an expression comes to depend on which imports are visible (Haskell's fixity-import problem; Swift's precedencegroup conflicts). Fixed fixity makes the *parse* of any expression depend on nothing but the expression — only the *meaning* of `operator⊞` travels, and that is just ordinary lookup. This is D1/D2's "one level, left, learn it once" argument with the alternative's failure mode named. |
-| U10 | **Operator characters are never identifier characters** — the token set and the identifier set stay disjoint | **Proposed** | TR31 partitions syntax space from identifier space by construction, and it holds empirically: Pattern_Syntax ∩ XID_Start = Pattern_Syntax ∩ XID_Continue = ∅ in UCD 17.0. It also holds *historically* in C++: the C++11–C++20 Annex E identifier whitelist has zero overlap with Pattern_Syntax (it even carves × and ÷ out of the middle of the Latin-1 letter ranges), so no standard has ever admitted a function *named* ⊞ and no existing code can conflict (U§7.1). The function-name use is already served: `operator⊞` *is* a name — callable, address-taken, passable — Haskell's `(⊞)` section spelled the C++ way. And admitting bare-⊞ identifiers would create the design's one true ambiguity, `⊞(x)` in operand position (U§7.1), whose only resolutions are whitespace sensitivity (the Swift trap U5 already declined) or worse. |
+| U10 | **Operator characters are never identifier characters** — the token set and the identifier set stay disjoint | **Proposed** | TR31 partitions syntax space from identifier space by construction, and it holds empirically: Pattern_Syntax ∩ XID_Start = Pattern_Syntax ∩ XID_Continue = ∅ in UCD 17.0. It also holds *historically* in C++: the C++11–C++20 Annex E identifier whitelist has zero overlap with Pattern_Syntax (it even carves × and ÷ out of the middle of the Latin-1 letter ranges), so no standard has ever admitted a function *named* ⊞ and no existing code can conflict (U§7.1). The function-name use is already served: `operator⊞` *is* a name — callable, address-taken, passable — Haskell's `(⊞)` section spelled the C++ way. And admitting bare-⊞ identifiers would create the design's one true ambiguity, `⊞(x)` in operand position (U§7.1), whose only resolutions are whitespace sensitivity (the Swift trap U5 already declined) or worse. Composes cleanly with Clang's shipped math-identifier extension (D137051, Clang 16) and P3658R1: both admit exactly the TR31 §7.1 ID_Compat_Math sets, whose overlap with Pattern_Syntax is precisely {∂ ∇ ∞} — the three U1 already cedes to the identifier side — so operator set and extended identifier set stay disjoint even with the extension on, and mangling stays structurally distinct with nothing new (U§9). |
 
 ---
 
@@ -324,8 +324,38 @@ So no conforming C++ program in any standard has ever contained a function
 named `⊞`, and U1 does not change that: the operator set is carved from
 Pattern_Syntax, the identifier set from XID, and they can never meet.
 
-**Second, the position analysis, had we wanted both.** Suppose bare `⊞`
-were also an identifier:
+**Second, the live extension surface: Clang already ships math identifiers,
+and stays disjoint.** The user demand for operator-ish characters in
+*names* is real and already answered — by exactly the TR31 §7.1 profile:
+
+- **Clang D137051** (Corentin Jabot, landed December 2022, Clang 16):
+  admits the ID_Compat_Math sets into identifiers, **on by default** in
+  C++/C2x modes with an `ext_mathematical_notation` extension warning. The
+  review is explicit that Sm/So operator characters (⊞ ⊕ ⊗, arrows) are
+  *not* included.
+- **P3658R1** "Adjust identifier following new Unicode recommendations"
+  (2025) proposes the same ID_Compat_Math sets for standard C++ — necessary
+  as an explicit exception precisely because ∂ ∇ ∞ carry Pattern_Syntax,
+  and the stability policy forbids ever adding them to XID.
+- Measured against UCD 17.0 (audit script): ID_Compat_Math_Start is 13
+  code points (∂ ∇ ∞ plus ten plane-1 mathematical-style variants of ∂ and
+  ∇), ID_Compat_Math_Continue is 43 (adding super/subscript digits and
+  signs — none of them Pattern_Syntax), and **Pattern_Syntax ∩
+  ID_Compat_Math = exactly {∂, ∇, ∞}** — the three characters U1 already
+  excludes and cedes to the identifier side.
+
+So even with the Clang extension enabled, the operator set and the
+(extended) identifier set are disjoint: `int ∂(int, int)` is a function
+named by an ordinary (extended) identifier, `int operator⊞(int, int)` is an
+operator-function, and no code point is legal in both roles. The
+composition rule for any *future* identifier extension falls out: take the
+TR31 §7.1 side of the line, never admit a U1 code point, and every lexed
+code point classifies as exactly one of identifier-constituent or operator
+token — context-free, declaration-free.
+
+**Third, the position analysis, had a character been in both classes.**
+This is the situation the partition rule exists to prevent. Suppose one
+code point `⊞` were *both* an identifier and an operator:
 
 - *Post-operand (infix) position*: never ambiguous. An identifier cannot
   follow a complete operand, so `a ⊞ b` is the operator, full stop.
@@ -353,8 +383,8 @@ were also an identifier:
   declaration-dependent disambiguation (new ambiguity machinery in
   overload-resolution territory, for no gain).
 
-**Third, the payoff would be nil, because the function-name use already
-exists.** `operator⊞` *is* the name of the function: `operator⊞(a, b)` calls
+**Fourth, the payoff of a both-classes character would be nil, because the
+function-name use already exists.** `operator⊞` *is* the name of the function: `operator⊞(a, b)` calls
 it, `&operator⊞` takes its address, and the operator-function-id names the
 overload set anywhere an unqualified-id does — exactly as `operator+` works
 for existing operators. This is Haskell's `(⊞)` section, spelled the way C++
@@ -422,6 +452,21 @@ as `v2` plus a code-point-derived source-name such as `op_u229E`, giving
 stable, demangler-tolerated symbols for the fork. Precedents: literal-operator
 suffixes mangle by derived name (`li<length><suffix>`), and `co_await` shows a
 new operator earning a first-class code (`aw`) when it standardizes.
+
+**No new mangling is needed to keep operators apart from math-identifier
+functions** (U§7.1): a function *named* with an extended identifier —
+`int ∂(int, int)` under Clang's D137051 extension, or a hypothetical
+`int ⊞(int, int)` — mangles as an ordinary `<source-name>` (decimal byte
+length + UTF-8 bytes, how Itanium mangles every extended identifier today),
+while `operator⊞` mangles in `<operator-name>` space (`v2…` for the
+prototype, a two-letter code if standardized). The two productions are
+disjoint by the mangling grammar itself — a source-name begins with a
+digit, an operator-name with letters — so the declarations are structurally
+distinguishable end to end: by the `operator` keyword in the declaration,
+by grammatical position at the use site, and by production in the mangled
+name. (Under U10 the question is doubly moot, since no code point can be
+legal in both roles — but the manglings would not collide even if one
+were.)
 
 Open for a real proposal: a first-class `<operator-name>` production keyed by
 code point (cross-vendor agreement in the Itanium ABI group), and the MSVC
@@ -534,6 +579,10 @@ before EWG.
   aliasing question (is `×` a user operator or a confusable of `*`?) that the
   block restriction currently sidesteps.
 - **Feature-test macro.** `__cpp_unicode_operators` on the usual pattern.
+- **Track P3658R1.** If it lands, ∂ ∇ ∞ become *standard* identifier
+  characters and U1's exclusion of them stops being a courtesy to a profile
+  and becomes a hard requirement of the identifier grammar. Either way the
+  exclusion stands; only its citation changes.
 - **Set delivery — settled direction: enumerate.** The U§4 audit closes
   this: a property-reference set (the P1949 model for identifiers) is
   version-dependent, because Unicode assigns new characters inside

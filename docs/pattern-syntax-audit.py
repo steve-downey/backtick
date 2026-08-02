@@ -119,7 +119,18 @@ e1 = set()
 for a, b in E1:
     e1.update(range(a, b + 1))
 
-print(f"\nOperator vs identifier space (U10):")
+ims, imc = set(), set()
+for a, b, _ in ranges(D / "PropList.txt", "ID_Compat_Math_Start"):
+    ims.update(range(a, b + 1))
+for a, b, _ in ranges(D / "PropList.txt", "ID_Compat_Math_Continue"):
+    imc.update(range(a, b + 1))
+
+print(f"\nOperator vs identifier space (U10 / U§7.1):")
 print(f"  Pattern_Syntax ∩ XID_Start           : {len(ps & xid_start)}")
 print(f"  Pattern_Syntax ∩ XID_Continue        : {len(ps & xid_cont)}")
 print(f"  Pattern_Syntax ∩ C++11–20 whitelist  : {len(ps & e1)}")
+print(f"  ID_Compat_Math_Start (D137051/P3658) : {len(ims)}")
+print(f"  ID_Compat_Math_Continue              : {len(imc)}")
+print(f"  Pattern_Syntax ∩ ID_Compat_Math      : " +
+      ", ".join(f"U+{c:04X} {chr(c)}" for c in sorted(ps & (ims | imc))) +
+      "   (exactly the U1 exclusions)")
