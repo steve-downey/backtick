@@ -1,0 +1,243 @@
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t
+#+options: broken-links:nil c:nil creator:nil d:(not "LOGBOOK") date:t e:t
+#+options: email:nil f:t inline:t num:t p:nil pri:nil prop:nil stat:t tags:t
+#+options: tasks:t tex:t timestamp:t title:t toc:nil todo:t |:t
+#+options: html5-fancy:t
+#+TITLE: Unicode User-Defined Operators for C++
+#+SUBTITLE: If backtick works for names, what about symbols?
+#+AUTHOR: Steve Downey
+#+EMAIL: sdowney@gmail.com
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+DESCRIPTION:
+#+KEYWORDS:
+#+DATE: {{{modification-time(%Y-%m-%d, VC)}}}
+#+STARTUP: showall
+#+OPTIONS: html-link-use-abs-url:nil html-postamble:nil html-preamble:t
+#+OPTIONS: html-scripts:n html-style:nil html5-fancy:nil tex:t
+#+HTML_DOCTYPE: xhtml-strict
+#+HTML_CONTAINER: div
+#+DESCRIPTION:
+#+KEYWORDS:
+#+HTML_LINK_HOME:
+#+HTML_LINK_UP:
+#+HTML_MATHJAX:
+#+HTML_HEAD:
+#+HTML_HEAD_EXTRA:
+#+SUBTITLE:
+#+INFOJS_OPT:
+#+MACRO: TEASER_END #+HTML:<!-- TEASER_END -->
+
+
+
+#+begin_abstract
+A design sketch, following on from the infix backtick operator. Backtick lets
+any /name/ sit in infix position. The obvious next question is whether C++
+could have user-declared /symbolic/ operators: declare =operator⊞= like any
+other function, and =5 ⊞ 7= calls it. Unicode has recently done the standards
+work that makes the character-set question answerable, and the backtick
+project already settled the precedence, associativity, and desugaring
+questions. This is a sketch; nothing here is implemented, and there is no
+paper yet.
+#+end_abstract
+
+{{{TEASER_END}}}
+
+* The pitch, again in one line
+
+The backtick proposal says =x `f` y= is =f(x, y)= for any callable =f=. Once
+you have that, people ask the next question: fine, any /name/ can be an
+operator, but what about actual /symbols/? Mathematics didn't stop at the
+dozen operators ASCII happens to contain, and neither did Unicode. So the
+sketch is this: let a user declare
+
+#+begin_src c++
+constexpr int operator⊞(int a, int b) { return a + b; }  // saturating, say
+constexpr Matrix operator⊗(Matrix const&, Matrix const&);
+#+end_src
+
+and then
+
+#+begin_src c++
+5 ⊞ 7                   // operator⊞(5, 7)
+a ⊗ b ⊗ c               // operator⊗(operator⊗(a, b), c)
+#+end_src
+
+=operator⊞= is an ordinary function: overloadable, member or free, found by
+ADL, usable in templates, callable by its full name if you want to. The
+expression form desugars to the call in the front end, the same way
+backtick does, so overload resolution, templates, constexpr, and codegen are
+all inherited instead of reimplemented. That part of the design is settled;
+the backtick work already litigated it.
+
+These characters can never collide with the language. C++ has never assigned
+=⊞= a meaning; today it isn't even a valid token, and a source file
+containing one fails to lex. The space is empty, and it's large.
+
+* Unicode already did the standards work
+
+I spent part of the backtick effort cataloguing what's left of ASCII. The
+answer is: almost nothing, and everything that remains is two characters
+glued together with adjacency hazards. That inventory is why backtick
+exists: named operators cost no lexical real estate at all.
+
+The non-ASCII space is different in kind, and as of last year it has a
+standard behind it. UAX #31 (the Unicode identifier-and-syntax annex, the
+same document C++23 already cites for identifiers, via P1949) now has a
+section on user-defined operators: UAX31-R3c. It defines operator characters
+in terms of the =Pattern_Syntax= property, and =Pattern_Syntax= carries the
+strongest promise Unicode makes about anything: it is immutable, per code
+point. No code point will ever gain or lose the property, in any version,
+ever. That's the stability policy, in force since Unicode 4.1 in 2005.
+
+But immutable isn't closed, and the distinction is the first question any
+committee will ask. The frozen set is 2,760 code points, and 79 of them are
+still unassigned; Unicode has been filling them in steadily, 453 new
+characters since the freeze, including one in 17.0 itself (⮖, EQUALS SIGN
+WITH INFINITY ABOVE, which certainly sounds like something someone will want
+as an operator). So Unicode 18.0 can mint new symbols /inside/ the set; what
+it can not do is mint one outside it. The consequence for C++ is that the
+operator set has to be a frozen enumeration, pinned to a Unicode version,
+never re-derived: a new character can't be checked against the confusables
+list before it exists, so nothing gets in automatically. A later revision of
+the standard could adopt new symbols the way it adopts anything else, by
+paper, on purpose. The ceiling is guaranteed; the contents are a decision.
+
+One correction to my own first reading, for anyone else skimming TR31: §7.1,
+the "Mathematical Compatibility Notation Profile," sounds like the operator
+section and isn't. It's an /identifier/ profile: it's about letting =∂=,
+=∇=, and =∞= be identifier characters, and it removes them from syntactic
+use. The operator story is R3c. And it means those three characters belong to
+the identifier side of the line, so they're excluded from any operator set:
+they name things; they don't combine things.
+
+R3c's raw set won't do as-is, since =Pattern_Syntax= includes all the ASCII
+punctuation C++ already spent. The usable pool is Pattern_Syntax minus ASCII,
+and I'd restrict further: single code points from the mathematical and arrow
+blocks, general category Sm or So, excluding the paired brackets (=⟨=, =⟦=,
+=⌈=; worth keeping unspent for some future bracketing idea) and excluding
+anything confusable with an existing token. That last list matters most:
+U+2212 (the real minus sign), the division slash, the asterisk operator, the
+middle dots, =≤= and =≥=. Those are rejected outright, never aliased. A
+character that renders like =-= but isn't should fail to compile, not quietly
+mean something else. What's left, with every exclusion applied, is 1,381
+code points in 32 contiguous ranges: =⊞ ⊠ ⊕ ⊖ ⊗ ⊘ ∘ ⋄ ⋈ ∪ ∩ ⊓ ⊔ ↦ ⊢ ⊨= and
+on and on. (Those 32 ranges are also the entire lexer story: a 256-byte
+sorted table, one binary search, on the slow path that only non-ASCII
+source reaches. Both compilers already classify extended identifiers with
+exactly this machinery.) Actual notation, where ASCII offered scraps.
+
+* Parsing is the easy part this time
+
+Backtick had one genuinely tricky parsing problem: the open and close
+delimiter are the same token, which needed a =GreaterThanIsOperator=-style
+suppression flag in both compilers. None of that applies here. Each operator
+is one distinct token. There's no delimiter to match, no nesting question, no
+suppression flag. The grammar work is close to nothing:
+
+- Binary =⊞= sits at the same precedence level as backtick (the highest
+  binary level, tighter than =*=, looser than unary) and it's
+  left-associative. One level for all user-introduced infix, named or
+  symbolic, so mixed chains group left and there is no precedence table to
+  memorize. =-a ⊞ -b= is =operator⊞(-a, -b)=, symmetric, for the same
+  reasons the backtick design records.
+- Unary prefix operators are declared with one parameter, the way
+  =operator-= already selects its form by arity. Position disambiguates a
+  use: after an operand it's binary, in operand position it's prefix. That's
+  the rule C++ has always used for =-=, =*=, and =&=. No postfix forms; that
+  is what forces Swift into whitespace-sensitivity rules, and declining
+  postfix avoids the whole topic.
+
+One structural point that constrains everything: whether =⊞= is an operator
+token can not depend on whether an =operator⊞= declaration is in scope.
+Lexing happens long before name lookup (the preprocessor sees the tokens
+too). So the character set is fixed by the grammar, and using an operator
+nobody declared is an ordinary overload-resolution failure, the same
+diagnostic as =std::cout << my_type{}= without a =<<= overload. This is
+Julia's model (the parser has a fixed table of operator characters; users
+just define methods for them), and it's the only model that can work in
+C++.
+
+* The hard parts are elsewhere
+
+However, the feature isn't free; the costs just live below the parser.
+
+The declaration side is the real work in both compilers. Clang represents
+=operator+= as a =DeclarationName= over a closed enum of operator kinds, and
+GCC keeps operator identifiers in a fixed-size table; =operator⊞= fits
+neither. Both compilers already solved this shape once, though, for
+user-defined literals: =operator""_km= is an operator name carrying
+open-ended extra data, threaded through declaration, lookup, and mangling.
+The same move, a name kind keyed by code point, is the implementation road.
+Real plumbing, but a worked precedent.
+
+Mangling is the one place the feature touches ABI. The Itanium ABI has a
+vendor-extended operator production for just this situation, so a
+prototype can mangle =⊞= as a derived name today; a standardized feature
+would want a first-class code, which means cross-vendor agreement. =co_await=
+got its own code when it standardized, and literal suffixes mangle by name,
+so there's precedent on both ends. That's an open question; it doesn't block
+a prototype.
+
+And there's the objection everyone raises first: how do you type =⊞=? The
+honest answer is Julia's answer — editor input methods. =\boxplus= and hit
+tab, in every editor Julia's community touched, and that community has run
+this experiment at scale for over a decade. Code is read far more often than
+it's typed. The fallback is always there: =operator⊞(a, b)= is an ordinary
+call, and a codebase that hates the glyphs can simply not declare any. I'd
+also note, having fought shell quoting for a year, that =git grep ⊞= just
+works, which is more than I can say for the backtick.
+
+* What I am not proposing: precedence declarations
+
+Every language that lets users pick fixity regrets it somewhere. Haskell's
+=infixl 6= travels with imports, so the parse of an expression depends on
+what's in scope. Swift's precedencegroups reintroduce the same thing with
+more ceremony. In C++ the failure mode has a name: two translation units
+that disagree about how =a ⊕ b ⊗ c= parses are an ODR violation factory,
+and modules make the question of "which fixity declarations are visible
+here" genuinely unanswerable.
+
+So: one precedence level, fixed by the language, left-associative,
+parenthesize for anything else. The parse of every expression depends on
+nothing but the expression. Only the /meaning/ of =operator⊞= travels, and
+that's ordinary name lookup, which C++ already knows how to do across TUs.
+OCaml is the existence proof that programmers accept fixed, non-declarable
+fixity for user operators (there, derived from the operator's first
+character) and mathematicians who want =⊗= tighter than =⊕= can write the
+parentheses. Left to right is the least surprising reading; everything else
+is what parentheses are for.
+
+* Where this leaves backtick
+
+The two features are complementary, and deliberately so. Backtick lifts any
+name into infix position with zero declarations; this lifts symbols, at the
+price of one. And backtick is the honest baseline the symbolic version has to
+beat: most of the value is available today by naming the function well;
+=a `boxplus` b= works fine. The residual case for symbols is the domains
+where the notation /is/ the vocabulary (linear algebra, lattices,
+relational algebra, units), where =`tensor`= is a transliteration of the
+thing and not the thing.
+
+APL is the ghost at this feast, so name it: the objection is glyph soup that
+nobody can read or type. But APL's glyphs were primitives, with no
+declaration to go read. These are user-named functions; =operator⊗= has a
+declaration, in a header, with a comment, found by go-to-definition. The
+notation is only as opaque as the library that declares it, which is exactly
+as true of =operator<<= today.
+
+This would be a separate paper from the backtick one, citing its decisions
+without reopening them, and sequenced so that a committee allergic to
+Unicode can't take the backtick down with it. SG16 gets it before EWG does.
+
+* Status, and an invitation
+
+There is a design sketch with the full decisions table, the character-set
+predicate, the grammar, and the implementation notes for both compilers;
+nothing is implemented, and given the state of the backtick work, nothing
+will be for a while. This post is the trial balloon. If you work in a domain
+where =a ⊗ b= is the established notation and =tensor(a, b)= has always
+grated, I'd like the example. If you think the input-method story is
+disqualifying no matter what Julia's experience shows, I'd like to hear that
+too — reach me at [[mailto:sdowney@gmail.com][sdowney@gmail.com]]. What have I missed?

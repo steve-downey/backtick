@@ -264,6 +264,15 @@ and port.
 - Carry the **anticipated-objections rebuttals** (§18) — wrapper-type
   alternative answered with P0543's own precedent — alongside §13.5's
   spelling rebuttals.
+- Name the D2 precedence level the **user-infix level**, not the backtick
+  level, and carry a short **informative future-directions appendix**
+  pointing at the Unicode operator sketch (`unicode-operators.md`, its U12):
+  EWG then has its one operators-and-infix discussion with the whole
+  landscape visible, banks the shared decisions (one level, left-assoc,
+  desugar-to-call) once, and the follow-on paper inherits them as adopted
+  precedent instead of reopening them. The appendix is informative and the
+  papers' fates stay separate — Unicode-allergy must not be able to sink
+  backtick.
 
 ---
 
@@ -588,6 +597,12 @@ Everything else: write it as a backtick call. The inventory in 14.1–14.3 is
 therefore best read as *what remains technically possible*, with the
 expectation that this proposal removes most of the *motivation* to spend it —
 implication's lazy RHS being the notable exception.
+
+This appendix is deliberately ASCII-only; the non-ASCII pool — Unicode
+characters with syntactic (Pattern_Syntax) status that C++ has never claimed,
+now with normative footing in UAX #31 R3c — is explored as a separate
+follow-on sketch in `unicode-operators.md` (`x ⊞ y` ⇒ `operator⊞(x, y)`,
+reusing this proposal's precedence, associativity, and desugaring decisions).
 
 ### 14.5 Prior art for this analysis
 
