@@ -7,6 +7,11 @@
 # clang-<major>-backtick (e.g. clang-23-backtick), with clang/clang++ symlinks
 # in the same bin/, exactly like the existing ~/install/llvm-23 convention.
 #
+# compiler-rt is in LLVM_ENABLE_RUNTIMES so the installed clang can link
+# -fsanitize= builds; without it the sanitizer configs of any project using
+# this toolchain (e.g. examples/'s default CONFIG=Asan) fail at link time
+# with "cannot find libclang_rt.asan.a".
+#
 # Usage: run from a fresh, empty build directory:
 #   mkdir -p ~/src/llvm/build-backtick && cd ~/src/llvm/build-backtick
 #   ~/src/backtick/ops/build/configure-clang23-backtick.sh
@@ -37,6 +42,7 @@ exec cmake -G Ninja \
   -DCMAKE_C_COMPILER=clang-23 \
   -DCMAKE_CXX_COMPILER=clang++-23 \
   -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" \
+  -DLLVM_ENABLE_RUNTIMES="compiler-rt" \
   -DLLVM_ENABLE_ASSERTIONS=ON \
   -DLLVM_TARGETS_TO_BUILD=host \
   -DLLVM_PARALLEL_COMPILE_JOBS=12 \

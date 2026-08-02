@@ -151,8 +151,15 @@ ninja install
 # GCC: from a fresh build dir (re-running configure in an existing one is
 # fine for a prefix/suffix-only change, but prefer a fresh dir if unsure)
 cd ~/bld/gcc/gcc-backtick-build && ~/src/backtick/ops/build/configure-gcc-trunk-backtick.sh
-make -j18 all-gcc && make -j18 install-gcc
+make -j18 all && make -j18 install
 ```
+
+`all-gcc` / `install-gcc` are enough for `cc1plus -fsyntax-only` checks, but
+they install a compiler with no runtime: no libstdc++ headers, no libasan.
+Use the full `all` / `install` above for a prefix that can actually build and
+link a project. The Clang side is the same story — both configure scripts put
+`compiler-rt` in `LLVM_ENABLE_RUNTIMES` so `-fsanitize=` links; `ninja
+runtimes && ninja install-runtimes` adds it to an already-installed prefix.
 
 The Clang mechanism is CMake's native `CLANG_EXECUTABLE_VERSION` (normally
 just the LLVM major, e.g. `23`; the scripts append `-backtick`) — the same
