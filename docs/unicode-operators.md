@@ -50,6 +50,7 @@ Vec operator⊖(Vec const&);          // one parameter -> unary prefix form
 | U7 | Gated behind its own flag, `-funicode-operators`, independent of and composable with `-fbacktick` | **Proposed** | Same D5 rationale: opt-in prototype vehicle, default build byte-identical to upstream. A separate flag because the features are separable proposals with separable fates; a translation unit may enable either, both, or neither, and U4's shared precedence level must parse identically whichever subset is on. |
 | U8 | Mangling: Itanium **vendor-extended operator** (`v <arity> <source-name>`) with a code-point-derived source-name, e.g. `⊞` binary → `v2` + `op_u229E` | **Proposed — open (ABI)** | The `v` production exists precisely for operators the grammar didn't anticipate; precedent for naming-by-derived-source-name is `li<name>` for literal-operator suffixes, and precedent for retrofitting a real code is `aw` for `co_await`. A standardized feature would want a first-class `<operator-name>` production keyed by code point, which needs cross-vendor agreement — flagged open, not resolved. MSVC mangling unexamined. |
 | U9 | **No user-declared precedence or associativity, ever** | **Proposed** | Fixity is the rock other designs founder on. A declared precedence is a semantic property that must travel with the name across headers, modules, and translation units; two TUs disagreeing about `a ⊕ b ⊗ c` is an ODR/IFNDR factory, and the parse of an expression comes to depend on which imports are visible (Haskell's fixity-import problem; Swift's precedencegroup conflicts). Fixed fixity makes the *parse* of any expression depend on nothing but the expression — only the *meaning* of `operator⊞` travels, and that is just ordinary lookup. This is D1/D2's "one level, left, learn it once" argument with the alternative's failure mode named. |
+| U11 | **UCN spellings form operator tokens**: a universal-character-name (including `\N{...}`) designating a U1 code point is that operator token | **Proposed** | Preserves the extended-character ≡ UCN equivalence the language maintains for identifiers, for the same reason it exists there: the escape hatch when the source encoding, font, or review tool can not carry or render the glyph — `operator\N{SQUARED PLUS}` stays writable and legible where `operator⊞` is tofu. The absence of UCN punctuators today is an accident of every punctuator being basic-character-set, not a rule to inherit; these are the first non-basic tokens. Structurally free: the UCN-designated code point takes the same phase-3 classification as a literal one on the lexer's existing UCN path (XID → identifier, U1 → operator, else ill-formed), so `a\u229Eb` ≡ `a ⊞ b` (U§8). |
 | U10 | **Operator characters are never identifier characters** — the token set and the identifier set stay disjoint | **Proposed** | TR31 partitions syntax space from identifier space by construction, and it holds empirically: Pattern_Syntax ∩ XID_Start = Pattern_Syntax ∩ XID_Continue = ∅ in UCD 17.0. It also holds *historically* in C++: the C++11–C++20 Annex E identifier whitelist has zero overlap with Pattern_Syntax (it even carves × and ÷ out of the middle of the Latin-1 letter ranges), so no standard has ever admitted a function *named* ⊞ and no existing code can conflict (U§7.1). The function-name use is already served: `operator⊞` *is* a name — callable, address-taken, passable — Haskell's `(⊞)` section spelled the C++ way. And admitting bare-⊞ identifiers would create the design's one true ambiguity, `⊞(x)` in operand position (U§7.1), whose only resolutions are whitespace sensitivity (the Swift trap U5 already declined) or worse. Composes cleanly with Clang's shipped math-identifier extension (D137051, Clang 16) and P3658R1: both admit exactly the TR31 §7.1 ID_Compat_Math sets, whose overlap with Pattern_Syntax is precisely {∂ ∇ ∞} — the three U1 already cedes to the identifier side — so operator set and extended identifier set stay disjoint even with the extension on, and mangling stays structurally distinct with nothing new (U§9). |
 
 ---
@@ -424,12 +425,26 @@ character (mathematical notation profile), not an operator" — rather than
 a generic stray-character error. The exclusions exist for the *reader's*
 protection; the diagnostics should say so.
 
-Two rules that fall out of single-code-point tokens: operator code points
-are written **literally, never as UCNs** (`operator\u229E` is not a
-spelling of `operator⊞`, exactly as no punctuator has a UCN spelling; UCNs
-revert only in identifiers and literals), and **no normalization runs at lex time** — one
-code point has nothing to normalize; NFC questions arrive only with v2's
-combining-mark sequences (U§13).
+Two rules that fall out of single-code-point tokens. First, **UCN spellings
+form operator tokens** (U11): a *universal-character-name* — including the
+C++23 named form — designating a U1 code point forms that operator token,
+exactly as a UCN designating an XID character participates in an identifier.
+`operator\u229E`, `operator\N{SQUARED PLUS}`, and `operator⊞` are the same
+declaration, and `a \N{CIRCLED TIMES} b` is `a ⊗ b`. An earlier draft of
+this sketch banned UCN spellings "as for every punctuator" — wrong, and
+instructively so: no punctuator has a UCN spelling because every punctuator
+is basic-character-set, an accident, not a principle. These are the first
+non-basic tokens, and the extended-character ≡ UCN equivalence the language
+maintains for identifiers — the escape hatch for limited source encodings
+and for every environment that renders math glyphs as tofu — must extend to
+them. No phase-ordering wrinkle arises: the lexer's existing UCN path
+already produces a code point during phase-3 token formation, and that code
+point takes the same three-way classification as a literal one (XID →
+identifier-constituent, U1 → operator token, otherwise ill-formed), so
+`a\u229Eb` lexes as `a ⊞ b` exactly as `a⊞b` does. Second, **no
+normalization runs at lex time** — the token is one scalar value however
+spelled; NFC questions arrive only with v2's combining-mark sequences
+(U§13).
 
 **Clang.**
 
@@ -517,8 +532,10 @@ The objections are known in advance; pre-load the answers (§13.5 discipline).
 - **"How do I type ⊞?"** The honest answer is Julia's answer: editor input
   methods (LaTeX-name completion — `\boxplus<TAB>` — in every major editor
   Julia touched), plus the observation that code is read far more often than
-  typed. The fallback is always available: `operator⊞(a, b)` is an ordinary
-  call, and a project that hates the glyphs can simply not declare any.
+  typed. Two fallbacks are always available: `operator⊞(a, b)` is an
+  ordinary call, and the UCN spelling `operator\N{SQUARED PLUS}` (U11)
+  stays writable — and legible, if verbose — in any encoding and any font.
+  A project that hates the glyphs can simply not declare any.
 - **Grep and diff.** A single distinctive code point greps *better* than most
   identifiers and much better than backtick (which is shell-quoting-hostile);
   `git grep ⊞` just works. Fonts and terminals in 2026 render the math blocks
