@@ -1,0 +1,12 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: v0.1-19-gca3ef81
+_src_path: gh:steve-downey/example
+include_prefix: smd
+library_name: backticks
+maintainer_email: sdowney@gmail.com
+maintainer_name: Steve Downey
+namespace: backticks
+project_slug: example
+project_title: Example C++ using Backticks
+sample_value: Steve
+test_framework: catch2
