@@ -53,6 +53,12 @@ and a Status-log row so base-commit changes are not lost.
 - `ops/DEVIATIONS.md`, `ops/gcc/DEVIATIONS.md` — ledger of every place build
   reality contradicted the design (DEV-NN / DEV-GNN), including cross-compiler
   divergences, with reconciliation status.
+- `examples/` — a self-contained CMake project (vendored in via `git subtree`,
+  own history) that *uses* the prototype compilers rather than building them.
+  `make TOOLCHAIN=gcc-backticks`, `TOOLCHAIN=clang-23-backticks`, and
+  `TOOLCHAIN=clang-trunk-backticks` select the three `~/install/` prefixes and
+  add `-fbacktick`; see `examples/etc/*-backticks-toolchain.cmake`. This is
+  where sample code for the paper gets compiled and run for real.
 
 ## The implementation worktrees (where the code actually is)
 
