@@ -61,6 +61,8 @@ Complers are expected to be available on PATH with versioned names, such as `g++
 
 `make` by itself uses the system `c++` compiler. For others, e.g., `make TOOLCHAIN=gcc-15` will use the etc/gcc-15-toolchain.cmake toolchain, which sets CXX to be gcc-15. By default the build and test is address sanitized, plus some compatible sanitizers. Alternatives are specified with CONFIG, e.g. `make TOOLCHAIN=gcc-15 CONFIG=RelWithDebInfo`.
 
+Three toolchains select the infix-backtick prototype compilers instead, and add `-fbacktick` so the new syntax is actually enabled: `gcc-backticks`, `clang-23-backticks`, and `clang-trunk-backticks`. These don't come off PATH — each names the compiler in its own install prefix under `~/install/`, built by the `ops/build/configure-*-backtick.sh` scripts in the [backtick](https://github.com/steve-downey/backtick) repository. Without `-fbacktick` these compilers are their upstream selves, so the flag lives in the toolchain file rather than in gcc-flags.cmake or clang-flags.cmake.
+
 
 # Building Presentations with Emacs and Org-Transclusion
 
