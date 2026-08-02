@@ -50,6 +50,7 @@ Vec operator⊖(Vec const&);          // one parameter -> unary prefix form
 | U7 | Gated behind its own flag, `-funicode-operators`, independent of and composable with `-fbacktick` | **Proposed** | Same D5 rationale: opt-in prototype vehicle, default build byte-identical to upstream. A separate flag because the features are separable proposals with separable fates; a translation unit may enable either, both, or neither, and U4's shared precedence level must parse identically whichever subset is on. |
 | U8 | Mangling: Itanium **vendor-extended operator** (`v <arity> <source-name>`) with a code-point-derived source-name, e.g. `⊞` binary → `v2` + `op_u229E` | **Proposed — open (ABI)** | The `v` production exists precisely for operators the grammar didn't anticipate; precedent for naming-by-derived-source-name is `li<name>` for literal-operator suffixes, and precedent for retrofitting a real code is `aw` for `co_await`. A standardized feature would want a first-class `<operator-name>` production keyed by code point, which needs cross-vendor agreement — flagged open, not resolved. MSVC mangling unexamined. |
 | U9 | **No user-declared precedence or associativity, ever** | **Proposed** | Fixity is the rock other designs founder on. A declared precedence is a semantic property that must travel with the name across headers, modules, and translation units; two TUs disagreeing about `a ⊕ b ⊗ c` is an ODR/IFNDR factory, and the parse of an expression comes to depend on which imports are visible (Haskell's fixity-import problem; Swift's precedencegroup conflicts). Fixed fixity makes the *parse* of any expression depend on nothing but the expression — only the *meaning* of `operator⊞` travels, and that is just ordinary lookup. This is D1/D2's "one level, left, learn it once" argument with the alternative's failure mode named. |
+| U10 | **Operator characters are never identifier characters** — the token set and the identifier set stay disjoint | **Proposed** | TR31 partitions syntax space from identifier space by construction, and it holds empirically: Pattern_Syntax ∩ XID_Start = Pattern_Syntax ∩ XID_Continue = ∅ in UCD 17.0. It also holds *historically* in C++: the C++11–C++20 Annex E identifier whitelist has zero overlap with Pattern_Syntax (it even carves × and ÷ out of the middle of the Latin-1 letter ranges), so no standard has ever admitted a function *named* ⊞ and no existing code can conflict (U§7.1). The function-name use is already served: `operator⊞` *is* a name — callable, address-taken, passable — Haskell's `(⊞)` section spelled the C++ way. And admitting bare-⊞ identifiers would create the design's one true ambiguity, `⊞(x)` in operand position (U§7.1), whose only resolutions are whitespace sensitivity (the Swift trap U5 already declined) or worse. |
 
 ---
 
@@ -292,6 +293,76 @@ it is at worst a lookup/overload failure, the same category of error as
 `x.operator⊞(y)`), so D6's inheritance list — overload resolution, ADL,
 templates, SFINAE, constexpr, conversions, value categories, codegen — and
 D15's evaluation-order story carry over without modification.
+
+### 7.1 Operator characters as ordinary names (U10)
+
+Several languages let operator-ish characters appear in ordinary identifiers
+(Lisp/Scheme famously; Agda; Julia admits a few), so the question will come
+up: could a *function named* `⊞` — the bare character as an identifier —
+coexist with `operator⊞`? The instinct that the uses are distinguishable by
+grammatical position (the D10 move) is mostly right; here is the full
+position analysis, and where it breaks.
+
+**First, the conflict cannot arise in C++ today — and never could have.**
+Verified against the UCD and the historical standards (checks in
+`pattern-syntax-audit.py`):
+
+- **C++23 (P1949):** identifiers are XID_Start/XID_Continue, and
+  Pattern_Syntax ∩ XID_Start = Pattern_Syntax ∩ XID_Continue = **∅** in
+  UCD 17.0. TR31 partitions syntax space from identifier space by
+  construction, precisely so parsers can classify a code point without
+  context; the partition holds empirically.
+- **C++11 through C++20** ([charname.allowed], the Annex E whitelist): the
+  allowed ranges have **zero overlap with Pattern_Syntax** — all 2,760, not
+  just the U1 blocks. The whitelist was generous about *future* characters
+  (all of U+3031–D7FF and planes 1–14, which is how the incoherent emoji
+  identifiers of the P1949 motivation got in), but it deliberately stepped
+  around the syntax blocks, down to carving × (U+00D7) and ÷ (U+00F7) out
+  of the middle of the Latin-1 letter ranges C0–D6/D8–F6.
+
+So no conforming C++ program in any standard has ever contained a function
+named `⊞`, and U1 does not change that: the operator set is carved from
+Pattern_Syntax, the identifier set from XID, and they can never meet.
+
+**Second, the position analysis, had we wanted both.** Suppose bare `⊞`
+were also an identifier:
+
+- *Post-operand (infix) position*: never ambiguous. An identifier cannot
+  follow a complete operand, so `a ⊞ b` is the operator, full stop.
+  `a ⊞ (x, y)` likewise parses one way only: `operator⊞(a, (x, y))`, whose
+  right operand is a parenthesized comma expression (evaluate `x`, yield
+  `y`). It *reads* like a call of a function `⊞` juxtaposed after `a` — but
+  juxtaposition is not grammar, so under an identifier-only reading it is an
+  error anyway, for a different reason. Visually confusable, never
+  ambiguous. (QoI note for U§10: an infix RHS that is a parenthesized
+  comma-expression is almost certainly this confusion; a `-Wcomma`-family
+  warning would catch it.)
+- *Operand position, followed by an operand*: `⊞ x` is the prefix operator
+  only (identifier-then-expression is not grammar). Unambiguous.
+- *Operand position, bare*: `f = ⊞;` has only the identifier reading (a
+  prefix operator with no operand is an error). Unambiguous — and
+  unnecessary, because `f = operator⊞;` already works (below).
+- *Operand position, followed by `(`* — **the one true ambiguity**:
+  `⊞(x)` is a call of the function `⊞` with argument `x`, *and* the prefix
+  `operator⊞` applied to the parenthesized expression `(x)`. Both readings
+  are grammatical in the same position, and they name different entities.
+  Every resolution costs something real: whitespace sensitivity (`⊞(x)`
+  call vs `⊞ (x)` prefix — the Swift rule U5 declined postfix specifically
+  to avoid); a prefer-the-call rule (then parenthesizing a prefix operand
+  *changes its meaning* — `⊞x` versus `⊞(x)` — which is worse); or
+  declaration-dependent disambiguation (new ambiguity machinery in
+  overload-resolution territory, for no gain).
+
+**Third, the payoff would be nil, because the function-name use already
+exists.** `operator⊞` *is* the name of the function: `operator⊞(a, b)` calls
+it, `&operator⊞` takes its address, and the operator-function-id names the
+overload set anywhere an unqualified-id does — exactly as `operator+` works
+for existing operators. This is Haskell's `(⊞)` section, spelled the way C++
+has always spelled it. A bare-identifier `⊞` would buy use-site brevity
+only, at the price of the design's single genuine ambiguity.
+
+Hence U10: the sets stay disjoint. TR31 already made the right cut; the
+proposal keeps it.
 
 ---
 

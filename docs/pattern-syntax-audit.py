@@ -6,9 +6,13 @@ set of *assigned characters* within it, and measures how a predicate-defined
 operator set (unicode-operators.md §5, U1) would have drifted across Unicode
 versions.
 
-Needs three UCD files in the directory given as argv[1] (default: cwd), from
+Also backs §7.1 / U10: Pattern_Syntax is disjoint from XID (C++23
+identifiers, P1949) and from the C++11–C++20 Annex E identifier whitelist,
+so no C++ standard has ever admitted an operator character into a name.
+
+Needs four UCD files in the directory given as argv[1] (default: cwd), from
 https://www.unicode.org/Public/UCD/latest/ucd/ :
-    PropList.txt  DerivedAge.txt  UnicodeData.txt
+    PropList.txt  DerivedAge.txt  UnicodeData.txt  DerivedCoreProperties.txt
 
 Numbers quoted in the design doc were produced against UCD 17.0.0
 (DerivedAge.txt dated 2025-07-30).
@@ -90,3 +94,32 @@ print(f"  unassigned PS code points today: {len(u1_unassigned)}  " +
       ", ".join(f"U+{c:04X}" for c in u1_unassigned))
 print(f"  post-4.1 assignments           : {len(u1_late)}")
 print(f"  of those, gc Sm/So (would enter a predicate-defined U1 set): {len(sm_so)}")
+
+# --- §7.1 / U10: operator characters vs identifier characters -------------
+
+xid_start, xid_cont = set(), set()
+for a, b, v in ranges(D / "DerivedCoreProperties.txt"):
+    if v == "XID_Start":
+        xid_start.update(range(a, b + 1))
+    elif v == "XID_Continue":
+        xid_cont.update(range(a, b + 1))
+
+# C++11–C++20 [charname.allowed] Annex E.1 (pre-P1949 identifier whitelist).
+E1 = [
+    (0xA8, 0xA8), (0xAA, 0xAA), (0xAD, 0xAD), (0xAF, 0xAF), (0xB2, 0xB5),
+    (0xB7, 0xBA), (0xBC, 0xBE), (0xC0, 0xD6), (0xD8, 0xF6), (0xF8, 0xFF),
+    (0x100, 0x167F), (0x1681, 0x180D), (0x180F, 0x1FFF),
+    (0x200B, 0x200D), (0x202A, 0x202E), (0x203F, 0x2040), (0x2054, 0x2054),
+    (0x2060, 0x206F), (0x2070, 0x218F), (0x2460, 0x24FF), (0x2776, 0x2793),
+    (0x2C00, 0x2DFF), (0x2E80, 0x2FFF), (0x3004, 0x3007), (0x3021, 0x302F),
+    (0x3031, 0xD7FF), (0xF900, 0xFD3D), (0xFD40, 0xFDCF), (0xFDF0, 0xFE44),
+    (0xFE47, 0xFFFD),
+] + [(p << 16, (p << 16) + 0xFFFD) for p in range(1, 15)]
+e1 = set()
+for a, b in E1:
+    e1.update(range(a, b + 1))
+
+print(f"\nOperator vs identifier space (U10):")
+print(f"  Pattern_Syntax ∩ XID_Start           : {len(ps & xid_start)}")
+print(f"  Pattern_Syntax ∩ XID_Continue        : {len(ps & xid_cont)}")
+print(f"  Pattern_Syntax ∩ C++11–20 whitelist  : {len(ps & e1)}")
