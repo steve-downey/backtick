@@ -264,6 +264,15 @@ and port.
 - Carry the **anticipated-objections rebuttals** (§18) — wrapper-type
   alternative answered with P0543's own precedent — alongside §13.5's
   spelling rebuttals.
+- Name the D2 precedence level the **user-infix level**, not the backtick
+  level, and carry a short **informative future-directions appendix**
+  pointing at the Unicode operator sketch (`unicode-operators.md`, its U12):
+  EWG then has its one operators-and-infix discussion with the whole
+  landscape visible, banks the shared decisions (one level, left-assoc,
+  desugar-to-call) once, and the follow-on paper inherits them as adopted
+  precedent instead of reopening them. The appendix is informative and the
+  papers' fates stay separate — Unicode-allergy must not be able to sink
+  backtick.
 
 ---
 

@@ -51,6 +51,7 @@ Vec operator⊖(Vec const&);          // one parameter -> unary prefix form
 | U8 | Mangling: Itanium **vendor-extended operator** (`v <arity> <source-name>`) with a code-point-derived source-name, e.g. `⊞` binary → `v2` + `op_u229E` | **Proposed — open (ABI)** | The `v` production exists precisely for operators the grammar didn't anticipate; precedent for naming-by-derived-source-name is `li<name>` for literal-operator suffixes, and precedent for retrofitting a real code is `aw` for `co_await`. A standardized feature would want a first-class `<operator-name>` production keyed by code point, which needs cross-vendor agreement — flagged open, not resolved. MSVC mangling unexamined. |
 | U9 | **No user-declared precedence or associativity, ever** | **Proposed** | Fixity is the rock other designs founder on. A declared precedence is a semantic property that must travel with the name across headers, modules, and translation units; two TUs disagreeing about `a ⊕ b ⊗ c` is an ODR/IFNDR factory, and the parse of an expression comes to depend on which imports are visible (Haskell's fixity-import problem; Swift's precedencegroup conflicts). Fixed fixity makes the *parse* of any expression depend on nothing but the expression — only the *meaning* of `operator⊞` travels, and that is just ordinary lookup. This is D1/D2's "one level, left, learn it once" argument with the alternative's failure mode named. |
 | U11 | **UCN spellings form operator tokens**: a universal-character-name (including `\N{...}`) designating a U1 code point is that operator token | **Proposed** | Preserves the extended-character ≡ UCN equivalence the language maintains for identifiers, for the same reason it exists there: the escape hatch when the source encoding, font, or review tool can not carry or render the glyph — `operator\N{SQUARED PLUS}` stays writable and legible where `operator⊞` is tofu. The absence of UCN punctuators today is an accident of every punctuator being basic-character-set, not a rule to inherit; these are the first non-basic tokens. Structurally free: the UCN-designated code point takes the same phase-3 classification as a literal one on the lexer's existing UCN path (XID → identifier, U1 → operator, else ill-formed), so `a\u229Eb` ≡ `a ⊞ b` (U§8). |
+| U12 | **A separate paper from D4307** — with D4307 carrying an informative future-directions appendix, and its precedence level named the *user-infix level* | **Proposed** | D14's own rule decides it: bundle what shares a design surface within one committee, split what crosses committees. The measured wording overlap is one grammar production plus the precedence prose; everything else is disjoint (normative character table, UCN/identifier interplay, operator-function-id and [over.oper] changes, SG16 review, ABI note — none of which backtick touches). The routing differs (SG16 and the ABI group vs EWG/CWG alone), the maturity differs (two implementations vs none — bundling dilutes D4307's strongest asset), and the fates must stay separable: Unicode-allergy is real in the room and must not be able to sink backtick. The shared-discussion value is recovered without coupling: D4307 presents one *user-infix level* with an informative appendix showing this direction, EWG banks the shared decisions (one level, left-assoc, desugar-to-call) once with the whole landscape visible, and this paper inherits them as adopted precedent (U§12). |
 | U10 | **Operator characters are never identifier characters** — the token set and the identifier set stay disjoint | **Proposed** | TR31 partitions syntax space from identifier space by construction, and it holds empirically: Pattern_Syntax ∩ XID_Start = Pattern_Syntax ∩ XID_Continue = ∅ in UCD 17.0. It also holds *historically* in C++: the C++11–C++20 Annex E identifier whitelist has zero overlap with Pattern_Syntax (it even carves × and ÷ out of the middle of the Latin-1 letter ranges), so no standard has ever admitted a function *named* ⊞ and no existing code can conflict (U§7.1). The function-name use is already served: `operator⊞` *is* a name — callable, address-taken, passable — Haskell's `(⊞)` section spelled the C++ way. And admitting bare-⊞ identifiers would create the design's one true ambiguity, `⊞(x)` in operand position (U§7.1), whose only resolutions are whitespace sensitivity (the Swift trap U5 already declined) or worse. Composes cleanly with Clang's shipped math-identifier extension (D137051, Clang 16) and P3658R1: both admit exactly the TR31 §7.1 ID_Compat_Math sets, whose overlap with Pattern_Syntax is precisely {∂ ∇ ∞} — the three U1 already cedes to the identifier side — so operator set and extended identifier set stay disjoint even with the extension on, and mangling stays structurally distinct with nothing new (U§9). |
 
 ---
@@ -601,11 +602,48 @@ the residual 10% — domains (linear algebra, lattices, relational algebra,
 units) where the notation *is* the established vocabulary and `` `tensor` `` is
 the transliteration.
 
-Scope, mirroring D13/D14: pure core language, no library additions; a
-**separate paper** from D4307 (separable design surface, separable fate —
-backtick must not sink if EWG balks at Unicode), citing D4307's adopted
-precedence/associativity/desugaring decisions as its foundation. SG16 review
-before EWG.
+**One paper or two — the evidence (U12).** D14 settled the bundling rule
+for this project: bundle what shares a design surface within one committee;
+split what is separable across committees. Applying it here:
+
+- *Wording overlap is small.* Backtick's wording: one punctuator, the
+  infix-expression production, the desugaring clause, the escape. This
+  paper's wording: a normative ~1,381-entry character table (U1), UCN and
+  identifier interaction (U10/U11), the operator-function-id extension and
+  the [over.oper] class-or-enum carve-out (U2), and an ABI note (U§9). The
+  intersection is one grammar production plus the precedence prose. The
+  *rationale* overlaps heavily; the *wording* barely does.
+- *The routing differs* — SG16 first, and the ABI group for U8, neither of
+  which backtick needs. By D14's own criterion, that is a split.
+- *The maturity differs.* D4307's strongest asset is two independent
+  implementations; this sketch has none. Bundling dilutes the implemented
+  paper's credibility with the unimplemented half.
+- *The fates must be separable.* Some of the room finds any non-ASCII token
+  disqualifying; they must be able to vote that conviction without taking
+  backtick down.
+
+The cost of splitting — EWG discussing user infix twice — is recovered
+structurally: D4307 names its precedence level the **user-infix level**
+(not the backtick level) and carries a short **informative future-directions
+appendix** pointing at this sketch. EWG then has its one
+operators-and-infix discussion with the whole landscape visible and banks
+the shared decisions — one level, left-associative, desugar-to-call — once;
+this paper inherits them as adopted precedent instead of reopening them.
+
+**On undercutting, and on taste.** Opening real operators does soften
+§14.4's "backtick removes the motivation" argument, and the honest framing
+is partition, not competition: named operations read as words —
+`` f `bind` g `` — and symbols are for domains where the notation is the
+established vocabulary (⊗ in linear algebra, ⋈ in relational algebra,
+lattice ⊓/⊔). Writing `f ⊚ g` for bind is notation abuse; but the
+standard's position on notation abuse was settled when `operator<<` shipped
+on streams: the language provides the mechanism, and style guides and
+clang-tidy police taste. Both papers can state the expectation as
+non-normative guidance — backtick for named combinators, symbols for
+established notation — without pretending the grammar can enforce it.
+
+Scope otherwise mirrors D13: pure core language, no library additions; SG16
+review before EWG.
 
 ---
 
