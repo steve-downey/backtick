@@ -10,9 +10,14 @@ Also backs §7.1 / U10: Pattern_Syntax is disjoint from XID (C++23
 identifiers, P1949) and from the C++11–C++20 Annex E identifier whitelist,
 so no C++ standard has ever admitted an operator character into a name.
 
-Needs four UCD files in the directory given as argv[1] (default: cwd), from
-https://www.unicode.org/Public/UCD/latest/ucd/ :
+Also derives the final U1 operator set (§5 predicates + exclusions) and its
+range-table shape — the static table a lexer would actually search (§8).
+
+Needs five UCD files in the directory given as argv[1] (default: cwd), from
+https://www.unicode.org/Public/UCD/latest/ucd/ (emoji-data.txt is under
+ucd/emoji/):
     PropList.txt  DerivedAge.txt  UnicodeData.txt  DerivedCoreProperties.txt
+    emoji-data.txt
 
 Numbers quoted in the design doc were produced against UCD 17.0.0
 (DerivedAge.txt dated 2025-07-30).
@@ -134,3 +139,35 @@ print(f"  ID_Compat_Math_Continue              : {len(imc)}")
 print(f"  Pattern_Syntax ∩ ID_Compat_Math      : " +
       ", ".join(f"U+{c:04X} {chr(c)}" for c in sorted(ps & (ims | imc))) +
       "   (exactly the U1 exclusions)")
+
+# --- §5/§8: the final U1 set and its lexer range-table shape ---------------
+
+epres = set()
+for a, b, _ in ranges(D / "emoji-data.txt", "Emoji_Presentation"):
+    epres.update(range(a, b + 1))
+
+EXCLUDE = (
+    {0x2202, 0x2207, 0x221E}                             # ∂ ∇ ∞ — identifier side (U10)
+    | {0x2212, 0x2215, 0x2044, 0x2217, 0x2223,           # confusables of - / * / |
+       0x2236, 0x2219, 0x22C5}                           # ∶ ∙ ⋅
+    | {0x2264, 0x2265, 0x21D0, 0x21D2, 0x21D4}           # ≤ ≥ ⇐ ⇒ ⇔ — <= >= => space
+)
+
+u1_final = sorted(
+    cp for cp in ps
+    if inb(cp) and gc.get(cp) in ("Sm", "So")
+    and cp not in EXCLUDE and cp not in epres
+)
+rgs = []
+for cp in u1_final:
+    if rgs and cp == rgs[-1][1] + 1:
+        rgs[-1][1] = cp
+    else:
+        rgs.append([cp, cp])
+
+print(f"\nFinal U1 operator set (§5 predicates, all exclusions applied):")
+print(f"  code points : {len(u1_final)}")
+print(f"  contiguous ranges : {len(rgs)}  "
+      f"(static table: {len(rgs) * 8} bytes at 2×uint32 per range)")
+print(f"  emoji-presentation excluded inside the blocks : "
+      f"{len([c for c in ps if inb(c) and c in epres])}")

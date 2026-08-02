@@ -220,10 +220,11 @@ Notes on the shape of this definition:
   read as `*` and `/` with all the aliasing questions that implies, ¬ as `!`;
   admitting them is a coherent *extension*, not part of the minimal set. Open
   question U§13.
-- The result is on the order of two thousand code points — ⊞ ⊠ ⊕ ⊖ ⊗ ⊘ ⊙ ∘ ∙
-  ⋄ ⋈ ∪ ∩ ⊎ ⊓ ⊔ ↦ ⇝ ⊢ ⊨ and their supplemental variants — which is the
-  entire point: the ASCII inventory (§14.3) offered a handful of two-character
-  sequences; this offers actual notation.
+- The result, measured against UCD 17.0 with every exclusion applied, is
+  **1,381 code points in 32 contiguous ranges** (`pattern-syntax-audit.py`)
+  — ⊞ ⊠ ⊕ ⊖ ⊗ ⊘ ⊙ ∘ ⋄ ⋈ ∪ ∩ ⊎ ⊓ ⊔ ↦ ⇝ ⊢ ⊨ and their supplemental
+  variants — which is the entire point: the ASCII inventory (§14.3) offered
+  a handful of two-character sequences; this offers actual notation.
 
 ---
 
@@ -401,6 +402,34 @@ proposal keeps it.
 The parser side is small — smaller than backtick's, since §5/§17.1 vanish
 (U§6). The real work in both compilers is the same item: **the operator-name
 tables are closed**, and this feature opens them.
+
+**Token classification is a static range table, not a predicate.** Because
+U1 is a frozen enumeration, the lexer never evaluates Unicode properties:
+the derivation (Pattern_Syntax ∩ blocks ∩ Sm/So, minus the exclusions and
+the 12 emoji-presentation code points inside the blocks) runs once,
+offline, and yields — against UCD 17.0 — **1,381 code points in 32
+contiguous ranges**: a 256-byte sorted table, one binary search
+(`pattern-syntax-audit.py` derives it). The check sits only on the
+non-ASCII slow path, after UTF-8 decode, where both lexers already do
+exactly this shape of lookup for extended identifiers — Clang's static
+range arrays in `clang/lib/Lex/UnicodeCharSets.h` (whose XID tables run to
+hundreds of ranges) and libcpp's generated `ucnid.h` tables in GCC. ASCII
+sources never touch it, and the order of checks against XID is immaterial
+because U10 makes the sets disjoint.
+
+Keep the **exclusion list as a second, tiny table with reasons**, not
+merely as absent entries: U+2212 in source should produce "U+2212 MINUS
+SIGN is not an operator; did you mean `-`?" — and ∂ ∇ ∞ "is an identifier
+character (mathematical notation profile), not an operator" — rather than
+a generic stray-character error. The exclusions exist for the *reader's*
+protection; the diagnostics should say so.
+
+Two rules that fall out of single-code-point tokens: operator code points
+are written **literally, never as UCNs** (`operator\u229E` is not a
+spelling of `operator⊞`, exactly as no punctuator has a UCN spelling; UCNs
+revert only in identifiers and literals), and **no normalization runs at lex time** — one
+code point has nothing to normalize; NFC questions arrive only with v2's
+combining-mark sequences (U§13).
 
 **Clang.**
 

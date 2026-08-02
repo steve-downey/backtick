@@ -121,9 +121,12 @@ anything confusable with an existing token. That last list matters most:
 U+2212 (the real minus sign), the division slash, the asterisk operator, the
 middle dots, =≤= and =≥=. Those are rejected outright, never aliased. A
 character that renders like =-= but isn't should fail to compile, not quietly
-mean something else. What's left is still on the order of two thousand
-symbols: =⊞ ⊠ ⊕ ⊖ ⊗ ⊘ ∘ ⋄ ⋈ ∪ ∩ ⊓ ⊔ ↦ ⊢ ⊨= and on and on. Actual notation,
-where ASCII offered scraps.
+mean something else. What's left, with every exclusion applied, is 1,381
+code points in 32 contiguous ranges: =⊞ ⊠ ⊕ ⊖ ⊗ ⊘ ∘ ⋄ ⋈ ∪ ∩ ⊓ ⊔ ↦ ⊢ ⊨= and
+on and on. (Those 32 ranges are also the entire lexer story: a 256-byte
+sorted table, one binary search, on the slow path that only non-ASCII
+source reaches. Both compilers already classify extended identifiers with
+exactly this machinery.) Actual notation, where ASCII offered scraps.
 
 * Parsing is the easy part this time
 
