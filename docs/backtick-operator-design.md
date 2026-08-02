@@ -589,6 +589,12 @@ therefore best read as *what remains technically possible*, with the
 expectation that this proposal removes most of the *motivation* to spend it —
 implication's lazy RHS being the notable exception.
 
+This appendix is deliberately ASCII-only; the non-ASCII pool — Unicode
+characters with syntactic (Pattern_Syntax) status that C++ has never claimed,
+now with normative footing in UAX #31 R3c — is explored as a separate
+follow-on sketch in `unicode-operators.md` (`x ⊞ y` ⇒ `operator⊞(x, y)`,
+reusing this proposal's precedence, associativity, and desugaring decisions).
+
 ### 14.5 Prior art for this analysis
 
 This exact "what ASCII is actually free" exercise has been run to a
