@@ -41,7 +41,7 @@ Vec operator⊖(Vec const&);          // one parameter -> unary prefix form
 
 | ID | Decision | Status | Rationale |
 |----|----------|--------|-----------|
-| U1 | Operator tokens are **single non-ASCII code points** with the Pattern_Syntax property, drawn from the mathematical/arrow blocks, shipped as a **frozen enumeration** | **Proposed** | Pattern_Syntax is immutable by Unicode stability policy, so the set can never grow or shrink under us (U§4). Single code point, NFC, no combining marks: keeps lexing trivial (one code point = one token), avoids the normalization/rendering questions Mn sequences drag in (negated operators like `⊕̸` are a v2 candidate, U§13). Non-ASCII by construction: every ASCII Pattern_Syntax character is already claimed or reserved by the grammar (§14). Confusables with existing punctuators are excluded by name (U§5). The standard would carry the final enumerated list normatively — the same standing as the existing UAX #31 reference for identifiers (U§4). |
+| U1 | Operator tokens are **single non-ASCII code points** with the Pattern_Syntax property, drawn from the mathematical/arrow blocks, shipped as a **frozen enumeration pinned to Unicode 17.0** | **Proposed** | Pattern_Syntax is immutable *per code point* by Unicode stability policy — but not closed: 79 of its 2,760 code points are unassigned, and Unicode keeps assigning characters at them (453 since the 4.1 freeze; U§4). So the ceiling is guaranteed, the contents are not, and the list must be frozen by *this proposal*, not by Unicode. Single code point, NFC, no combining marks: keeps lexing trivial (one code point = one token), avoids the normalization/rendering questions Mn sequences drag in (negated operators like `⊕̸` are a v2 candidate, U§13). Non-ASCII by construction: every ASCII Pattern_Syntax character is already claimed or reserved by the grammar (§14). Confusables with existing punctuators are excluded by name (U§5). The standard would carry the final enumerated list normatively — the same standing as the existing UAX #31 reference for identifiers (U§4). |
 | U2 | `operator⊞` is an *operator-function-id*; an ordinary overloadable free or member function, with **no class/enum-parameter requirement** | **Proposed** | Exactly the existing operator-function machinery, one production wider. The explicit-call spelling `operator⊞(a, b)` works, as it does for every operator today. [over.oper]'s "at least one class or enum parameter" rule exists to protect the built-in meaning of the token — a user operator *has* no built-in meaning to protect, so `operator⊞(int, int)` is legal and `5 ⊞ 7` finds it. That is the point: the fundamental-type case (`5 ⊞ 7`) is the motivating one. |
 | U3 | Lexing is **declaration-independent**: every set member is always an operator token (under U7's flag), whether or not any `operator⊞` is in scope | **Proposed** | The lexer cannot consult declarations — tokenization precedes lookup (preprocessing, template bodies, header order). So the operator set is fixed by the *grammar*, not by what is declared; a use with no viable `operator⊞` fails at overload resolution with an ordinary "no match" diagnostic, exactly as an undeclared `operator+` on a class type does. This is Julia's model (fixed parse table, users define methods) and the opposite of Swift's (declaration-gated parsing), and it is the only model that works in C++ (U§11). |
 | U4 | Binary user operators occupy **the backtick precedence level** (D2 Option A): tighter than `*`, looser than unary; operands are cast-expressions; **left-associative** (D1) | **Proposed** | One level for *all* user-introduced infix — named (backtick) and symbolic (this) — so mixed chains group left with no precedence table to learn. Reuses D2's litigated resolution wholesale, including the symmetric-prefix property: `-a ⊞ -b` is `operator⊞(-a, -b)`. Everything §4 records in favour of Option A applies unchanged. |
@@ -96,11 +96,17 @@ Facts checked against UAX #31 revision 43 (Unicode 17.0.0, 2025-08-20).
   operator can be written). It also records the lexical-ambiguity guidance
   this sketch follows: operators should not contain characters that can begin
   an identifier or literal.
-- **Pattern_Syntax is immutable**: UAX #31 states the Pattern_Syntax and
-  Pattern_White_Space properties are "absolutely invariant, not changing with
-  successive versions of Unicode." This is the property that makes a frozen
-  operator set safe to standardize: no future Unicode version can add to,
-  remove from, or re-purpose it.
+- **Pattern_Syntax is immutable — per code point, not per character.** The
+  Unicode Character Encoding Stability Policy
+  (unicode.org/policies/stability_policy.html, "Property Value Stability",
+  guarantee dating from Unicode 4.1): "The Pattern_Syntax and
+  Pattern_White_Space properties are immutable code point properties, which
+  means that their property values for all Unicode code points will never
+  change." So no code point will ever gain or lose the property. But
+  **immutable is not closed**: the frozen set deliberately *contains
+  unassigned code points*, and Unicode assigns new characters at them —
+  see the audit below. This distinction is the first question EWG/SG16 will
+  ask, and it drives U1's frozen-enumeration shape.
 - **A correction to the obvious reading of §7.1.** TR31's §7.1 "Mathematical
   Compatibility Notation Profile" is an *identifier* profile, not an operator
   one: it admits ∂, ∇, ∞ (and style variants, plus sub/superscripts) as
@@ -117,6 +123,46 @@ Facts checked against UAX #31 revision 43 (Unicode 17.0.0, 2025-08-20).
   reference to UAX #31 (R1). A proposal referencing R3c is the *same shape of
   citation to the same document* — precedent exists, and SG16 has the
   machinery to review it.
+
+**Immutable versus stable — what Unicode 18.0 can and cannot do.** The
+distinction, audited against UCD 17.0 (`PropList.txt` × `DerivedAge.txt`,
+2025-07-30), since EWG will ask for numbers:
+
+- Pattern_Syntax is **2,760 code points**, fixed since Unicode 4.1 (2005).
+  As of 17.0, **2,681** of them carry assigned characters; **79 are still
+  unassigned** — reserved slots *inside* the immutable set.
+- Since the 4.1 freeze, Unicode has assigned **453 new characters** at
+  Pattern_Syntax code points, in nearly every release: 130 in 7.0, 48 in
+  11.0, 11 in 14.0 (the U+2E55–2E5C bracket pairs), 3 in 16.0, and **one in
+  17.0 itself** — U+2B96 ⮖ EQUALS SIGN WITH INFINITY ABOVE. This is by
+  design, and R3c says so explicitly: "Unassigned code points are not
+  characters; they are therefore excluded by this definition" — meaning the
+  R3c operator set is defined over *assigned* characters and **grows** when
+  a later version assigns one.
+- Within the U1 blocks specifically: **283** post-freeze assignments, **279**
+  of them General_Category Sm/So — i.e. a predicate-defined operator set,
+  re-derived per Unicode version, would have grown by 279 operators since
+  2005. Two code points in the U1 blocks (U+2B74, U+2B75) are unassigned
+  today; 18.0 could fill them.
+- General_Category is **not** immutable either: the stability policy permits
+  gc changes that preserve a character's "fundamental identity" (only Cc,
+  Co, Cs are frozen), so even the assigned side of an Sm/So predicate is
+  version-dependent in principle.
+
+So: **Unicode 18.0 cannot mint an operator-eligible character outside the
+2,760, and can (and predictably will) mint them inside it.** Two consequences
+for the design. First, growth is *lexically benign*: a newly assigned code
+point was previously not a valid token at all, so an assignment can only make
+previously-ill-formed programs well-formed — it can never change the meaning
+of a valid one (the same benignity argument that lets identifiers ride
+Unicode updates under the grows-only XID stability guarantee). Second,
+growth is nonetheless *unauditable in advance*: the UTS #39 confusability
+exclusion (U1) cannot be evaluated for characters that do not exist yet, so
+a predicate-defined set would auto-admit unvetted symbols. That asymmetry —
+benign to the lexer, blind to the audit — is why U1 freezes an enumeration
+pinned to a named Unicode version instead of tracking the predicate, and why
+adopting later additions is a deliberate act of a future revision (U§13),
+not an automatic consequence of a UCD update.
 
 One more consequence of R3c worth stating: since Pattern_Syntax includes the
 ASCII operator characters (`+ < | !` …), R3c does not hand C++ a usable set
@@ -157,12 +203,14 @@ A code point is a *user-operator token* iff all of:
 
 Notes on the shape of this definition:
 
-- Predicates 3–5 are applied **once**, to the (frozen) Pattern_Syntax set, and
-  the proposal ships the resulting **enumerated list** normatively. Block
-  membership and General_Category are *derivation inputs*, not ongoing
-  dependencies — later Unicode versions cannot change the list, because
-  Pattern_Syntax cannot change (U§4). The gc-stability weakness of an
-  "Sm-only" rule is thereby avoided.
+- Predicates 3–5 are applied **once**, against UCD 17.0, and the proposal
+  ships the resulting **enumerated list** normatively. Block membership and
+  General_Category are *derivation inputs*, not ongoing dependencies — the
+  list is frozen by fiat, because it has to be: re-running the derivation
+  against a later UCD *would* yield a different set (279 Sm/So characters
+  have been assigned inside these blocks since the Pattern_Syntax freeze,
+  and U+2B74–2B75 are still open — U§4). Freezing the enumeration is what
+  neutralizes both that growth and the gc-instability of an "Sm-only" rule.
 - **NFC is required** (as it already is in identifier context); combining
   marks are excluded, so every operator is exactly one code point and maximal
   munch is trivial — there are no multi-character user operators and no
@@ -415,10 +463,17 @@ before EWG.
   aliasing question (is `×` a user operator or a confusable of `*`?) that the
   block restriction currently sidesteps.
 - **Feature-test macro.** `__cpp_unicode_operators` on the usual pattern.
-- **Set delivery.** Ship the frozen enumeration in normative text, or
-  normatively reference R3c-plus-stated-predicates and let the enumeration be
-  informative? (P1949 referenced the properties; but our predicates are
-  compound, and an enumeration is auditable. Leaning: enumerate.)
+- **Set delivery — settled direction: enumerate.** The U§4 audit closes
+  this: a property-reference set (the P1949 model for identifiers) is
+  version-dependent, because Unicode assigns new characters inside
+  Pattern_Syntax in nearly every release and R3c's operator definition
+  tracks assignment. Identifiers can afford that — XID has a grows-only
+  stability guarantee and identifier growth is benign — but operator growth
+  bypasses the confusability audit (U§4). So: a frozen enumeration, pinned
+  to Unicode 17.0, in normative text. A future revision of the standard may
+  adopt later-assigned symbols the way it adopts anything else —
+  deliberately, by paper, after audit — and the Pattern_Syntax ceiling
+  guarantees any such addition lands inside the already-reserved 2,760.
 - **`operator` + token adjacency.** Whether `operator ⊞` (space) and
   `operator⊞` both parse (they should — same as `operator +` / `operator+`),
   and what clang-format canonicalizes.

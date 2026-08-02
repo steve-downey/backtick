@@ -86,10 +86,23 @@ The non-ASCII space is different in kind, and as of last year it has a
 standard behind it. UAX #31 (the Unicode identifier-and-syntax annex, the
 same document C++23 already cites for identifiers, via P1949) now has a
 section on user-defined operators: UAX31-R3c. It defines operator characters
-in terms of the =Pattern_Syntax= property, and =Pattern_Syntax= comes with
-the one guarantee a language standard actually needs: it is immutable.
-Unicode has promised it will never add to it, remove from it, or reassign it,
-in any future version. A frozen operator set stays frozen.
+in terms of the =Pattern_Syntax= property, and =Pattern_Syntax= carries the
+strongest promise Unicode makes about anything: it is immutable, per code
+point. No code point will ever gain or lose the property, in any version,
+ever. That's the stability policy, in force since Unicode 4.1 in 2005.
+
+But immutable isn't closed, and the distinction is the first question any
+committee will ask. The frozen set is 2,760 code points, and 79 of them are
+still unassigned; Unicode has been filling them in steadily, 453 new
+characters since the freeze, including one in 17.0 itself (⮖, EQUALS SIGN
+WITH INFINITY ABOVE, which certainly sounds like something someone will want
+as an operator). So Unicode 18.0 can mint new symbols /inside/ the set; what
+it can not do is mint one outside it. The consequence for C++ is that the
+operator set has to be a frozen enumeration, pinned to a Unicode version,
+never re-derived: a new character can't be checked against the confusables
+list before it exists, so nothing gets in automatically. A later revision of
+the standard could adopt new symbols the way it adopts anything else, by
+paper, on purpose. The ceiling is guaranteed; the contents are a decision.
 
 One correction to my own first reading, for anyone else skimming TR31: §7.1,
 the "Mathematical Compatibility Notation Profile," sounds like the operator
