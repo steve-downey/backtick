@@ -92,9 +92,12 @@ Any non-zero `Failed` is a regression. Compare against *these* numbers.
 Five gate facts, three inherited from the backtick track and all of which
 have cost real time already:
 - **`ninja … | tail` reports `tail`'s exit code.** Redirect and check `$?`.
-- **`check-clang` self-formats `clang/lib/Format/`** and aborts at ~step
+- **`check-clang` self-formats the Format sources** and aborts at ~step
   81/970 — before any lit test runs — if the edits there don't match
-  current LLVM style. Relevant to U18.
+  current LLVM style. Corrected by U18: the glob covers
+  **`clang/unittests/Format/*.cpp` as well as `clang/lib/Format/`**, and it
+  formats with the **in-tree** `clang-format`, not an upstream binary. So
+  format your test edits too, with the binary you just built.
 - The `Clang :: Format/dump-config-objc-stdin.m` failure caused by the stray
   2018 `/home/sdowney/src/.clang-format` is a **`backtick-23`-only** artifact.
   It **passes** on this trunk base (confirmed by U00, as by
