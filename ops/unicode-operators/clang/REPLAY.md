@@ -827,3 +827,25 @@ the `lldb` switch arm is still **compile-unverified** (`LLVM_ENABLE_PROJECTS`
 is `clang;clang-tools-extra` in this build dir too), and `clang/lib/CIR/`'s
 `CXXRewrittenBinaryOperator` site set is still **untouched** — a real hole in
 `UserOperatorExpr`'s obligations, not merely an unbuilt line.
+
+# U21 — probe only, nothing landed
+
+U21 is a design probe in Phase F and is **off the replay path by
+construction**. It landed **no code on `unicode-operators-experiment` and no
+code on `unicode-operators-upstream`**; both branches are untouched, at
+`06735e8df66d` and `44299aae010d` respectively, and the U20 replay result
+(109 files, +7073/−18, 15 commits, baseline +72/+72) is unchanged.
+
+Classification: **probe only — nothing to replay.**
+
+The one artifact is a throwaway prototype of the greedy-infix fixity rule,
+committed to a **scratch branch** in the experiment worktree so the
+measurement is reproducible:
+
+| Branch | Commit | Stat | Status |
+|--------|--------|------|--------|
+| `unicode-postfix-probe-scratch` | `c929b9ee000d` | 1 file, +68 (`clang/lib/Parse/ParseExpr.cpp`) | **DO NOT MERGE.** Never checked out after measurement; the worktree was returned to `unicode-operators-experiment` and `clang` rebuilt. Deleting the branch loses nothing but the reproduction. |
+
+Its commit message says so in its title. It resolves a postfix use against the
+one-operand overload set, which is deliberately wrong semantics — it exists to
+measure the *parse*, and nothing else about it is correct.

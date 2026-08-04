@@ -45,7 +45,7 @@ Vec operator⊖(Vec const&);          // one parameter -> unary prefix form
 | U2 | `operator⊞` is an *operator-function-id*; an ordinary overloadable free or member function, with **no class/enum-parameter requirement** | **Proposed** | Exactly the existing operator-function machinery, one production wider. The explicit-call spelling `operator⊞(a, b)` works, as it does for every operator today. [over.oper]'s "at least one class or enum parameter" rule exists to protect the built-in meaning of the token — a user operator *has* no built-in meaning to protect, so `operator⊞(int, int)` is legal and `5 ⊞ 7` finds it. That is the point: the fundamental-type case (`5 ⊞ 7`) is the motivating one. |
 | U3 | Lexing is **declaration-independent**: every set member is always an operator token (under U7's flag), whether or not any `operator⊞` is in scope | **Proposed** | The lexer cannot consult declarations — tokenization precedes lookup (preprocessing, template bodies, header order). So the operator set is fixed by the *grammar*, not by what is declared; a use with no viable `operator⊞` fails at overload resolution with an ordinary "no match" diagnostic, exactly as an undeclared `operator+` on a class type does. This is Julia's model (fixed parse table, users define methods) and the opposite of Swift's (declaration-gated parsing), and it is the only model that works in C++ (U§11). |
 | U4 | Binary user operators occupy **the backtick precedence level** (D2 Option A): tighter than `*`, looser than unary; operands are cast-expressions; **left-associative** (D1) | **Proposed** | One level for *all* user-introduced infix — named (backtick) and symbolic (this) — so mixed chains group left with no precedence table to learn. Reuses D2's litigated resolution wholesale, including the symmetric-prefix property: `-a ⊞ -b` is `operator⊞(-a, -b)`. Everything §4 records in favour of Option A applies unchanged. |
-| U5 | **Unary prefix** operators are declared with one parameter; prefix vs infix is disambiguated by grammatical position; **no postfix forms** | **Proposed** | Arity selects the form, as it does for `operator-` today (two parameters / one member parameter = binary; one / none = prefix). Position disambiguates uses: post-operand → infix, operand position → prefix — the same strategy as `-`, `*`, `&`, and D10's escape-vs-operator split. Declining postfix eliminates the prefix/postfix ambiguity that forces Swift's whitespace-sensitivity rules; nothing mathematical is lost (postfix notation is rare outside `!`, and `!` is taken). |
+| U5 | **Unary prefix** operators are declared with one parameter; prefix vs infix is disambiguated by grammatical position; **no postfix forms** | **Proposed** | Arity selects the form, as it does for `operator-` today (two parameters / one member parameter = binary; one / none = prefix). Position disambiguates uses: post-operand → infix, operand position → prefix — the same strategy as `-`, `*`, `&`, and D10's escape-vs-operator split. Declining postfix eliminates the prefix/postfix ambiguity that forces Swift's whitespace-sensitivity rules; nothing mathematical is lost (postfix notation is rare outside `!`, and `!` is taken). **Priced by U21 (U§13.1), which reframes the decision from "postfix is ambiguous" to "postfix is a pure extension we can decline for free":** a one-token greedy-infix rule does resolve the ambiguity without whitespace sensitivity or backtracking, and a prototype of it works — but it costs the missing-right-operand diagnostic for *every* user of the feature, forces a hand-curated normative token list whose contents move with the dialect, needs a cross-vendor Itanium change (prefix and postfix unaries share an arity, and Clang already mis-mangles `++` where GCC does not), and adds LEWG to the routing via a compiler-known `std::postfix`. Since the rule only ever reinterprets programs v1 rejects, v1 declines it without foreclosing v2. |
 | U6 | Candidate assembly is that of the **existing overloaded operators**: member candidates + non-member candidates found by unqualified lookup and **ADL**; no built-in candidates | **Proposed** | §17.4's rule carries over verbatim and stays normative: `x ⊞ y` must find every `operator⊞` the call `operator⊞(x, y)` would, including by ADL into the operands' associated namespaces — the mechanism that makes `std::cout << x` work is the mechanism that makes a library's `⊗` work on its own types. The GCC parse-time-resolution defect (DEV-G05) is the cautionary tale: carry the name unresolved into the call machinery. There are no built-in candidates because there are no built-in meanings (U2). |
 | U7 | Gated behind its own flag, `-funicode-operators`, independent of and composable with `-fbacktick` | **Proposed** | Same D5 rationale: opt-in prototype vehicle, default build byte-identical to upstream. A separate flag because the features are separable proposals with separable fates; a translation unit may enable either, both, or neither, and U4's shared precedence level must parse identically whichever subset is on. |
 | U8 | Mangling: Itanium **vendor-extended operator** (`v <arity> <source-name>`) with a code-point-derived source-name, e.g. `⊞` binary → `v2` + `op_u229E` | **Proposed — open (ABI)** | The `v` production exists precisely for operators the grammar didn't anticipate; precedent for naming-by-derived-source-name is `li<name>` for literal-operator suffixes, and precedent for retrofitting a real code is `aw` for `co_await`. A standardized feature would want a first-class `<operator-name>` production keyed by code point, which needs cross-vendor agreement — flagged open, not resolved. MSVC mangling unexamined. |
@@ -658,6 +658,9 @@ review before EWG.
   for negated operators (`⊕̸`). Excluded from v1 (U1) to keep one-codepoint
   lexing; a v2 could admit `<operator, Mn*>` sequences under NFC. Needs a
   rendering/confusability story first.
+- **Postfix operators (v2).** Answered, with a measurement, in §13.1: it is
+  implementable and it is a pure extension of the v1 grammar, so v1 declines
+  it without foreclosing it.
 - **Latin-1 stragglers.** ± × ÷ ¬ fail U1's block predicate but are the
   symbols users will ask for first. Admitting them means answering the
   aliasing question (is `×` a user operator or a confusable of `*`?) that the
@@ -681,3 +684,174 @@ review before EWG.
 - **`operator` + token adjacency.** Whether `operator ⊞` (space) and
   `operator⊞` both parse (they should — same as `operator +` / `operator+`),
   and what clang-format canonicalizes.
+
+### 13.1 Postfix operators — the price, measured (U21)
+
+U5 declines postfix. The question comes back anyway, so here is the answer
+with a number on it. Everything below was measured against Clang on the
+prototype branch, not reasoned from the grammar; a throwaway implementation
+of the candidate rule (68 lines, one file) was built and run on the witness
+expressions, then discarded.
+
+**The tempting design is wrong for a reason worth stating.** Partitioning U1
+into an infix half and a postfix half makes fixity a property of the code
+point. It is not: the code point belongs to whoever is writing the domain,
+and pre-assigning its fixity pre-assigns its meaning. Fixity has to be
+user-declarable or the feature is not worth having. That rules out the cheap
+answer and forces the question to be about *parsing*.
+
+**Arity cannot declare it, and the `int` dummy is unavailable.** `operator++`
+tells its two forms apart by a dummy `int` parameter — `operator++(T)` is
+prefix, `operator++(T, int)` is postfix ([over.inc]p1, enforced in Clang at
+`SemaDeclCXX.cpp` `CheckOverloadedOperatorDeclaration`). U2 removes the
+class-or-enum parameter requirement, which makes `operator⊞(T, int)` a
+perfectly ordinary *infix* operator whose right operand is an `int`. So the
+convention is spent. A distinguished tag type is forced, not stylistic:
+
+```cpp
+T operator⊕(std::postfix, T t);   // postfix:  a⊕
+T operator⊕(T lhs, T rhs);        // infix:    a ⊕ b
+```
+
+**`operator++` does not, in fact, solve this problem — it dodges it.** `++`
+has no infix form, so after a complete operand `a++` can only be postfix and
+one token of position settles it. A user operator declared both ways gives
+the parser a token it cannot classify from position alone. And the dodge is
+visible in the compiler: postfix-ness has no representation anywhere in
+Clang. It is re-derived at every consumer from `OO_PlusPlus` plus an argument
+count — `ExprCXX.cpp` `getSourceRangeImpl`, `StmtPrinter.cpp`
+`VisitCXXOperatorCallExpr`, `TreeTransform.h` `RebuildCXXOperatorCallExpr`'s
+`isPostIncDec` — after `SemaOverload.cpp` `CreateOverloadedUnaryOp`
+synthesizes an `IntegerLiteral` `0` as a second argument precisely so that
+downstream code can recover the fixity it was not told. There is no
+`isPostfix()` on `CXXOperatorCallExpr` and no predicate anywhere in Clang for
+"this token can begin an expression". Both would have to be written. This is
+the fourth consecutive place where opening a closed operator concept costs a
+*parallel* mechanism rather than a widened one.
+
+**The candidate rule: greedy-infix.** After a complete operand, a user
+operator followed by a token that can begin a *cast-expression* is infix;
+otherwise it is postfix. One token of lookahead, no backtracking, no
+whitespace sensitivity, and — the property that matters — the parser still
+never consults a declaration (U3). Sema then resolves whichever shape the
+parser produced, and a postfix shape with no postfix overload in scope is an
+ordinary no-viable-overload error. It is the same greedy-operand preference
+D2/§4 already adopted for `-a ⊞ -b` == `⊞(-a, -b)`: a second application of a
+litigated rule, not a new one, which is the framing EWG needs.
+
+**It works.** The prototype puts the decision in
+`Parser::ParsePostfixExpressionSuffix` — one `case`, one `NextToken()` call.
+Measured, with `⊖` declared unary:
+
+```cpp
+a ⊖;          // postfix — parses, resolves
+(void)(a ⊖);  // postfix
+a ⊖ / a;      // postfix, then binary /
+(a ⊖) ⊗;      // postfix, chained through parentheses
+a ⊞ b;        // infix, unchanged
+```
+
+**The price is four things, and only the first was expected.**
+
+*One: the paren-forcing set is larger than "prefix-unary ∩ infix-binary".*
+The real set is every token that can begin a cast-expression and could also
+follow a complete operand. Measured against Clang's own dispatch
+(`ParseExpr.cpp`, `ParseCastExpression`'s 135-label token switch, whose
+`default:` is exactly "cannot begin a cast-expression") that is `*`, `&`,
+`+`, `-`, a prefix user operator — *and* `++`, `--`, `(`, `[`, and `&&`.
+
+```cpp
+a ⊖ * b     // infix:  ⊖(a, *b)     -> "indirection requires pointer operand"
+a ⊖ && b    // infix:  ⊖(a, &&b)    -> "use of undeclared label 'b'"
+a ⊖ (b)     // infix:  ⊖(a, b)      -> "requires 1 argument, but 2 were provided"
+a ⊖ ⊗       // infix, then ⊗ awaits an operand -> "expected expression"
+(a ⊖) * b   // the workaround, in every case
+```
+
+`&&` is the one that should stop the discussion: it is a cast-expression
+starter only because of the GNU address-of-label extension
+(`ParseExpr.cpp`, `case tok::ampamp`, ungated in every language mode), and
+`a ⊖ && b` is an entirely ordinary thing to write. The rule can of course be
+specified by a hand-curated token list that puts `&&` on the terminator side
+— but then it is a curated list, not a derivation, and the standard has to
+carry it and re-audit it every time a token that can start an expression is
+added. `^^` was added for reflection while this was being written, and its
+case in Clang is gated on the language mode; `[` branches on C++ and
+Objective-C; `^` on blocks. A predicate derived from the compiler's own
+notion of "can begin an expression" therefore makes **the fixity of an
+expression depend on the dialect**, which is a fresh violation of exactly the
+property U9 was written to protect.
+
+*Two: the chained-postfix wart is a hard error with an unhelpful message.*
+`a ⊖ ⊗` takes `⊗` as the start of an operand and then fails at the `;` with
+`expected expression`, pointing at the semicolon and mentioning neither
+postfix nor the fix. Unlike the backtick project's DEV-04, this one is
+diagnosable — the parser knows it has just taken a user operator as infix and
+run into a non-operand — so it is a QoI problem, not a grammatical one.
+
+*Three, and this is the expensive one: it costs a diagnostic the whole
+feature currently has.* Under greedy-infix a missing right operand is no
+longer a parse error. `a ⊞ ;` becomes a well-formed postfix parse, and the
+error moves to overload resolution — "no matching function for call to
+`operator⊞` … requires 2 arguments, but 1 was provided" — naming a unary call
+the programmer never wrote. Four existing negative tests on the prototype
+branch change behaviour under the rule, and every one of them is this shape;
+two are fold expressions, where the parse cascades into `expected ')'` and
+`expression contains unexpanded parameter pack`. That cost is paid by every
+user of the feature, not only by the ones who declare a postfix operator.
+
+*Four: it reopens the ABI question (U8), and not hypothetically.* Two unary
+forms have the same arity, so the U8 prototype scheme `v <arity>
+<source-name>` gives `⊖a` and `a⊖` the same mangled operator-name. The
+Itanium ABI already has this problem and already solved it: the
+`<expression>` production spells prefix `++` as `pp_` and postfix as `pp`.
+GCC 15.2 emits both; Clang emits `pp` for both, and the collision is real —
+
+```cpp
+struct A { int operator++(); double operator++(int); };
+template <class T> void f(decltype(++T{})) {}
+template <class T> void f(decltype(T{}++)) {}
+// clang: error: definition with same mangled name '_Z1fI1AEvDTpptlT_EE'
+// gcc:   _Z1fI1AEvDTpp_tlT_EE  and  _Z1fI1AEvDTpptlT_EE
+```
+
+A user operator would need the same trailing-`_` convention grafted onto the
+`v <arity> <source-name>` production, which is a cross-vendor ABI change on
+top of a mangling U8 already flags as open. There is one escape: if the
+postfix use *synthesizes* the `std::postfix` tag as a real first argument —
+`operator++(int)`'s trick, generalized — then the postfix call has two
+arguments, mangles distinctly, and overload-resolves without a new mechanism.
+That is the design to pursue if postfix is ever taken. It still needs a
+fixity bit on the AST node, because arity no longer recovers it.
+
+*And the library cost, which changes the paper's routing.* A
+compiler-known `std::postfix` makes this library-affects-language. The
+precedent is `operator<=>` and `std::strong_ordering`, and its cost in Clang
+is not small: `ComparisonCategories.{h,cpp}` is 452 lines of dedicated AST
+support, `Sema::CheckComparisonCategoryType` is ninety more with its own
+`InvalidSTLDiagnoser`, and 26 files know about it. The consequence for the
+paper is the one that matters: **LEWG joins a proposal already routed to
+SG16, EWG/CWG and the ABI group.** D13's rule — bundle what shares a design
+surface within one committee, split what crosses committees — says on its own
+terms that this does not belong in v1.
+
+**Recommendation: decline postfix for v1, and say why in these terms.** Not
+because it cannot be done — it can, and cheaply in code — but because
+greedy-infix is a **pure extension of the v1 grammar**, so declining costs
+nothing later. The rule fires only where a user operator is followed by a
+token that cannot begin a cast-expression, and v1 requires a cast-expression
+there; every program greedy-infix reinterprets is a program v1 rejects. That
+is structural, and it is what the prototype measured: the only behaviour that
+changed was in diagnostics on already-ill-formed code, and no well-formed
+program changed meaning. So v1 answers the question with "one fixity per
+arity, declared", v2 can answer it with "a tag type and one token of
+lookahead", and nothing in v1 has to be taken back to get there — including
+the fact that fixity stays user-declarable in both, which is the constraint
+the whole question exists to protect.
+
+The alternatives are worse and should be recorded as such: whitespace
+sensitivity (Swift's answer, declined by U5, and the reason this section
+exists) makes `a ⊖ b` and `a ⊖b` different programs; a code-point partition
+makes the committee choose fixity for every symbol in the table; and doing
+nothing at all is what v1 does, at the cost of one paragraph in the paper
+instead of a section in the standard.
