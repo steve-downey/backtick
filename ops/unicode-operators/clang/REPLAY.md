@@ -208,13 +208,19 @@ followed literally; two are new facts.
 7. **`upstream/main` has moved 582 commits since the base** — it is now
    `e7dd336e0f78` (2026-08-02) where `bb33de72920a` (2026-07-29) is what
    `backtick-trunk` forked from. Every "on `main` it reads…" anchor in this
-   ledger was verified against **`bb33de72920a`**. U20 must choose
-   deliberately: branch from `bb33de72920a` (anchors guaranteed, replay is
-   a clean experiment) or from current `upstream/main` (realistic, but any
-   anchor may have drifted). **Recommendation: branch from
-   `bb33de72920a`.** The replay is evidence that the patch is
-   backtick-independent, not that it is rebase-current; conflating the two
-   costs a day and proves nothing extra.
+   ledger was verified against **`bb33de72920a`** — and only there.
+   **U20's step file is authoritative and asks for a fresh
+   `git fetch upstream` and a branch off current `upstream/main`**, on the
+   grounds that "the drift is part of the result" and that upstream churn
+   in the touched files is exactly the maintenance-cost question a
+   committee asks. Follow it. But know that the anchor text in §4 was not
+   verified against `e7dd336e0f78`, so **re-check the six §4 anchors
+   against whatever `main` is on the day** before concluding an anchor is
+   wrong; and keep `bb33de72920a` as the fallback base if drift makes the
+   replay unmeasurable rather than merely inconvenient. Any place where
+   drift *would have* broken the design — a `DeclarationName` refactor, a
+   move in `UnicodeCharSets.h`, a change to `getBinOpPrecedence`'s
+   signature — is a finding for the paper, not an annoyance.
 8. **`clang/include/clang/AST/ExprCXX.h` is written `clang/lib/AST/ExprCXX.h`
    in U16's row.** Cosmetic; noted so a path-following agent does not stall.
 
