@@ -39,3 +39,562 @@ Classifications:
 | U04 | `clang/include/clang/Lex/Lexer.h` (+26: two private declarations, `isUserOperatorCodePoint` and `LexUserOperator`, plus a paragraph on the UCN equivalence in `getUserOperatorCodePoint`'s doc); `clang/lib/Lex/Lexer.cpp` (+107/−9: the file-static `decodeUCNSpelling`, the `Spelling.front() == '\\'` branch in `getUserOperatorCodePoint(StringRef)`, the `isUserOperatorCodePoint`/`LexUserOperator` definitions, the early return in `tryConsumeIdentifierUCN`, the hook in `LexTokenInternal`'s `case '\\':`, and the rewrite of U03's `default:` hook through the two new helpers); `clang/include/clang/Options/Options.td` (+12/−4: `ShouldParseIf<cplusplus.KeyPath>` on **both** `defm unicode_operators` and `defm backtick`, plus the comment saying why they take it together); new `clang/test/Lexer/unicode-operators-ucn.cpp`; new `clang/test/Lexer/unicode-operators-c-mode.c`; new `clang/test/Lexer/backtick-c-mode.c`; `clang/unittests/Lex/LexerTest.cpp` (+118: five `UnicodeOperator*UCN*` cases); and the five deferred cross-spelling assertions in `clang/test/{Parser/unicode-operator-decl.cpp, Parser/unicode-operator-precedence.cpp, SemaCXX/unicode-operator-call.cpp, CodeGenCXX/unicode-operator-mangle.cpp, AST/unicode-operator-print.cpp}`. **3 production files, +145/−10.** | `upstream replay` — **except two hunks, which must be split off.** (a) The `ShouldParseIf<cplusplus.KeyPath>` on **`defm backtick`** is a **backtick-track edit** and has no clean-`main` counterpart: on `main` there is no `defm backtick` to guard. (b) `clang/test/Lexer/backtick-c-mode.c` is likewise **backtick-only** and must not be replayed. Everything else — the whole `Lexer.cpp`/`Lexer.h` diff, the `defm unicode_operators` guard, the two Unicode test files and the five test amendments — is pure Unicode. | **Two things to drop and one ordering constraint.** (a) **Drop the `defm backtick` hunk and `Lexer/backtick-c-mode.c` entirely.** They exist only because this branch carries the backtick diff; the U04 commit deliberately changed both flags in one edit because a divergence where only one of the paired flags is C++-only would be a worse surprise than the current symmetry (DEV-U07), and that argument is a *this-branch* argument. On clean `main` the Unicode flag simply gains the guard on its own, anchored on `defm reflection`'s existing `ShouldParseIf<cplusplus.KeyPath>` two lines above. **If the backtick track lands separately it owes itself the same one-line change**, and this row is where that obligation is recorded. (b) The `-fbacktick` RUN lines in the five amended test files were already classified by the steps that own those files (U07, U09, U10, U15, U16); U04 added no new `-fbacktick` RUN line to any of them, so nothing new to drop there. **No hunk in `Lexer.cpp` or `Lexer.h` reads, modifies or takes its diff context from a backtick symbol.** The `case '\\':` hook is anchored on upstream's `return LexUnicodeIdentifierStart(Result, CodePoint, CurPtr);`, ~10 lines *below* backtick's `case '`':` arm — that adjacency is the only place the two features are near each other in this diff, and re-anchoring on the `LexUnicodeIdentifierStart` call removes it. `decodeUCNSpelling` and the two new `Lexer` members sit beside upstream text (`getSpelling`, `tryConsumeIdentifierUTF8Char`) and apply cleanly. **Ordering constraint for U20:** everything here amends U03's hunks in the same functions, so U03 must be replayed first; the five test amendments need U07–U16 replayed first. |
 | U05 | `clang/include/clang/Basic/DiagnosticLexKinds.td` (+12: `err_unicode_operator_confusable`, `err_unicode_operator_emoji_presentation`); `clang/include/clang/Basic/DiagnosticParseKinds.td` (+10: `note_unicode_operator_identifier_profile`); `clang/include/clang/Lex/Lexer.h` (+48: public `static bool isUserOperatorIdentifierProfileExclusion(uint32_t)`, private `bool isDiagnosableOperatorExclusion(uint32_t) const` and `bool LexExcludedOperator(Token &, uint32_t, const char *)`); `clang/lib/Lex/Lexer.cpp` (+101: the three definitions, the two `LexTokenInternal` call sites — the non-ASCII `default:` and `case '\\':` — and the two identifier-continuation early-outs in `tryConsumeIdentifierUTF8Char` / `tryConsumeIdentifierUCN`); `clang/lib/Parse/ParseExprCXX.cpp` (+30/−2: the `NoteIdentifierProfileExclusion` lambda and its two call sites at the failure exits of the conversion-function-id parse in `ParseUnqualifiedIdOperator`); new `clang/test/Lexer/unicode-operators-excluded.cpp`; `clang/test/Lexer/unicode-operators-ucn.cpp` (+13/−11: the EXCL block, tightened); `clang/unittests/Lex/LexerTest.cpp` (+31: `UnicodeOperatorExcludedCodePointEndsAnIdentifier`). **5 production files, +201/−2.** | `upstream replay` — **all of it, with no exceptions.** No hunk names, reads or takes diff context from a backtick symbol; there is no `-fbacktick` RUN line in any U05 test file. | **Nothing to write, two things to know.** (a) **Ordering:** every `Lexer.cpp` hunk amends a function U03 or U04 already touched (all four classification sites), so U03 and U04 must be replayed first; the `ParseExprCXX.cpp` hunk sits inside `ParseUnqualifiedIdOperator`, which **U07 edits** (the `tok::user_operator` arm), so U07 must precede it — but the two hunks are ~90 lines apart and independent. (b) **Anchoring:** the `ParseExprCXX.cpp` hunk is anchored on upstream's `if (ParseCXXTypeSpecifierSeq(DS, DeclaratorContext::ConversionId))` and `if (Ty.isInvalid())`, both pure upstream text. The `DiagnosticParseKinds.td` addition is anchored on `warn_cxx98_compat_literal_operator`; the `DiagnosticLexKinds.td` addition on `ext_mathematical_notation`. Both anchors are upstream. **This is the first step whose production diff touches the Parse library**, so U19 should note that the upstream stack's "diagnostics" commit is not purely a Lex commit. |
 | U18 | `clang/lib/Format/Format.cpp` (+5: `LangOpts.UnicodeOperators = 1;` plus a comment, inside the existing `Style.Language == LK_Cpp \|\| LK_ObjC` block in `getFormattingLangOpts()`); `clang/lib/Format/FormatToken.h` (+7/−1: `FormatToken::getPrecedence()` now passes `/*BacktickIsOperator=*/true, /*UnicodeOperatorsEnabled=*/true`); `clang/lib/Format/TokenAnnotator.cpp` (+31/−9, three hunks: the new file-static `endsOperand(const FormatToken *)` in the anonymous namespace after `startsWithInitStatement`; the rewrite of the backtick open-classification in `determineTokenType` to call it; and the new `if (IsCpp && Current.is(tok::user_operator))` arm immediately after the backtick block); `clang/unittests/Format/FormatTest.cpp` (+69: `TEST_F(FormatTest, UnicodeOperatorFormatting)`); `clang/unittests/Format/TokenAnnotatorTest.cpp` (+85: `TEST_F(TokenAnnotatorTest, UnicodeOperatorTokenTypes)`). **3 production files, +32/−9.** | **Mixed — three classes in five files, and this is the most finely split row in the ledger.** (a) `Format.cpp`, `FormatToken.h`, and the `tok::user_operator` arm of `TokenAnnotator.cpp` are `upstream replay`, each with one re-anchoring note below. (b) The **`endsOperand` helper is `shared if landed`**: its body names `TT_BacktickEscapeClose`, a backtick-track `TokenType`, and it exists in this shape because two features share the rule. (c) The **rewrite of the backtick open-classification** (`if (endsOperand(Prev) \|\| (Prev && Prev->is(TT_BacktickInfixClose)))` replacing S10's inline `PostOperand`) is a **`backtick dependency`** — pure refactor of backtick-track code, behaviour-preserving, with **no clean-`main` counterpart at all**. In the test files: every case naming a backtick is `backtick dependency` (4 `verifyFormat` lines in `FormatTest.cpp`, 3 `annotate` blocks in `TokenAnnotatorTest.cpp`); the rest is `upstream replay`. | **One helper to inline, one hunk to drop, three anchors to move.** (a) **Drop the backtick open-classification rewrite entirely** — on clean `main` there is no backtick block in `determineTokenType` to rewrite. (b) **`endsOperand` still goes up, minus one enumerator**: introduce it as a file-static in `TokenAnnotator.cpp`'s anonymous namespace, immediately after `startsWithInitStatement`, with the `TT_BacktickEscapeClose` term **removed** — the remaining list (`Tok.isLiteral()`, `tok::identifier`, `r_paren`, `r_square`, `r_brace`, `kw_true`, `kw_false`, `kw_nullptr`, `kw_this`) is pure upstream and is the whole rule the Unicode feature needs. Its doc comment must lose the "shared by the backtick infix operator" sentence; the Unicode operator is then its sole client, exactly as `prec::UserInfix` is (U11's row). (c) **`FormatToken.h`: drop the `BacktickIsOperator` argument.** On `main` U11's replayed `getBinOpPrecedence` has the signature `(Kind, GreaterThanIsOperator, CPlusPlus11, UnicodeOperatorsEnabled = false)` — no backtick parameter — so the call becomes `getBinOpPrecedence(Tok.getKind(), /*GreaterThanIsOperator=*/true, /*CPlusPlus11=*/true, /*UnicodeOperatorsEnabled=*/true)`. **This hunk is not optional and is easy to miss**: without it a chain of user operators gets `prec::Unknown` in `ExpressionParser::getCurrentPrecedence`, the fake-parenthesis tree is unstructured, and wrapping a long chain is wrong while every spacing test still passes. (d) **`Format.cpp`: re-anchor.** The hunk currently sits *inside* the `if (Style.Language == LK_Cpp \|\| LK_ObjC)` block that S10 created for `LangOpts.Backtick`; on `main` that block does not exist, so **this patch introduces it**, immediately before `return LangOpts;` in `getFormattingLangOpts()`. Keep the language test — **do not** simplify it to `LangOpts.CPlusPlus`, which JS/Java/C# also set (S10's deviation 1; the JS hazard is backtick-specific but the guard is the right shape regardless). (e) **`TokenAnnotator.cpp`: re-anchor the `user_operator` arm.** It is currently placed after the backtick block in `determineTokenType`; on `main` it goes at the top of the function, immediately after the `if (Current.isNot(TT_Unknown)) return;` early-out and before the `(Style.isJavaScript() \|\| Style.isCSharp()) && Current.is(tok::exclaim)` arm. Its body references nothing backtick-related. (f) **Test split for U19 item 5.** `FormatTest.UnicodeOperatorFormatting`: hold back the four-line "Mixed with the backtick infix operator" block; everything else replays. `TokenAnnotatorTest.UnicodeOperatorTokenTypes`: hold back the three `annotate` calls containing a backtick (` a \`f\` b ⊞ c; `, ` \`new\` ⊞ b; `, ` a \`f\` ⊖b; `) and the `EXPECT_TOKEN(Tokens[3], tok::backtick, TT_BacktickInfixClose)` line with them; everything else replays, including the excluded-code-point block and the two `ColumnWidth` assertions. **No new lit test was added by this step** — clang-format has no lit coverage for this feature in either tree, which is upstream's own convention for `lib/Format` (`unittests/Format` is where it lives). |
+
+---
+
+# U19 — the audit and the verdict
+
+**Date:** 2026-08-04. **Branch audited:** `unicode-operators-experiment`
+@ `06735e8df66d` (U18 tip, working tree clean). **Against:** `backtick-trunk`
+@ `bd6f4d5fa102`. **Clean-`main` base for every "on `main` it reads…"
+statement below: `bb33de72920a`**, the commit `backtick-trunk` forked from.
+
+No compiler change. **Gate "before" number for U20**, carried from U18 and
+unchanged because nothing since has touched a source file:
+
+```
+GTEST_FILTER='-DirectoryWatcherTest.*' llvm-lit -s tools/clang/test  -> EXIT=0
+  Total Discovered Tests: 54171     Passed: 48285     Failed: 0
+  Expectedly Failed: 27   Unsupported: 5853   Skipped: 6
+Unfiltered check-clang: 54179 / 48285 / 8 failed, all 8 DirectoryWatcherTest.*
+(machine inotify budget, not ours).
+```
+
+U20's replayed branch has **no** backtick tests, so its own numbers will be
+smaller; the number that must match is **0 failed**, and the arithmetic to
+check is `main`'s own baseline **+ the discovered count of the replayed
+tests** (see "What the upstream stack costs in tests", below).
+
+## 1. Reconciliation: the diff, measured
+
+The rows above were written step by step. Here is the diff they describe,
+counted once:
+
+| | |
+|---|---|
+| Files changed | **110** (`clang` 108, `clang-tools-extra` 1, `lldb` 1) |
+| Lines | **+7341 / −29** |
+| Hunks (`git diff -U0`, i.e. contiguous change blocks) | **204** |
+| — production | **171** |
+| — test / unittest / generated-doc | **33** |
+
+Both gap directions were checked and **both are clean**:
+
+- **Every file in the diff has a ledger row.** A basename search over
+  `REPLAY.md` reported six misses — `ByteCode/Compiler.{h,cpp}` and
+  `CGExpr{Agg,Complex,Constant,Scalar}.cpp` — all six are *present* in U16's
+  row under the abbreviations `Compiler.{h,cpp}` and "five CodeGen files
+  (+28 across `CGExpr.cpp` ×4, `CGExprScalar/Complex/Agg/Constant.cpp`)".
+  No real gap.
+- **Every file named in a ledger row is in the diff**, except three that are
+  correctly *not* meant to be: `clang/test/lit.cfg.py` (cited by U10 as
+  unchanged upstream convention), `docs/pattern-syntax-audit.py` (the
+  generator, which lives in *this* repo, not the LLVM tree), and the
+  `CGExprScalar/Complex/Agg/Constant.cpp` abbreviation above.
+- **U21 has not run** and has changed no file. Nothing to classify.
+
+**Rows are in step-execution order, not numeric order** (…U12, U14, U15,
+U04, U05, U18), because Phase A finished last. This audit reads them
+numerically; no row is missing.
+
+### The only mechanical way to find backtick contamination
+
+Grepping the *changed lines* (not the context) of the whole diff for
+`backtick`/`Backtick`/`BACKTICK` is exhaustive and cheap:
+
+```bash
+git -C ~/src/llvm/unicode diff -U0 backtick-trunk..unicode-operators-experiment |
+  awk '/^\+\+\+ b\//{f=substr($0,7)} /^@@/{h=$0}
+       /^[+-]/ && !/^(\+\+\+|---)/ { if (tolower($0) ~ /backtick/) print f" | "h }'
+```
+
+It hits **exactly six production files** — `OperatorPrecedence.h`,
+`OperatorPrecedence.cpp`, `ParseExpr.cpp`, `Format/Format.cpp`,
+`Format/FormatToken.h`, `Format/TokenAnnotator.cpp` — plus
+`SemaOverload.cpp` (one doc-comment cross-reference) and the test files.
+**`Options.td` does not appear**, because its backtick edit adds a line that
+does not contain the word; check it by hand. Run this on U20's replayed
+branch as the "no backtick anywhere" gate.
+
+## 2. Hunk classification — the ratio (the paper result)
+
+Counted over the **cumulative** diff at `-U0` granularity. Where a single
+hunk carries lines of two classes it is counted once, as **mixed**, and the
+lines to strip are named in §4.
+
+| Class | Production | Test/doc | Total | Share |
+|-------|-----------:|---------:|------:|------:|
+| `upstream replay`, **verbatim** | 156 | 15 | **171** | **83.8 %** |
+| `upstream replay`, **mixed hunk** — lift after deleting named backtick lines | 10 | 17 | **27** | **13.2 %** |
+| `shared if landed` — needs a standalone equivalent on `main` | 3 | 0 | **3** | **1.5 %** |
+| `backtick dependency` — **deleted entirely**, no counterpart | 2 | 1 | **3** | **1.5 %** |
+| | 171 | 33 | **204** | |
+
+**Read it three ways.**
+
+1. **201 of 204 hunks (98.5 %) survive onto clean `main`.** Only three
+   disappear: two refactors of backtick-track code in
+   `TokenAnnotator.cpp`, and one whole backtick-only lit test
+   (`clang/test/Lexer/backtick-c-mode.c`).
+2. **Only 6 hunks (2.9 %) require any thought** — the 3 `shared if landed`
+   plus the 3 dropped. The 27 "mixed" hunks are mechanical deletions of
+   named lines, not judgement calls.
+3. **Restricted to production code: 169 of 171 hunks (98.8 %) land**, and
+   the entire backtick coupling of a 7,341-line feature is **three
+   constructs**: a precedence enumerator, one fold-operator exclusion, and
+   one 12-line clang-format helper. Each has a standalone equivalent
+   writable in under ten lines (§4).
+
+This is the quantitative form of **U§12's separable-fates claim, and it
+holds.** The two features share exactly one *design* decision — that there
+is one user-infix precedence level — and that decision costs one enumerator
+in each of the two possible worlds. Nothing else about the Unicode feature
+knows the backtick feature exists.
+
+**Correcting a number in circulation:** U05's forward note said "exactly
+three hunks in the whole diff" are non-`upstream replay`. Re-derived here
+that is **six** (3 `shared if landed` + 3 dropped), because U18 added two
+production hunks and one whole test file after U05 was written, and because
+U11's `isFoldOperator` line is `shared if landed` rather than verbatim.
+U18's forward note predicted this and was right to say "re-derive; do not
+quote U05's".
+
+## 3. What the audit found that the ledger had wrong or missing
+
+Eight items. Six are corrections to instructions U20 would otherwise have
+followed literally; two are new facts.
+
+1. **`AST/unicode-operator-print.cpp` is a `diff` *pair*, and U16's row
+   calls it one line.** The row says "the new test's fifth RUN line uses
+   `-fbacktick`; drop that one line". In fact the `-fbacktick` RUN is line
+   **22** (the **7th** RUN line, not the fifth) and line **23** is
+   `// RUN: diff -u %t.print.cpp %t.backtick.cpp`, which consumes the file
+   it writes. Deleting only line 22 leaves a `diff` against a file that is
+   never created — exactly the hazard U14's and U15's rows warn about for
+   their own files. **Delete 22 and 23 together.**
+2. **`PCH/unicode-operators.cpp` is the same shape, and U17's row obscures
+   it.** The row says "`PCH/unicode-operators.cpp` ×3". There are only
+   **two** `-fbacktick` RUN lines (34, 35); the third line (36) is
+   `// RUN: diff -u %t.pch.txt %t.bt.txt`, a consumer. **Delete 34–36
+   together.** `Modules/unicode-operators.cppm` ×2 (lines 29, 30) *is*
+   correct and has no consumer line — its second RUN is the consumer.
+3. **`PointerToMember = 15` on clean `main` has no trailing comma.** U11's
+   row gives the standalone equivalent as "one line after it:
+   `UserInfix = 16`", which does not compile as written. The standalone
+   hunk must also add the comma. Exact text in §4.1.
+4. **U11's `getBinOpPrecedence` doc comment is itself mixed.** The row
+   treats the new doc comment as part of the new-parameter hunk. Three of
+   its six lines describe `BacktickIsOperator`, a parameter that does not
+   exist on `main`; only the `UnicodeOperatorsEnabled` sentence replays.
+5. **`Options.td`'s backtick edit and its rationale comment are one region,
+   not one hunk to drop.** At `-U0` they are two hunks: a six-line comment
+   block (about *both* flags) and a seven-line hunk in which three lines
+   amend `defm backtick` and five add `defm unicode_operators`. U04's row
+   says "drop the `defm backtick` hunk" as though it were separable; it is
+   separable only by hand-editing. §4.5 gives the exact `main` text.
+6. **`clang-format` is *not* independent of the name-and-parse work in the
+   way U18's forward note says — but it is independent in a better way.**
+   The note says clang-format "can go up as its own PR right after the
+   lexer commits (U03/U04) and does not need Phases B–D at all". True of
+   `Format.cpp` and `TokenAnnotator.cpp`; **false of `FormatToken.h`**,
+   which needs `prec::UserInfix` and the fourth `getBinOpPrecedence`
+   parameter — i.e. U11. The fix strengthens the claim rather than
+   weakening it: **split U11 into a precedence-only commit** (`lib/Basic` +
+   the four `lib/Parse` lines that consume it) and a parse-dispatch commit.
+   clang-format then depends on lexer + precedence and on nothing else, and
+   the precedence commit is separately reviewable as "EWG banks one level"
+   in isolation. This is commit **6** in §5 and it is the audit's one
+   structural recommendation.
+7. **`upstream/main` has moved 582 commits since the base** — it is now
+   `e7dd336e0f78` (2026-08-02) where `bb33de72920a` (2026-07-29) is what
+   `backtick-trunk` forked from. Every "on `main` it reads…" anchor in this
+   ledger was verified against **`bb33de72920a`**. U20 must choose
+   deliberately: branch from `bb33de72920a` (anchors guaranteed, replay is
+   a clean experiment) or from current `upstream/main` (realistic, but any
+   anchor may have drifted). **Recommendation: branch from
+   `bb33de72920a`.** The replay is evidence that the patch is
+   backtick-independent, not that it is rebase-current; conflating the two
+   costs a day and proves nothing extra.
+8. **`clang/include/clang/AST/ExprCXX.h` is written `clang/lib/AST/ExprCXX.h`
+   in U16's row.** Cosmetic; noted so a path-following agent does not stall.
+
+Two further facts the ledger states correctly and that this audit
+**verified against the source** rather than trusting:
+
+- **`isFoldOperator` is an addition on `main`, not a rename.** `main`
+  reads `Level != prec::Spaceship;` at `ParseExpr.cpp:308`. Confirmed. The
+  resulting line is byte-identical in both worlds, which is why it is
+  `shared if landed` and not `backtick dependency`.
+- **The lldb hunk is compile-unverified.** `build-unicode`'s
+  `LLVM_ENABLE_PROJECTS` is `clang;clang-tools-extra`; the one-line switch
+  arm in `lldb/source/Plugins/ExpressionParser/Clang/ClangASTSource.cpp`
+  has never been compiled on this branch. So is `clang/lib/CIR/`'s
+  `CXXRewrittenBinaryOperator` site set, which was never *touched* (U17's
+  note (b)) — that one is a genuine hole in the node's obligations, not
+  merely an unbuilt line.
+
+## 4. Standalone equivalents — the six items, as instructions
+
+These are the only places where U20 must *write* something rather than lift
+it. Each is given as the text to put on clean `main`.
+
+### 4.1 `prec::UserInfix` — `shared if landed`
+
+`clang/include/clang/Basic/OperatorPrecedence.h`. On `main` the enum ends
+`PointerToMember = 15    // .*, ->*` with **no trailing comma**. Replace
+that line with these two:
+
+```c++
+    PointerToMember = 15,   // .*, ->*
+    UserInfix       = 16    // x <user-operator> y
+```
+
+Note the comment: on this branch it reads ``// x `f` y, x <user-operator> y``
+because both features occupy the level. On `main` the Unicode operator is
+the **sole client**, so the backtick half of the comment goes.
+
+### 4.2 `isFoldOperator`'s exclusion — `shared if landed`
+
+`clang/lib/Parse/ParseExpr.cpp:306-309`. On `main`:
+
+```c++
+bool Parser::isFoldOperator(prec::Level Level) const {
+  return Level > prec::Unknown && Level != prec::Conditional &&
+         Level != prec::Spaceship && Level != prec::UserInfix;
+}
+```
+
+The changed line is **identical** to this branch's; on `main` it is an
+addition of `&& Level != prec::UserInfix` to a line that ends at
+`prec::Spaceship`. **Do not skip it.** Without it a user operator is
+admitted as a fold operator, which is behaviour U11 measured as *rejected*
+(`(... ⊞ N)` → `expected expression`). It is invisible to every other test
+and it is the single likeliest replay mistake in the stack.
+
+### 4.3 `endsOperand` — `shared if landed`
+
+`clang/lib/Format/TokenAnnotator.cpp`, file-static in the anonymous
+namespace, immediately after `startsWithInitStatement` (line 45 on `main`).
+The `TT_BacktickEscapeClose` term is dropped and the doc comment loses its
+sharing sentence:
+
+```c++
+/// Returns \c true if \p Prev (which may be null) ends an operand, i.e. if a
+/// user-introduced infix operator appearing right after it would be infix
+/// rather than prefix.
+///
+/// This is the formatter's copy of the rule the parser uses: fixity is decided
+/// by position alone, with no lookahead and no declaration lookup.
+static bool endsOperand(const FormatToken *Prev) {
+  return Prev &&
+         (Prev->Tok.isLiteral() ||
+          Prev->isOneOf(tok::identifier, tok::r_paren, tok::r_square,
+                        tok::r_brace, tok::kw_true, tok::kw_false,
+                        tok::kw_nullptr, tok::kw_this));
+}
+```
+
+### 4.4 `getBinOpPrecedence` — mixed signature and doc comment
+
+On `main` the declaration is three parameters with no defaults. Replace it
+with:
+
+```c++
+/// Return the precedence of the specified binary operator token.
+///
+/// \p UnicodeOperatorsEnabled says whether tok::user_operator is an infix
+/// operator in this translation unit; it is LangOptions::UnicodeOperators.
+prec::Level getBinOpPrecedence(tok::TokenKind Kind, bool GreaterThanIsOperator,
+                               bool CPlusPlus11,
+                               bool UnicodeOperatorsEnabled = false);
+```
+
+and the definition in `clang/lib/Basic/OperatorPrecedence.cpp` accordingly.
+`UnicodeOperatorsEnabled` is the **4th** parameter, not the 5th; the
+`BacktickIsOperator` parameter does not exist. The `case tok::user_operator:`
+arm goes at the top of the switch — on this branch it follows
+`case tok::backtick:`, which is not there — and its body is replayed
+verbatim, minus nothing.
+
+**Three call sites in `ParseExpr.cpp`** (`ParseRHSOfBinaryExpression`, at
+`main` lines ~318, ~527, ~558) each become four arguments, not five: delete
+the `BacktickIsOperator,` line from each replayed hunk, keeping
+`getLangOpts().UnicodeOperators`.
+
+**One call site in `clang/lib/Format/FormatToken.h`** (`getPrecedence`)
+likewise: drop `/*BacktickIsOperator=*/true,`, leaving
+
+```c++
+    return getBinOpPrecedence(Tok.getKind(), /*GreaterThanIsOperator=*/true,
+                              /*CPlusPlus11=*/true,
+                              /*UnicodeOperatorsEnabled=*/true);
+```
+
+This hunk is one line and looks cosmetic. It is not: without it a chain of
+user operators gets `prec::Unknown`, the fake-parenthesis tree is
+unstructured, long chains wrap wrongly, and **every clang-format test still
+passes**.
+
+### 4.5 `Options.td` — the C++-only guard, single-flag form
+
+On `main` there is no `defm backtick`. The two-flag comment becomes a
+one-flag comment and the `defm backtick` amendment disappears entirely.
+Insert after `defm reflection : …, ShouldParseIf<cplusplus.KeyPath>;`:
+
+```
+// -funicode-operators is a C++-only grammar extension: C has no `operator`
+// keyword, so the token has no production it could appear in.  Without
+// ShouldParseIf the flag still changed C *tokenization* -- it suppressed the
+// accurate stray-character diagnostic and left only the recovery one.
+defm unicode_operators : BoolFOption<"unicode-operators",
+  LangOpts<"UnicodeOperators">, DefaultFalse,
+  PosFlag<SetTrue, [], [], "Enable Unicode user-defined operators">,
+  NegFlag<SetFalse>, BothFlags<[], [ClangOption, CC1Option]>>,
+  ShouldParseIf<cplusplus.KeyPath>;
+```
+
+**The obligation this records:** `-fbacktick` gained the same guard in the
+U04 commit, closing DEV-U07 for *both* flags at once because a divergence
+where only one of a matched pair is C++-only would be a worse surprise than
+the symmetry. That argument is a this-branch argument. **If the backtick
+track lands separately it owes itself the identical one-line change**, and
+this is where that debt is written down.
+
+### 4.6 `Format.cpp` — the block this patch must introduce
+
+On `main`, `getFormattingLangOpts()` ends `LangOpts.C99 = 1; … return
+LangOpts;` with no language-keyed block. The replayed hunk **creates** it,
+immediately before `return LangOpts;`:
+
+```c++
+  if (Style.Language == FormatStyle::LK_Cpp ||
+      Style.Language == FormatStyle::LK_ObjC) {
+    // Lex Unicode user-defined operator code points as tok::user_operator so
+    // the annotator can classify them.  Keyed on the language rather than on
+    // LangOpts.CPlusPlus, because JS/Java/C# fall through to the same
+    // `default:` arm and also set CPlusPlus = 1.
+    LangOpts.UnicodeOperators = 1;
+  }
+```
+
+Keep the language test. Do **not** simplify it to `LangOpts.CPlusPlus`.
+
+### The three items deleted outright (`backtick dependency`)
+
+1. `clang/lib/Format/TokenAnnotator.cpp`, hunk `@@ -2419 +2437,4 @@` — the
+   rewritten comment inside the backtick open-classification block.
+2. `clang/lib/Format/TokenAnnotator.cpp`, hunk `@@ -2421,8 +2442 @@` — the
+   `PostOperand` → `endsOperand(Prev) || (Prev && Prev->is(TT_BacktickInfixClose))`
+   rewrite. Behaviour-preserving refactor of S10's code; there is no such
+   code on `main`.
+3. `clang/test/Lexer/backtick-c-mode.c` — a backtick-only lit test written
+   by U04 because the flag pair took the C++-only guard together. It moves
+   to the backtick track's own test set, not to `main`.
+
+And one line to **reword, not delete**, for upstream hygiene:
+`clang/lib/Sema/SemaOverload.cpp:15526` cites "the backtick design's
+Sec. 17.4" in `CreateOverloadedUserOp`'s doc comment. Upstream has no such
+document. Replace with the normative statement itself — "unqualified lookup
+of `operator<op>` plus ADL on the operands, which is why the callee is never
+resolved before overload resolution sees the arguments".
+
+## 5. The upstream stack, ordered
+
+Fifteen commits. **No title and no body mentions backtick**, and after the
+edits in §4 and §6 no *content* does either.
+
+| # | Commit | Contents | Depends on |
+|---|--------|----------|-----------|
+| 1 | `[clang] Add -funicode-operators` | `LangOptions.def`, `Options.td` (§4.5), `Driver/ToolChains/Clang.cpp`, `test/Driver/funicode-operators.c` (ON/OFF/DEFAULT only) | — |
+| 2 | `[clang][Lex] Frozen UAX#31 Pattern_Syntax operator tables` | `lib/Lex/UnicodeOperatorCharSets.h` (generated), `unittests/Lex/UnicodeOperatorCharSetsTest.cpp`, `unittests/Lex/CMakeLists.txt` | — |
+| 3 | `[clang][Lex] Lex tok::user_operator from UTF-8 glyphs` | `TokenKinds.def`, `Lex/Lexer.h`, `lib/Lex/Lexer.cpp`, `LexerTest.cpp`, `test/Lexer/unicode-operators.cpp` | 1, 2 |
+| 4 | `[clang][Lex] UCN and \N{...} spellings form operator tokens` | `Lexer.h`/`Lexer.cpp` (amends 3), `test/Lexer/unicode-operators-ucn.cpp`, `test/Lexer/unicode-operators-c-mode.c`, `LexerTest.cpp` | 3 |
+| 5 | `[clang][Lex] Diagnose excluded code points with reasons` | `DiagnosticLexKinds.td`, `Lexer.h`/`Lexer.cpp`, `test/Lexer/unicode-operators-excluded.cpp`, `LexerTest.cpp`. **Hold back** the `ParseExprCXX.cpp` + `DiagnosticParseKinds.td` half → commit 8 | 3, 4 |
+| 6 | `[clang][Basic] prec::UserInfix: one precedence level for user-introduced infix operators` | `OperatorPrecedence.h` (§4.1, §4.4), `OperatorPrecedence.cpp`, `ParseExpr.cpp`'s `isFoldOperator` (§4.2) and its three call sites | 1, 3 |
+| 7 | `[clang][AST] DeclarationName kind for Unicode user-defined operators` | the 21-file U06 set: `IdentifierTable.h`, `DeclarationName.{h,cpp}`, `PropertiesBase.td`, 15 switch arms, `DeclarationNameTest.cpp` | 3 (test only) |
+| 8 | `[clang][Parse] Parse operator⊞ as an operator-function-id` | U07's 8 files + `test/Parser/unicode-operator-decl.cpp`, **plus** U05's held-back `ParseExprCXX.cpp` identifier-profile note and `DiagnosticParseKinds.td` | 5, 7 |
+| 9 | `[clang][Sema] Declaration rules and arity for user-defined operators` | U08's 6 files, `test/SemaCXX/unicode-operator-decl.cpp`, `unittests/Sema/UserOperatorDeclTest.cpp` (+CMake) | 7, 8 |
+| 10 | `[clang][AST] Itanium mangling for user-defined operators (vendor-extended form)` | `ItaniumMangle.cpp`, `MicrosoftMangle.cpp`, `test/CodeGenCXX/unicode-operator-mangle.cpp` | 7, 8. **ABI-open — see §7** |
+| 11 | `[clang] Explicit-call sweep for user-defined operators` | `test/SemaCXX/unicode-operator-call.cpp`, `test/CodeGenCXX/unicode-operator-call.cpp`. Test-only; fold into 9/10 if a reviewer prefers | 7–10 |
+| 12 | `[clang][Parse][Sema] Infix and prefix uses; candidate assembly with ADL` | U11's parser dispatch arm + `ActOnUserOperator` (as amended by U16), U12's `ParseCastExpression` case, U13's `CreateOverloadedUserOp` (**as amended by U16**), `Sema.h`, `test/Parser/unicode-operator-{infix,prefix}.cpp`, `test/SemaCXX/unicode-operator-adl.cpp` | 6, 7, 9 |
+| 13 | `[clang][AST] UserOperatorExpr: operator syntax survives instantiation` | U16's 31 production files + `test/AST/unicode-operator-print.cpp` | 12 |
+| 14 | `[clang][Serialization][ASTMatchers] PCH, modules, import, matchers` | U17's 9 production files, generated `LibASTMatchersReference.html`, `test/{PCH,Modules}/…`, `ASTImporterTest.cpp`, `ASTMatchersNodeTest.cpp` | 7, 13 |
+| 15 | `[clang][Format] Format Unicode user-defined operators` | `Format.cpp` (§4.6), `FormatToken.h` (§4.4), `TokenAnnotator.cpp`'s `endsOperand` (§4.3) + `user_operator` arm, `FormatTest.cpp`, `TokenAnnotatorTest.cpp` | 4, 6 |
+
+Plus the two behaviour sweeps, which are test-only and can land last or be
+folded into 12/13: `test/SemaCXX/unicode-operator-semantics.cpp` +
+`test/CodeGenCXX/unicode-operator-semantics.cpp` (U14), and
+`test/Parser/unicode-operator-precedence.cpp` (U15).
+
+**Two ordering traps, restated because they are silent:**
+
+- **Replay U13 as amended by U16, never as U13 left it.**
+  `CreateOverloadedUserOp` gained `const UnresolvedSetImpl &Fns` and
+  `bool PerformADL`, and the phase-1 lookup moved into `ActOnUserOperator`.
+  The intermediate form reintroduces DEV-U12. The *cumulative* diff already
+  carries the amended version, so this trap only fires if U20
+  cherry-picks commit-by-commit; taking the cumulative diff per area, as
+  the table above does, avoids it.
+- **Commit 5 must be split.** U05 is the first step whose production diff
+  reaches `lib/Parse`; that half belongs to commit 8, after the
+  operator-function-id parse it annotates. The two `Lexer.cpp` halves and
+  the `ParseExprCXX.cpp` half are ~90 lines apart and independent.
+
+### Which of these could go up as independent PRs
+
+Verified against the dependency edges, not assumed:
+
+- **PR A = commits 1–5.** The flag, the tables, the lexer, the UCN
+  spellings, the exclusion diagnostics. Self-contained: it adds a driver
+  flag, a `LangOpt`, a token kind and a data table. Nothing else in clang
+  refers to `tok::user_operator` yet, and with the flag off the token is
+  never produced. **Reviewable entirely by `lib/Lex` reviewers.** This is
+  the largest genuinely independent piece and it is where SG16 has the most
+  to say.
+- **PR B = commit 6.** `prec::UserInfix` and the fourth
+  `getBinOpPrecedence` parameter. ~20 lines across `lib/Basic` and
+  `lib/Parse`, depends only on PR A for the token to exist, and is *exactly*
+  the EWG decision "one level for all user-introduced infix syntax" in
+  isolation. Splitting it out is this audit's structural recommendation
+  (§3 item 6).
+- **PR C = commit 15 (clang-format).** Depends on PR A + PR B and on
+  **nothing else** — not on `DeclarationName`, not on Sema, not on the AST
+  node. `lib/Format` has its own reviewers, and a formatting PR that needs
+  no Sema review is a real reviewability win.
+- **PR D = commits 7–9 (+ 11, 14).** The `DeclarationName` /
+  operator-function-id / declaration-rules work. Depends on PR A only
+  (commit 7 needs `Lexer::getUserOperatorCodePoint` in one unittest case;
+  drop that case and commit 7 depends on nothing at all). **Independent of
+  PR B and PR C in both directions** — this is the separation the step file
+  asked to verify, and it holds.
+- **PR E = commit 10 (mangling).** Technically lands after PR D, but should
+  be held on ABI grounds (§7) rather than on dependency grounds.
+- **PR F = commits 12–13 + the sweeps.** The expression feature itself.
+  Needs A, B and D. Not independent, and should not pretend to be: this is
+  the PR the language design argument attaches to.
+
+So the fan-out is **A → {B, D}; B → C; {B, D} → F**, with E parked. Four
+PRs (A, B, C, D) can be in review simultaneously, and the two that carry
+the most reviewer risk — the character tables and the `DeclarationName`
+enum — are in different PRs with different reviewers.
+
+## 6. Test-file splits — mechanical recipes
+
+Line numbers are on `unicode-operators-experiment` @ `06735e8df66d`.
+**25 `-fbacktick` RUN lines exist across the test set; 4 of them are halves
+of a `diff` pair.** In every file the surviving RUN set must still cover
+the flag-off `-DOFF`/`NOFLAG` case, which is *not* a backtick case.
+
+| File | Delete | Note |
+|------|--------|------|
+| `test/Driver/funicode-operators.c` | RUN 7; the `BOTH-DAG` lines 19–20; "and that the flag composes with `-fbacktick` (U7)" in the header | keeps ON/OFF/DEFAULT |
+| `test/Lexer/backtick-c-mode.c` | **the whole file** | backtick-track property; belongs to the backtick tree |
+| `test/Parser/unicode-operator-decl.cpp` | RUN 2 | |
+| `test/Parser/unicode-operator-infix.cpp` | RUN 10, 12; the `#ifdef BACKTICK` block (4 `static_assert`s, `ast_mixed`, its 5 `BT-` directives, the `constexpr int f`) | ~18 lines |
+| `test/Parser/unicode-operator-prefix.cpp` | RUN 17, 19; the `#ifdef BACKTICK` block (4 `static_assert`s + the ``⊖a `f` b`` `BT-` dump checks) | |
+| `test/Parser/unicode-operator-precedence.cpp` | RUN 31, 33, 35, 51 **and 52** (51+52 are a pair); **lines 332–408** (section 10 header + `#ifdef BACKTICK`…`#endif`, incl. its nested `#ifdef ERRORS` btfold case); **lines 466–479** (section 11's `#ifdef BACKTICK`); rewrite the header banner at 28–51 | See the two notes below |
+| `test/SemaCXX/unicode-operator-decl.cpp` | RUN 2 | |
+| `test/SemaCXX/unicode-operator-call.cpp` | RUN 2; section 8's prose | |
+| `test/SemaCXX/unicode-operator-adl.cpp` | RUN 2; section 6's prose | no assertion is `#ifdef`-guarded |
+| `test/SemaCXX/unicode-operator-semantics.cpp` | RUN 26, 28, 30; section 9's `#ifdef BACKTICK` block (10 `static_assert`s) | **RUN 29 (`-DOFF`, no `-fbacktick`) must survive** — section 9's `#else` keeps both `off-error` uses |
+| `test/CodeGenCXX/unicode-operator-call.cpp` | RUN 5 | |
+| `test/CodeGenCXX/unicode-operator-mangle.cpp` | RUN 2 | |
+| `test/CodeGenCXX/unicode-operator-semantics.cpp` | RUN 17 **and 18** (`diff %t.op.ll %t.bt.op.ll` consumes 17) | the `-DFORM_OP`/`-DFORM_CALL` pair at 13–15 is the real evidence and survives |
+| `test/AST/unicode-operator-print.cpp` | RUN 22 **and 23** — *the ledger said one line; it is a pair* | |
+| `test/PCH/unicode-operators.cpp` | RUN 34, 35 **and 36** — *ditto* | the `%t.direct.txt`/`%t.pch.txt` pair at 27–30 survives |
+| `test/Modules/unicode-operators.cppm` | RUN 29, 30; the composability comment above them | no consumer line |
+| `test/Modules/unicode-operators-odr.cpp` | **nothing** | no `-fbacktick` anywhere |
+| `test/Lexer/unicode-operators{,-ucn,-excluded}.cpp`, `-c-mode.c` | **nothing** | |
+| `unittests/Format/FormatTest.cpp` | lines **26694–26699** (blank + "Mixed with the backtick infix operator" comment + 4 `verifyFormat`) | rest of `UnicodeOperatorFormatting` replays, incl. the 16-column proof |
+| `unittests/Format/TokenAnnotatorTest.cpp` | lines **4689–4703** (blank + 4 comment lines + the three `annotate` groups, including `EXPECT_TOKEN(Tokens[3], tok::backtick, TT_BacktickInfixClose)` and the `Tokens[4]` line under it) | rest replays, incl. the excluded-code-point block and both `ColumnWidth` assertions |
+| every other test / unittest | **nothing** | |
+
+**Two things U20 must not lose in the precedence file.**
+
+1. The `-ast-print` diff at RUN 50–52 is the file's **item 9** evidence
+   (precedence is flag-independent). On clean `main` there is no second
+   flag to compare against, so the whole three-line construct goes and item
+   9 becomes **vacuous rather than untested**. Say so in the replayed
+   file's header; do not delete it silently.
+2. `-DPRINTING` exists **only** to route around DEV-U17, a pre-existing
+   backtick printer defect. It is meaningless on a backtick-free `main`,
+   and the `#ifndef PRINTING` guard lives inside section 10, which is being
+   deleted. **Remove `-DPRINTING` entirely on `main`.**
+   **Section 11a** (`Res`, non-trivial destructor, `decltype` chains) is
+   pure Unicode and replays as-is even though its comment discusses
+   backtick — reword the comment, keep the test; it is a worthwhile
+   regression test in its own right.
+
+**What the upstream stack costs in tests.** **21 lit test files → 20** on
+`main` (`backtick-c-mode.c` drops), and **119 RUN lines → 87**: 4 go with
+`backtick-c-mode.c`, 24 are the remaining `-fbacktick` producers, and 4 are
+the consumer `diff` lines that must go with their producers — 32 in all.
+Six unittest files add **52 gtest cases** (14 charset + 12 lexer + 9 name +
+1 sema + 14 import/matcher + 2 format), of which **none** is deleted — only
+7 assertions inside two `Format` cases are held back. So this branch's
++73 discovered tests over its own baseline become **+72 on `main`** (20 lit
++ 52 gtest), less whatever a squash of the sweeps changes. That single
+dropped test is the entire test-suite cost of decoupling the two features.
+
+## 7. The ABI-open item (U09) — *not* a replay question
+
+**This is the one item in this document that U20 cannot settle by executing
+it correctly.** Everything else is "lift this, drop that". This is a
+cross-vendor question that the prototype answered by fiat, and the answer
+is replayable but not thereby *right*.
+
+What U09 fixed, exactly, in `ItaniumMangle.cpp`:
+
+- the Itanium **vendor-extended operator** production
+  `<operator-name> ::= v <digit> <source-name>`, with `<digit>` the
+  operator's arity as declared — 1 prefix, 2 infix, and for a member
+  operator that count *includes* the implicit object parameter;
+- a source-name derivation rule stated as a de facto ABI decision:
+  `"op_u"` + the code point in **uppercase hex**, no `U+` prefix,
+  zero-padded to a minimum of four digits and widened above the BMP. So
+  U+229E → `op_u229E`, and binary U+229E mangles `v28op_u229E`. Injective,
+  because hex is injective on the scalar value and padding only ever
+  reaches four;
+- derivation from the **scalar value, never the spelling**, so glyph, `\u`
+  and `\N{...}` produce one symbol (U11) — free, because `DeclarationName`
+  carries the code point and no spelling reaches the mangler;
+- `MicrosoftMangle.cpp`: an **honest `Error()`**, not an invented scheme.
+  There is no Microsoft analogue of the vendor-extended production, and
+  fabricating one would hide the open question.
+
+**U8 remains `Proposed — open (ABI)`.** A real proposal wants a first-class
+`<operator-name>` production keyed by code point, agreed cross-vendor
+through the Itanium C++ ABI group, and an MSVC scheme that someone from
+Microsoft has looked at. Replaying commit 10 verbatim carries the prototype
+ABI onto `main` unchanged — correct for an experiment, wrong for anything
+that ships.
+
+**Recommendation for U20 and for the paper:** land commit 10 in the replay
+branch (the stack does not build without *a* mangling) but mark it in the
+commit message and in the paper as the one item held back from any real
+upstream submission, and raise the `<operator-name>` production as a
+question to the ABI group rather than as a patch. It is also the natural
+place to note that the arity hoist above the `mangleUnqualifiedName`
+fallthrough was a real bug fix found by building: before it, a *member*
+infix operator reached `mangleOperatorName` with `UnknownArity`.
+
+## 8. Held back from the upstream stack — the complete list
+
+Everything on this list stays on `unicode-operators-experiment` and has no
+clean-`main` counterpart. It is the whole of the backtick coupling.
+
+1. `TokenAnnotator.cpp` — the backtick open-classification comment rewrite.
+2. `TokenAnnotator.cpp` — the `PostOperand` → `endsOperand(…) || … TT_BacktickInfixClose` rewrite.
+3. `clang/test/Lexer/backtick-c-mode.c` — the whole file.
+4. `Options.td` — the `ShouldParseIf<cplusplus.KeyPath>` added to `defm backtick` (**a debt the backtick track now owes itself**, §4.5).
+5. `OperatorPrecedence.{h,cpp}` — the `BacktickIsOperator` parameter and the `case tok::backtick:` arm (they are backtick's, pre-existing on this branch).
+6. `ParseExpr.cpp` — the `BacktickIsOperator,` argument at three call sites.
+7. `FormatToken.h` — the `/*BacktickIsOperator=*/true,` argument.
+8. The 25 `-fbacktick` RUN lines, their 4 consumer `diff` lines, and the 6 `#ifdef BACKTICK` regions (§6).
+9. `unittests/Format` — 4 `verifyFormat` lines and 3 `annotate` groups (§6).
+10. Section 10 of `test/Parser/unicode-operator-precedence.cpp` in full, and `-DPRINTING` with it.
+
+Items 5–7 are not *deletions* the Unicode patch makes; they are backtick
+lines that the Unicode hunks happen to sit next to and that simply are not
+present on `main`. They are listed so that a mixed hunk is never lifted
+whole by accident.
