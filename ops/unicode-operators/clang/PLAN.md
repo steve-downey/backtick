@@ -76,6 +76,7 @@ Do **not** poll with `pgrep -f "ninja -C $B"`: the poll loop's own command
 line contains that string, so `pgrep` matches itself and the loop never
 exits. U03 hit this and reported "ninja still running" long after it had
 finished. Grep the log for the marker, never the process table.
+
 Base: branch `unicode-operators-experiment` @ `bd6f4d5fa102` (= `backtick-trunk`
 tip), 45 commits above `upstream/main` @ `bb33de72920a`. CMake line and the
 full baseline are in `handoffs/U00-baseline.handoff.md`.
