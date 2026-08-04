@@ -604,3 +604,226 @@ Items 5–7 are not *deletions* the Unicode patch makes; they are backtick
 lines that the Unicode hunks happen to sit next to and that simply are not
 present on `main`. They are listed so that a mixed hunk is never lifted
 whole by accident.
+
+---
+
+# U20 — the ledger, executed and closed
+
+**Date:** 2026-08-04. **Executed against:** `upstream/main` @ **`d28193fa1ff6`**
+(2026-08-04) — **825 commits** past the experiment's base `bb33de72920a`, and
+243 past the `e7dd336e0f78` U19 measured. Worktree
+`/home/sdowney/src/llvm/unicode-upstream`, branch `unicode-operators-upstream`,
+build dir `/home/sdowney/src/llvm/build-unicode-upstream` (fresh, U00's CMake
+line with `LLVM_PARALLEL_COMPILE_JOBS=16` / `LINK_JOBS=4`).
+
+**Every row above is resolved.** Nothing in the ledger was left unexecuted and
+nothing on the held-back list (§8) reached the branch.
+
+## The result the ledger was written to produce
+
+`git diff upstream/main..unicode-operators-upstream | grep -i backtick` returns
+**nothing**. Not a symbol, not a flag, not a comment. The three prose residues
+U19 predicted (`SemaOverload.cpp`'s doc-comment cross-reference, the
+`prec::UserInfix` comment, the `getBinOpPrecedence` doc comment) were the only
+ones, and each was handled by the text §4 supplied. **No fourth residue turned
+up**, and — the thing that actually mattered — **no behaviour turned out to
+require the backtick diff.** U§12's separable-fates claim survives execution,
+not just audit.
+
+| | Experiment branch | Upstream stack |
+|---|---|---|
+| Base | `bb33de72920a` + 45 backtick commits | `d28193fa1ff6` (clean) |
+| Files | 110 | **109** |
+| Lines | +7341 / −29 | **+7073 / −18** |
+| — production | 78 files | **77 files, +1940 / −18** |
+| — test / unittest / doc | 32 files | **32 files, +5133** |
+| Hunks (`-U0`) | 204 (171 prod + 33 test) | **200 (168 prod + 32 test)** |
+| Lit test files | 21 | **20** |
+| `// RUN` lines | 119 | **86** |
+| gtest cases added | 52 | **52** |
+
+**The number the paper quotes as implementation cost: 109 files, +7073/−18,
+of which the compiler proper is 77 files and +1940 lines.** The other 5,133
+lines are tests.
+
+## Gate
+
+Both runs in the same fresh build dir, same machine, same day.
+
+```
+BASELINE, pristine upstream/main @ d28193fa1ff6
+  check-clang            54167 discovered / 48242 passed / 8 failed (all DirectoryWatcherTest)
+  filtered  -> EXIT=0    54159 discovered / 48242 passed / 0 failed / 27 XFAIL / 5884 unsup / 6 skipped
+
+REPLAY, unicode-operators-upstream @ 44299aae010d
+  check-clang            54239 discovered / 48314 passed / 8 failed (the same 8)
+  filtered  -> EXIT=0    54231 discovered / 48314 passed / 0 failed / 27 XFAIL / 5884 unsup / 6 skipped
+```
+
+**Exactly +72 discovered and +72 passed** — 20 lit files plus 52 gtest cases,
+which is U19 §6's prediction to the test. **No pre-existing test changed
+behaviour.** The 8 `DirectoryWatcherTest` failures are the machine-wide inotify
+condition (65,382 of 65,536 watches held), identical in both runs. 90
+`Checking format of` steps ran before lit in the replay gate, so the
+self-format trap was cleared by running the in-tree `clang-format -i` over the
+three `lib/Format` files and the two `unittests/Format` files.
+
+**Flag off is upstream, measured not argued.** A TU carrying U1 code points in
+every position a source file can put them — comment, narrow/`u`/`U` string,
+`char32_t` literal, raw string, excluded code points, the two
+mathematical-notation identifier characters, stray infix and prefix uses, and
+an `operator⊞` declaration — compiled by the replay `clang` with the flag off
+and by a `clang` built from pristine `d28193fa1ff6` in the same build dir:
+
+- `-fsyntax-only` diagnostics: **byte-identical** (all 29 lines);
+- `-E` output: **byte-identical**;
+- `-emit-llvm` on the well-formed subset: **byte-identical except the
+  `!llvm.ident` string**, which carries the commit hash.
+
+## What the ledger got right
+
+- **The ratio.** 98.5 % predicted, 98 % measured (200 of 204 hunks landed; the
+  one-hunk gap is coalescing, not content — hunks that were separate on the
+  branch because a backtick line sat between them merge into one on `main`).
+- **The three shared constructs, and only three.** `prec::UserInfix`,
+  `isFoldOperator`'s exclusion, `endsOperand`. Each standalone equivalent in §4
+  was correct as written and needed no adjustment beyond the trailing comma
+  §3 item 3 already flagged.
+- **The four `diff`-pair RUN lines.** All four were pairs exactly as §6 said.
+  Deleting only the producer would have failed in a way that looked like a
+  regression; the ledger prevented it four times.
+- **The `isFoldOperator` addition.** Added, and `(... ⊞ N)` still diagnoses
+  `expected expression` on the replay branch — the silent failure did not
+  happen.
+- **`FormatToken.h`'s fourth argument.** Applied; `FormatTest.UnicodeOperator‑
+  Formatting`'s long-chain wrapping assertions pass, which is the only thing
+  that would have caught its omission.
+- **Every §4 anchor still existed at `d28193fa1ff6`** despite 825 commits of
+  drift. `PointerToMember = 15` with no trailing comma, `defm reflection`'s
+  `ShouldParseIf`, `Level != prec::Spaceship`, `startsWithInitStatement`,
+  `getFormattingLangOpts`'s `return LangOpts;`, `BuildSynthesizedThreeWay‑
+  Comparison`, `ExprResult Sema::ActOnCallExpr(` — all verbatim.
+
+## What the ledger got wrong
+
+Three items, one of them structural.
+
+1. **§5's commit 12 cannot compile as specified.** The table says commit 12
+   carries "U13's `CreateOverloadedUserOp` (**as amended by U16**)", and the
+   forward notes say "replay U13 as amended by U16, never as U13 left it". But
+   U16's amendment *is* the `UserOperatorExpr` wrapper — `Wrap()` constructs
+   the node — and the node does not exist until commit 13. The amended form is
+   not buildable one commit early. **Resolved by replaying U13's own form at
+   commit 12 and U16's amendment with the node at commit 13**, which is what
+   the experiment branch itself did. The consequence U19 warned about is real
+   but transient: at commit 12 exactly the DEV-U12 shape fails
+   (`Parser/unicode-operator-prefix.cpp`'s member-in-template section), and it
+   passes from commit 13 on. **The warning should read: never leave the stack
+   *ending* at U13's form.**
+2. **§5's split of commit 5 was unnecessary and mildly harmful.** U05's
+   `ParseExprCXX.cpp` + `DiagnosticParseKinds.td` half was to be held back to
+   commit 8 "after the operator-function-id parse it annotates". There is no
+   such dependency: the identifier-profile note hangs off the *upstream*
+   failure exits of the conversion-function-id parse, which exist on clean
+   `main`, and the hunk applies and builds at commit 5. Holding it back leaves
+   commit 5's own lit test, `Lexer/unicode-operators-excluded.cpp`, **failing
+   at commit 5** (two `on-note` directives unseen) — measured, not reasoned.
+   **Kept in commit 5**, which is therefore self-testing.
+3. **"Will fuzz on context" understated it.** U19 said the 25 production hunks
+   that take backtick text as context "will fuzz on cherry-pick and must be
+   re-anchored". In practice `git apply -3` produced **hard conflicts with
+   markers in 18 files and 23 hunks**, all of the same shape (ours empty,
+   theirs = backtick block + user-operator block). They were mechanical to
+   resolve — keep the user-operator half — but three needed a hand fix
+   afterwards where the shared *continuation* line of the preceding upstream
+   case got duplicated (`Expr.cpp` ×2, `ExprConstant.cpp`) and one where the
+   `template <class Emitter>` line belonging to the deleted backtick function
+   left a duplicate (`ByteCode/Compiler.cpp`). **Anyone repeating this should
+   expect conflict resolution, not fuzz**, and should diff the result against
+   the experiment file rather than trusting the merge.
+
+Two smaller corrections: the surviving `// RUN` count is **86**, not 87; and
+`ASTBitCodes.h` carries U16's and U17's changes in different commits, which the
+ledger's per-step rows imply but never say.
+
+## The stack as landed — 15 commits
+
+| # | Commit | Title | Stat |
+|---|--------|-------|------|
+| 1 | `e3073eda7a54` | `[clang] Add -funicode-operators` | 4 files, +24 |
+| 2 | `efda48cd2d28` | `[clang][Lex] Frozen UAX#31 Pattern_Syntax operator tables` | 3 files, +422 |
+| 3 | `a4bfb311624b` | `[clang][Lex] Lex tok::user_operator from UTF-8 glyphs` | 5 files, +271 |
+| 4 | `b4a1b422f6f0` | `[clang][Lex] UCN and \N{...} spellings form operator tokens` | 6 files, +430/−7 |
+| 5 | `9278d934ea08` | `[clang][Lex][Parse] Diagnose excluded code points with reasons` | 8 files, +432/−13 |
+| 6 | `2f9cfdab0e1e` | `[clang][Basic] prec::UserInfix: one precedence level for user-introduced infix operators` | 3 files, +24/−7 |
+| 7 | `5d50da917b46` | `[clang][AST] DeclarationName kind for Unicode user-defined operators` | 21 files, +436/−1 |
+| 8 | `5b1801ee6f2c` | `[clang][Parse] Parse operator<op> as an operator-function-id` | 9 files, +193/−5 |
+| 9 | `cea7bf068095` | `[clang][Sema] Declaration rules and arity for user-defined operators` | 9 files, +322/−1 |
+| 10 | `1ade09bef6ca` | `[clang][AST] Itanium mangling … (vendor-extended form)` — **ABI-open, §7** | 3 files, +206/−11 |
+| 11 | `1a560ede86b1` | `[clang] Explicit-call sweep for user-defined operators` | 2 files, +534 |
+| 12 | `f7cf3934ee80` | `[clang][Parse][Sema] Infix and prefix uses; candidate assembly with ADL` | 6 files, +667 |
+| 13 | `50896d6cf555` | `[clang][AST] UserOperatorExpr: operator syntax survives instantiation` (+ the U14/U15 sweeps) | 36 files, +2268/−22 |
+| 14 | `49c3bec0acce` | `[clang][Serialization][ASTMatchers] PCH, modules, import, matchers` | 15 files, +738/−17 |
+| 15 | `44299aae010d` | `[clang][Format] Format Unicode user-defined operators` | 5 files, +173/−1 |
+
+Commit 6 is U19's structural recommendation, executed: `lib/Format` (commit 15)
+depends on commits 1–4 and 6 and on **nothing else** — no `DeclarationName`, no
+Sema, no AST node. The PR fan-out §5 proposed (**A** = 1–5, **B** = 6, **C** =
+15, **D** = 7–9 + 11 + 14, **E** = 10 parked on ABI grounds, **F** = 12–13) is
+exactly what this stack supports.
+
+Titles follow §5's upstream shape (`[clang][Area] …`) rather than the plan's
+`[unicode] <title>` convention: the branch is meant to read as an upstream PR
+series, and a `[unicode]` prefix would be the one thing in it that no upstream
+reviewer could parse. **The 10th commit's message says in plain text that its
+mangling is held back from any real submission.**
+
+## What only worked on the experiment branch
+
+The complete list, and it contains nothing surprising:
+
+1. The 25 `-fbacktick` RUN lines, their 4 consumer `diff` lines and the 6
+   `#ifdef BACKTICK` regions — the composability evidence, which needs two
+   features to compose.
+2. Section 10 of the precedence file (mixed chains across both spellings) and
+   `-DPRINTING` with it.
+3. `clang/test/Lexer/backtick-c-mode.c`.
+4. The two `TokenAnnotator.cpp` refactors of backtick-track code.
+
+Everything on that list is *about* the other feature. **Nothing on it is a
+Unicode behaviour**, and no Unicode assertion had to be weakened, deleted or
+rewritten to make the replay pass — only three composability sections were
+re-worded to say, honestly, that the claim is vacuous in a tree with one such
+feature rather than untested (`SemaCXX/unicode-operator-call.cpp` §8,
+`SemaCXX/unicode-operator-adl.cpp` §6, and item 9 of the precedence file).
+
+## Upstream drift, priced
+
+825 commits touched **25 of the 109 files**, +319/−144 in total, and **not one
+of them cost anything**. The three surfaces the step file named as the
+maintenance-cost question:
+
+- **`DeclarationName` / `IdentifierTable.h` — untouched.** The riskiest surface
+  in the patch (a new `DeclarationNameExtra::ExtraKind`, 15 switch arms across
+  clang, clang-tools-extra and lldb) saw zero upstream churn in 825 commits.
+- **`UnicodeCharSets.h` — untouched.** The generated table needed no refresh,
+  which is the point of freezing U1 at 17.0.0.
+- **The Format token machinery** drifted (`Format.cpp` +79/−15,
+  `TokenAnnotator.cpp` +3/−1) but not in the three places this patch edits.
+- The largest drift in a touched file was `Clang.cpp` (+47/−41, a refactor of
+  neighbouring `addLastArg` calls) and `SemaDecl.cpp` (+61/−13); both applied
+  three-way with no conflict.
+
+`ASTReader.cpp`/`ASTWriter.cpp` drifted only in their OpenMP clause readers,
+nowhere near the `DeclarationNameKey` group. **The honest summary for a
+committee is that a feature of this shape survived four months of trunk with
+zero rebase cost, and the one part that would have been expensive to re-derive
+— the code-point tables — is frozen by design and so cannot rot.**
+
+## Still not covered, on either branch
+
+Unchanged from U19 and worth repeating because the replay did not fix them:
+the `lldb` switch arm is still **compile-unverified** (`LLVM_ENABLE_PROJECTS`
+is `clang;clang-tools-extra` in this build dir too), and `clang/lib/CIR/`'s
+`CXXRewrittenBinaryOperator` site set is still **untouched** — a real hole in
+`UserOperatorExpr`'s obligations, not merely an unbuilt line.
