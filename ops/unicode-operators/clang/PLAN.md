@@ -69,7 +69,7 @@ Total Discovered Tests: 54106
 ```
 Any non-zero `Failed` is a regression. Compare against *these* numbers.
 
-Four gate facts, three inherited from the backtick track and all of which
+Five gate facts, three inherited from the backtick track and all of which
 have cost real time already:
 - **`ninja … | tail` reports `tail`'s exit code.** Redirect and check `$?`.
 - **`check-clang` self-formats `clang/lib/Format/`** and aborts at ~step
@@ -80,6 +80,16 @@ have cost real time already:
   It **passes** on this trunk base (confirmed by U00, as by
   `ops/handoffs/14-rebase-trunk.handoff.md`). Do not budget a known failure
   for it; do not "fix" the stray file either.
+- **`DirectoryWatcherTest.*` (8 cases) fails when the machine's inotify watch
+  budget is exhausted**, with `No space left on device : inotify_add_watch()`.
+  First hit at U03 (2026-08-04): a `cloud-drive-dae` process held 65,045 of
+  65,536 `fs.inotify.max_user_watches`. It is **not** ours — the untouched
+  `build-backtick-trunk` binary fails the identical 8. Check
+  `for p in /proc/[0-9]*/fdinfo/*; do grep -c '^inotify' $p; done | paste -sd+ | bc`
+  against `/proc/sys/fs/inotify/max_user_watches` before believing a
+  DirectoryWatcher failure. To gate around it:
+  `GTEST_FILTER='-DirectoryWatcherTest.*' $B/bin/llvm-lit -s $B/tools/clang/test`
+  runs exactly the `check-clang` set minus those 8.
 - `check-clang` deliberately crashes clang twice on upstream XFAIL tests
   (`Analysis/reinterpret-cast-pointer-to-member.cpp`,
   `CodeGen/xfail-alloc-align-fn-pointers.cpp`), producing coredump/DrKonqi
@@ -92,7 +102,7 @@ have cost real time already:
 - [x] **U00** Experiment worktree, branch, baseline gate — `steps/U00-baseline.md`
 - [x] **U01** Flag `-funicode-operators` — `steps/U01-feature-flag.md` (dep: U00)
 - [x] **U02** Frozen U1 range table + exclusion table (generated) — `steps/U02-charset-tables.md` (dep: U00)
-- [ ] **U03** Lexer: `tok::user_operator` from UTF-8 glyphs — `steps/U03-lexer-token.md` (dep: U01, U02)
+- [x] **U03** Lexer: `tok::user_operator` from UTF-8 glyphs — `steps/U03-lexer-token.md` (dep: U01, U02)
 - [ ] **U04** Lexer: UCN and `\N{...}` spellings (U11) — `steps/U04-lexer-ucn.md` (dep: U03)
 - [ ] **U05** Exclusion diagnostics with reasons — `steps/U05-exclusion-diagnostics.md` (dep: U03)
 
@@ -131,3 +141,4 @@ exist.
 | U00 | 2026-08-03 | `unicode-operators-experiment` | `bd6f4d5fa102` (base, no source change) | `check-clang` GREEN — 54106 discovered / 48220 passed / **0 failed** / 27 XFAIL / 5853 unsupported / 6 skipped; 204s test time, 723s wall | `handoffs/U00-baseline.handoff.md` |
 | U01 | 2026-08-03 | `unicode-operators-experiment` | `3014f97cfc31` | `check-clang` GREEN — 54107 discovered / 48221 passed / **0 failed** / 27 XFAIL / 5853 unsupported / 6 skipped; 206s test time. Exactly baseline **+1** discovered/+1 passed (the new `Driver/funicode-operators.c`) | `handoffs/U01-feature-flag.handoff.md` |
 | U02 | 2026-08-03 | `unicode-operators-experiment` | `2389fe7be452` | `check-clang` GREEN — 54121 discovered / 48235 passed / **0 failed** / 27 XFAIL / 5853 unsupported / 6 skipped; 168s test time. Exactly U01 **+14** discovered/+14 passed (the 14 `UnicodeOperatorCharSetsTest` cases). Tables measured: **1381 code points / 32 ranges / 256 bytes**; U1@17.0 ∩ XID@18.0 = ∅ | `handoffs/U02-charset-tables.handoff.md` |
+| U03 | 2026-08-04 | `unicode-operators-experiment` | `dacbe22ddeef` | `check-clang` GREEN — 54128 discovered / 48234 passed / 27 XFAIL / 5853 unsupported / 6 skipped, **0 failed among the 54120 tests that could run**; the 8 `DirectoryWatcherTest.*` cases were blocked by an exhausted machine-wide inotify budget (65,045/65,536 watches held by `cloud-drive-dae`) and fail identically on the untouched `build-backtick-trunk` binary — see the gate-facts bullet above. Discovered is exactly U02 **+7** (6 new `LexerTest.UnicodeOperator*` cases + `Lexer/unicode-operators.cpp`), all 7 passing; `GTEST_FILTER='-DirectoryWatcherTest.*' llvm-lit -s tools/clang/test` → exit 0, 54120 discovered / 48234 passed / **0 failed**. 174s test time | `handoffs/U03-lexer-token.handoff.md` |
