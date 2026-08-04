@@ -1,5 +1,13 @@
 # LLVM/Clang Unicode Operators Experiment Plan
 
+**This is the narrative rationale, not the operational document.** The
+executable form of this plan — checklist, dependencies, per-step specs and
+gates, handoffs, ledgers — is `clang/PLAN.md` and `clang/steps/U00–U20`.
+Read that to *do* the work; read this for why the branch base, the replay
+discipline, and the scope boundary are what they are. Where the two differ
+on a mechanical detail, `clang/PLAN.md` wins; where a step file contradicts
+its predecessor's handoff, the handoff wins.
+
 ## Summary
 
 - Start the first prototype on `steve-downey/llvm` branch `backtick-trunk`.

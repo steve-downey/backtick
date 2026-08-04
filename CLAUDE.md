@@ -17,12 +17,18 @@ The thesis being tested: `x `op` y` is sugar for `op(x, y)`, desugared in the
 front end so overload resolution, ADL, templates, constexpr, and codegen are
 all inherited rather than reimplemented. See `docs/backtick-operator-design.md`.
 
-**Current state:** both implementation tracks are fully checked off — Clang
-S00–S12 and GCC G01–G10. There is no "next unchecked step" to pick up; the
-work now is paper writing (see `docs/infix-backtick-operator.org`), reconciling
-open DEVIATIONS rows back into the design doc, and follow-up edits. Treat the
-`ops/` step machinery as a completed record unless a *new* step is added to a
-`PLAN.md`.
+**Current state:** both *backtick* implementation tracks are fully checked
+off — Clang S00–S12 and GCC G01–G10. Treat that `ops/` step machinery as a
+completed record unless a *new* step is added to a `PLAN.md`; the remaining
+backtick work is paper writing (see `docs/infix-backtick-operator.org`),
+reconciling open DEVIATIONS rows back into the design doc, and follow-up
+edits.
+
+A **second feature** is now planned but unimplemented: Unicode user-defined
+operators (`docs/unicode-operators.md`, decisions U1–U12, all *Proposed*).
+Its Clang track has a live plan — `ops/unicode-operators/clang/PLAN.md`,
+steps U00–U20, nothing checked. That is where an implementation agent picks
+up work.
 
 Maintenance rebases (R-prefixed rows in the `ops/PLAN.md` Status log) are not
 plan steps and do not follow `ops/AGENT_PROTOCOL.md`; they still get a handoff
