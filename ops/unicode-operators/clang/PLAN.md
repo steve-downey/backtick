@@ -91,7 +91,7 @@ have cost real time already:
 ### Phase A — Base, flag, lexing
 - [x] **U00** Experiment worktree, branch, baseline gate — `steps/U00-baseline.md`
 - [x] **U01** Flag `-funicode-operators` — `steps/U01-feature-flag.md` (dep: U00)
-- [ ] **U02** Frozen U1 range table + exclusion table (generated) — `steps/U02-charset-tables.md` (dep: U00)
+- [x] **U02** Frozen U1 range table + exclusion table (generated) — `steps/U02-charset-tables.md` (dep: U00)
 - [ ] **U03** Lexer: `tok::user_operator` from UTF-8 glyphs — `steps/U03-lexer-token.md` (dep: U01, U02)
 - [ ] **U04** Lexer: UCN and `\N{...}` spellings (U11) — `steps/U04-lexer-ucn.md` (dep: U03)
 - [ ] **U05** Exclusion diagnostics with reasons — `steps/U05-exclusion-diagnostics.md` (dep: U03)
@@ -130,3 +130,4 @@ exist.
 |------|------|--------|--------|-------------|---------|
 | U00 | 2026-08-03 | `unicode-operators-experiment` | `bd6f4d5fa102` (base, no source change) | `check-clang` GREEN — 54106 discovered / 48220 passed / **0 failed** / 27 XFAIL / 5853 unsupported / 6 skipped; 204s test time, 723s wall | `handoffs/U00-baseline.handoff.md` |
 | U01 | 2026-08-03 | `unicode-operators-experiment` | `3014f97cfc31` | `check-clang` GREEN — 54107 discovered / 48221 passed / **0 failed** / 27 XFAIL / 5853 unsupported / 6 skipped; 206s test time. Exactly baseline **+1** discovered/+1 passed (the new `Driver/funicode-operators.c`) | `handoffs/U01-feature-flag.handoff.md` |
+| U02 | 2026-08-03 | `unicode-operators-experiment` | `2389fe7be452` | `check-clang` GREEN — 54121 discovered / 48235 passed / **0 failed** / 27 XFAIL / 5853 unsupported / 6 skipped; 168s test time. Exactly U01 **+14** discovered/+14 passed (the 14 `UnicodeOperatorCharSetsTest` cases). Tables measured: **1381 code points / 32 ranges / 256 bytes**; U1@17.0 ∩ XID@18.0 = ∅ | `handoffs/U02-charset-tables.handoff.md` |
