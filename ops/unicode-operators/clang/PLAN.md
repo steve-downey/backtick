@@ -137,7 +137,7 @@ have cost real time already:
 - [x] **U11** Infix parse at the user-infix level (U4) — `steps/U11-infix-parse.md` (dep: U08)
 - [ ] **U12** Prefix parse in operand position (U5) — `steps/U12-prefix-parse.md` (dep: U11)
 - [x] **U13** Sema: candidate assembly + ADL, no built-ins (U6) — `steps/U13-overload-build.md` (dep: U11)
-- [ ] **U14** Semantics sweep — `steps/U14-semantics-tests.md` (dep: U13, U12)
+- [ ] **U14** Semantics sweep — `steps/U14-semantics-tests.md` (dep: U13, U12, **U16**)
 - [ ] **U15** Precedence/associativity sweep — `steps/U15-precedence-tests.md` (dep: U13, U12)
 
 ### Phase D — AST, serialization, tooling
@@ -151,9 +151,20 @@ have cost real time already:
 
 The fan-out points, so an agent can see where the plan widens: U01‖U02 after
 U00; U04‖U05‖U06 after U03; U08‖U09 after U07; U12‖U13 after U11;
-U14‖U15‖U16 after U13. Nothing in Phase B needs Phase A's UCN or diagnostic
+U15‖U16 after U13. Nothing in Phase B needs Phase A's UCN or diagnostic
 work, and nothing in Phase C needs Phase B's mangling to be *good* — only to
 exist.
+
+**U14 gained a dependency on U16 (added 2026-08-04, after U13).** As
+planned, U16 was cosmetic — a wrapper for `-ast-print` fidelity. U13
+measured it as load-bearing instead: because `CXXOperatorCallExpr` is
+welded to `OverloadedOperatorKind`, a user-operator use is a plain
+`CallExpr`, and `TreeTransform` rebuilds it at instantiation through
+`ActOnCallExpr` — [over.match.call], not [over.match.oper]. ADL survives
+(a property of the call); **member candidates do not** (a property of the
+operator syntax). So a member `operator⊕` is not found in a template, and
+`requires { a ⊕ b; }` is unsatisfied. U14 item 4 tests exactly that, so
+U14 cannot be honest until U16 lands. See DEV-U12 part 3.
 
 ## Status log (each agent appends one row)
 | Step | Date | Branch | Commit | Gate result | Handoff |
