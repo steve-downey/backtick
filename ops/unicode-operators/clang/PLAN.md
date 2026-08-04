@@ -57,6 +57,17 @@ ninja -C "$B" clang                       # build   (~3299 edges, ~12 min cold)
 ninja -C "$B" check-clang > gate.log 2>&1; echo "EXIT=$?"   # full gate (~12 min)
 "$B"/bin/llvm-lit -sv "$WT"/clang/test/... # fast targeted gate (seconds)
 ```
+
+**Waiting for a build or gate without losing your step.** Both exceed the
+10-minute per-call ceiling, so start them in the background — but a
+background command finishing does **not** resume you, and ending your turn
+ends your step. U03 lost a full cycle to exactly this. Block inside one
+call and repeat it until it returns:
+```bash
+until ! pgrep -f "ninja -C $B" >/dev/null; do sleep 30; done; echo DONE
+```
+Repeating a blocking poll several times is correct and expected. Ending
+your turn to "wait for a notification" is not.
 Base: branch `unicode-operators-experiment` @ `bd6f4d5fa102` (= `backtick-trunk`
 tip), 45 commits above `upstream/main` @ `bb33de72920a`. CMake line and the
 full baseline are in `handoffs/U00-baseline.handoff.md`.
