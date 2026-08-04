@@ -20,3 +20,4 @@ Classifications:
 
 | Step | Files / hunks | Class | Standalone equivalent needed on `main` |
 |------|---------------|-------|----------------------------------------|
+| U00 | No source files touched. Establishes the base itself: worktree `/home/sdowney/src/llvm/unicode`, branch `unicode-operators-experiment` @ `bd6f4d5fa102`, which is `upstream/main` @ `bb33de72920a` **plus the 45-commit backtick diff**. | `backtick dependency` (the *base*, not any hunk) | U20 branches from `bb33de72920a` — or from whatever `upstream/main` is then — and replays only U01–U18 rows classed `upstream replay`. The 45 backtick commits are never replayed. Nothing to write; this row exists so U19 has the base pair recorded rather than reconstructed. |

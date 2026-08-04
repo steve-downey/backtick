@@ -45,7 +45,7 @@ operational document: it is what an agent reads.
   `upstream replay` / `shared if landed`. U19/U20 consume that ledger; a
   step that skips it costs the replay agent a rediscovery.
 
-## Build & test (U00 pins these; values below are the intended setup)
+## Build & test (**pinned by U00, 2026-08-03 — these are measured, not intended**)
 The experiment starts from the backtick trunk branch, which already carries
 the user-infix precedence level, the `ParseRHSOfBinaryExpression` shape, the
 AST-wrapper pattern, and the clang-format lessons. It gets **its own
@@ -53,24 +53,43 @@ worktree and build dir** so `backtick-trunk` and its build stay usable:
 ```bash
 WT=/home/sdowney/src/llvm/unicode         # worktree, branch unicode-operators-experiment
 B=/home/sdowney/src/llvm/build-unicode    # its own build dir
-ninja -C "$B" clang                       # build
-ninja -C "$B" check-clang > gate.log 2>&1; echo "EXIT=$?"   # full gate
-"$B"/bin/llvm-lit -v "$WT"/clang/test/... # fast targeted gate
+ninja -C "$B" clang                       # build   (~3299 edges, ~12 min cold)
+ninja -C "$B" check-clang > gate.log 2>&1; echo "EXIT=$?"   # full gate (~12 min)
+"$B"/bin/llvm-lit -sv "$WT"/clang/test/... # fast targeted gate (seconds)
 ```
-Three gate facts inherited from the backtick track, all of which have cost
-real time already:
+Base: branch `unicode-operators-experiment` @ `bd6f4d5fa102` (= `backtick-trunk`
+tip), 45 commits above `upstream/main` @ `bb33de72920a`. CMake line and the
+full baseline are in `handoffs/U00-baseline.handoff.md`.
+
+**Baseline gate shape on this base — green is ZERO failures:**
+```
+Total Discovered Tests: 54106
+  Passed: 48220   Unsupported: 5853   Expectedly Failed: 27   Skipped: 6
+  Failed: 0
+```
+Any non-zero `Failed` is a regression. Compare against *these* numbers.
+
+Four gate facts, three inherited from the backtick track and all of which
+have cost real time already:
 - **`ninja … | tail` reports `tail`'s exit code.** Redirect and check `$?`.
 - **`check-clang` self-formats `clang/lib/Format/`** and aborts at ~step
   81/970 — before any lit test runs — if the edits there don't match
   current LLVM style. Relevant to U18.
-- One **env-only known failure**, `Clang :: Format/dump-config-objc-stdin.m`
-  (a stray 2018 `.clang-format` at `/home/sdowney/src/.clang-format`).
-  Exactly that one failure means green. Do not "fix" it.
+- The `Clang :: Format/dump-config-objc-stdin.m` failure caused by the stray
+  2018 `/home/sdowney/src/.clang-format` is a **`backtick-23`-only** artifact.
+  It **passes** on this trunk base (confirmed by U00, as by
+  `ops/handoffs/14-rebase-trunk.handoff.md`). Do not budget a known failure
+  for it; do not "fix" the stray file either.
+- `check-clang` deliberately crashes clang twice on upstream XFAIL tests
+  (`Analysis/reinterpret-cast-pointer-to-member.cpp`,
+  `CodeGen/xfail-alloc-align-fn-pointers.cpp`), producing coredump/DrKonqi
+  noise. Counted in `Expectedly Failed`; not ours. `ulimit -c 0` around the
+  gate avoids writing the cores.
 
 ## Checklist
 
 ### Phase A — Base, flag, lexing
-- [ ] **U00** Experiment worktree, branch, baseline gate — `steps/U00-baseline.md`
+- [x] **U00** Experiment worktree, branch, baseline gate — `steps/U00-baseline.md`
 - [ ] **U01** Flag `-funicode-operators` — `steps/U01-feature-flag.md` (dep: U00)
 - [ ] **U02** Frozen U1 range table + exclusion table (generated) — `steps/U02-charset-tables.md` (dep: U00)
 - [ ] **U03** Lexer: `tok::user_operator` from UTF-8 glyphs — `steps/U03-lexer-token.md` (dep: U01, U02)
@@ -109,3 +128,4 @@ exist.
 ## Status log (each agent appends one row)
 | Step | Date | Branch | Commit | Gate result | Handoff |
 |------|------|--------|--------|-------------|---------|
+| U00 | 2026-08-03 | `unicode-operators-experiment` | `bd6f4d5fa102` (base, no source change) | `check-clang` GREEN — 54106 discovered / 48220 passed / **0 failed** / 27 XFAIL / 5853 unsupported / 6 skipped; 204s test time, 723s wall | `handoffs/U00-baseline.handoff.md` |
