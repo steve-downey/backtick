@@ -145,6 +145,9 @@ have cost real time already:
 - [x] **U17** Serialization, import, `TreeTransform`, visitors — `steps/U17-serialization.md` (dep: U16)
 - [ ] **U18** clang-format — `steps/U18-clang-format.md` (dep: U04)
 
+### Phase F — Design probes (not on the replay path)
+- [ ] **U21** Postfix feasibility probe — `steps/U21-postfix-probe.md` (dep: U12, U13)
+
 ### Phase E — Upstream replay
 - [ ] **U19** Replay-ledger audit — `steps/U19-replay-audit.md` (dep: U14, U15, U17, U18)
 - [ ] **U20** Clean-`main` replay branch + gate — `steps/U20-upstream-replay.md` (dep: U19)
