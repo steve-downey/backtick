@@ -61,13 +61,21 @@ ninja -C "$B" check-clang > gate.log 2>&1; echo "EXIT=$?"   # full gate (~12 min
 **Waiting for a build or gate without losing your step.** Both exceed the
 10-minute per-call ceiling, so start them in the background — but a
 background command finishing does **not** resume you, and ending your turn
-ends your step. U03 lost a full cycle to exactly this. Block inside one
-call and repeat it until it returns:
+ends your step. U03 lost a full cycle to exactly this. Have the background command write its own completion marker, then block on
+the marker inside one call and repeat that call until it returns:
 ```bash
-until ! pgrep -f "ninja -C $B" >/dev/null; do sleep 30; done; echo DONE
+# background:
+ulimit -c 0; ninja -C "$B" check-clang > gate.log 2>&1; echo "EXIT=$?" >> gate.log
+# foreground, repeat until it prints the tail:
+until grep -q '^EXIT=' gate.log; do sleep 30; done; tail -3 gate.log
 ```
 Repeating a blocking poll several times is correct and expected. Ending
 your turn to "wait for a notification" is not.
+
+Do **not** poll with `pgrep -f "ninja -C $B"`: the poll loop's own command
+line contains that string, so `pgrep` matches itself and the loop never
+exits. U03 hit this and reported "ninja still running" long after it had
+finished. Grep the log for the marker, never the process table.
 Base: branch `unicode-operators-experiment` @ `bd6f4d5fa102` (= `backtick-trunk`
 tip), 45 commits above `upstream/main` @ `bb33de72920a`. CMake line and the
 full baseline are in `handoffs/U00-baseline.handoff.md`.
