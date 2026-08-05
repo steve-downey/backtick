@@ -148,6 +148,9 @@ have cost real time already:
 - [x] **U17** Serialization, import, `TreeTransform`, visitors — `steps/U17-serialization.md` (dep: U16)
 - [x] **U18** clang-format — `steps/U18-clang-format.md` (dep: U04)
 
+### Phase G — Maintenance (not plan steps; R/M-prefixed, like the rebases)
+- [ ] **M1** Forward-port the backtick defect fixes — `steps/M1-forward-port-backtick-fixes.md` (dep: `ops/handoffs/15-defect-fixes.handoff.md` green on `backtick-trunk`)
+
 ### Phase F — Design probes (not on the replay path)
 - [x] **U21** Postfix feasibility probe — `steps/U21-postfix-probe.md` (dep: U12, U13)
 
