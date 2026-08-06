@@ -85,35 +85,51 @@ the log for the marker, never the process table.
   `clang/unittests/Format/*.cpp` as well as `clang/lib/Format/`, and it uses
   the **in-tree** `clang-format`. Format your test edits with the binary you
   just built.
-- **`DirectoryWatcherTest.*` (8 cases)** fails when the machine's inotify
-  budget is exhausted — a `cloud-drive-dae` process holds ~65,382 of 65,536.
-  Not ours; the untouched binaries fail identically. Gate around it with
-  `GTEST_FILTER='-DirectoryWatcherTest.*' "$B"/bin/llvm-lit -s "$B"/tools/clang/test`.
-  **BL01/`B31` is the fix**, and it needs root.
+- **`DirectoryWatcherTest.*` (8 cases)** fail *intermittently* when the
+  machine runs out of **free** inotify watches — a `cloud-drive-dae` process
+  holds ~65,045 of 65,536. Not ours; the untouched binaries fail identically.
+  **Corrected by BL01:** they do not fail unconditionally. With ~155 watches
+  free all 8 pass, and BL01's unfiltered gate was clean on both branches with
+  the budget in exactly that state. So **do not budget them as expected
+  failures** — a clean unfiltered run is achievable and is the standard. If
+  they do fail, check the budget before believing it, then gate around them:
+  ```bash
+  for p in /proc/[0-9]*/fdinfo/*; do grep -c '^inotify' $p; done | paste -sd+ | bc
+  cat /proc/sys/fs/inotify/max_user_watches
+  "$B"/tools/clang/unittests/AllClangUnitTests --gtest_filter='DirectoryWatcherTest.*'
+  ```
+  Note the binary: clang's unittests are consolidated into a single
+  **`AllClangUnitTests`**; there is no `DirectoryWatcherTests` executable.
+  `B31` — the permanent fix — needs root and is **still open**.
 - **`Format/dump-config-objc-stdin.m`** fails on `backtick-23` **only**, from
   a stray 2018 `/home/sdowney/src/.clang-format` outside any repo. It passes
   on every trunk-based branch. Do not "fix" the file (`B33`).
-- **`Analysis/scan-build/cxx-name.test` and `Driver/hip-gz-options.hip`** fail
-  on both backtick branches because `CLANG_EXECUTABLE_VERSION` was set to
-  `23-backtick`/`24-backtick`. **BL01/`B32` is the fix.**
 - `check-clang` deliberately crashes clang twice on upstream XFAILs; `ulimit
   -c 0` around the gate avoids the cores.
 
-### Baselines to do the arithmetic against (filtered, pre-BL01)
+### Baselines to do the arithmetic against
 
-| Branch | Discovered | Passed | Failed |
-|---|---|---|---|
-| `backtick-trunk` | 54099 | 48212 | 2 (`B32`) |
-| `backtick-23` | 54333 | 48490 | 3 (`B32` ×2, `B33`) |
-| `unicode-operators-experiment` | 54171 | 48285 | 0 |
+**Measured by BL01, 2026-08-05, `check-clang` run UNFILTERED.** Green is these
+numbers; anything else is a regression.
 
-**BL01 replaces these.** After it, record the new numbers here and subtract
-against those.
+| Branch | Discovered | Passed | Failed | XFAIL | Unsupported | Skipped |
+|---|---|---|---|---|---|---|
+| `backtick-trunk` | 54107 | 48222 | **0** | 27 | 5852 | 6 |
+| `backtick-23` | 54341 | 48500 | **1** (`B33` only) | 27 | 5807 | 6 |
+| `unicode-operators-experiment` | 54171 | 48285 | 0 | — | — | — |
+
+The Unicode row is U20's filtered figure and has **not** been re-measured by
+BL01; the first Unicode step to gate should replace it with an unfiltered one.
+
+Against the pre-BL01 filtered figures (trunk 54099 / 48212 / 2; 23.x 54333 /
+48490 / 3): discovered **+8** on each — the `DirectoryWatcherTest.*` cases,
+which are no longer filtered out — and passed **+10**, being those 8 plus the
+two `CLANG_EXECUTABLE_VERSION` tests `B32` fixed.
 
 ## Checklist
 
 ### Phase A — Make the gate trustworthy
-- [ ] **BL01** Environment: `B31`, `B32`, `B33`, `B34` — `steps/BL01-environment.md`
+- [x] **BL01** Environment: `B31`, `B32`, `B33`, `B34` — `steps/BL01-environment.md`
 
 ### Phase B — The paper-truth item
 - [ ] **BL02** `B01`: implement D16, type-name in the operator slot — `steps/BL02-d16-type-slot.md` (dep: BL01)
@@ -146,3 +162,5 @@ they run near each other.
 ## Status log (each agent appends one row per branch)
 | Step | Date | Branch | Commit | Gate result | Handoff |
 |------|------|--------|--------|-------------|---------|
+| BL01 | 2026-08-05 | `backtick-trunk` | no source change — build-dir config only; branch stays at `169e45c7916f`, worktree clean | **PASS, and green UNFILTERED for the first time on this track**: 54107 discovered / 48222 passed / **0 failed** / 27 XFAIL / 5852 unsupported / 6 skipped, `EXIT=0`. Against the pre-BL01 *filtered* 54099 / 48212 / 2: discovered **+8** (the `DirectoryWatcherTest.*` cases, no longer filtered out), passed **+10** (those 8 plus the two `CLANG_EXECUTABLE_VERSION` tests), failed **2 → 0**. `CLANG_EXECUTABLE_VERSION` `24-backtick` → `24`; rebuild was 2 ninja edges (relink + symlink). `Analysis/scan-build/cxx-name.test` and `Driver/hip-gz-options.hip` verified failing before and passing after. | `handoffs/BL01-environment.handoff.md` |
+| BL01 | 2026-08-05 | `backtick-23` | no source change — build-dir config only; branch stays at `c280d8101f56`, worktree clean | **PASS**: 54341 discovered / 48500 passed / **1 failed** / 27 XFAIL / 5807 unsupported / 6 skipped, `EXIT=1`. The single failure is `Clang :: Format/dump-config-objc-stdin.m` — the documented `backtick-23`-only `B33` artifact, and the *only* remaining failure on this branch. Against the pre-BL01 filtered 54333 / 48490 / 3: discovered **+8**, passed **+10**, failed **3 → 1**. `CLANG_EXECUTABLE_VERSION` `23-backtick` → `23`; same 2-edge rebuild; same two tests verified before/after. | `handoffs/BL01-environment.handoff.md` |

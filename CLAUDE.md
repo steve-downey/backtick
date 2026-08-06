@@ -118,16 +118,32 @@ Two gotchas that make a failed gate look green — both cost real time already:
 
 - **`ninja … | tail` reports `tail`'s exit code, not ninja's.** Redirect and
   check explicitly: `ninja check-clang > gate.log 2>&1; echo "EXIT=$?"`.
-- **`check-clang` self-formats `clang/lib/Format/`** and aborts at ~step 81/970,
-  before any lit test runs, if the backtick edits there don't match the current
-  LLVM style. A conflict-free rebase does not imply a passing gate.
+- **`check-clang` self-formats `clang/lib/Format/` *and*
+  `clang/unittests/Format/`**, with the **in-tree** `clang-format`, and aborts
+  at ~step 81/970 before any lit test runs if the edits there don't match the
+  current LLVM style. A conflict-free rebase does not imply a passing gate.
+  (Glob corrected by U18; the original wording named only `lib/`.)
 
-`check-clang` has one **env-only known failure**,
-`Clang :: Format/dump-config-objc-stdin.m`: a stray `Language: Cpp` config at
-`/home/sdowney/src/.clang-format` (dated 2018, outside any repo) is picked up by
-clang-format walking up the directory tree. It fails identically on the pristine
-`build-main` binary. Exactly that one failure means the gate is green — do not
-"fix" it by touching that file.
+**Known failures, and nothing else is acceptable.** The full accounting lives
+in `ops/backlog/PLAN.md`'s gate facts; the short form:
+
+- **8 `DirectoryWatcherTest.*` cases**, on *every* branch including untouched
+  binaries, when the machine's inotify watch budget is exhausted. Not ours.
+  Gate around them with
+  `GTEST_FILTER='-DirectoryWatcherTest.*' "$B"/bin/llvm-lit -s "$B"/tools/clang/test`.
+  The real fix needs root and is tracked as `ops/BACKLOG.md` B31.
+- **`Clang :: Format/dump-config-objc-stdin.m` on `backtick-23` only** — a
+  stray `Language: Cpp` config at `/home/sdowney/src/.clang-format` (dated
+  2018, outside any repo) picked up by clang-format walking up the directory
+  tree. It fails identically on the pristine `build-main` binary. It **passes**
+  on every trunk-based branch, so do not budget it on `backtick-trunk` or the
+  Unicode branches — and do not "fix" it by touching that file (B33).
+
+`Analysis/scan-build/cxx-name.test` and `Driver/hip-gz-options.hip` used to
+fail here too, from a `CLANG_EXECUTABLE_VERSION` of `23-backtick`/`24-backtick`.
+BL01 reverted that on 2026-08-05; both pass now and the suffixed binaries are
+gone. If you see them fail again, check the build dir's cache before anything
+else (B32).
 
 GCC (dev build is `--disable-bootstrap --enable-languages=c,c++`):
 ```bash

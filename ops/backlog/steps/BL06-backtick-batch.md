@@ -47,10 +47,13 @@ suppressing an accurate diagnostic. Measured:
 
 ```
 $ printf 'int g(int,int);\nint f(int a,int b){ return a `g` b; }\n' \
-    | clang-24-backtick -cc1 -fbacktick -fsyntax-only -x c -
+    | ~/src/llvm/build-backtick-trunk/bin/clang -cc1 -fbacktick -fsyntax-only -x c -
 exit=0        # C *accepts* the infix grammar
 $ ... without -fbacktick:  error: expected ';' after return statement, exit=1
 ```
+
+(BL01 removed the `clang-24-backtick` / `clang-23-backtick` binaries when it
+reverted `CLANG_EXECUTABLE_VERSION`; use `bin/clang`.)
 
 So the flag does not merely change C-mode tokenization — it makes a C
 compilation accept `` a `g` b ``. (The keyword-escape half is already
