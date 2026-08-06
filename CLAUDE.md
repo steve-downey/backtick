@@ -17,18 +17,23 @@ The thesis being tested: `x `op` y` is sugar for `op(x, y)`, desugared in the
 front end so overload resolution, ADL, templates, constexpr, and codegen are
 all inherited rather than reimplemented. See `docs/backtick-operator-design.md`.
 
-**Current state:** both *backtick* implementation tracks are fully checked
-off — Clang S00–S12 and GCC G01–G10. Treat that `ops/` step machinery as a
-completed record unless a *new* step is added to a `PLAN.md`; the remaining
-backtick work is paper writing (see `docs/infix-backtick-operator.org`),
-reconciling open DEVIATIONS rows back into the design doc, and follow-up
-edits.
+**Current state:** all three implementation tracks are fully checked off —
+Clang backtick S00–S12, GCC backtick G01–G10, and Clang Unicode U00–U21
+(`ops/unicode-operators/clang/PLAN.md`; the second feature is implemented,
+not merely planned). Treat that step machinery as a completed record unless a
+*new* step is added to a `PLAN.md`.
 
-A **second feature** is now planned but unimplemented: Unicode user-defined
-operators (`docs/unicode-operators.md`, decisions U1–U12, all *Proposed*).
-Its Clang track has a live plan — `ops/unicode-operators/clang/PLAN.md`,
-steps U00–U20, nothing checked. That is where an implementation agent picks
-up work.
+**Live work is in `ops/backlog/PLAN.md`** — steps BL01–BL07, nothing checked.
+That track works `ops/BACKLOG.md`, the ledger of every defect the three
+tracks found and left standing (`B01`–`B36`). **That is where an
+implementation agent picks up work.** Two maintenance merges are also
+outstanding, M1 and M2 in `ops/unicode-operators/clang/PLAN.md` Phase G.
+
+The remaining non-defect work is paper writing (see
+`docs/infix-backtick-operator.org`, `docs/unicode-infix-operators.org`,
+`papers/`), reconciling open DEVIATIONS rows back into the design docs, and
+the open *design* decisions indexed in `ops/BACKLOG.md` §6 — which need an
+author's decision, not an implementer's.
 
 Maintenance rebases (R-prefixed rows in the `ops/PLAN.md` Status log) are not
 plan steps and do not follow `ops/AGENT_PROTOCOL.md`; they still get a handoff
@@ -48,6 +53,11 @@ and a Status-log row so base-commit changes are not lost.
   editing this prose.
 - `ops/PLAN.md` — master operational checklist (Clang phases A–C, then GCC).
 - `ops/gcc/PLAN.md` — the GCC sub-plan (G01–G10).
+- `ops/BACKLOG.md` — every defect the three tracks found and left standing
+  (`B01`–`B36`), with a `Closed by` column pointing at the step that closes
+  each one. Open *design* questions are not in it; §6 indexes those.
+- `ops/backlog/PLAN.md` — the defect-fix track (BL01–BL07), which schedules
+  and gates that backlog. The only plan with unchecked steps.
 - `ops/AGENT_PROTOCOL.md` — the one-step-per-agent execution loop. **Read it
   before doing any plan step.**
 - `ops/steps/NN-*.md`, `ops/gcc/steps/GNN-*.md` — one self-contained spec per

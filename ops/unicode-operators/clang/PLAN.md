@@ -150,6 +150,16 @@ have cost real time already:
 
 ### Phase G — Maintenance (not plan steps; R/M-prefixed, like the rebases)
 - [ ] **M1** Forward-port the backtick defect fixes — `steps/M1-forward-port-backtick-fixes.md` (dep: `ops/handoffs/15-defect-fixes.handoff.md` green on `backtick-trunk`)
+- [ ] **M2** Forward-port the backlog track's backtick fixes — D16 (BL02) and the
+  B03/B04/B06/B08/B35 batch (BL06) — same hazard as M1: the merge goes to
+  `unicode-operators-experiment` **only** and must not reach
+  `unicode-operators-upstream`. (dep: `ops/backlog/PLAN.md` BL02 and BL06 both
+  green on `backtick-trunk`; M1)
+
+M1 should run **before** `ops/backlog/PLAN.md`'s BL03, which fixes the static
+analyzer for `UserOperatorExpr`: M1 puts the `BacktickInfixExpr` arms in the
+same switches, immediately beside where the new ones go. BL03's replay onto
+`unicode-operators-upstream` carries only the `UserOperatorExpr` half.
 
 ### Phase F — Design probes (not on the replay path)
 - [x] **U21** Postfix feasibility probe — `steps/U21-postfix-probe.md` (dep: U12, U13)
