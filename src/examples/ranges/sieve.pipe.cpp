@@ -32,8 +32,10 @@ constexpr auto eratosthenes = [] {
 
 // 867acdbd-8d3f-445a-aa3f-272d19c9fcf6
 int main() {
-    auto primes = views::iota(2, limit) | views::filter([](int n) { return eratosthenes[n]; })
-                | views::transform([](int n) { return std::to_string(n); }) | views::join_with(' ');
+    auto primes = views::iota(2, limit) |
+                  views::filter([](int n) { return eratosthenes[n]; }) |
+                  views::transform([](int n) { return std::to_string(n); }) |
+                  views::join_with(' ');
 
     std::println("{}", std::ranges::to<std::string>(primes));
 }

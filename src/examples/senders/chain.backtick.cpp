@@ -23,8 +23,8 @@ namespace ex = beman::execution;
 using smd::infix::pipe;
 
 namespace {
-constexpr auto inc      = [](int n) { return n + 1; };
-constexpr auto dbl      = [](int n) { return n * 2; };
+constexpr auto inc = [](int n) { return n + 1; };
+constexpr auto dbl = [](int n) { return n * 2; };
 constexpr auto describe = [](int n) { return "n = " + std::to_string(n); };
 } // namespace
 
@@ -36,7 +36,8 @@ int main() {
     std::println("{}", text);
 
     // when_all is variadic, so it stays a call in both spellings.
-    auto both = ex::when_all(ex::just(2) `ex::then` dbl, ex::just(5) `ex::then` inc);
+    auto both =
+        ex::when_all(ex::just(2) `ex::then` dbl, ex::just(5) `ex::then` inc);
 
     auto [a, b] = (std::move(both) `pipe` ex::sync_wait).value();
     std::println("{} {}", a, b);

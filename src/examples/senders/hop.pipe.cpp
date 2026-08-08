@@ -24,15 +24,20 @@ int main() {
 
     auto here = [&a, &b] {
         auto id = std::this_thread::get_id();
-        return id == a.id() ? a.name() : id == b.id() ? b.name() : std::string{"main"};
+        return id == a.id()   ? a.name()
+               : id == b.id() ? b.name()
+                              : std::string{"main"};
     };
-    auto mark = [&here](std::string trail) { return trail.empty() ? here() : trail + " " + here(); };
+    auto mark = [&here](std::string trail) {
+        return trail.empty() ? here() : trail + " " + here();
+    };
 
     // starts_on takes the scheduler first and has no one-argument closure
     // form, so there is no `sndr | starts_on(sched)` to write: the pipeline
     // has to be broken open into a call and then resumed.
-    auto hop = ex::starts_on(a.scheduler(), ex::just(std::string{})) | ex::then(mark)
-             | ex::continues_on(b.scheduler()) | ex::then(mark);
+    auto hop = ex::starts_on(a.scheduler(), ex::just(std::string{})) |
+               ex::then(mark) | ex::continues_on(b.scheduler()) |
+               ex::then(mark);
 
     auto [trail] = ex::sync_wait(std::move(hop)).value();
     std::println("{}", trail);

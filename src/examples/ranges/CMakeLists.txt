@@ -3,3 +3,4 @@
 
 add_paired_example(triples)
 add_paired_example(sieve)
+add_paired_example(calendar)

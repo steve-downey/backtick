@@ -21,7 +21,8 @@ namespace smd::infix {
 // `pipe` supplies one. `x `pipe` f` is `f(x)`, which keeps a niladic stage in
 // the same left-to-right chain as its neighbours instead of forcing the chain
 // to be turned inside out into a call.
-inline constexpr auto pipe = []<typename X, typename F>(X&& x, F&& f) -> decltype(auto) {
+inline constexpr auto pipe =
+    []<typename X, typename F>(X &&x, F &&f) -> decltype(auto) {
     return std::invoke(std::forward<F>(f), std::forward<X>(x));
 };
 // 17cc4d61-f8c7-460f-880e-6f91fcf875b5 end

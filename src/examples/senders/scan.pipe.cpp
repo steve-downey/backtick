@@ -22,39 +22,38 @@ namespace ex = beman::execution;
 
 namespace {
 
-auto async_inclusive_scan(ex::scheduler auto      sch,
-                          std::span<const double> input,
-                          std::span<double>       output,
-                          double                  init,
-                          std::size_t             tile_count) {
+auto async_inclusive_scan(ex::scheduler auto sch, std::span<const double> input,
+                          std::span<double> output, double init,
+                          std::size_t tile_count) {
     const std::size_t tile_size = (input.size() + tile_count - 1) / tile_count;
 
     std::vector<double> partials(tile_count + 1);
     partials[0] = init;
 
-    return ex::just(std::move(partials)) | ex::continues_on(sch)
-         | ex::bulk(ex::par,
-                    tile_count,
-                    [=](std::size_t i, std::vector<double>& partials) {
+    return ex::just(std::move(partials)) | ex::continues_on(sch) |
+           ex::bulk(ex::par, tile_count,
+                    [=](std::size_t i, std::vector<double> &partials) {
                         const auto start = i * tile_size;
-                        const auto end   = std::min(input.size(), (i + 1) * tile_size);
-                        partials[i + 1]  = *--std::inclusive_scan(
-                            input.begin() + start, input.begin() + end, output.begin() + start);
-                    })
-         | ex::then([](std::vector<double>&& partials) {
-               std::inclusive_scan(partials.begin(), partials.end(), partials.begin());
+                        const auto end =
+                            std::min(input.size(), (i + 1) * tile_size);
+                        partials[i + 1] = *--std::inclusive_scan(
+                            input.begin() + start, input.begin() + end,
+                            output.begin() + start);
+                    }) |
+           ex::then([](std::vector<double> &&partials) {
+               std::inclusive_scan(partials.begin(), partials.end(),
+                                   partials.begin());
                return std::move(partials);
-           })
-         | ex::bulk(ex::par,
-                    tile_count,
-                    [=](std::size_t i, std::vector<double>& partials) {
-                        const auto start = i * tile_size;
-                        const auto end   = std::min(input.size(), (i + 1) * tile_size);
-                        std::for_each(output.begin() + start,
-                                      output.begin() + end,
-                                      [&](double& e) { e = partials[i] + e; });
-                    })
-         | ex::then([=](std::vector<double>&&) { return output; });
+           }) |
+           ex::bulk(
+               ex::par, tile_count,
+               [=](std::size_t i, std::vector<double> &partials) {
+                   const auto start = i * tile_size;
+                   const auto end = std::min(input.size(), (i + 1) * tile_size);
+                   std::for_each(output.begin() + start, output.begin() + end,
+                                 [&](double &e) { e = partials[i] + e; });
+               }) |
+           ex::then([=](std::vector<double> &&) { return output; });
 }
 
 } // namespace
@@ -64,7 +63,7 @@ int main() {
     examples::thread_context pool{"pool"};
 
     const std::vector<double> input(16, 1.0);
-    std::vector<double>       output(input.size());
+    std::vector<double> output(input.size());
 
     auto scan = async_inclusive_scan(pool.scheduler(), input, output, 0.0, 4);
 

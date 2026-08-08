@@ -44,10 +44,12 @@ static_assert((3 `pipe` inc `pipe` dbl `pipe` neg) == -8);
 // 4bf5ca2a-824d-41ab-8094-74e687a9bedb end
 
 TEST_CASE("pipe: returns decltype(auto), so identity preserves the reference") {
-    constexpr auto id = [](auto&& x) -> decltype(auto) { return std::forward<decltype(x)>(x); };
+    constexpr auto id = [](auto &&x) -> decltype(auto) {
+        return std::forward<decltype(x)>(x);
+    };
 
     int n = 7;
-    static_assert(std::is_same_v<decltype(n `pipe` id), int&>);
+    static_assert(std::is_same_v<decltype(n `pipe` id), int &>);
     CHECK(&(n `pipe` id) == &n);
 }
 

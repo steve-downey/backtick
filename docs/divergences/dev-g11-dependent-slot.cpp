@@ -11,9 +11,10 @@
 //   $ clang++ -fbacktick -std=gnu++26 -fsyntax-only dev-g11-dependent-slot.cpp
 //   (accepted, both the release/23.x and trunk tracks)
 //
-//   $ g++-17-backtick -fbacktick -std=gnu++23 -fsyntax-only dev-g11-dependent-slot.cpp
-//   error: 'pipe' was not declared in this scope, and no declarations were
-//   found by argument-dependent lookup at the point of instantiation
+//   $ g++-17-backtick -fbacktick -std=gnu++23 -fsyntax-only
+//   dev-g11-dependent-slot.cpp error: 'pipe' was not declared in this scope,
+//   and no declarations were found by argument-dependent lookup at the point of
+//   instantiation
 //
 // The GCC prototype resolves a bare-name slot with perform_koenig_lookup
 // (the G10 fix for DEV-G05). For a dependent call it re-runs that lookup at
@@ -32,10 +33,11 @@
 #include <utility>
 
 namespace n {
-inline constexpr auto pipe = []<class X, class F>(X&& x, F&& f) -> decltype(auto) {
+inline constexpr auto pipe = []<class X, class F>(X &&x,
+                                                  F &&f) -> decltype(auto) {
     return std::invoke(std::forward<F>(f), std::forward<X>(x));
 };
-}
+} // namespace n
 
 using n::pipe;
 

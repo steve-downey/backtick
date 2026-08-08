@@ -27,10 +27,7 @@ function(add_paired_example name)
         set(tgt ${name}.${variant})
         add_executable(${tgt})
         target_sources(${tgt} PRIVATE ${name}.${variant}.cpp)
-        target_link_libraries(
-            ${tgt}
-            PRIVATE backtick-examples.infix ${PE_LIBS}
-        )
+        target_link_libraries(${tgt} PRIVATE backtick-examples.infix ${PE_LIBS})
         install(
             TARGETS ${tgt}
             COMPONENT backtick-examples.infix.examples

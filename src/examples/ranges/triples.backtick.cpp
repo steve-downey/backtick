@@ -29,7 +29,8 @@ constexpr auto is_pythagorean = [](auto t) {
 int main() {
     auto triples = views::iota(1) `views::transform` [](int z) {
         return views::iota(1, z + 1) `views::transform` [z](int x) {
-            return views::iota(x, z + 1) `views::transform` [x, z](int y) { return std::tuple{x, y, z}; };
+            return views::iota(x, z + 1) `views::transform`
+                [x, z](int y) { return std::tuple{x, y, z}; };
         } `pipe` views::join;
     } `pipe` views::join `views::filter` is_pythagorean `views::take` 10;
 

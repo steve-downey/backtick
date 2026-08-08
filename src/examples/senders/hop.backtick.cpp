@@ -33,12 +33,16 @@ int main() {
 
     auto here = [&a, &b] {
         auto id = std::this_thread::get_id();
-        return id == a.id() ? a.name() : id == b.id() ? b.name() : std::string{"main"};
+        return id == a.id()   ? a.name()
+               : id == b.id() ? b.name()
+                              : std::string{"main"};
     };
-    auto mark = [&here](std::string trail) { return trail.empty() ? here() : trail + " " + here(); };
+    auto mark = [&here](std::string trail) {
+        return trail.empty() ? here() : trail + " " + here();
+    };
 
-    auto hop = a.scheduler() `ex::starts_on` ex::just(std::string{}) `ex::then` mark
-        `ex::continues_on` b.scheduler() `ex::then` mark;
+    auto hop = a.scheduler() `ex::starts_on` ex::just(std::string{}) `ex::then`
+               mark `ex::continues_on` b.scheduler() `ex::then` mark;
 
     auto [trail] = (std::move(hop) `pipe` ex::sync_wait).value();
     std::println("{}", trail);

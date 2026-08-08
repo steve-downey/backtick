@@ -30,19 +30,19 @@ class thread_context {
 
     ~thread_context() { d_loop.finish(); }
 
-    thread_context(const thread_context&)            = delete;
-    thread_context& operator=(const thread_context&) = delete;
+    thread_context(const thread_context &) = delete;
+    thread_context &operator=(const thread_context &) = delete;
 
     auto scheduler() { return d_loop.get_scheduler(); }
     auto id() const -> std::thread::id { return d_id; }
-    auto name() const -> const std::string& { return d_name; }
+    auto name() const -> const std::string & { return d_name; }
 
   private:
-    std::string                d_name;
+    std::string d_name;
     beman::execution::run_loop d_loop{};
-    std::thread::id            d_id{};
-    std::latch                 d_ready{1};
-    std::jthread               d_thread;
+    std::thread::id d_id{};
+    std::latch d_ready{1};
+    std::jthread d_thread;
 };
 
 } // namespace examples

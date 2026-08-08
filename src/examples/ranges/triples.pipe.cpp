@@ -20,14 +20,17 @@ constexpr auto is_pythagorean = [](auto t) {
 
 // 944390db-9ffa-492b-8e7e-3272533eaa84
 int main() {
-    auto triples = views::iota(1) | views::transform([](int z) {
-                       return views::iota(1, z + 1) | views::transform([z](int x) {
-                                  return views::iota(x, z + 1)
-                                       | views::transform([x, z](int y) { return std::tuple{x, y, z}; });
-                              })
-                            | views::join;
-                   })
-                 | views::join | views::filter(is_pythagorean) | views::take(10);
+    auto triples =
+        views::iota(1) | views::transform([](int z) {
+            return views::iota(1, z + 1) | views::transform([z](int x) {
+                       return views::iota(x, z + 1) |
+                              views::transform([x, z](int y) {
+                                  return std::tuple{x, y, z};
+                              });
+                   }) |
+                   views::join;
+        }) |
+        views::join | views::filter(is_pythagorean) | views::take(10);
 
     for (auto [x, y, z] : triples) {
         std::println("({}, {}, {})", x, y, z);

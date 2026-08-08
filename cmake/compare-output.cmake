@@ -10,7 +10,14 @@
 #
 # Expected variables: NAME, PIPE, BACKTICK, EXPECTED, WORKDIR
 
-foreach(var NAME PIPE BACKTICK EXPECTED WORKDIR)
+foreach(
+    var
+    NAME
+    PIPE
+    BACKTICK
+    EXPECTED
+    WORKDIR
+)
     if(NOT DEFINED ${var})
         message(FATAL_ERROR "compare-output: -D${var}= is required")
     endif()
@@ -42,7 +49,8 @@ execute_process(
 )
 if(NOT rc EQUAL 0)
     execute_process(
-        COMMAND "${CMAKE_COMMAND}" -E compare_files "${pipe_out}" "${backtick_out}"
+        COMMAND
+            "${CMAKE_COMMAND}" -E compare_files "${pipe_out}" "${backtick_out}"
         COMMAND_ECHO NONE
     )
     message(
