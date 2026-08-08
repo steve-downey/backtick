@@ -18,15 +18,44 @@ There is a top-level Makefile to drive workflow. Its default is to build and run
 
 The project levergages `uv` and PyPI to install the tools that it requires. It installs them into a local virtual environment so as not to make system wide changes.
 
-The repository also vendors a generic WG21 paper framework under `papers/wg21` via `git subtree`. It is intentionally generic rather than tied to any one proposal number. Use `make papers` to build the vendored papers, `make clean` to remove their generated outputs, and `make realclean` to remove the paper tool infrastructure as well.
-
 The [pre-commit](https://github.com/pre-commit/pre-commit) framework is used to drive linters both locally and in GitHub Actions. Clang format is enforced, as is a CMake format. I've given up doing this by hand. Yaml is even worse. Spellcheck, for code, also.
 
 The infra directory is vendored in from the [Beman Project](https://github.com/bemanproject/infra) supporting [infra](https://github.com/bemanproject/infra) project. Right now for install of the project. Many of the GitHub actions in .github/workflows/ also use Beman scripts and tools. The CMakePresets.txt exists largely to support those tools. I find the workflow [Makefile](./Makefile) easier to extend with less combanitorial explosion.
 
-Complers are expected to be available on PATH with versioned names, such as `g++-15` or `clang++-21`. Toolchains are in the ./etc/ directory.
+Every example here needs `-fbacktick`, so this project does not build with a stock
+compiler. The three toolchains that work are the infix-backtick prototypes, installed
+by `ops/build/configure-*-backtick.sh` in the [backtick](https://github.com/steve-downey/backtick)
+repo:
 
-`make` by itself uses the system `c++` compiler. For others, e.g., `make TOOLCHAIN=gcc-15` will use the etc/gcc-15-toolchain.cmake toolchain, which sets CXX to be gcc-15. By default the build and test is address sanitized, plus some compatible sanitizers. Alternatives are specified with CONFIG, e.g. `make TOOLCHAIN=gcc-15 CONFIG=RelWithDebInfo`.
+| `TOOLCHAIN=` | Prefix | Compiler |
+|---|---|---|
+| `clang-23-backticks` (default) | `~/install/clang-23-backtick` | clang 23.1.0-rc2 |
+| `clang-trunk-backticks` | `~/install/clang-trunk-backtick` | clang 24.0.0git |
+| `gcc-backticks` | `~/install/gcc-trunk-backtick` | g++ 17.0.0 |
+
+So `make` alone builds with the release/23.x clang prototype, and
+`make TOOLCHAIN=gcc-backticks` builds with the GCC one. Each toolchain gets its own
+`.build/build-$(TOOLCHAIN)` tree, so all three coexist. By default the build and test
+is address sanitized, plus some compatible sanitizers. Alternatives are specified with
+CONFIG, e.g. `make TOOLCHAIN=gcc-backticks CONFIG=RelWithDebInfo`.
+
+An example is only done when all three agree. A divergence between the Clang and GCC
+prototypes is a finding for `ops/gcc/DEVIATIONS.md` in the backtick repo, not a bug in
+the example.
+
+## Divergences from the copier template
+
+This project is generated from [steve-downey/example](https://github.com/steve-downey/example)
+and mostly follows it. `copier update` will conflict on these deliberate changes:
+
+- `Makefile` defaults `TOOLCHAIN` to `clang-23-backticks` instead of falling back to
+  `etc/toolchain.cmake` and the system compiler, and drops the `papers/wg21` targets —
+  the paper this code feeds lives in the backtick repo.
+- `CMakePresets.json` replaces the eight Beman CI presets with one per prototype.
+- `.github/workflows/{ci_tests.yml,test_makefile.yaml,codeql.yml}` are removed: they
+  compile the project in containers with stock compilers, which cannot work here.
+  The pre-commit, doxygen, dependency-review, and scorecard workflows are kept.
+- `cmake/add_paired_example.cmake` and `cmake/compare-output.cmake` are new.
 
 
 # Building Presentations with Emacs and Org-Transclusion
@@ -58,7 +87,6 @@ install-uv                     install uv via `pipx install uv`
 lint                           Run all configured tools in pre-commit
 lint-manual                    Run all manual tools in pre-commit
 mrdocs                         Build the docs with MrDocs
-papers                         Build the vendored WG21 papers
 reconf                         Recreate the current configured build tree
 realclean                      Delete the generated build infrastructure
 show-venv                      Debugging target - show venv details

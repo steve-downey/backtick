@@ -34,15 +34,15 @@ CONFIG ?= Asan
 
 export
 
-ifeq ($(strip $(TOOLCHAIN)),)
-	_build_name?=build-system/
-	_build_dir?=.build/
-	_local_toolchain?=$(CURDIR)/etc/toolchain.cmake
-else
-	_build_name?=build-$(TOOLCHAIN)
-	_build_dir?=.build/
-	_local_toolchain?=$(CURDIR)/etc/$(TOOLCHAIN)-toolchain.cmake
-endif
+# Every example in this project needs -fbacktick, so the default toolchain is a
+# prototype compiler rather than the system one. The other two prototypes are
+# etc/clang-trunk-backticks-toolchain.cmake and etc/gcc-backticks-toolchain.cmake;
+# each gets its own .build/build-$(TOOLCHAIN) tree, so all three coexist.
+TOOLCHAIN ?= clang-23-backticks
+
+_build_name?=build-$(TOOLCHAIN)
+_build_dir?=.build/
+_local_toolchain?=$(CURDIR)/etc/$(TOOLCHAIN)-toolchain.cmake
 
 _configuration_types ?= "RelWithDebInfo;Debug;Tsan;Asan;Gcov"
 
@@ -55,7 +55,7 @@ VCPKG ?= $(shell command -v vcpkg 2> /dev/null)
 ifeq ($(VCPKG),)
 	_cmake_top_level?="infra/cmake/use-fetch-content.cmake"
 	_toolchain:=$(_local_toolchain)
-	_args=-DBEMANINFRA_googletest_REPO=file:///home/sdowney/bld/googletest/googletest.git
+	_args=
 else
 	_vcpkg_toolchain:=$(VCPKG_ROOT)/scripts/buildsystems/vcpkg.cmake
 	_cmake_top_level?=$(_vcpkg_toolchain)
@@ -166,21 +166,9 @@ realclean: ## Delete the generated build infrastructure
 env:
 	$(foreach v, $(.VARIABLES), $(info $(v) = $($(v))))
 
-.PHONY: papers
-papers:
-	$(MAKE) -C papers/wg21 pdf
-
-.PHONY: clean-papers
-clean-papers: ## Clean generated paper outputs
-	$(MAKE) -C papers/wg21 clean
-
-clean: clean-papers
-
-.PHONY: realclean-papers
-realclean-papers: ## Delete generated paper infrastructure
-	$(MAKE) -C papers/wg21 realclean
-
-realclean: realclean-papers
+# The template's papers/wg21 targets are dropped: the paper this project feeds
+# lives in ~/src/backtick (docs/infix-backtick-operator.org, papers/), and the
+# code gets there by org-transclusion, not by building a paper here.
 
 .PHONY: all
 all: compile
