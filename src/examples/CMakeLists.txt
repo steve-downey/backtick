@@ -1,16 +1,7 @@
-include(GNUInstallDirs)
+# src/examples/CMakeLists.txt                                       -*-cmake-*-
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-add_executable(hello)
+include(${PROJECT_SOURCE_DIR}/cmake/add_paired_example.cmake)
 
-# Add example source file.
-target_sources(hello PRIVATE hello.cpp)
-
-# Link example with the library.
-target_link_libraries(hello PRIVATE backtick-examples.infix)
-
-install(
-    TARGETS hello
-    COMPONENT backtick-examples.infix.examples
-    DESTINATION ${CMAKE_INSTALL_BINDIR}
-    EXCLUDE_FROM_ALL
-)
+add_subdirectory(gating)
+add_subdirectory(ranges)
