@@ -1,0 +1,12 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: v0.1-19-gca3ef81
+_src_path: gh:steve-downey/example
+include_prefix: smd
+library_name: infix
+maintainer_email: sdowney@gmail.com
+maintainer_name: Steve Downey
+namespace: infix
+project_slug: backtick-examples
+project_title: 'Infix Backtick: Worked Examples'
+sample_value: Steve
+test_framework: catch2
