@@ -1,9 +1,17 @@
-// hello.cpp -*-C++-*-
+// src/examples/hello.cpp                                            -*-C++-*-
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-#include <smd/infix/infix.hpp>
+#include <smd/infix/pipe.hpp>
 
 #include <print>
+#include <string>
 
-// 710c39c6-c7e1-403f-a9f0-9f8ecf890dc9
-int main() { std::println("Hello, {}!", infix::infix()); }
-// 710c39c6-c7e1-403f-a9f0-9f8ecf890dc9 end
+using smd::infix::pipe;
+
+namespace {
+std::string greet(std::string_view who) { return "Hello, " + std::string{who} + "!"; }
+} // namespace
+
+// 46634163-8eef-49f1-a93e-4e259981ed49
+int main() { std::println("{}", "Steve" `pipe` greet); }
+// 46634163-8eef-49f1-a93e-4e259981ed49 end

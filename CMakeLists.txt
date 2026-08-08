@@ -27,12 +27,13 @@ option(
 
 set(CMAKE_VERIFY_INTERFACE_HEADER_SETS ON)
 
-# Create the library target and named header set for beman.optional
-add_library(backtick-examples.infix STATIC "")
+# The helper library is header-only: it is one combinator, `pipe`, that the
+# examples use where an adaptor is niladic and so has no infix spelling.
+add_library(backtick-examples.infix INTERFACE)
 
 target_sources(
     backtick-examples.infix
-    PUBLIC FILE_SET infix_infix_headers TYPE HEADERS BASE_DIRS src
+    INTERFACE FILE_SET infix_infix_headers TYPE HEADERS BASE_DIRS src
 )
 
 if(INFIX_ENABLE_TESTING)

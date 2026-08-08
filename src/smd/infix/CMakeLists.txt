@@ -1,9 +1,11 @@
+# src/smd/infix/CMakeLists.txt                                      -*-cmake-*-
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
 include(GNUInstallDirs)
 
 target_sources(
     backtick-examples.infix
-    PUBLIC FILE_SET infix_infix_headers TYPE HEADERS FILES infix.hpp
-    PRIVATE infix.cpp
+    INTERFACE FILE_SET infix_infix_headers TYPE HEADERS FILES pipe.hpp
 )
 
 ## Tests
@@ -23,13 +25,13 @@ Consider using CMAKE_PROJECT_TOP_LEVEL_INCLUDES=./cmake/use-fetch-content.cmake 
 endif()
 
 if(INFIX_ENABLE_TESTING)
-    add_executable(infix_test)
+    add_executable(pipe_test)
 
-    target_sources(infix_test PRIVATE infix.test.cpp)
+    target_sources(pipe_test PRIVATE pipe.test.cpp)
 
-    target_link_libraries(infix_test backtick-examples.infix)
-    target_link_libraries(infix_test Catch2::Catch2WithMain)
+    target_link_libraries(pipe_test backtick-examples.infix)
+    target_link_libraries(pipe_test Catch2::Catch2WithMain)
 
     include(Catch)
-    catch_discover_tests(infix_test)
+    catch_discover_tests(pipe_test)
 endif()
