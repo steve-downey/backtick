@@ -2,30 +2,65 @@
 
 [![OpenSSF Baseline](https://www.bestpractices.dev/projects/12577/baseline)](https://www.bestpractices.dev/projects/12577)
 
-This repo is my current set of best practices for C++ projects. It does evolve somewhat over time.
+Real code from the ranges and senders idioms, rewritten with the infix backtick
+operator, and compiled by the two prototype compilers that implement it.
 
-This is a snapshot as of today, Sat Apr 11 05:26:37 PM BST 2026.
+`views::filter(r, pred)` is the primary overload. `views::filter(pred)` is a closure
+that remembers `pred` and waits for a range, and `operator|` is what finally applies
+it. Two of those three exist because C++ has no way to write the first one between
+its arguments.
 
-The code is trivial so that I can repurpose the framework quickly. A library that returns my name, a test that confirms that works, and an example hello `infix` that uses the library.
+```c++
+r | views::filter(pred) | views::transform(fn)      // today
+r `views::filter` pred `views::transform` fn        // the same calls
+```
 
-The C++ src is all in the ./src directory, including the headers and tests. Take a look at [The Pitchfork Layout Spec](https://www.w3.org/publications/spec-generator/?type=bikeshed-spec&output=html&die-on=fatal&md-date=&url=https%3A%2F%2Fraw.githubusercontent.com%2Fvector-of-bool%2Fpitchfork%2Fdevelop%2Fdata%2Fspec.bs&file=) for some discussion about merged layouts. Short answer is that include directories are an install location, not a source location, but that the directory layouts must still be coherent. Tests are co-located because tests are important and the further away they are, the more they will be dropped.
+The design, the plan, and both compiler prototypes live in the
+[backtick](https://github.com/steve-downey/backtick) repo. This one only uses them.
+`backtick-examples.org` is the reading order; `make presentation` exports it, pulling
+the code straight out of the sources so nothing in the prose can drift from what
+compiles.
 
-The CMake is contemporary, post-modern, so not just target oriented, it is also file set oriented.
+## The examples
 
-GitHub Actions are set up to make sure everything I expect to work actually does.
+Every example ships twice, from two sources that differ only in how they spell their
+calls: `<name>.pipe.cpp` and `<name>.backtick.cpp`. Both are built by the same
+compiler at the same settings, and `<name>.equivalent` requires their output to be
+identical and to match a checked-in `<name>.expected`. Two programs agreeing isn't
+evidence on its own, so the golden is what pins the behaviour and the pairwise diff
+is what pins the claim that only the spelling changed. The `.pipe` half is compiled
+with `-fno-backtick`, so it is code proven to build with the feature off.
 
-There is a top-level Makefile to drive workflow. Its default is to build and run all tests for the project.
+| | |
+|---|---|
+| `src/examples/ranges/triples` | Niebler's Pythagorean triples, nested |
+| `src/examples/ranges/sieve` | Eratosthenes; every stage converts |
+| `src/examples/ranges/calendar` | Niebler's calendar, ported to `std::ranges` and `std::chrono` |
+| `src/examples/senders/chain` | `just`/`then`/`when_all`/`sync_wait` |
+| `src/examples/senders/hop` | `starts_on` and `continues_on`, which the pipe could never spell |
+| `src/examples/senders/scan` | P2300's async inclusive scan, and where the operator stops |
+| `src/examples/scorecard` | one compiled instance of each interface shape |
+| `src/examples/gating` | proof that nothing here builds without the flag |
 
-The project levergages `uv` and PyPI to install the tools that it requires. It installs them into a local virtual environment so as not to make system wide changes.
+`src/smd/infix/pipe.hpp` is the only library code: one combinator, for the adaptors
+that take nothing beyond their subject and so have no second operand to write.
 
-The [pre-commit](https://github.com/pre-commit/pre-commit) framework is used to drive linters both locally and in GitHub Actions. Clang format is enforced, as is a CMake format. I've given up doing this by hand. Yaml is even worse. Spellcheck, for code, also.
+## What it turned up
 
-The infra directory is vendored in from the [Beman Project](https://github.com/bemanproject/infra) supporting [infra](https://github.com/bemanproject/infra) project. Right now for install of the project. Many of the GitHub actions in .github/workflows/ also use Beman scripts and tools. The CMakePresets.txt exists largely to support those tools. I find the workflow [Makefile](./Makefile) easier to extend with less combanitorial explosion.
+Writing these found two things one-line examples would not have, both recorded in
+the backtick repo's deviation ledgers:
 
-Every example here needs `-fbacktick`, so this project does not build with a stock
-compiler. The three toolchains that work are the infix-backtick prototypes, installed
-by `ops/build/configure-*-backtick.sh` in the [backtick](https://github.com/steve-downey/backtick)
-repo:
+- **DEV-06 / DEV-G12.** A type name in the operator slot (design D16, carried in the
+  paper's wording example as ``a `std::pair` b``) is not implemented by either
+  prototype, in any spelling.
+- **DEV-G11.** GCC rejects a bare slot name in a dependent context; Clang accepts it.
+
+Repros for both are in `docs/divergences/`.
+
+## Building
+
+Nothing here builds with a stock compiler. The three toolchains that work are the
+prototypes, installed by `ops/build/configure-*-backtick.sh` in the backtick repo:
 
 | `TOOLCHAIN=` | Prefix | Compiler |
 |---|---|---|
@@ -39,9 +74,9 @@ So `make` alone builds with the release/23.x clang prototype, and
 is address sanitized, plus some compatible sanitizers. Alternatives are specified with
 CONFIG, e.g. `make TOOLCHAIN=gcc-backticks CONFIG=RelWithDebInfo`.
 
-An example is only done when all three agree. A divergence between the Clang and GCC
-prototypes is a finding for `ops/gcc/DEVIATIONS.md` in the backtick repo, not a bug in
-the example.
+An example is only done when all three agree. Where the Clang and GCC prototypes
+disagree, that is a finding for `ops/gcc/DEVIATIONS.md` in the backtick repo, and the
+example gets adjusted afterwards.
 
 ## Divergences from the copier template
 
@@ -49,20 +84,24 @@ This project is generated from [steve-downey/example](https://github.com/steve-d
 and mostly follows it. `copier update` will conflict on these deliberate changes:
 
 - `Makefile` defaults `TOOLCHAIN` to `clang-23-backticks` instead of falling back to
-  `etc/toolchain.cmake` and the system compiler, and drops the `papers/wg21` targets —
-  the paper this code feeds lives in the backtick repo.
+  `etc/toolchain.cmake` and the system compiler, and drops the `papers/wg21` targets
+  (the paper this code feeds lives in the backtick repo).
 - `CMakePresets.json` replaces the eight Beman CI presets with one per prototype.
 - `.github/workflows/{ci_tests.yml,test_makefile.yaml,codeql.yml}` are removed: they
   compile the project in containers with stock compilers, which cannot work here.
   The pre-commit, doxygen, dependency-review, and scorecard workflows are kept.
-- `cmake/add_paired_example.cmake` and `cmake/compare-output.cmake` are new.
+- `.pre-commit-config.yaml` runs the prototype's `clang-format`, since only that one
+  has a rule for the operator, and skips `*.expected`, which is golden output compared
+  byte for byte. It also skips the vendored `infra/` subtree.
+- `cmake/add_paired_example.cmake`, `cmake/compare-output.cmake`,
+  `cmake/compare-golden.cmake` and `cmake/require-gated.cmake` are new.
 
 
-# Building Presentations with Emacs and Org-Transclusion
+## Building presentations with Emacs and org-transclusion
 
-This example project uses [nobiot's org-transclusion](https://github.com/nobiot/org-transclusion) and org-export to produce an HTML file for use in presentations. This allows checking that the code is correct but also limited to what is useful.
+This project uses [nobiot's org-transclusion](https://github.com/nobiot/org-transclusion) and org-export to produce an HTML file for use in presentations. Every example carries `// <uuid>` … `// <uuid> end` anchor pairs, and `backtick-examples.org` names them, so the prose gets the code that actually compiled and no more of it than is useful.
 
-The export can be run by `make presentation`, which builds and runs the tests for the project and runs the org export afterwards.
+`make presentation` builds the project, runs the tests, and then runs the org export.
 
 The `infra` directory is vendored in from the Beman Project via `git subtree`.
 

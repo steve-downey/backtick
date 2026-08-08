@@ -2,8 +2,8 @@
 #+OPTIONS: ':nil *:t -:t ::t <:t H:4 \n:nil ^:nil arch:headline author:t
 #+OPTIONS: email:nil f:t inline:t num:nil p:nil pri:nil prop:nil stat:t tags:t
 #+OPTIONS: tasks:t tex:t timestamp:t title:t toc:nil todo:t |:t
-#+TITLE: Transclusion Examples
-#+SUBTITLE: A Case Study
+#+TITLE: Infix Backtick: Worked Examples
+#+SUBTITLE: Removing the pipe from ranges and senders
 #+date: {{{modification-time(%Y-%m-%d, VC)}}}
 #+AUTHOR: Steve Downey
 #+EMAIL: sdowney@gmail.com
@@ -16,14 +16,11 @@
 #+LATEX_HEADER_EXTRA:
 #+DESCRIPTION:
 #+KEYWORDS:
-#+SUBTITLE:
 #+LATEX_COMPILER: pdflatex
 #+OPTIONS: html-link-use-abs-url:nil html-postamble:nil html-preamble:t
 #+OPTIONS: html-scripts:t html-style:t html5-fancy:nil tex:t
 #+HTML_DOCTYPE: xhtml-strict
 #+HTML_CONTAINER: div
-#+DESCRIPTION:
-#+KEYWORDS:
 #+HTML_LINK_HOME:
 #+HTML_LINK_UP:
 #+HTML_MATHJAX:
@@ -31,28 +28,170 @@
 #+HTML_HEAD_EXTRA:
 #+INFOJS_OPT:
 #+CREATOR:
-#+LATEX_HEADER:
 #+STARTUP: showall
 
-* Examples of Transclusion
-** Declaration of the ~name~ function
-#+transclude: [[file:./src/smd/infix/infix.hpp::44cc988c-7353-43aa-a7d3-8840f92371a6]]  :lines 2- :src cpp :end "44cc988c-7353-43aa-a7d3-8840f92371a6 end"
+* Why there is a pipe at all
 
-** Definition of the ~name~ function
-#+transclude: [[file:src/smd/infix/infix.cpp::a66dec0e-e5cc-44b5-b9f1-bbed787c3d44]]  :lines 2- :src cpp :end "a66dec0e-e5cc-44b5-b9f1-bbed787c3d44 end"
+~views::filter(r, pred)~ is the primary overload. ~views::filter(pred)~ is a
+closure that remembers ~pred~ and waits for a range, and ~operator|~ is what
+finally applies it. Two of those three exist because C++ has no way to write
+the first one between its arguments.
 
-** Testing the ~name~ function
-#+transclude: [[file:src/smd/infix/infix.test.cpp::03013d1f-bcc1-4d3e-9701-3ed1a15c6370]]  :lines 2- :src cpp :end "03013d1f-bcc1-4d3e-9701-3ed1a15c6370 end"
+It has one now.
 
-** Saying hello with the ~name~ function
-#+transclude: [[file:src/examples/hello.cpp::710c39c6-c7e1-403f-a9f0-9f8ecf890dc9]]
-:lines 2- :src cpp :end "710c39c6-c7e1-403f-a9f0-9f8ecf890dc9 end"
-
-** The Transclusion for the example above
-#+begin_src org
-#+transclude: [[file:src/examples/hello.cpp::710c39c6-c7e1-403f-a9f0-9f8ecf890dc9]] :lines 2- :src cpp :end "710c39c6-c7e1-403f-a9f0-9f8ecf890dc9 end"
+#+begin_src c++
+r | views::filter(pred) | views::transform(fn)      // today
+r `views::filter` pred `views::transform` fn        // the same calls
 #+end_src
 
+The backtick binds tighter than every other binary operator and associates to
+the left, so the chaining is free and no stage needs a parenthesis. Nothing
+else changes: same overload resolution, same ADL, same laziness, same
+codegen. It is a call.
+
+Every example here is compiled twice, once in each spelling, by the same
+compiler at the same settings, and a test requires the two binaries to print
+the same bytes. Two programs agreeing isn't evidence on its own (they can be
+wrong together), so each pair is also pinned to a checked-in golden. And
+the ~|~ half is compiled with =-fno-backtick=, so it is code proven to build
+with the feature off. Code that merely happens not to use it would prove
+nothing.
+
+* Pythagorean triples
+
+Eric Niebler's example, nested instead of written with ~cartesian_product~,
+because the nesting is what exercises chaining. As it is usually written:
+
+#+transclude: [[file:src/examples/ranges/triples.pipe.cpp::944390db-9ffa-492b-8e7e-3272533eaa84]] :lines 2- :src c++ :end "944390db-9ffa-492b-8e7e-3272533eaa84 end"
+
+And with the calls spelled infix:
+
+#+transclude: [[file:src/examples/ranges/triples.backtick.cpp::3b78b3dc-0ec5-4878-a244-73fde0656432]] :lines 2- :src c++ :end "3b78b3dc-0ec5-4878-a244-73fde0656432 end"
+
+~views::join~ is the one stage that doesn't convert. It takes nothing beyond
+the range, and a backtick operator takes two operands and no more, so there is
+nothing to write on the right. The ~pipe~ helper supplies one.
+
+* The sieve
+
+Every stage here is an adaptor with one argument beyond the range, so nothing
+needs the helper.
+
+#+transclude: [[file:src/examples/ranges/sieve.backtick.cpp::57844e66-5063-40f0-89c2-ad326c73dc65]] :lines 2- :src c++ :end "57844e66-5063-40f0-89c2-ad326c73dc65 end"
+
+The sieve itself is done classically. Ranges are doing the presentation, which
+is the honest division of labour for that algorithm.
+
+* The calendar
+
+The largest ranges pipeline anyone points at: Niebler's calendar, six stages
+at the top level and three more nested inside them. Ported to ~std::ranges~
+and ~std::chrono~, so ~boost::gregorian~, ~boost::format~ and the
+hand-written ~interleave_view~ are gone. It prints 2015, three months to a
+line, and the first twenty-seven lines are byte-identical to the output
+documented in the original, which is a better check on the port than any
+assertion I would have written.
+
+#+transclude: [[file:src/examples/ranges/calendar.backtick.cpp::ade28340-6ad4-4580-8011-d001a7bf4bf4]] :lines 2- :src c++ :end "ade28340-6ad4-4580-8011-d001a7bf4bf4 end"
+
+Seven of the nine adaptor applications convert directly. The pipeline still
+reads one stage per line with no parentheses anywhere. At eighty columns the
+~|~ version doesn't; ~clang-format~ breaks it across the closures.
+
+* Senders
+
+The same story, since ~then(sndr, fn)~ is also a primary overload:
+
+#+transclude: [[file:src/examples/senders/chain.backtick.cpp::a2c278fa-1f76-4548-972a-885c7d276169]] :lines 2- :src c++ :end "a2c278fa-1f76-4548-972a-885c7d276169 end"
+
+~when_all~ is variadic and stays a call. ~sync_wait~ takes nothing beyond the
+sender and keeps the helper.
+
+** Where it goes past replacing a pipe
+
+~starts_on(sched, sndr)~ takes its scheduler first and has no one-argument
+closure form. There is no ~sndr | starts_on(sched)~ to write, and there never
+was: today the pipeline has to be broken open into a call and then resumed. An
+infix operator does not care which argument is the subject.
+
+#+transclude: [[file:src/examples/senders/hop.backtick.cpp::df720525-1992-407d-b375-908af9ec77ca]] :lines 2- :src c++ :end "df720525-1992-407d-b375-908af9ec77ca end"
+
+Each stage reports the thread it actually ran on, so ~A B~ is evidence and not
+a caption.
+
+The range algorithms are the same shape and the same win. ~ranges::count~,
+~ranges::contains~, ~ranges::equal~ all take the range first and have no
+closure form, so ~r `ranges::count` x~ is reachable and ~r | count(x)~ never
+was.
+
+** Where it stops
+
+P2300's asynchronous inclusive scan. ~bulk(sndr, policy, shape, f)~ takes four
+arguments; a backtick operator is binary. There is no infix spelling
+of a four-argument call, and this proposal doesn't invent one.
+
+#+transclude: [[file:src/examples/senders/scan.backtick.cpp::b38693ad-2fc4-46f8-bda3-70efeee491bd]] :lines 2- :src c++ :end "b38693ad-2fc4-46f8-bda3-70efeee491bd end"
+
+So ~bulk~ keeps its closure and ~pipe~ carries it. That is the honest shape of
+the result: the pipe idiom survives where the arity doesn't fit, and nowhere
+else.
+
+* What converts, and what does not
+
+The table below is printed by a program that compiles one instance of each
+shape, so it cannot drift away from what the compiler accepts. Every claim in
+it is a ~static_assert~ or it is not made.
+
+#+transclude: [[file:src/examples/scorecard/scorecard.cpp::1d233eaa-37b0-43c9-815c-699b3772aba3]] :lines 2- :src c++ :end "1d233eaa-37b0-43c9-815c-699b3772aba3 end"
+
+One row of it is a finding, not a feature. The design records D16 (a type name
+in the slot constructs, with CTAD) as resolved, and the wording
+example in the paper carries ~a `std::pair` b~. Neither prototype accepts it,
+in any spelling. Clang refuses a slot that names a type at all; GCC accepts
+the name and then looks for ~operator()~ on an object of that type. Neither
+reaches functional-style construction, which is its own grammar production, so
+D16 doesn't fall out of "a type name is callable" the way the design assumes.
+That is DEV-06 and DEV-G12.
+
+* The helper
+
+One combinator, for the stages that have no second operand.
+
+#+transclude: [[file:src/smd/infix/pipe.hpp::17cc4d61-f8c7-460f-880e-6f91fcf875b5]] :lines 2- :src c++ :end "17cc4d61-f8c7-460f-880e-6f91fcf875b5 end"
+
+Constant evaluation comes from the call, and isn't reimplemented for the
+operator, so this is true at compile time:
+
+#+transclude: [[file:src/smd/infix/pipe.test.cpp::4bf5ca2a-824d-41ab-8094-74e687a9bedb]] :lines 2- :src c++ :end "4bf5ca2a-824d-41ab-8094-74e687a9bedb end"
+
+* Everything is behind the flag
+
+A build without =-fbacktick= has to behave just as upstream does. This source is
+compiled twice by the test suite, once with the flag where it must succeed and
+once with =-fno-backtick= where it must fail:
+
+#+transclude: [[file:src/examples/gating/gated.cpp::7ed5d37b-5384-4b83-98d8-756c5f5a88a3]] :lines 2- :src c++ :end "7ed5d37b-5384-4b83-98d8-756c5f5a88a3 end"
+
+Clang rejects it in the parser, GCC in the lexer with =stray '`' in program=.
+Which is what upstream does.
+
+* What the examples turned up
+
+Three things, none of which I'd have found from one-line examples.
+
+D16 is not implemented, above.
+
+A bare slot name in a dependent context is rejected by GCC and accepted by
+Clang. ~t `pipe` inc~ inside a function template, where ~pipe~ is a variable
+brought in by a using-declaration, fails at instantiation: GCC re-runs the
+lookup at the point of instantiation and keeps only the ADL result, discarding
+the ordinary lookup from the definition context. ADL finds nothing, since the
+callee is a variable. Since the slot desugars to a call it should inherit the
+call's lookup, so Clang has it right. A qualified slot works on both. That is
+DEV-G11, and it bit twice in ordinary generic code.
+
+And the pipe half of the calendar is harder to read than the backtick half, at
+the same column limit, formatted by the same tool. I didn't set out to demonstrate that.
 
 # Local Variables:
 # org-html-htmlize-output-type: css

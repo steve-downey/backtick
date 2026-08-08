@@ -20,6 +20,34 @@ include(GNUInstallDirs)
 # happens not to use the feature" but code proven to compile with the feature
 # switched off. That is the same invariant the prototypes assert in their own
 # regression suites: a build without the flag behaves exactly as upstream.
+# add_golden_example(<name> [LIBS <lib>...])
+# ==========================================
+#
+# One program, one golden output. For an example whose claim is about what
+# compiles rather than about two spellings agreeing at runtime.
+function(add_golden_example name)
+    cmake_parse_arguments(GE "" "" "LIBS" ${ARGN})
+
+    add_executable(${name})
+    target_sources(${name} PRIVATE ${name}.cpp)
+    target_link_libraries(${name} PRIVATE backtick-examples.infix ${GE_LIBS})
+    install(
+        TARGETS ${name}
+        COMPONENT backtick-examples.infix.examples
+        DESTINATION ${CMAKE_INSTALL_BINDIR}
+        EXCLUDE_FROM_ALL
+    )
+
+    add_test(
+        NAME ${name}.golden
+        COMMAND
+            ${CMAKE_COMMAND} -DNAME=${name} -DBINARY=$<TARGET_FILE:${name}>
+            -DEXPECTED=${CMAKE_CURRENT_SOURCE_DIR}/${name}.expected
+            -DWORKDIR=${CMAKE_CURRENT_BINARY_DIR} -P
+            ${PROJECT_SOURCE_DIR}/cmake/compare-golden.cmake
+    )
+endfunction()
+
 function(add_paired_example name)
     cmake_parse_arguments(PE "" "" "LIBS" ${ARGN})
 
