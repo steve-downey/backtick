@@ -1,6 +1,8 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
-exclude: ^(template/|papers/wg21)
+# infra/ is vendored in from bemanproject/infra by git subtree. Reformatting
+# it here would conflict with every future pull from upstream.
+exclude: ^(template/|papers/wg21|infra/)
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
