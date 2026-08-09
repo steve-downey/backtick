@@ -85,22 +85,20 @@ the log for the marker, never the process table.
   `clang/unittests/Format/*.cpp` as well as `clang/lib/Format/`, and it uses
   the **in-tree** `clang-format`. Format your test edits with the binary you
   just built.
-- **`DirectoryWatcherTest.*` (8 cases)** fail *intermittently* when the
-  machine runs out of **free** inotify watches — a `cloud-drive-dae` process
-  holds ~65,045 of 65,536. Not ours; the untouched binaries fail identically.
-  **Corrected by BL01:** they do not fail unconditionally. With ~155 watches
-  free all 8 pass, and BL01's unfiltered gate was clean on both branches with
-  the budget in exactly that state. So **do not budget them as expected
-  failures** — a clean unfiltered run is achievable and is the standard. If
-  they do fail, check the budget before believing it, then gate around them:
+- **`DirectoryWatcherTest.*` (8 cases)** used to fail *intermittently* when
+  the machine ran out of **free** inotify watches — a `cloud-drive-dae`
+  process holds ~65k. **`B31` CLOSED 2026-08-08:** the maintainer applied
+  the root fix; `fs.inotify.max_user_watches` is now **524288** (8×
+  headroom), verified with all 8 passing directly. They are ordinary tests:
+  never budget them as expected failures, never filter them. If they ever
+  fail again, check `sysctl fs.inotify.max_user_watches` first — a reimage
+  or sysctl change reverting to 65536 re-arms the old failure mode:
   ```bash
-  for p in /proc/[0-9]*/fdinfo/*; do grep -c '^inotify' $p; done | paste -sd+ | bc
-  cat /proc/sys/fs/inotify/max_user_watches
+  sysctl fs.inotify.max_user_watches   # expect 524288
   "$B"/tools/clang/unittests/AllClangUnitTests --gtest_filter='DirectoryWatcherTest.*'
   ```
   Note the binary: clang's unittests are consolidated into a single
   **`AllClangUnitTests`**; there is no `DirectoryWatcherTests` executable.
-  `B31` — the permanent fix — needs root and is **still open**.
 - **`Format/dump-config-objc-stdin.m`** fails on `backtick-23` **only**, from
   a stray 2018 `/home/sdowney/src/.clang-format` outside any repo. It passes
   on every trunk-based branch. Do not "fix" the file (`B33`).

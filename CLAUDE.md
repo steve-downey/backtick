@@ -127,11 +127,13 @@ Two gotchas that make a failed gate look green — both cost real time already:
 **Known failures, and nothing else is acceptable.** The full accounting lives
 in `ops/backlog/PLAN.md`'s gate facts; the short form:
 
-- **8 `DirectoryWatcherTest.*` cases**, on *every* branch including untouched
-  binaries, when the machine's inotify watch budget is exhausted. Not ours.
-  Gate around them with
-  `GTEST_FILTER='-DirectoryWatcherTest.*' "$B"/bin/llvm-lit -s "$B"/tools/clang/test`.
-  The real fix needs root and is tracked as `ops/BACKLOG.md` B31.
+- **(closed 2026-08-08)** The 8 `DirectoryWatcherTest.*` cases used to fail
+  intermittently when the machine ran out of free inotify watches (B31).
+  The root fix is applied: `fs.inotify.max_user_watches` is now 524288, so
+  they are ordinary tests — do **not** budget them as expected failures and
+  do **not** filter them out. If they ever fail again, check
+  `sysctl fs.inotify.max_user_watches` (a reimage or sysctl change could
+  revert it) before suspecting your diff.
 - **`Clang :: Format/dump-config-objc-stdin.m` on `backtick-23` only** — a
   stray `Language: Cpp` config at `/home/sdowney/src/.clang-format` (dated
   2018, outside any repo) picked up by clang-format walking up the directory
