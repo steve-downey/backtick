@@ -40,7 +40,14 @@ with `-fno-backtick`, so it is code proven to build with the feature off.
 | `src/examples/senders/hop` | `starts_on` and `continues_on`, which the pipe could never spell |
 | `src/examples/senders/scan` | P2300's async inclusive scan, and where the operator stops |
 | `src/examples/scorecard` | one compiled instance of each interface shape |
+| `src/examples/consteval` | a pipeline evaluated entirely at compile time, sized from the command line |
 | `src/examples/gating` | proof that nothing here builds without the flag |
+
+`consteval` is the one pair that is not there to be read as an idiom. It exists to
+be measured: it runs its whole pipeline in a `static_assert`, and `-DSMD_EVAL_N=400`
+resizes the work so the cost of a spelling can be read as a curve rather than a
+single number. The assert checks the pipeline against a hand-written loop over the
+same sieve, so it holds at every size and the sweep needs no table of answers.
 
 `src/smd/infix/pipe.hpp` is the only library code: one combinator, for the adaptors
 that take nothing beyond their subject and so have no second operand to write.

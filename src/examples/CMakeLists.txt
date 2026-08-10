@@ -3,6 +3,7 @@
 
 include(${PROJECT_SOURCE_DIR}/cmake/add_paired_example.cmake)
 
+add_subdirectory(consteval)
 add_subdirectory(gating)
 add_subdirectory(ranges)
 add_subdirectory(scorecard)
