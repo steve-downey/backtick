@@ -64,6 +64,49 @@ the backtick repo's deviation ledgers:
 
 Repros for both are in `docs/divergences/`.
 
+## What it costs
+
+`make compare` measures the two spellings against each other and writes
+`docs/comparison/<toolchain>.md`. It asks three questions: does the same program
+come out, what did the compiler spend to produce it, and what did the constant
+evaluator spend. Only the clang-23 prototype is measured so far.
+
+Both halves of a pair are compiled from a file of the *same name* in different
+directories, which is what makes the strong form of the answer available: the
+objects can be compared byte for byte, because the source name in `.strtab` was
+the only thing that differed. Every pair is a bit-identical object at `-O2` and
+`-O3` except `calendar`, and `calendar` differs only in what two closure types
+are called -- identical `.text`, no symbol a different size, and assembly that
+matches once anonymous-lambda ordinals are renumbered.
+
+At `-O0` they do differ, and the backtick side is smaller every time, by 1369
+bytes of `.text` on `scan` up to 7354 on `calendar`. That is the closure objects:
+the pipe spelling instantiates `_RangeAdaptor` and `_Partial` specializations for
+each stage, and the infix spelling never makes them. The optimizer erases the
+difference; the front end does not do the same work.
+
+Constant evaluation is the one exact measurement, since `-fconstexpr-steps`
+bisects to a count rather than a time. Over the `consteval` pair at four sizes the
+infix spelling costs a flat 43 steps less -- 5757 against 5714 at n=100, 42745
+against 42702 at n=800 -- with the same 52 steps per element on both sides. A
+constant offset, not a slope.
+
+Compile time is the axis this repo can say least about. The differences are near
+the resolution of a busy machine, so the harness interleaves the variants and
+compiles a *control* -- the pipe source a second time under another name -- to
+measure what the host contributes on its own. Where a gap does clear that floor,
+it has so far been the extra `#include <smd/infix/pipe.hpp>`: the backtick TUs
+pay about 0.16s of front end for the header, and the spelling itself has never
+cost more than the control.
+
+The checked-in timings were taken on a workstation doing other things at the
+time, and the `machine` column says so on the rows where it matters. Sources
+proven to generate identical code do not time identically here, which makes the
+difference environmental rather than something left to find. No claim rests on
+that section: it is not gated, not kept current, and if it is ever worth pinning
+down it belongs on a quiet machine in CI. The other two axes need no such
+apology -- both are deterministic, and both reproduce exactly from run to run.
+
 ## Building
 
 Nothing here builds with a stock compiler. The three toolchains that work are the

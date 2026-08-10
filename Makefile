@@ -141,6 +141,13 @@ ctest_: compile
 .PHONY: test
 test: ctest_ ## Rebuild and run tests
 
+# The comparison reads the build's own compile commands to get the flags, so
+# the tree has to be configured first. Takes tens of minutes: scope it with
+# scripts/compare.sh --examples/--only when iterating.
+.PHONY: compare
+compare: $(_build_path)/CMakeCache.txt ## Compare codegen and cost of the two spellings
+	scripts/compare.sh --toolchain $(TOOLCHAIN)
+
 .PHONY: cmake
 cmake: |  $(_build_path)
 	cd $(_build_path) && ${run_cmake}
