@@ -22,7 +22,7 @@
 // the ordinary lookup from the definition context. pipe is a variable, so
 // ADL finds nothing. Clang accepts it on both tracks. Recorded as DEV-G11.
 
-#include "thread_context.hpp"
+#include <examples/senders/thread_context.hpp>
 
 #include <smd/infix/pipe.hpp>
 

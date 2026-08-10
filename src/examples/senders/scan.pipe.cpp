@@ -6,7 +6,7 @@
 // the same pipeline with the calls spelled infix; the two must print the
 // same thing.
 
-#include "thread_context.hpp"
+#include <examples/senders/thread_context.hpp>
 
 #include <beman/execution/execution.hpp>
 

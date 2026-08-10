@@ -5,7 +5,7 @@
 // actually ran on, so the printed trail is evidence rather than a caption.
 // hop.backtick.cpp is the same chain with the calls spelled infix.
 
-#include "thread_context.hpp"
+#include <examples/senders/thread_context.hpp>
 
 #include <beman/execution/execution.hpp>
 

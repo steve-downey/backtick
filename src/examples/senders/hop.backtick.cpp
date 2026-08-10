@@ -11,7 +11,7 @@
 // Left associativity puts the stages in the right order without parentheses:
 // this is then(continues_on(then(starts_on(...), mark), b), mark).
 
-#include "thread_context.hpp"
+#include <examples/senders/thread_context.hpp>
 
 #include <smd/infix/pipe.hpp>
 
