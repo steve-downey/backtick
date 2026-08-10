@@ -849,3 +849,57 @@ measurement is reproducible:
 Its commit message says so in its title. It resolves a postfix use against the
 one-operand overload set, which is deliberately wrong semantics — it exists to
 measure the *parse*, and nothing else about it is correct.
+
+---
+
+## M1 — the backtick merge, which is never replayed
+
+`unicode-operators-experiment` @ `760a11f0b444` is a **merge commit** bringing
+`439ceb5237dc` and `169e45c7916f` from `backtick-trunk` (the F23/F24 defect
+fixes). Classification: **backtick dependency — and not merely unreplayed, but
+unreplayable by design.**
+
+It **changes no existing row.** The merge is on the far side of the
+`backtick-trunk..unicode-operators-experiment` diff base, so the feature diff
+this ledger classifies is byte-identical after it:
+
+```
+git diff --stat 169e45c7916f..760a11f0b444   → 110 files, +7341/−29
+git diff -U0  169e45c7916f..760a11f0b444 | grep -c '^@@'   → 204
+```
+
+— U19's 110 files / 204 hunks, unchanged. `unicode-operators-upstream` did not
+receive the merge and must never receive it; see the M1 handoff for why.
+
+## BL03 — `UserOperatorExpr` in the static analyzer
+
+Classification: **`upstream replay` — all six sites, verbatim in intent, and
+landed.**
+
+| Site | Experiment | Upstream |
+|---|---|---|
+| `Analysis/CFG.cpp` `findConstructionContexts` | ✔ | ✔ |
+| `Analysis/CFG.cpp` `CFGBuilder::Visit` | ✔ | ✔ |
+| `Analysis/CFG.cpp` `VisitForTemporaries` | ✔ | ✔ |
+| `Analysis/LiveVariables.cpp` `LookThroughExpr` | ✔ | ✔ |
+| `StaticAnalyzer/Core/Environment.cpp` `ignoreTransparentExprs` | ✔ | ✔ |
+| `StaticAnalyzer/Core/ExprEngine.cpp` `Visit` | ✔ | ✔ |
+| `test/Analysis/unicode-operator-analysis.cpp` | ✔ | ✔ (byte-identical) |
+
+Every site is `UserOperatorExpr`-only and carries **no backtick dependency**:
+the arms name `UserOperatorExprClass` and call `getSemanticForm()`, neither of
+which exists in the backtick feature. `grep -i backtick` over the new test and
+over `git diff upstream/main..unicode-operators-upstream` both return nothing.
+
+**Stated explicitly because M1 makes it look otherwise:** on the experiment
+branch these six arms now sit *directly beside* `BacktickInfixExpr` arms in the
+same switches, and three of the four production files were touched by both.
+Those backtick arms are **not part of this replay**. The upstream hunks are
+therefore not textually identical to the experiment ones — they are positioned
+against the *upstream* precedents (`ParenExpr`, `OpaqueValueExpr`,
+`CXXBindTemporaryExpr`, `ConstantExpr`/`ExprWithCleanups`) rather than after
+the backtick arms, and one comment differs accordingly. Same six changes, same
+semantics, different neighbours.
+
+Cost: **4 production files, +47/−5; 1 test file, +122.** Both branches gate
+green with zero failures.
