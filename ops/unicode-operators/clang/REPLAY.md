@@ -903,3 +903,43 @@ semantics, different neighbours.
 
 Cost: **4 production files, +47/−5; 1 test file, +122.** Both branches gate
 green with zero failures.
+
+## BL04 — `UserOperatorExpr` in ClangIR
+
+Classification: **`upstream replay` — all four sites, and landed.** The
+backtick half of the same commit is a **`backtick dependency`** and belongs to
+the backtick track; it is not replayed.
+
+| Site | Experiment | Upstream |
+|---|---|---|
+| `CIR/CodeGen/CIRGenExprScalar.cpp` `VisitUserOperatorExpr` | ✔ | ✔ |
+| `CIR/CodeGen/CIRGenExprAggregate.cpp` `VisitUserOperatorExpr` | ✔ | ✔ |
+| `CIR/CodeGen/CIRGenExprComplex.cpp` `VisitUserOperatorExpr` | ✔ | ✔ |
+| `CIR/CodeGen/CIRGenFunction.cpp` `emitLValue` | ✔ | ✔ |
+| `test/CIR/CodeGen/unicode-operator.cpp` | ✔ | ✔ (byte-identical) |
+| `test/CIR/CodeGen/backtick-infix.cpp` | ✔ | ✗ — backtick only |
+
+Every `UserOperatorExpr` site is backtick-free: the arms name
+`UserOperatorExprClass` and call `getSemanticForm()`, neither of which exists
+in the backtick feature. `grep -i backtick` over the new upstream test and over
+`git diff upstream/main..unicode-operators-upstream` both return nothing, so
+U20's headline result survives this step as it survived BL03's.
+
+**The 24 added lines on `unicode-operators-upstream` are byte-identical to
+lines that were compiled and run**, which is worth saying because the upstream
+branch has no CIR build of its own and never will as part of this track. The
+one CIR build stands against `unicode-operators-experiment`, which carries both
+features; the `UserOperatorExpr`-only form was produced there by removing the
+backtick arms, rebuilt, and re-run — `unicode-operator.cpp` passes and
+`backtick-infix.cpp` fails — and the resulting `+` lines were diffed against
+the upstream worktree's before committing. The same was done in reverse for the
+backtick-only form.
+
+Unlike BL03, the upstream hunks here **are** textually identical to the
+experiment ones apart from the shared lead comment, which on the experiment
+branch introduces both wrappers at once and upstream introduces one. The arms
+themselves are the same characters in the same order, because all four sites
+place them immediately after the same upstream precedent —
+`VisitCXXRewrittenBinaryOperator` — rather than after a backtick neighbour.
+
+Cost: **4 production files, +24; 1 test file, +84.**
