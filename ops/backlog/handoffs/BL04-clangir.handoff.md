@@ -127,9 +127,14 @@ configuration. `backtick-23`'s single failure is
   full runs the same day gave **0** failures (the scratch gate) and **3**
   (`build-unicode`, run concurrently with it), and all five gates above ran
   clean. **Still do not filter them and do not budget them as expected
-  failures**; a gate failing only these 8 is an environment reading. A durable
-  fix has to bound `cloud-drive-dae`, not raise the ceiling again — which
-  needs root, so it is the maintainer's, not an agent's.
+  failures**; a gate failing only these 8 is an environment reading.
+  **`cloud-drive-dae` is the machine's continuous backup**, so watching every
+  file is its job and its hoard tracks the file count — it will grow into any
+  ceiling. 524288 is a plausible ceiling for this tree where the 65536 default
+  plainly was not, so the sysctl fix was right and stays; it just cannot be a
+  guarantee. Free watches are a shared, load-dependent resource and these 8
+  tests are the only thing in `check-clang` that competes for it. Raising the
+  ceiling again is the lever if it recurs, and that needs root.
 - **The scratch dir is standing and reusable**, `~/src/llvm/build-cir-scratch`,
   pointed at `~/src/llvm/unicode`. It has `clang`, `FileCheck`, `count`, `not`,
   `split-file` and a full `check-clang` dependency set. **BL07 needs a scratch
@@ -189,9 +194,10 @@ Read after `steps/BL05-upstream-mangling.md`:
 
 - **Nothing is pushed on any branch.** All four are ahead of every remote, and
   now by one more commit each.
-- **`B31` is open again and needs root.** The maintainer has to bound
-  `cloud-drive-dae`'s watch hoard; raising `fs.inotify.max_user_watches` again
-  will be eaten the same way.
+- **`B31` is open again, and is an environment condition rather than a bug to
+  fix.** `cloud-drive-dae` is the continuous backup and legitimately scales
+  with the tree, so no ceiling is permanent; 524288 is at least a plausible
+  one. Raising it further needs root and is the maintainer's call.
 - **`B37` is still unowned** (BL03 found it; its fix lands on four branches and
   changes `backtick-infix.cpp`'s `bugs_are_still_found` premise).
 - **`M2` is still blocked on `BL06`.** Note that BL04 has now put CIR arms on
