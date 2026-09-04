@@ -23,17 +23,24 @@ Clang backtick S00–S12, GCC backtick G01–G10, and Clang Unicode U00–U21
 not merely planned). Treat that step machinery as a completed record unless a
 *new* step is added to a `PLAN.md`.
 
-**Live work is in `ops/backlog/PLAN.md`** — steps BL01–BL07, nothing checked.
-That track works `ops/BACKLOG.md`, the ledger of every defect the three
-tracks found and left standing (`B01`–`B36`). **That is where an
-implementation agent picks up work.** Two maintenance merges are also
-outstanding, M1 and M2 in `ops/unicode-operators/clang/PLAN.md` Phase G.
+**Live work is in `ops/completion/PLAN.md`** — steps C01–C15, nothing checked.
+**That is where an agent picks up work.** It supersedes `ops/backlog/PLAN.md`
+(BL01–BL04 green; BL05–BL07 absorbed) and covers *all* remaining work in one
+plan: the 31 open `BNN` rows in `ops/BACKLOG.md`, the 29 unreconciled rows
+across the three DEVIATIONS ledgers, the 7 open design decisions, and the two
+papers.
 
-The remaining non-defect work is paper writing (see
-`docs/infix-backtick-operator.org`, `docs/unicode-infix-operators.org`,
-`papers/`), reconciling open DEVIATIONS rows back into the design docs, and
-the open *design* decisions indexed in `ops/BACKLOG.md` §6 — which need an
-author's decision, not an implementer's.
+It is **ordered by what each item does to a paper**, not by severity and not
+by when the item was noticed — the implementation tracks are complete, so the
+remaining question is which of these changes what a paper can claim. Phase A
+is upstream reports (issues take calendar time to cite), Phase B is the
+decisions that need the *author* rather than an implementer, then paper-truth
+defects, evidence debt, reconciliation section by section, hygiene, and the
+two papers last. `ops/completion/PLAN.md`'s "Coverage" table maps every open
+row to its step; nothing in `ops/` is outside it.
+
+One maintenance merge is outstanding, M2 in `ops/unicode-operators/clang/PLAN.md`
+Phase G; it runs after C05.
 
 Maintenance rebases (R-prefixed rows in the `ops/PLAN.md` Status log) are not
 plan steps and do not follow `ops/AGENT_PROTOCOL.md`; they still get a handoff
@@ -41,6 +48,10 @@ and a Status-log row so base-commit changes are not lost.
 
 ## Layout
 
+- `docs/unicode-operators.md` — the Unicode design doc, the exact counterpart
+  of the backtick one below: decisions log (U1–U11), the token set, the
+  grammar, the implementation sketch, ABI, and the open questions. The
+  `DXXXXR0` paper is written from it.
 - `docs/backtick-operator-design.md` — the canonical design + decisions log
   (D1–D16), precedence rationale (§4), the same-delimiter parsing problem (§5),
   per-compiler implementation plans (§6 Clang, §7 clang-format, §8 GCC), and
@@ -54,10 +65,13 @@ and a Status-log row so base-commit changes are not lost.
 - `ops/PLAN.md` — master operational checklist (Clang phases A–C, then GCC).
 - `ops/gcc/PLAN.md` — the GCC sub-plan (G01–G10).
 - `ops/BACKLOG.md` — every defect the three tracks found and left standing
-  (`B01`–`B36`), with a `Closed by` column pointing at the step that closes
+  (`B01`–`B38`), with a `Closed by` column pointing at the step that closes
   each one. Open *design* questions are not in it; §6 indexes those.
-- `ops/backlog/PLAN.md` — the defect-fix track (BL01–BL07), which schedules
-  and gates that backlog. The only plan with unchecked steps.
+- `ops/completion/PLAN.md` — the completion track (C01–C15), which schedules
+  and gates **everything** still outstanding: defects, reconciliation,
+  decisions and the papers. The only plan with unchecked steps.
+- `ops/backlog/PLAN.md` — the defect-fix track (BL01–BL07). Superseded;
+  BL01–BL04's Status rows and handoffs are the record of four closed defects.
 - `ops/AGENT_PROTOCOL.md` — the one-step-per-agent execution loop. **Read it
   before doing any plan step.**
 - `ops/steps/NN-*.md`, `ops/gcc/steps/GNN-*.md` — one self-contained spec per

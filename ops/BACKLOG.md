@@ -17,7 +17,8 @@ Severity is about the paper and the prototype, not about shipping:
 - **P2** — real defect, bounded blast radius, no paper claim depends on it.
 - **P3** — verification debt, cosmetic, or an upstream annoyance.
 
-**Scheduled work lives in `ops/backlog/PLAN.md`** (steps BL01–BL07). The
+**Scheduled work lives in `ops/completion/PLAN.md`** (steps C01–C15), which
+supersedes `ops/backlog/PLAN.md` (BL01–BL04 green, BL05–BL07 absorbed). The
 `Closed by` column below is filled in by the step that closes the row; an
 empty cell means nobody owns it yet. Rows re-graded on 2026-08-05 against
 measurements rather than handoff prose are marked **[re-graded]**.
@@ -78,6 +79,7 @@ Not ours, found while doing this work, and worth reporting.
 | B28 | P3 | **`-ast-print` cannot round-trip an `auto`-returning function template** (deduced return type versus the `auto` primary). Pre-existing; costs five minutes to anyone writing a round-trip test. | U16 handoff | |
 | B29 | P3 | **`-ast-print` after a PCH prints a class's fields last** if they precede its methods. Pre-existing; breaks any naive PCH print-diff test. | U17 handoff | |
 | B30 | P3 | **The caret for `use of undeclared 'operator⊞'` underlines only the `operator` keyword**, not the glyph. Upstream's shape — `operator+` and `operator""_x` produce the identical 8-column range. Cosmetic and shared. | U10 handoff | |
+| B38 | P2 | **`CIRGenFunction::emitLValue`'s default arm turns any unhandled l-value class into an assertion failure, not a diagnostic.** It calls `errorNYI("emitLValue: unsupported l-value class")` and then `return LValue()`; the default-constructed `LValue` carries a null `QualType`, which asserts downstream in `QualType::getCommonPtr` (`!isNull() && "Cannot retrieve a NULL type pointer"`). So the ClangIR NYI path, which is meant to be a hard diagnostic, aborts instead for this one site. Measured by BL04 with **both** wrapper nodes — `BacktickInfixExpr` and `UserOperatorExpr` abort identically at the same arm, which is what localizes it to the arm rather than to either node. Neither feature causes it and neither flag is needed to reach it: any `Expr` class missing from that switch, in l-value position, in a CIR build, does the same. Reachable today only in a `CLANG_ENABLE_CIR=ON` build, which is why nobody here had seen it. BL04 fixed the two arms it needed and left the default alone, since making the default diagnose properly is upstream's design call, not ours. *(Added 2026-09-03 by BL04.)* | BL04 handoff; `clang/lib/CIR/CodeGen/CIRGenFunction.cpp` `emitLValue` default arm; DEV-09 / DEV-U24 | |
 
 ## 5. Environment and infrastructure
 
@@ -112,8 +114,18 @@ recommendation, and needs an author's decision, not an implementer's:
 
 ## 7. Suggested order
 
-Superseded by `ops/backlog/PLAN.md`, which schedules and gates this. The
-reasoning, updated for what measurement changed:
+**Superseded twice.** First by `ops/backlog/PLAN.md`, which scheduled and
+gated the top of this list; then, on 2026-09-03, by `ops/completion/PLAN.md`,
+which covers *everything* here and orders it differently on purpose.
+
+The order below is by severity — which defect most damages the prototype.
+That was right while the prototype was the deliverable. It is no longer:
+the three implementation tracks are done, and the remaining question is
+**which of these changes a paper.** `ops/completion/PLAN.md` is ordered by
+that instead, and its §"Coverage" table maps every open row to a step.
+
+Kept below because the severity reasoning is still true and still useful
+when two items compete for one agent:
 
 **BL01 (`B31`–`B34`) first**, ahead of everything. B31+B32 inject 10 spurious
 failures into every backtick gate, and until they are gone each step's Status

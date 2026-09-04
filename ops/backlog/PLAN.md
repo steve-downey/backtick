@@ -1,5 +1,13 @@
 # Backlog — Operational Plan (defect-fix track)
 
+> **SUPERSEDED 2026-09-03 by `ops/completion/PLAN.md`.** `BL01`–`BL04` are
+> green and their Status rows and handoffs below are the record; keep them.
+> The three unstarted steps live on: `BL05`'s step file is executed unchanged
+> by **C01**, `BL07`'s is superseded by **C09**, and `BL06`'s five rows were
+> split by purpose across **C05**, **C09** and **C13** — they were one step
+> because they shared a branch, and they are five unrelated jobs. Do not pick
+> up an unchecked box below; go to `ops/completion/PLAN.md`.
+
 This plan works `ops/BACKLOG.md`. That file is a *record* — 36 rows of
 defects the three implementation tracks found and left standing, with a
 severity scale and a suggested order in prose, but nothing scheduled or
