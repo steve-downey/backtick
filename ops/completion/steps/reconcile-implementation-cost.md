@@ -1,4 +1,4 @@
-# C10 — Reconcile U§8: the implementation-cost thesis
+# reconcile-implementation-cost — Reconcile U§8: the implementation-cost thesis
 
 **Goal.** Eight deviation rows land in one section, and together they are the
 **strongest single piece of evidence the whole prototype produced**. U§8 is
@@ -6,7 +6,7 @@ currently an "implementation sketch" with three Clang bullets. What was
 measured is a much larger and much more interesting claim, and no paper says
 it yet.
 
-**Depends on:** C09 — the evidence debt is discharged first, so this section
+**Depends on:** evidence-debt — the evidence debt is discharged first, so this section
 does not cite a measurement that is still owed.
 **Closes / reconciles:** `DEV-U04`, `DEV-U05`, `DEV-U07`, `DEV-U12`,
 `DEV-U13`, `DEV-U14`, `DEV-U17`, `DEV-U24`. Records `B19` as evidence.
@@ -51,14 +51,14 @@ The rows tell one story in three numbers and one pattern:
 7. **`DEV-U17`** — the AST-node shape, and U§12's "one level, banked once for
    both features".
 8. **`DEV-U05`, `DEV-U07`** — the parser and flag story, including U§6's
-   "parsing is the *easy* part" claim, which C12 also touches (see below).
+   "parsing is the *easy* part" claim, which reconcile-remainder also touches (see below).
 
 ## The sentence three rows disagree with
 
 `DEV-U05`, `DEV-U11`, `DEV-U13` and `DEV-U15` all name the same claim in U§6:
 **"parsing is the *easy* part of this feature, easier even than backtick."**
-Four independent measurements pushed back on one sentence. **C12 owns U§6**;
-this step must not rewrite it, but it should hand C12 the U§8-side evidence
+Four independent measurements pushed back on one sentence. **reconcile-remainder owns U§6**;
+this step must not rewrite it, but it should hand reconcile-remainder the U§8-side evidence
 and say so in the handoff. A sentence contradicted four times is worth a
 paragraph in the paper, not a quiet edit.
 
@@ -90,4 +90,4 @@ paragraph in the paper, not a quiet edit.
 - All eight rows carry `**RECONCILED**` and a paragraph reference. This is the
   gate — a reconciliation that cannot say where it went did not happen.
 - U§8 states a number for each axis, and the numbers match the rows.
-- The handoff tells C12 exactly what U§6's sentence has to answer for.
+- The handoff tells reconcile-remainder exactly what U§6's sentence has to answer for.

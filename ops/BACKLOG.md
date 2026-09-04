@@ -17,7 +17,7 @@ Severity is about the paper and the prototype, not about shipping:
 - **P2** — real defect, bounded blast radius, no paper claim depends on it.
 - **P3** — verification debt, cosmetic, or an upstream annoyance.
 
-**Scheduled work lives in `ops/completion/PLAN.md`** (steps C01–C15), which
+**Scheduled work lives in `ops/completion/PLAN.md`** (16 steps, named by slug), which
 supersedes `ops/backlog/PLAN.md` (BL01–BL04 green, BL05–BL07 absorbed). The
 `Closed by` column below is filled in by the step that closes the row; an
 empty cell means nobody owns it yet. Rows re-graded on 2026-08-05 against

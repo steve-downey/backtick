@@ -1,4 +1,4 @@
-# C09 — Discharge the evidence debt: `B16`, `B17`, `B21`, `B08`
+# evidence-debt — Discharge the evidence debt: `B16`, `B17`, `B21`, `B08`
 
 **Goal.** Four places where the prototype claims, or is about to claim, that
 something was checked and it was not. This step supersedes
@@ -62,7 +62,7 @@ to prove the frozen bytes are the ones published.
 So `TransformBacktickInfixExpr` is unexercised for round-trip. **Watch `B28`**
 — write an explicit return type, not `auto`, because `-ast-print` cannot
 round-trip an `auto`-returning function template and you will spend the
-afternoon on upstream's bug instead of yours. (C02 reports `B28`; this step
+afternoon on upstream's bug instead of yours. (upstream-triage reports `B28`; this step
 just avoids it.)
 
 ## Do

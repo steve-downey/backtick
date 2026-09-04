@@ -1,4 +1,4 @@
-# C02 — Triage the upstream annoyances: `B24`, `B27`–`B30`
+# upstream-triage — Triage the upstream annoyances: `B24`, `B27`–`B30`
 
 **Goal.** Five rows that have sat as "upstream's problem, probably" get a
 decision each: **report**, or **WONTFIX with the reason recorded**. Either
@@ -29,7 +29,7 @@ spare agent.
   which are ASCII-derived by construction. A clean small upstream report.
 - **`B28` — `-ast-print` cannot round-trip an `auto`-returning function
   template.** Pre-existing, and it costs five minutes to everyone who writes a
-  round-trip test — C09 has to work around it. Report.
+  round-trip test — evidence-debt has to work around it. Report.
 - **`B29` — `-ast-print` after a PCH prints a class's fields last** if they
   precede its methods. Pre-existing; breaks any naive PCH print-diff test.
   Report, and note that U17's round-trip test had to be written around it.

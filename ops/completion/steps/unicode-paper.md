@@ -1,11 +1,11 @@
-# C15 — The Unicode paper: a real number, and the blog version
+# unicode-paper — The Unicode paper: a real number, and the blog version
 
 **Goal.** The last step. `papers/dxxxxr0.md` is a complete 718-line draft that
 **still has `DXXXXR0` as its document number** — it has never been submitted.
 This step finishes it and gives it one.
 
-**Depends on:** C04 (the ABI section), C07 (decided changes implemented),
-C10, C11, C12 (the whole Unicode ledger reconciled). It is last because it
+**Depends on:** mangling-abi (the ABI section), implement-decisions (decided changes implemented),
+reconcile-implementation-cost, reconcile-declaring-using, reconcile-remainder (the whole Unicode ledger reconciled). It is last because it
 depends on nearly everything, which is the correct shape: the paper is what
 all of it was for.
 **Refs:** `papers/dxxxxr0.md`; `docs/unicode-operators.md`;
@@ -28,11 +28,11 @@ done — just do not half-rename.
 
 ## What has changed under the paper
 
-- **C04 rewrote U§9.** The ABI question is answered: what is implemented, what
+- **mangling-abi rewrote U§9.** The ABI question is answered: what is implemented, what
   the paper asks for, and what is unexamined. The paper's "What is not
   resolved" section shrinks accordingly, and must not still list a question
-  C04 answered.
-- **C10 rewrote U§8.** This is the biggest change and the paper's strongest
+  mangling-abi answered.
+- **reconcile-implementation-cost rewrote U§8.** This is the biggest change and the paper's strongest
   material: five Clang work items rather than three, 32 dispatch sites in 21
   files over `StmtClass` and 33 over `NameKind` on a disjoint axis, the
   four-category taxonomy of how a compiler does and does not tell you about
@@ -45,19 +45,19 @@ done — just do not half-rename.
   identical** to the explicit call. That is the desugaring thesis checked at
   the last place it could have failed, and it belongs near the top of the
   implementation-experience argument, not in a footnote.
-- **C11 rewrote §7 / §7.1**, including removing the unqualified "anywhere".
-- **C03's answers.** Four questions that the paper currently lists as open are
+- **reconcile-declaring-using rewrote §7 / §7.1**, including removing the unqualified "anywhere".
+- **decision-brief's answers.** Four questions that the paper currently lists as open are
   now decided. Move them out of "What is not resolved" and into the design,
   with the author's reasoning. What remains open should be a short list, and
   every item on it should be open *on purpose*.
-- **C12's U§6 correction**: four independent measurements contradicted
+- **reconcile-remainder's U§6 correction**: four independent measurements contradicted
   "parsing is the easy part". The paper should carry the corrected claim and
   the fact that it was corrected — a prototype that changed its author's mind
   about something is worth reporting.
 
 ## Do
 
-1. Reconcile against `docs/unicode-operators.md`, which C10–C12 have just
+1. Reconcile against `docs/unicode-operators.md`, which reconcile-implementation-cost–reconcile-remainder have just
    rewritten. Design doc is truth; paper is written from it.
 2. Check every "we implemented" claim against the tree.
 3. Confirm the **separable-fates** claim in the paper still matches reality —
@@ -72,7 +72,7 @@ done — just do not half-rename.
 
 - The paper renders, under its **real** number, with no `DXXXX` left anywhere
   in the repo (`grep -ri dxxxx` is the check).
-- "What is not resolved" contains nothing C03 or C04 answered.
+- "What is not resolved" contains nothing decision-brief or mangling-abi answered.
 - Every "we implemented" claim checked against the tree; say how many.
 - The separable-fates grep is in the handoff, with its empty output.
 

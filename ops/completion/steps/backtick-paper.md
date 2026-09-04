@@ -1,11 +1,11 @@
-# C14 — D4307R0, and the blog version
+# backtick-paper — D4307R0, and the blog version
 
 **Goal.** The backtick paper is a complete draft — 1128 lines, eleven
 sections, wording included — written before four tracks of measurement landed.
 This step makes it say what is now true and finishes it.
 
-**Depends on:** C05 (paper-truth defects fixed), C12 (backtick ledger
-reconciled, §17 updated), C13 (parity gaps closed so the paper does not have
+**Depends on:** clang-paper-truth (paper-truth defects fixed), reconcile-remainder (backtick ledger
+reconciled, §17 updated), hygiene-parity (parity gaps closed so the paper does not have
 to explain them).
 **Closes:** nothing in `BACKLOG.md`. This is the deliverable.
 **Refs:** `papers/d4307r0.md`; `docs/backtick-operator-design.md`;
@@ -24,23 +24,23 @@ Work through these rather than re-reading the whole thing cold:
   something the implementation did not do. Check that §"Design choices and
   decisions" and the wording section now match the implementation, including
   the `-ast-print` round trip and the CTAD and dependent forms.
-- **C05's three fixes** change three claims: the flag is now C++-only in fact
+- **clang-paper-truth's three fixes** change three claims: the flag is now C++-only in fact
   as well as intent (`B03`), the keyword escape round-trips (`B02`), and the
   node's source range spans its operands (`B04`).
-- **`DEV-09` (C12)** gives §17 the back-end symmetry sentence: the two
+- **`DEV-09` (reconcile-remainder)** gives §17 the back-end symmetry sentence: the two
   features diverge in the front end and converge in the back end, which is the
   design's own claim about where the sugar stops mattering.
-- **C01's issue numbers.** Wherever the paper says a defect was found in
+- **upstream-reports's issue numbers.** Wherever the paper says a defect was found in
   Clang, cite it.
-- **C02's WONTFIX reasons**, if `B24` or `B30` went that way — the paper
+- **upstream-triage's WONTFIX reasons**, if `B24` or `B30` went that way — the paper
   should answer those questions rather than let a reviewer raise them.
-- **`B12` from C08**: parts of the Clang work have **no GCC counterpart by
+- **`B12` from gcc-resync**: parts of the Clang work have **no GCC counterpart by
   construction**. A two-implementation paper has to say which parts, and why
   that is a fact about the compilers rather than a gap in the experiment.
 
 ## Do
 
-1. Reconcile the paper against `docs/backtick-operator-design.md`, which C12
+1. Reconcile the paper against `docs/backtick-operator-design.md`, which reconcile-remainder
    has just brought up to date. **The design doc is the source of truth and
    the paper is written from it** — if they disagree, fix the paper, and if
    the design doc is the one that is wrong, fix it first and say so.

@@ -1,4 +1,4 @@
-# C13 — Hygiene: `B05`, `B06`, `B07`, `B35`, and record `B18` / `B22`
+# hygiene-parity — Hygiene: `B05`, `B06`, `B07`, `B35`, and record `B18` / `B22`
 
 **Goal.** Six rows with no paper consequence. They are last on purpose — none
 of them changes what either paper can claim — but they are not optional,
@@ -7,10 +7,10 @@ will find the Unicode side supported in tooling and the backtick side not, and
 that asymmetry is an artifact of the order the work happened in, not a design
 statement.
 
-**Depends on:** C05, so this does not collide with it on the same two
+**Depends on:** clang-paper-truth, so this does not collide with it on the same two
 branches.
 **Closes:** `B05`, `B06`, `B07`, `B35`; records `B18`. (`B22` is closed by
-C12, where its decision belongs.)
+reconcile-remainder, where its decision belongs.)
 **Refs:** `ops/backlog/steps/BL06-backtick-batch.md` for `B06` and `B35`;
 `U17`'s handoff for the `B05` sizing.
 

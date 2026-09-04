@@ -3,8 +3,8 @@
 > **SUPERSEDED 2026-09-03 by `ops/completion/PLAN.md`.** `BL01`–`BL04` are
 > green and their Status rows and handoffs below are the record; keep them.
 > The three unstarted steps live on: `BL05`'s step file is executed unchanged
-> by **C01**, `BL07`'s is superseded by **C09**, and `BL06`'s five rows were
-> split by purpose across **C05**, **C09** and **C13** — they were one step
+> by **upstream-reports**, `BL07`'s is superseded by **evidence-debt**, and `BL06`'s five rows were
+> split by purpose across **clang-paper-truth**, **evidence-debt** and **hygiene-parity** — they were one step
 > because they shared a branch, and they are five unrelated jobs. Do not pick
 > up an unchecked box below; go to `ops/completion/PLAN.md`.
 

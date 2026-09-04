@@ -1,12 +1,12 @@
-# C05 — Clang paper-truth: `B03`, `B02`, `B04`
+# clang-paper-truth — Clang paper-truth: `B03`, `B02`, `B04`
 
 **Goal.** Three defects on the backtick branches where the implementation does
 not do what a document says. `BL06` had them in a batch with two hygiene items
 because they share a branch; this step takes the three that change what a
-paper can claim and leaves `B06`/`B35` to C13.
+paper can claim and leaves `B06`/`B35` to hygiene-parity.
 
-**Depends on:** C03 — only so that a decision does not land on top of this
-work. If C03 is blocked on the author, this step may run anyway; say so.
+**Depends on:** decision-brief — only so that a decision does not land on top of this
+work. If decision-brief is blocked on the author, this step may run anyway; say so.
 **Closes:** `B03`, `B02`, `B04`.
 **Refs:** `ops/backlog/steps/BL06-backtick-batch.md` — its `B03`, `B04` and
 `B02` material is good and this step does not restate it; read it.
@@ -49,7 +49,7 @@ identical, because a reader comparing the two features will compare exactly
 this.
 
 Do **not** be drawn into `B24` here: the *inner* `CallExpr`'s range is a
-separate, non-cheap problem that C02 triages.
+separate, non-cheap problem that upstream-triage triages.
 
 ## Do
 

@@ -23,12 +23,19 @@ Clang backtick S00–S12, GCC backtick G01–G10, and Clang Unicode U00–U21
 not merely planned). Treat that step machinery as a completed record unless a
 *new* step is added to a `PLAN.md`.
 
-**Live work is in `ops/completion/PLAN.md`** — steps C01–C15, nothing checked.
+**Live work is in `ops/completion/PLAN.md`** — 16 steps, named by slug, nothing checked.
 **That is where an agent picks up work.** It supersedes `ops/backlog/PLAN.md`
 (BL01–BL04 green; BL05–BL07 absorbed) and covers *all* remaining work in one
 plan: the 31 open `BNN` rows in `ops/BACKLOG.md`, the 29 unreconciled rows
 across the three DEVIATIONS ledgers, the 7 open design decisions, and the two
 papers.
+
+Steps are **named by slug, never numbered** — the checklist's ordinals are
+reading order and shift when a step is inserted; the slug is the identity and
+is what every cross-reference uses. The plan's own first step,
+`slug-the-ledgers`, retires the serial numbers this repo already carries
+(`B03`, `DEV-U13`, `D16`, `U8`) for the same reason; see `~/.claude/CLAUDE.md`,
+"Name things for what they are, not what number they came in at".
 
 It is **ordered by what each item does to a paper**, not by severity and not
 by when the item was noticed — the implementation tracks are complete, so the
@@ -40,7 +47,7 @@ two papers last. `ops/completion/PLAN.md`'s "Coverage" table maps every open
 row to its step; nothing in `ops/` is outside it.
 
 One maintenance merge is outstanding, M2 in `ops/unicode-operators/clang/PLAN.md`
-Phase G; it runs after C05.
+Phase G; it runs after clang-paper-truth.
 
 Maintenance rebases (R-prefixed rows in the `ops/PLAN.md` Status log) are not
 plan steps and do not follow `ops/AGENT_PROTOCOL.md`; they still get a handoff
@@ -67,7 +74,7 @@ and a Status-log row so base-commit changes are not lost.
 - `ops/BACKLOG.md` — every defect the three tracks found and left standing
   (`B01`–`B38`), with a `Closed by` column pointing at the step that closes
   each one. Open *design* questions are not in it; §6 indexes those.
-- `ops/completion/PLAN.md` — the completion track (C01–C15), which schedules
+- `ops/completion/PLAN.md` — the completion track (16 steps, named by slug), which schedules
   and gates **everything** still outstanding: defects, reconciliation,
   decisions and the papers. The only plan with unchecked steps.
 - `ops/backlog/PLAN.md` — the defect-fix track (BL01–BL07). Superseded;
@@ -184,9 +191,12 @@ make -C gcc check-c++ RUNTESTFLAGS="dg.exp=g++.dg/backtick/*.C"
   (Clang `LangOptions` `Backtick`; GCC `flag_backtick` / `OPT_fbacktick`). A
   default build (flag off) must behave exactly as upstream. Keep diffs minimal —
   touch only what the step names.
-- **Commit messages** (in *this* repo and the worktrees): `[backtick] SNN: <title>`
-  for Clang-track work, `[backtick][gcc] GNN: <title>` for GCC-track, `docs: …`
-  for design-doc edits, `ops: …` for plan/ledger bookkeeping.
+- **Commit messages** (in *this* repo and the worktrees): `[backtick] <slug>: <title>`
+  for Clang-track work, `[backtick][gcc] <slug>: <title>` for GCC-track, `docs: …`
+  for design-doc edits, `ops: …` for plan/ledger bookkeeping. The completed
+  tracks used `SNN` / `GNN` / `UNN` and those commits stay as they are — see
+  `ops/completion/steps/slug-the-ledgers.md` for why the historical ids are
+  deliberately not rewritten.
 - **Feedback loop.** When build reality contradicts the design doc, append a row
   to the relevant `DEVIATIONS.md` and reference it in the handoff; the design-doc
   author reconciles it into §3 / the affected section. Record cross-compiler

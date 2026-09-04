@@ -1,4 +1,4 @@
-# C01 — File the upstream defects: `B25`, `B38`, `B26`
+# upstream-reports — File the upstream defects: `B25`, `B38`, `B26`
 
 **Goal.** Three defects that are LLVM's, not this feature's, stop being
 private notes in `ops/` and become issues the papers can cite.
@@ -7,7 +7,7 @@ private notes in `ops/` and become issues the papers can cite.
 **Closes:** `B25`, `B38`, `B26`.
 
 Placed first in the plan not because it is urgent but because **an issue takes
-calendar time to be triaged**, and C04 and C15 both want to cite one. Nothing
+calendar time to be triaged**, and mangling-abi and unicode-paper both want to cite one. Nothing
 lands on any feature branch. This step writes no compiler code.
 
 ## Do

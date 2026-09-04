@@ -1,4 +1,4 @@
-# C08 — GCC: re-sync (`B13`), then `B09`, `B10`, `B11`, `B12`
+# gcc-resync — GCC: re-sync (`B13`), then `B09`, `B10`, `B11`, `B12`
 
 **Goal.** The GCC track has been parked since `G10`. It is pinned at trunk
 `c9ee2c5ab6c` while the Clang side has moved to 23.x and 24.x, and it carries

@@ -1,4 +1,4 @@
-# C04 — The ABI question, and U§9 with it
+# mangling-abi — The ABI question, and U§9 with it
 
 **Goal.** `U8` has been "open" since the Unicode track began: the Itanium ABI
 has no first-class `<operator-name>` production for a user-defined operator,
@@ -7,14 +7,14 @@ production to borrow at all. This step decides what the paper asks for and
 writes U§9 in the same sitting, because the section cannot be written until
 the question is answered and answering it *is* writing the section.
 
-**Depends on:** C01 — the report it files is evidence here (see below).
+**Depends on:** upstream-reports — the report it files is evidence here (see below).
 **Closes:** `B20`; reconciles `DEV-U08`, `DEV-U09`, and `DEV-U23`'s mangling
 clause; answers §6's `U8 / DEV-U09`.
 **Refs:** `docs/unicode-operators.md` §9 and U8; `DEV-U08`, `DEV-U09`;
 `ops/unicode-operators/clang/handoffs/U09-mangling.handoff.md`; `U21`'s
 mangling note.
 
-## Why this depends on C01
+## Why this depends on upstream-reports
 
 BL05's own closing note makes the connection, and it is the strongest
 argument the section has: **fixity in mangling is easy to get wrong even
@@ -22,7 +22,7 @@ where the ABI spells it out.** `B25` is Clang emitting the postfix spelling
 for prefix `++` and `--` when the ABI gives `pp_` / `pp` and `mm_` / `mm`,
 and GCC gets it right — a live cross-vendor divergence in the exact corner a
 first-class `<operator-name>` production would have to specify. Cite the
-issue number C01 obtained. A section that argues "the ABI needs room for
+issue number upstream-reports obtained. A section that argues "the ABI needs room for
 fixity" is much stronger when it can point at fixity going wrong today.
 
 ## The decision
@@ -56,22 +56,22 @@ the decision puts it, and close the row either way.
 
 ## Do
 
-1. Write the decision as C03 writes its pages — question, what was measured,
+1. Write the decision as decision-brief writes its pages — question, what was measured,
    options, cost, recommendation — but write it **into `docs/unicode-operators.md`
-   §9** rather than into `docs/open-decisions.md`, because unlike C03's four
+   §9** rather than into `docs/open-decisions.md`, because unlike decision-brief's four
    this one's answer *is* the section.
 2. Reconcile `DEV-U08` (the derivation and its untested branches) and
    `DEV-U09` (§9's closing paragraph, the MSVC gap) into §9 as you go, and
    mark both rows `**RECONCILED**`.
 3. Reconcile `DEV-U23`'s mangling clause only — the rest of `DEV-U23` is
-   postfix and belongs to C03.
+   postfix and belongs to decision-brief.
 4. Close `B20` with the reasoning above.
 
 ## Verify (gate)
 
 - No build; no feature branch touched.
 - §9 answers all three of: what is implemented, what is asked for, what is
-  unexamined — and cites C01's issue.
+  unexamined — and cites upstream-reports's issue.
 - `DEV-U08` and `DEV-U09` carry `**RECONCILED**` and name the paragraph they
-  landed in. `DEV-U23` says which clause was taken and which was left to C03.
+  landed in. `DEV-U23` says which clause was taken and which was left to decision-brief.
 - `B20`'s `Closed by` cell is filled.

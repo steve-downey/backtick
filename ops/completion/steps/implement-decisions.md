@@ -1,14 +1,14 @@
-# C07 — Implement what C03 decided
+# implement-decisions — Implement what decision-brief decided
 
-**Goal.** Turn C03's answers into code. Scope is **contingent on the author's
+**Goal.** Turn decision-brief's answers into code. Scope is **contingent on the author's
 decisions** and cannot be written in advance; what can be written in advance
 is the shape of the work and the traps in it.
 
-**Depends on:** C03, answered. If C03 is BLOCKED awaiting the author, so is
+**Depends on:** decision-brief, answered. If decision-brief is BLOCKED awaiting the author, so is
 this — do not guess a decision in order to have something to build.
 **Closes:** whichever of `DEV-U15`, `DEV-U06`, U§13-folds and `DEV-U23` were
 decided in the direction of a change. Rows decided in the direction of "keep
-and document" are **not** this step's; they go to C11.
+and document" are **not** this step's; they go to reconcile-declaring-using.
 
 ## Read first
 
@@ -58,4 +58,4 @@ dated. If it has no answers, stop.
 
 That is a complete and common outcome, and this step then does nothing but
 say so. **Do not tick this box on an empty step** — mark it not-applicable in
-the plan with a one-line reason, and let C11 carry the documentation.
+the plan with a one-line reason, and let reconcile-declaring-using carry the documentation.

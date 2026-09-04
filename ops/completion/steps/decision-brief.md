@@ -1,4 +1,4 @@
-# C03 — The decision brief: four open questions, and `B23`
+# decision-brief — The decision brief: four open questions, and `B23`
 
 **Goal.** The seven items in `ops/BACKLOG.md` §6 have been "measured, with a
 recommendation, needing an author's decision" since the tracks closed, and
@@ -7,17 +7,17 @@ have never been put in front of the author in one place. Four of them have
 and writing twice. This step is the one thing that blocks the most.
 
 **Depends on:** nothing. Desk work — no build, no branch.
-**Closes:** `B23`. Unblocks C07, C11, and (with C04) C15.
+**Closes:** `B23`. Unblocks implement-decisions, reconcile-declaring-using, and (with mangling-abi) unicode-paper.
 **Refs:** `ops/unicode-operators/clang/DEVIATIONS.md` rows `DEV-U06`,
 `DEV-U15`, `DEV-U16`, `DEV-U23`; `docs/unicode-operators.md` §13 and §13.1;
 `ops/unicode-operators/clang/handoffs/U21-postfix-probe.handoff.md`.
 
 ## Scope — four questions plus one re-triage
 
-The three §6 items **not** here: the ABI question is C04 (it is large enough
-to be its own step and it wants C01's issue number), `DEV-U16` is a CWG
-question with no implementation consequence and is recorded by C11, and
-U§6's sixth worked example is a two-line doc sync done by C12.
+The three §6 items **not** here: the ABI question is mangling-abi (it is large enough
+to be its own step and it wants upstream-reports's issue number), `DEV-U16` is a CWG
+question with no implementation consequence and is recorded by reconcile-declaring-using, and
+U§6's sixth worked example is a two-line doc sync done by reconcile-remainder.
 
 1. **`DEV-U15` — a prefix use finds a two-parameter operator through its
    default argument.** Keep and document, or reinstate [over.oper]p8. Note
@@ -63,7 +63,7 @@ only where they disagree.
 - No build. Nothing committed to a feature branch.
 - Every one of the five has all five parts; **no page ends in "TBD"** and no
   recommendation is "either is fine".
-- Each page names the branches its recommendation would touch, so C07 can be
+- Each page names the branches its recommendation would touch, so implement-decisions can be
   scoped from this document alone.
 - `ops/BACKLOG.md` §6 is rewritten to point at `docs/open-decisions.md`
   instead of restating the questions.
@@ -72,6 +72,6 @@ only where they disagree.
 
 Record the answers **in `docs/open-decisions.md` itself**, dated, with the
 author's reason where it differs from the recommendation — that record is
-what C11 and C15 cite. Then C07 implements whatever was decided. If the
+what reconcile-declaring-using and unicode-paper cite. Then implement-decisions implements whatever was decided. If the
 author has not answered when you finish, that is a **BLOCKED** handoff with
 the brief attached, which is a successful step: the block is the point.

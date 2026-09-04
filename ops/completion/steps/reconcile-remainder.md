@@ -1,15 +1,15 @@
-# C12 — Reconcile the rest: U§5, §10, §6, §12, §13, and the backtick and GCC ledgers
+# reconcile-remainder — Reconcile the rest: U§5, §10, §6, §12, §13, and the backtick and GCC ledgers
 
 **Goal.** The eleven remaining deviation rows, across three ledgers, plus the
 one §6 item that is a two-line sync rather than a decision. After this the
 deviation ledgers are empty of unreconciled rows for the first time since the
 tracks began.
 
-**Depends on:** C08 — the GCC row and the cross-compiler material need the
+**Depends on:** gcc-resync — the GCC row and the cross-compiler material need the
 re-synced state.
 **Closes / reconciles:** `DEV-U03`, `DEV-U18`, `DEV-U19`, `DEV-U20`,
 `DEV-U21`, `DEV-U22`; `DEV-06`, `DEV-07`, `DEV-08`, `DEV-09`; `DEV-G08` if
-C08 did not take it. Closes §6's U§6 item.
+gcc-resync did not take it. Closes §6's U§6 item.
 **Refs:** `docs/unicode-operators.md` §5, §6, §10, §12, §13;
 `docs/backtick-operator-design.md`; all three deviation ledgers.
 
@@ -24,7 +24,7 @@ generator has no `confusables.txt` input, and these strings now appear in
 Decide here whether the paper claims them as derived or admits them as
 curated — and if curated, say by what principle. Close `B22` either way;
 that is a recording, not an implementation, so it belongs in this step and
-not in C13.
+not in hygiene-parity.
 
 `DEV-U18` targets U§8's "two rules that fall out of single-code-point tokens"
 and the exclusion diagnostics; `DEV-U19` targets §5 predicate 5, §10 and
@@ -34,7 +34,7 @@ and the exclusion diagnostics; `DEV-U19` targets §5 predicate 5, §10 and
 
 **"Parsing is the *easy* part of this feature, easier even than backtick."**
 `DEV-U05`, `DEV-U11`, `DEV-U13` and `DEV-U15` each pushed back on it, from
-four different directions, and C10 will have handed you its half of the
+four different directions, and reconcile-implementation-cost will have handed you its half of the
 evidence. **This is the one sentence in the design doc that measurement most
 clearly falsified, and four independent contradictions is a paper paragraph,
 not a quiet edit.** Rewrite it to say what is true — parsing was the easy part
@@ -72,8 +72,8 @@ exactly the point the design predicts it should.** That sentence belongs in
 
 ## Group 5 — GCC
 
-`DEV-G08`, if C08 did not take it. And the cross-compiler divergence section
-generally: `B12`'s finding from C08 — that GCC has no phase-2 AST wrapper and
+`DEV-G08`, if gcc-resync did not take it. And the cross-compiler divergence section
+generally: `B12`'s finding from gcc-resync — that GCC has no phase-2 AST wrapper and
 therefore *cannot* have F23's fix — is a difference **in kind**, and the
 papers should say which parts of the Clang work have no GCC counterpart by
 construction.
