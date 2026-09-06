@@ -943,6 +943,37 @@ and the prohibition.
 [reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md)'s,
 U§7.1 being its destination section. *Report owed:* **none.**
 
+### 2026-09-06 — keyword-escape-printing: ratified
+
+**The escape belongs in diagnostics as well as in printers.**
+[keyword-escape-printing](backtick-operator-design.md#keyword-escape-printing)
+was resolved by
+[clang-paper-truth](../ops/completion/steps/clang-paper-truth.md), whose step
+file required the diagnostic half to be decided deliberately rather than
+changed as a side effect of the round-trip fix. It recorded the decision on
+its own authority, with the reversal cost stated, and flagged it. The author
+has now **ratified** it, so it is a ruling rather than an implementation
+choice awaiting review.
+
+Under `-fbacktick` the escape is the only spelling the name has, so a
+diagnostic that calls the entity `new` names it with a spelling no program can
+contain, and text copied out of that diagnostic is ill-formed. `-ast-dump`
+stays bare, because what it reports is the name's *identity*, which really is
+an ordinary identifier.
+
+The alternative — confining the escape to source-reproducing printers — is
+**not** taken. It remains reversible at the cost of one more
+`PrintingPolicy` bit and an opt-in at every printer entry point, but it would
+also have to *defend* the split, and the two halves of the diagnostic surface
+were found disagreeing already (`ak_declarationname` carried no policy while
+`ak_nameddecl` did), which is the condition a single answer removes.
+
+*Doc work owed:* **none.** The decision entry is written and the change is on
+both backtick branches; `unicode-operators-experiment` inherited it through
+[M2](../ops/completion/handoffs/M2-forward-port.handoff.md).
+`unicode-operators-upstream` does not carry it, which is one of the branch
+differences M2's handoff records.
+
 ## Where each answer was recorded
 
 Per the convention that a ruling appends to its question's own Log rather than
@@ -957,6 +988,7 @@ getting a document of its own:
 | dependent-template-operator-id | [operator-identifier-disjointness](unicode-operators.md#operator-identifier-disjointness) | [operator-id-anywhere](../ops/unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere), and the backlog row [dependent-template-operator-id](../ops/BACKLOG.md#dependent-template-operator-id) |
 | dependent-template-operator-id *(settled, 2026-09-06)* | same entry, second `Log.` line | [operator-id-anywhere](../ops/unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere) restated as reword-only, and the backlog row's `Closed by` and `Item` corrected |
 | abi-production-request | [operator-mangling](unicode-operators.md#operator-mangling) | none left to mark — [vendor-extended-mangling](../ops/unicode-operators/clang/DEVIATIONS.md#vendor-extended-mangling) and [msvc-mangling](../ops/unicode-operators/clang/DEVIATIONS.md#msvc-mangling) went **RECONCILED** in the same step, [postfix-operators](../ops/unicode-operators/clang/DEVIATIONS.md#postfix-operators)'s mangling clause with them |
+| keyword-escape-printing *(ratified)* | [keyword-escape-printing](backtick-operator-design.md#keyword-escape-printing) | [keyword-escape-printing](../ops/DEVIATIONS.md#keyword-escape-printing), already **RECONCILED** by the step that made the change — the answer *is* its destination section, as with the ABI row |
 
 Every ledger row above stays **`OPEN`** with a dated **DECIDED** note naming
 the step that owes the writing. A row goes `RECONCILED` when its destination

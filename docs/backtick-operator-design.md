@@ -229,9 +229,11 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 The switch is `PrintingPolicy::BacktickKeywordEscape`, initialised from `LangOptions::Backtick` the way `Bool`, `Restrict` and `Half` are initialised from their language facts, so a build without the flag prints byte-for-byte what it printed before. Nothing weaker is needed: a compilation without the escape cannot *have* an `Identifier` name whose spelling is a keyword.
 
-**Decided by.** [clang-paper-truth](../ops/completion/steps/clang-paper-truth.md), whose step file required the diagnostic half to be decided deliberately rather than changed as a side effect of the round-trip fix. It is reversible: confining the escape to source-reproducing printers costs one more policy bit and an opt-in at every printer entry point, and nothing else depends on the answer.
+**Decided by.** [clang-paper-truth](../ops/completion/steps/clang-paper-truth.md), whose step file required the diagnostic half to be decided deliberately rather than changed as a side effect of the round-trip fix. It is reversible: confining the escape to source-reproducing printers costs one more policy bit and an opt-in at every printer entry point, and nothing else depends on the answer. **Ratified by the author on 2026-09-06**, the reversal option having been offered and declined; see [the ratification](open-decisions.md#2026-09-06--keyword-escape-printing-ratified).
 
 **Log.** 2026-09-06 — recorded when [keyword-escape-round-trip](../ops/BACKLOG.md#keyword-escape-round-trip) was fixed on both Clang branches. One site does the escaping (`DeclarationName::print`); five more had to be routed *to* it, because upstream reaches those names through paths that carry no policy — three declarator printers in `DeclPrinter` that hand the name to the *type* printer as a placeholder string, `StmtPrinter::VisitMemberExpr`, and the `ak_declarationname` diagnostic argument (its `ak_nameddecl` sibling already used the context's policy, which is how the two halves of the diagnostic surface were found disagreeing). One site is gated the other way, `TextNodeDumper::VisitMemberExpr`, so that `-ast-dump` is bare consistently. The costs are in [keyword-escape-printing](../ops/DEVIATIONS.md#keyword-escape-printing).
+
+2026-09-06 — ratified by the author. The step that made the change recorded the decision itself, because the fix could not be made without taking one; the ratification settles that the diagnostic half was chosen rather than inherited from the printing half.
 
 ### alternative-spellings
 
