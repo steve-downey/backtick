@@ -1,13 +1,87 @@
 # Handoff — decision-brief — Four open questions, and the "anywhere" claim
 
-- **Status:** **BLOCKED — on the author, which is this step succeeding.** The
-  step file's four gate bullets all pass; the brief exists and is complete.
-  What is missing is the only thing an agent must not supply: the answers.
-- **Branch / commit:** `unicode-operators` in *this* repo only. No feature
-  branch touched, no compiler built, nothing landed in any LLVM or GCC
-  worktree — correct for this step, which the step file marks "desk work — no
-  build, no branch".
-- **Date / agent:** 2026-09-05
+- **Status:** **GREEN (gate passed, and the step is complete).** It stood
+  BLOCKED on the author from 2026-09-05; the author answered on 2026-09-06 —
+  **all five recommendations accepted as written, none overridden** — and the
+  answers are recorded, so the box is ticked.
+- **Branch / commit:** `unicode-operators` in *this* repo only —
+  `71780ad` (the brief) and a follow-up carrying the answers, this handoff and
+  the plan bookkeeping. No feature branch touched, no compiler built, nothing
+  landed in any LLVM or GCC worktree — correct for this step, which the step
+  file marks "desk work — no build, no branch".
+- **Date / agent:** brief 2026-09-05; answers recorded 2026-09-06
+
+## The answers (2026-09-06) — all five recommendations accepted
+
+| Question | Answer | What it generates |
+|---|---|---|
+| [prefix-arity-selection](../../../docs/open-decisions.md#prefix-arity-selection) | (a) — [over.oper]p8 stays **waived**; the cross-fixity use is intended | U§7 "Declaring" paragraph; split [unary-forms](../../../docs/unicode-operators.md#unary-forms)'s second sentence into declaration-arity and use-position |
+| [over-oper-restrictions](../../../docs/open-decisions.md#over-oper-restrictions) | (a) — static members stay **rejected**, on the two-spellings reason, *not* the "no implicit object parameter" one | U§7 "Declaring" enumerates all five [over.oper] restrictions; **a new decision entry** is owed, suggested slug `static-member-operators` |
+| [fold-over-user-infix](../../../docs/open-decisions.md#fold-over-user-infix) | (a) — **excluded in v1, for both features**, stated as deliberate | a U§13 bullet (the section has none to amend) + one backtick-paper sentence; **and a standing silent guard** |
+| [postfix-operators](../../../docs/open-decisions.md#postfix-operators) | (a) — **declined for v1, not foreclosed**, in *affordable and declined* terms | keep U§13.1 as a full subsection; make [unary-forms](../../../docs/unicode-operators.md#unary-forms)'s rationale agree |
+| [dependent-template-operator-id](../../../docs/open-decisions.md#dependent-template-operator-id) | (c) — **reword first, report separately**, paper not gated on the fix | the U§7.1 clause; one upstream report against the **literal-operator** reproducer |
+
+**Nothing turned into code**, which is why
+[implement-decisions](../steps/implement-decisions.md) is now marked
+**not-applicable** in the plan rather than left looking unstarted — per its own
+step file's "If the answer was 'no change'" clause, which says to mark it with
+a one-line reason and *not* tick it. All the work these answers generate is
+documentary and belongs to reconcile-declaring-using (U§7, U§7.1),
+reconcile-remainder (U§13, U§13.1) and upstream-triage (the report).
+
+**Where each answer was recorded**, per the convention that a ruling appends to
+its question's own Log rather than getting a document of its own:
+
+- **`docs/open-decisions.md`** — five dated subsections plus a
+  "Where each answer was recorded" table.
+- **`docs/unicode-operators.md` §2** — `Log.` entries on
+  [unary-forms](../../../docs/unicode-operators.md#unary-forms) (which carries
+  **three** of the five answers: the p8 waiver, the static-member reason, and
+  the postfix reframing),
+  [operator-function-id](../../../docs/unicode-operators.md#operator-function-id),
+  [user-infix-precedence](../../../docs/unicode-operators.md#user-infix-precedence)
+  and
+  [operator-identifier-disjointness](../../../docs/unicode-operators.md#operator-identifier-disjointness).
+- **`docs/backtick-operator-design.md` §3** — a `Log.` entry on
+  [precedence-level](../../../docs/backtick-operator-design.md#precedence-level),
+  because the fold answer is *one answer for both features*.
+- **`ops/unicode-operators/clang/DEVIATIONS.md`** — five rows marked
+  **`OPEN — DECIDED 2026-09-06`**:
+  [prefix-arity-selection](../../unicode-operators/clang/DEVIATIONS.md#prefix-arity-selection),
+  [over-oper-restrictions](../../unicode-operators/clang/DEVIATIONS.md#over-oper-restrictions),
+  [infix-parse-cost](../../unicode-operators/clang/DEVIATIONS.md#infix-parse-cost)
+  (part 3 only), [postfix-operators](../../unicode-operators/clang/DEVIATIONS.md#postfix-operators)
+  (substance only) and
+  [operator-id-anywhere](../../unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere).
+- **`ops/BACKLOG.md`** —
+  [dependent-template-operator-id](../../BACKLOG.md#dependent-template-operator-id)'s
+  `Closed by` records that it closes as a **pair** of steps.
+
+**No row was marked `RECONCILED`, and that is deliberate.** Deciding is not
+reconciling. A row goes `RECONCILED` when its destination section says the new
+thing; every one of these five names its destination section and its owning
+step and stays `OPEN` until that step writes it. Marking them otherwise would
+report work that has not happened — the exact failure the plan's docs-step gate
+exists to catch.
+
+**Two scope lines held.** The U§7.1 reword was *not* written here (it is
+reconcile-declaring-using's) and the upstream issue was *not* drafted here (it
+is upstream-triage's). The recommended new decision entry
+`static-member-operators` was likewise recorded as owed rather than written,
+for the same reason.
+
+**The fold guard was put where it will be read**, since the answer leaves a
+standing obligation and not just a sentence:
+`Level != prec::UserInfix` in `Parser::isFoldOperator` must survive every
+rebase and replay on all four Clang branches, and it fails **silently**. It is
+now a bullet in `ops/completion/PLAN.md`'s **Gate facts** (the live plan, read
+before every step) *and* a dated standing warning at the top of
+`ops/unicode-operators/clang/REPLAY.md`, above the per-step rows, where a
+replay agent looks first. Both say the same operative thing: on clean `main`
+the predicate ends at `prec::Spaceship`, so a replay must **add** the clause,
+not rename one, and the negative tests that pin it
+(`clang/test/Parser/unicode-operator-precedence.cpp` section 9 and its backtick
+twin) must come across with it.
 
 ## What changed
 
@@ -136,16 +210,16 @@ per the step file.
 None that contradict the design; this step touches no compiler and takes no
 position that is not marked as a recommendation. Four judgement calls:
 
-1. **The checkbox is left unticked and the handoff is BLOCKED**, although the
-   step file's four gate bullets all pass. The step file's own "After the
-   author answers" section makes recording the answers *in
-   `docs/open-decisions.md`* part of this step, and `ops/AGENT_PROTOCOL.md`
-   pairs a BLOCKED handoff with an unticked box. Ticking now would erase the
-   only signal that answers are outstanding, at the exact moment the plan's
-   critical path depends on that signal. **The box ticks when the answers land
-   in the file** — a resumption of *this* step, not a new one. The plan's
-   ground rule and `handoffs/README.md` both say a `Decide` step ending
-   BLOCKED on the author has succeeded, and this is that.
+1. **The checkbox was left unticked and the handoff BLOCKED on 2026-09-05**,
+   although the step file's four gate bullets all passed, because the step
+   file's own "After the author answers" section makes recording the answers
+   part of this step and `ops/AGENT_PROTOCOL.md` pairs a BLOCKED handoff with
+   an unticked box. Ticking then would have erased the only signal that answers
+   were outstanding, at the exact moment the plan's critical path depended on
+   it. **Resolved 2026-09-06**: the answers landed, the recording is done, and
+   the box is ticked by a resumption of *this* step rather than a new one —
+   which is what the plan's ground rule and `handoffs/README.md` describe when
+   they say a `Decide` step ending BLOCKED on the author has succeeded.
 2. **`dependent-template-operator-id` reuses the existing backlog slug**
    rather than taking a new one, contrary to the prior handoff's expectation
    but in line with its stated preference for reusing a ledger slug where one
@@ -219,11 +293,14 @@ position that is not marked as a recommendation. Four judgement calls:
 
 ## Forward notes for the NEXT step (written after reading its step file)
 
-**The next step is not implement-decisions, and implement-decisions may not
-start.** Its "Read first" is explicit: *"`docs/open-decisions.md`, the version
-with the author's answers recorded and dated. If it has no answers, stop."* It
-has no answers. Do not guess one to have something to build — that is the one
-failure mode both the plan's ground rules and `handoffs/README.md` name.
+**Superseded 2026-09-06 — the answers arrived, and implement-decisions is
+empty rather than blocked.** It is marked not-applicable in the plan, with the
+reason on the checklist line; do not tick it and do not go looking for
+something to build in it. Its own step file directs exactly this. Everything
+below this paragraph was written while the step was still blocked and still
+holds *as the list of what is available*, minus the reason for the wait.
+
+`gcc-resync` has since landed (`a0a1073`), so strike it from the list below.
 
 **What an agent can pick up instead, right now**, all unblocked and none of
 them dependent on this:
@@ -232,24 +309,21 @@ them dependent on this:
   numbers take calendar time and mangling-abi wants one.
 - **upstream-triage** (dep: none).
 - **null-return-suppression** (dep: none).
-- **gcc-resync** (dep: none) — the plan calls it the most perishable item in
-  the whole track.
+- ~~**gcc-resync**~~ — **landed 2026-09-06**, `a0a1073`; see
+  [gcc-resync](gcc-resync.handoff.md).
 - **evidence-debt** (dep: none).
 
-**When the answers do arrive**, the recording order is in the brief's
-`Answers` section and is worth following exactly: the dated answer goes in
-`docs/open-decisions.md`, *then* into the `Log.` field of the implicated entry
-in `docs/unicode-operators.md` §2 (rulings and divergences append to the
-question's own Log — they do not get a document or a number of their own),
-*then* the implicated ledger row's `**Status:**` is marked. Only then does
-implement-decisions have a scope.
+**The answers arrived and are recorded** in that order — brief, then `Log.`
+fields, then ledger `Status:` — and the brief's own `Answers` section now
+carries a table saying which entry and which row each one landed in. Read that
+table rather than re-deriving the mapping.
 
-**If every recommendation is accepted, implement-decisions is empty**, and its
-own step file says what to do about that: *"Do not tick this box on an empty
-step — mark it not-applicable in the plan with a one-line reason, and let
-reconcile-declaring-using carry the documentation."* Expect that outcome; four
-of the five recommendations are "keep what is built and argue for it", and the
-fifth is a doc reword plus an upstream report.
+**Every recommendation was accepted, so implement-decisions is empty** and has
+been marked not-applicable, per its own step file: *"Do not tick this box on an
+empty step — mark it not-applicable in the plan with a one-line reason, and let
+reconcile-declaring-using carry the documentation."* Four of the five answers
+are "keep what is built and argue for it"; the fifth is a doc reword plus an
+upstream report.
 
 **The documentation work these answers generate lands in three known places**,
 so reconcile-declaring-using can pre-read them:
@@ -269,11 +343,24 @@ so reconcile-declaring-using can pre-read them:
 
 ## Open risks / TODOs
 
-- **This step is the critical path and it is now waiting on a human.** Every
-  other Phase-C-and-later item that touches the Unicode paper is downstream of
-  it: implement-decisions, reconcile-declaring-using, and unicode-paper. Five
-  steps can proceed meanwhile (listed above), and after those the track has
-  nothing left that does not want an answer.
+- **Cleared 2026-09-06** — this step was the critical path and it is no longer
+  blocking anything. reconcile-declaring-using and unicode-paper are unblocked
+  as far as this step is concerned; implement-decisions is empty.
+- **The `static-member-operators` decision entry is owed and is easy to lose.**
+  It is the only *new* document the answers call for, it lives in
+  `docs/unicode-operators.md` §2, and it has no ledger row to remind anyone —
+  it exists only in the answer to
+  [over-oper-restrictions](../../../docs/open-decisions.md#over-oper-restrictions)
+  and in that row's `Status:`. reconcile-declaring-using owns it. Name it for
+  the question, not the answer, so it survives EWG reversing it.
+- **The reason recorded against the static-member rejection has changed, and
+  the old reason is still in the prototype's comment.** `SemaDeclCXX.cpp`'s
+  `CheckUserOperatorDeclaration` still says a static member "has no implicit
+  object parameter … so it can name neither form", which the inspection above
+  shows is not what the code does. Nobody owns fixing that comment — it is a
+  one-line edit on both Unicode branches and it is *not* worth a step of its
+  own, but whichever step next touches that function should correct it, or the
+  code will keep asserting a reason the design has abandoned.
 - **The plan's Coverage table says decision-brief closes
   [dependent-template-operator-id](../../BACKLOG.md#dependent-template-operator-id).**
   On the recommendation it does not: it closes as a pair

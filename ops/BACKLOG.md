@@ -275,7 +275,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** [operator-id-anywhere](unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere); U07, U10 handoffs
 
-**Closed by.** [decision-brief](completion/steps/decision-brief.md) has re-triaged this as a decision — the options, their costs and a recommendation are [dependent-template-operator-id](../docs/open-decisions.md#dependent-template-operator-id) — and it stays **open** until the author answers there. On the recommendation it closes as a *pair*: the U§7.1 reword is [reconcile-declaring-using](completion/steps/reconcile-declaring-using.md)'s and the upstream report is [upstream-triage](completion/steps/upstream-triage.md)-shaped work.
+**Closed by.** **A pair of steps, not one.** [decision-brief](completion/steps/decision-brief.md) re-triaged this as a decision and the author answered it on 2026-09-06 — option (c), [dependent-template-operator-id](../docs/open-decisions.md#dependent-template-operator-id): **reword U§7.1 and report upstream, in that order, and do not gate the paper on the fix landing.** So this row closes when both halves are done: the U§7.1 reword by [reconcile-declaring-using](completion/steps/reconcile-declaring-using.md), and the upstream report — filed against the **literal-operator** reproducer `t.template operator""_lit<int>(0)`, which needs no user operator and no unmerged branch — by [upstream-triage](completion/steps/upstream-triage.md). Neither half is [implement-decisions](completion/steps/implement-decisions.md)'s; nothing here turns into code on this project's branches.
 
 ### inner-call-source-range
 

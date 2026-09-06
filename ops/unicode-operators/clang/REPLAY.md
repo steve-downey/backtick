@@ -18,6 +18,23 @@ Classifications:
 - `shared if landed` — reusable if backtick lands first; otherwise needs a
   standalone equivalent.
 
+**Standing warning, added 2026-09-06 — the one clause in this feature that
+fails silently.** `Parser::isFoldOperator`'s `Level != prec::UserInfix`
+(`clang/lib/Parse/ParseExpr.cpp`) is **not** a rename on clean `main`: there
+the predicate ends at `prec::Spaceship`, and the replay must *add* the clause.
+Omitting it admits a user-introduced infix operator as a **fold operator** —
+no diagnostic, no build error, and no test failure unless the negative test
+came across too. `U11`'s row below already flags it as the single likeliest
+replay mistake in that step; this note hoists it to the top because it is now
+a *decision* and not merely an inherited behaviour:
+[fold-over-user-infix](../../../docs/open-decisions.md#fold-over-user-infix)
+was answered on 2026-09-06 — user operators are excluded from fold expressions
+in v1, deliberately, for both features. The negative tests that pin it are
+`clang/test/Parser/unicode-operator-precedence.cpp` section 9 and its backtick
+twin; replay them, and do not drop them as redundant. The same clause is a
+standing rebase check on all four Clang branches, recorded in
+[`ops/completion/PLAN.md`](../../completion/PLAN.md)'s gate facts.
+
 | Step | Files / hunks | Class | Standalone equivalent needed on `main` |
 |------|---------------|-------|----------------------------------------|
 | U00 | No source files touched. Establishes the base itself: worktree `/home/sdowney/src/llvm/unicode`, branch `unicode-operators-experiment` @ `bd6f4d5fa102`, which is `upstream/main` @ `bb33de72920a` **plus the 45-commit backtick diff**. | `backtick dependency` (the *base*, not any hunk) | U20 branches from `bb33de72920a` — or from whatever `upstream/main` is then — and replays only U01–U18 rows classed `upstream replay`. The 45 backtick commits are never replayed. Nothing to write; this row exists so U19 has the base pair recorded rather than reconstructed. |

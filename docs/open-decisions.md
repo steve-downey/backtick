@@ -679,17 +679,126 @@ any of the five feature branches here.
 
 ## Answers
 
-Nothing recorded yet — the brief is waiting on the author.
+**Answered 2026-09-06 by the design author. All five recommendations accepted
+as written.** No recommendation was overridden and no reason diverges from the
+brief, so each entry below records the option chosen and the doc work it
+generates rather than restating an argument the pages above already carry.
+Every one of the five is *decided*; none of the five is yet *written*, and the
+distinction is the point — the ledger rows below stay `OPEN` until their
+destination section says the new thing.
 
-When answering, add one dated subsection per question below, naming the option
-chosen and the reason wherever it differs from the recommendation. Then:
+**Consequence for the plan: nothing turned into code.** All five answers are
+"keep what is built and argue for it", so
+[implement-decisions](../ops/completion/steps/implement-decisions.md) has an
+empty scope and is marked not-applicable in `ops/completion/PLAN.md` rather
+than left looking unstarted, per its own step file. The work these answers
+generate is documentary and belongs to
+[reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md),
+[reconcile-remainder](../ops/completion/steps/reconcile-remainder.md) and
+[upstream-triage](../ops/completion/steps/upstream-triage.md).
 
-- append the same answer, dated, to the **Log** field of the implicated
-  decision entry in `docs/unicode-operators.md` §2 — divergences and rulings
-  append to the question's own Log rather than getting a document of their
-  own;
-- mark the implicated ledger row's `**Status:**`;
-- and let [implement-decisions](../ops/completion/steps/implement-decisions.md)
-  build whatever turned into code. On the recommendations above, that is
-  nothing, and that step becomes a no-op it should record as such rather than
-  skip.
+### 2026-09-06 — prefix-arity-selection: option (a)
+
+**Keep [over.oper]p8 waived.** A user operator may have default arguments, and
+a defaulted trailing parameter therefore makes an infix-declared operator
+usable in prefix position — intended, not a hole, because `⊟5` *is*
+`operator⊟(5)` and that is what the desugaring promises.
+
+*Doc work owed:* U§7 "Declaring" states the waiver and its consequence
+explicitly, and [unary-forms](unicode-operators.md#unary-forms)'s second
+sentence splits into the two independent claims — **arity selects the form at
+the point of declaration, grammatical position selects it at the point of
+use** — with the note that the second needs no help from the first, which is
+what makes the Swift trap avoidable. Owner:
+[reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md).
+
+### 2026-09-06 — over-oper-restrictions: option (a)
+
+**Keep rejecting static member user operators — on the reason that holds.**
+Not "a static member has no implicit object parameter, so it can name neither
+form": the arity rule counts operands and would have accepted a two-parameter
+static member, so that reason does not survive inspection. The reason is that
+the desugaring equivalence is defined over exactly two spellings,
+`operator⊞(x, y)` and `x.operator⊞(y)`, and a static member names neither.
+
+*Doc work owed:* U§7 "Declaring" enumerates the five [over.oper] restrictions
+and says which survive, and the static-member choice becomes a **new decision
+entry** in `docs/unicode-operators.md` §2 — suggested slug
+`static-member-operators`, named for the question — so that the C++23
+`static operator()` question is answered before it is asked. Owner:
+[reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md).
+
+### 2026-09-06 — fold-over-user-infix: option (a)
+
+**Excluded in v1, for both features, and stated as deliberate.** `(... ⊞ N)`
+and `` (... `f` N) `` are ill-formed. What must not happen is what happens
+today: a reader who tries it gets `expected expression` and no document
+anywhere says the exclusion was chosen.
+
+*Doc work owed:* a U§13 bullet (the section has no fold entry to amend — it
+must be added) and one sentence in the backtick paper, both saying the
+exclusion is deliberate and that admitting folds later changes only
+ill-formed programs. Owner:
+[reconcile-remainder](../ops/completion/steps/reconcile-remainder.md), which
+owns U§13.
+
+*And a standing guard, which is not doc work:* `Level != prec::UserInfix` in
+`Parser::isFoldOperator` must survive every rebase and replay on all four
+Clang branches, and it fails **silently** — a replay onto clean `main` must
+*add* the clause, not rename one. Recorded in `ops/completion/PLAN.md`'s gate
+facts and in the Unicode track's `REPLAY.md`, where a rebase or replay agent
+will actually read it.
+
+### 2026-09-06 — postfix-operators: option (a)
+
+**Declined for v1, explicitly not foreclosed**, and argued in the *affordable
+and declined* terms rather than the old *ambiguous* terms: greedy-infix only
+ever reinterprets programs v1 rejects, so v2 can take postfix without v1
+taking anything back — including the property the question exists to protect,
+that fixity stays user-declarable
+([user-declared-fixity](unicode-operators.md#user-declared-fixity)).
+
+*Doc work owed:* keep U§13.1 as a full subsection in the paper rather than
+compressing it to a bullet, and make sure
+[unary-forms](unicode-operators.md#unary-forms)'s rationale agrees with it.
+Owner: [reconcile-remainder](../ops/completion/steps/reconcile-remainder.md)
+for U§13, [unicode-paper](../ops/completion/steps/unicode-paper.md) for the
+paper's treatment. **The mangling clause of the
+[postfix-operators](../ops/unicode-operators/clang/DEVIATIONS.md#postfix-operators)
+row is not covered by this answer** — it stays
+[mangling-abi](../ops/completion/steps/mangling-abi.md)'s.
+
+### 2026-09-06 — dependent-template-operator-id: option (c)
+
+**Both, reword first.** U§7.1's "anywhere" is qualified now; the upstream
+report is filed separately and the paper is not gated on the fix landing. The
+report goes against the **literal-operator** reproducer
+(`t.template operator""_lit<int>(0)`), which involves no user operator and no
+unmerged branch — which is precisely what demonstrates that the limitation is
+C++11's and not the new name kind's.
+
+*Doc work owed:* the U§7.1 reword —
+[reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md)'s,
+U§7.1 being its destination section. *Report owed:*
+[upstream-triage](../ops/completion/steps/upstream-triage.md). The backlog row
+[dependent-template-operator-id](../ops/BACKLOG.md#dependent-template-operator-id)
+therefore closes as a **pair** of steps, and neither is implement-decisions;
+`ops/completion/PLAN.md`'s Coverage table is corrected to say so.
+
+## Where each answer was recorded
+
+Per the convention that a ruling appends to its question's own Log rather than
+getting a document of its own:
+
+| Answer | Decision-log `Log.` entries appended | Ledger `Status:` marked |
+|---|---|---|
+| prefix-arity-selection | [unary-forms](unicode-operators.md#unary-forms) | [prefix-arity-selection](../ops/unicode-operators/clang/DEVIATIONS.md#prefix-arity-selection) |
+| over-oper-restrictions | [operator-function-id](unicode-operators.md#operator-function-id), [unary-forms](unicode-operators.md#unary-forms) | [over-oper-restrictions](../ops/unicode-operators/clang/DEVIATIONS.md#over-oper-restrictions) |
+| fold-over-user-infix | [user-infix-precedence](unicode-operators.md#user-infix-precedence), [precedence-level](backtick-operator-design.md#precedence-level) | [infix-parse-cost](../ops/unicode-operators/clang/DEVIATIONS.md#infix-parse-cost) (part 3 only) |
+| postfix-operators | [unary-forms](unicode-operators.md#unary-forms) | [postfix-operators](../ops/unicode-operators/clang/DEVIATIONS.md#postfix-operators) (substance; mangling clause untouched) |
+| dependent-template-operator-id | [operator-identifier-disjointness](unicode-operators.md#operator-identifier-disjointness) | [operator-id-anywhere](../ops/unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere), and the backlog row [dependent-template-operator-id](../ops/BACKLOG.md#dependent-template-operator-id) |
+
+Every ledger row above stays **`OPEN`** with a dated **DECIDED** note naming
+the step that owes the writing. A row goes `RECONCILED` when its destination
+section says the new thing — deciding is not reconciling, and marking it
+otherwise would report work that has not happened.

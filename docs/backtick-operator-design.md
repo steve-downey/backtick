@@ -81,6 +81,8 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
+**Log.** 2026-09-06 — [fold-over-user-infix](open-decisions.md#fold-over-user-infix) answered (a) by the design author, and it lands here as well as on the Unicode side because **the answer is one answer for both features**: they share this precedence level, so `` (... `f` N) `` and `(... ⊞ N)` are both ill-formed in v1, deliberately. The backtick paper owes one sentence saying so. Backtick has the harder version of the reopening cost, worth recording while it is known: `CXXFoldExpr` has three fixed sub-expression slots (`Callee`, `LHS`, `RHS`) and stores its operator as a `BinaryOperatorKind`, so admitting a *slot* — an arbitrary expression — would need a fourth slot, not merely a widened enum.
+
 ### nesting-vs-chaining
 
 **Formerly:** `D3`.

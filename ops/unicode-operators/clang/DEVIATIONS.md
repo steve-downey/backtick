@@ -93,7 +93,7 @@ went did not happen.
 
 ### over-oper-restrictions
 
-**Formerly:** `DEV-U06`. **Status:** OPEN
+**Formerly:** `DEV-U06`. **Status:** **OPEN — DECIDED 2026-09-06.** [over-oper-restrictions](../../../docs/open-decisions.md#over-oper-restrictions), option (a): static member user operators stay **rejected**, and (b) and (c) stay **waived**. The reason changes, and this is the substantive part of the answer — **this row's stated basis does not survive inspection**. "A static member has no implicit object parameter, so it can name neither form" is not what the code does: `CheckUserOperatorDeclaration` computes `NumOperands = NumDeclaredParams + (HasImplicitObjectParam ? 1 : 0)` and accepts 1 or 2, so `static S operator⊞(S, S)` has `NumOperands == 2` and the arity rule alone would accept it; it is rejected only by the `MD->isStatic()` guard that runs three lines earlier. The restriction is a **choice**, not a consequence. Its reason is that the desugaring equivalence is defined over exactly two spellings — `operator⊞(x, y)` and `x.operator⊞(y)` — and a static member names neither (`x.operator⊞(y)` on a static member is legal C++ but passes one argument to a two-parameter function). Still `OPEN` because U§7 "Declaring" is unwritten and the choice is owed a decision entry of its own (suggested slug `static-member-operators`, named for the question). Owed by [reconcile-declaring-using](../../completion/steps/reconcile-declaring-using.md).
 
 **Found by.** U08
 
@@ -149,7 +149,7 @@ went did not happen.
 
 ### operator-id-anywhere
 
-**Formerly:** `DEV-U10`. **Status:** OPEN
+**Formerly:** `DEV-U10`. **Status:** **OPEN — DECIDED 2026-09-06.** [dependent-template-operator-id](../../../docs/open-decisions.md#dependent-template-operator-id), option (c): **reword U§7.1 and report upstream, in that order, and do not gate the paper on the fix.** The word "anywhere" gets the qualifying clause this row recommends; the report goes against the **literal-operator** reproducer (`t.template operator""_lit<int>(0)`), which involves no user operator and no unmerged branch, and is therefore the strongest form of the report — it is what shows the limitation is C++11's rather than the new name kind's. Still `OPEN` because both recommended doc changes are unwritten: the U§7.1 clause and the promotion of the ADL claim from assertion to measured result. Reword owed by [reconcile-declaring-using](../../completion/steps/reconcile-declaring-using.md); report owed by [upstream-triage](../../completion/steps/upstream-triage.md).
 
 **Found by.** U10
 
@@ -163,7 +163,7 @@ went did not happen.
 
 ### infix-parse-cost
 
-**Formerly:** `DEV-U11`. **Status:** OPEN
+**Formerly:** `DEV-U11`. **Status:** **OPEN — part (3) DECIDED 2026-09-06.** [fold-over-user-infix](../../../docs/open-decisions.md#fold-over-user-infix), option (a): this row's part (3) finding — a user operator is **not** a fold operator — is now a **decision** rather than an inheritance, taken once for both features because they share the level, and it is to be *stated* rather than left as the `expected expression` diagnostic that reads like an oversight. U§13 has no fold entry and must gain one. Reopening it later would change only ill-formed programs, so nothing is foreclosed; the measured cost of reopening is an AST-node change, not a parser change (`CXXFoldExprBits.Opcode` is a `BinaryOperatorKind`, 32 files read `CXXFoldExpr`, and backtick's slot has no sub-expression slot to live in). **Parts (1) and (2) of this row are unaffected and remain unreconciled.** Owed by [reconcile-remainder](../../completion/steps/reconcile-remainder.md) (U§13) and [reconcile-declaring-using](../../completion/steps/reconcile-declaring-using.md) (U§6, U§7 "Using").
 
 **Found by.** U11
 
@@ -219,7 +219,7 @@ went did not happen.
 
 ### prefix-arity-selection
 
-**Formerly:** `DEV-U15`. **Status:** OPEN
+**Formerly:** `DEV-U15`. **Status:** **OPEN — DECIDED 2026-09-06.** [prefix-arity-selection](../../../docs/open-decisions.md#prefix-arity-selection), option (a): [over.oper]p8 stays **waived**, and the cross-fixity use is intended rather than a hole — `⊟5` is `operator⊟(5)`, which is what the desugaring promises. The parser is *not* to filter candidates by declared arity. Still `OPEN` because the row's recommended doc change is unwritten: [unary-forms](../../../docs/unicode-operators.md#unary-forms) must split into declaration-arity and use-position, U§6 gains the structural one-liner, and U§7 "Declaring" gains the default-argument paragraph. Owed by [reconcile-declaring-using](../../completion/steps/reconcile-declaring-using.md).
 
 **Found by.** U12
 
@@ -331,7 +331,7 @@ went did not happen.
 
 ### postfix-operators
 
-**Formerly:** `DEV-U23`. **Status:** OPEN
+**Formerly:** `DEV-U23`. **Status:** **OPEN — substance DECIDED 2026-09-06; mangling clause untouched.** [postfix-operators](../../../docs/open-decisions.md#postfix-operators), option (a): postfix is **declined for v1 and explicitly not foreclosed**, argued in the *affordable and declined* terms rather than the *ambiguous* terms, because greedy-infix only ever reinterprets programs v1 rejects. U§13.1 keeps its full subsection: a priced negative result is the point, not an appendix. Still `OPEN` on two counts — this row's recommended doc changes (1), (4) and (5) are unwritten ([reconcile-remainder](../../completion/steps/reconcile-remainder.md)'s U§13, and the U§12 routing consequence), and **clause (3), the mangling clause, is not covered by this answer at all**: a first-class `<operator-name>` needing room for a fixity marker is [mangling-abi](../../completion/steps/mangling-abi.md)'s, as is the `pp_`/`pp` cross-vendor divergence this row found in passing.
 
 **Found by.** U21
 

@@ -146,6 +146,21 @@ restated here — read it. Two updates:
   discovered (`CIRUnitTests`), −888 unsupported, +932 passed, the last term
   including `Frontend/cir-not-built.c` going the other way. BL04's handoff has
   the full arithmetic.
+- **`Parser::isFoldOperator`'s `Level != prec::UserInfix` clause is a standing
+  guard on all four Clang branches, and losing it fails silently.** Dropping
+  it admits a user-introduced infix operator as a fold operator — no
+  diagnostic, no test failure unless the negative test is present, and a
+  behaviour change to `(... ⊞ N)` and `` (... `f` N) ``, both of which are
+  deliberately ill-formed
+  ([fold-over-user-infix](../../docs/open-decisions.md#fold-over-user-infix),
+  answered 2026-09-06). **A replay onto clean `main` must *add* the clause,
+  not rename one** — on `main` the predicate ends at `prec::Spaceship`.
+  Check it after every rebase and every replay, on `backtick-trunk`,
+  `backtick-23`, `unicode-operators-experiment` and
+  `unicode-operators-upstream`; `REPLAY.md`'s `U11` row calls it the single
+  likeliest replay mistake in that step. The negative tests that pin it are
+  `clang/test/Parser/unicode-operator-precedence.cpp` section 9 and its
+  backtick twin — do not delete them as redundant.
 
 ## Baselines
 
@@ -162,6 +177,13 @@ Each line carries an **ordinal and a slug**. The ordinal is reading order and
 shifts whenever a step is inserted or split; **the slug is the identity, and
 every cross-reference in this repo uses it.** Never write "step 7".
 
+Three box states: `[ ]` unstarted, `[x]` green and gated, and **`[—]`
+not-applicable** — a step whose scope turned out to be empty, with the reason
+on the line. `[—]` is deliberately not `[ ]`: an agent looking for "the first
+unchecked step whose dependencies are checked" must skip it rather than go
+hunting for work in it, and it is deliberately not `[x]` either, because
+nothing was done and no gate was run.
+
 ### Phase A — Naming (first, so nothing downstream is written twice)
 - [x] 1. [slug-the-ledgers](steps/slug-the-ledgers.md) — retire the serial numbers in the two decision logs, the three deviation ledgers and the backlog in favour of slugs; [`ops/SLUGS.md`](../SLUGS.md) is the map (dep: none)
 
@@ -170,13 +192,13 @@ every cross-reference in this repo uses it.** Never write "step 7".
 - [ ] 3. [upstream-triage](steps/upstream-triage.md) — report-or-WONTFIX the five annoyances (dep: none)
 
 ### Phase C — Decide (the author's, and the critical path for everything written)
-- [ ] 4. [decision-brief](steps/decision-brief.md) — the four questions with implementation consequences, and the "anywhere" claim (dep: none) — **brief written and complete, [`docs/open-decisions.md`](../../docs/open-decisions.md); BLOCKED on the author's answers, which is this step succeeding. The box ticks when the answers are recorded in that file.**
+- [x] 4. [decision-brief](steps/decision-brief.md) — the four questions with implementation consequences, and the "anywhere" claim (dep: none) — brief at [`docs/open-decisions.md`](../../docs/open-decisions.md); **answered 2026-09-06, all five recommendations accepted, and the answers are recorded there.** Nothing turned into code: see implement-decisions below.
 - [ ] 5. [mangling-abi](steps/mangling-abi.md) — the ABI question, and U§9 with it (dep: upstream-reports, slug-the-ledgers)
 
 ### Phase D — Make the papers true
 - [ ] 6. [clang-paper-truth](steps/clang-paper-truth.md) — the three Clang defects that falsify a claim (dep: decision-brief)
 - [ ] 7. [null-return-suppression](steps/null-return-suppression.md) — the analyzer parity break, on all four branches (dep: none)
-- [ ] 8. [implement-decisions](steps/implement-decisions.md) — build whatever decision-brief decided (dep: decision-brief; scope contingent)
+- [—] 8. [implement-decisions](steps/implement-decisions.md) — build whatever decision-brief decided (dep: decision-brief; scope contingent) — **NOT APPLICABLE: decision-brief was answered 2026-09-06 and all five answers are "keep what is built and argue for it", so this step has an empty scope.** Not ticked, per its own step file's "If the answer was 'no change'"; the documentation those answers generate belongs to [reconcile-declaring-using](steps/reconcile-declaring-using.md), [reconcile-remainder](steps/reconcile-remainder.md) and [upstream-triage](steps/upstream-triage.md).
 - [x] 9. [gcc-resync](steps/gcc-resync.md) — re-sync GCC to current trunk, then its four open defects (dep: none)
 
 ### Phase E — Discharge the evidence debt
@@ -184,7 +206,7 @@ every cross-reference in this repo uses it.** Never write "step 7".
 
 ### Phase F — Reconcile, one destination section per step
 - [ ] 11. [reconcile-implementation-cost](steps/reconcile-implementation-cost.md) — U§8, the implementation-cost thesis (dep: evidence-debt, slug-the-ledgers)
-- [ ] 12. [reconcile-declaring-using](steps/reconcile-declaring-using.md) — U§7 / §7.1, declaring, using, desugaring (dep: decision-brief, implement-decisions, slug-the-ledgers)
+- [ ] 12. [reconcile-declaring-using](steps/reconcile-declaring-using.md) — U§7 / §7.1, declaring, using, desugaring (dep: decision-brief ✔, implement-decisions **[—] n/a — satisfied**, slug-the-ledgers ✔) — **all dependencies met; this step is unblocked.** It now also owes the `static-member-operators` decision entry (see [`docs/open-decisions.md`](../../docs/open-decisions.md)).
 - [ ] 13. [reconcile-remainder](steps/reconcile-remainder.md) — U§5 / §10 / §6 / §12 / §13, and the backtick and GCC ledgers (dep: gcc-resync, slug-the-ledgers)
 
 ### Phase G — Hygiene (no paper consequence; any time after its branches settle)
@@ -192,7 +214,7 @@ every cross-reference in this repo uses it.** Never write "step 7".
 
 ### Phase H — The papers
 - [ ] 15. [backtick-paper](steps/backtick-paper.md) — D4307R0 and its blog version (dep: clang-paper-truth, reconcile-remainder, hygiene-parity)
-- [ ] 16. [unicode-paper](steps/unicode-paper.md) — the Unicode paper, a real number, and its blog version (dep: mangling-abi, implement-decisions, reconcile-implementation-cost, reconcile-declaring-using, reconcile-remainder)
+- [ ] 16. [unicode-paper](steps/unicode-paper.md) — the Unicode paper, a real number, and its blog version (dep: mangling-abi, implement-decisions **[—] n/a — satisfied**, reconcile-implementation-cost, reconcile-declaring-using, reconcile-remainder)
 
 ### Maintenance (not plan steps)
 - **M2** — forward-port `BL02` + clang-paper-truth's backtick fixes to `unicode-operators-experiment`. Runs after **clang-paper-truth**. Note that BL04 already put CIR arms on `backtick-trunk` that the experiment branch has too; expect a trivial conflict in the shared lead comment, not a semantic one.
@@ -234,7 +256,9 @@ everything** and are the right work for a spare agent.
 |---|---|
 | upstream-reports | [`increment-decrement-mangling`](../BACKLOG.md#increment-decrement-mangling) [`unqualified-id-union-read`](../BACKLOG.md#unqualified-id-union-read) [`clangir-lvalue-crash`](../BACKLOG.md#clangir-lvalue-crash) |
 | upstream-triage | [`inner-call-source-range`](../BACKLOG.md#inner-call-source-range) [`cxxfilt-stdin-nonascii`](../BACKLOG.md#cxxfilt-stdin-nonascii) [`auto-return-round-trip`](../BACKLOG.md#auto-return-round-trip) [`pch-ast-print-order`](../BACKLOG.md#pch-ast-print-order) [`operator-caret-range`](../BACKLOG.md#operator-caret-range) |
-| decision-brief | [`dependent-template-operator-id`](../BACKLOG.md#dependent-template-operator-id) (fix-or-reword) |
+| decision-brief | none, as it turns out — it *answers* [`dependent-template-operator-id`](../BACKLOG.md#dependent-template-operator-id) and closes none of it. Its real output is five decisions, four of which never had a `BNN` row because they were never defects. |
+| reconcile-declaring-using | [`dependent-template-operator-id`](../BACKLOG.md#dependent-template-operator-id), U§7.1 reword half (decided (c) on 2026-09-06) |
+| upstream-triage (2nd) | [`dependent-template-operator-id`](../BACKLOG.md#dependent-template-operator-id), upstream-report half — filed against the **literal-operator** reproducer, which needs no user operator and no unmerged branch |
 | mangling-abi | [`astral-plane-mangling`](../BACKLOG.md#astral-plane-mangling) |
 | clang-paper-truth | [`keyword-escape-round-trip`](../BACKLOG.md#keyword-escape-round-trip) [`c-mode-tokenization`](../BACKLOG.md#c-mode-tokenization) [`backtick-source-range`](../BACKLOG.md#backtick-source-range) |
 | null-return-suppression | [`null-return-suppression`](../BACKLOG.md#null-return-suppression) |
@@ -262,6 +286,16 @@ substance is decision-brief's.
 7 design decisions: four in decision-brief, the ABI in mangling-abi, U§6's example in reconcile-remainder, and
 [`operand-sequencing`](../unicode-operators/clang/DEVIATIONS.md#operand-sequencing) recorded in reconcile-declaring-using as the CWG question it is.
 
+**decision-brief's four were answered on 2026-09-06** — with a fifth, the
+"anywhere" re-triage — and all five accepted the recommendation, which was
+"change no code" in every case. See [`docs/open-decisions.md`](../../docs/open-decisions.md).
+The consequence for this plan is that **implement-decisions has an empty scope
+and is marked not-applicable**, and the work moves to the reconcile steps:
+U§7 "Declaring" and U§7.1 to reconcile-declaring-using (with a new decision
+entry owed, suggested slug `static-member-operators`), U§13's missing fold
+bullet and U§13.1's treatment to reconcile-remainder, and one upstream report
+to upstream-triage.
+
 ## Status log (each agent appends one row per branch or per document)
 | Step | Date | Branch / doc | Commit | Gate result | Handoff |
 |------|------|--------------|--------|-------------|---------|
@@ -269,9 +303,10 @@ substance is decision-brief's.
 | slug-the-ledgers | 2026-09-05 | `ops/DEVIATIONS.md`, `ops/gcc/DEVIATIONS.md`, `ops/unicode-operators/clang/DEVIATIONS.md` | 9 + 7 + 24 rows converted to slug-headed sections. Every entry now carries a `**Status:**` field; the Unicode ledger's 24 are all `OPEN`, which is accurate — it has never marked a row. | **PASS** — 40 entries, 40 anchors, 0 collisions. | same |
 | slug-the-ledgers | 2026-09-05 | `ops/BACKLOG.md`, `ops/SLUGS.md` (new) | 38 defect rows converted to slug-headed sections keeping `Severity` / `Item` / `Where` / `Closed by`. `ops/SLUGS.md` maps all **106** retired identifiers both directions and records what was deliberately *not* renamed. | **PASS** — 106 mappings, both directions, every one resolving to a live anchor. | same |
 | slug-the-ledgers | 2026-09-05 | cross-reference sweep: both papers, `ops/completion/**`, `ops/backlog/steps/BL05`–`BL07`, `CLAUDE.md`, `ops/AGENT_PROTOCOL.md`, `ops/HANDOFF_TEMPLATE.md` | 792 bare mentions rewritten as links to anchors; 19 internal identifiers **removed** from `papers/d4307r0.md` / `papers/dxxxxr0.md` rather than renamed, per the public-text rule. Protocol and ground rules now require slugs for anything added later. | **PASS** — the three gate greps are clean over `docs/`, `papers/`, `ops/*.md`, `ops/completion/` except `ops/SLUGS.md` (the map) and `steps/slug-the-ledgers.md` (the step's own quotation of what it retired); papers cite no identifier at all. | same |
-| decision-brief | 2026-09-05 | `docs/open-decisions.md` (new), `ops/BACKLOG.md` §6 and its [dependent-template-operator-id](../BACKLOG.md#dependent-template-operator-id) row | no branch — this repo only. Five decision pages, each headed by its slug, each with the five required parts and an explicit *Branches touched* line; a summary table of question / recommendation / implementation consequence. Two slugs added — `fold-over-user-infix` (new; U§13's fold question had none) and `dependent-template-operator-id` (reused from the backlog row, per the prior handoff's reuse rule). §6 rewritten as links into the brief. | **PASS on all four gate bullets** — 5×5 required sections present, no `TBD` and no non-answer, every recommendation names its branches (all five are "none"; each rejected option names what it would touch), §6 restates nothing. Links: 61 in the new file, 0 broken; 1107 repo-wide, 0 broken. **BLOCKED on the author** — no answer recorded, so no box ticked, no ledger `Status:` flipped and no decision `Log.` line appended. | [decision-brief](handoffs/decision-brief.handoff.md) |
+| decision-brief | 2026-09-05 | `docs/open-decisions.md` (new), `ops/BACKLOG.md` §6 and its [dependent-template-operator-id](../BACKLOG.md#dependent-template-operator-id) row | no branch — this repo only. Five decision pages, each headed by its slug, each with the five required parts and an explicit *Branches touched* line; a summary table of question / recommendation / implementation consequence. Two slugs added — `fold-over-user-infix` (new; U§13's fold question had none) and `dependent-template-operator-id` (reused from the backlog row, per the prior handoff's reuse rule). §6 rewritten as links into the brief. | **PASS on all four gate bullets** — 5×5 required sections present, no `TBD` and no non-answer, every recommendation names its branches (all five are "none"; each rejected option names what it would touch), §6 restates nothing. Links: 61 in the new file, 0 broken; 1107 repo-wide, 0 broken. **PASS, then BLOCKED on the author** — no answer at that point, so no box ticked, no ledger `Status:` flipped and no decision `Log.` line appended. Unblocked 2026-09-06; see the next row. | [decision-brief](handoffs/decision-brief.handoff.md) |
 | gcc-resync | 2026-09-06 | `backtick` (GCC), the re-sync | **not a plan step** — a rebase, treated as the R-prefixed Clang ones were. `c9ee2c5ab6c` (Daily bump, 2026-06-24) → `4df5e1e9b152` (Daily bump, 2026-09-06); 2158 upstream commits absorbed, 177 of them touching `gcc/cp`, `gcc/c-family` or `libcpp`. Ten feature commits replayed conflict-free; branch tip `b842ac1ed64` → `b50102ca0f6`. Pre-rebase tag `backtick-pre-resync` kept locally. | **PASS, and neutral**: `dg.exp=g++.dg/backtick/*.C` **88 passes / 0 failures** before the rebase and **88 / 0** after it, `EXIT=0` both times — the number G10 recorded. The feature diff's `+`/`−` lines are **byte-identical** across the move (`diff <(git diff c9ee2c5ab6c..pre) <(git diff 4df5e1e9b152..post)` differs only in blob hashes, hunk offsets and context). Closes [gcc-trunk-pin](../BACKLOG.md#gcc-trunk-pin). | [gcc-resync](handoffs/gcc-resync.handoff.md) |
 | gcc-resync | 2026-09-06 | `backtick` (GCC), `edce709e170` | ADL for a template-id operator slot: `cp_parser_backtick_template_id_slot` in `gcc/cp/parser.cc`, used at both handler sites, plus `g++.dg/backtick/infix-adl-template-id.C`. Closes [template-id-slot-adl](../BACKLOG.md#template-id-slot-adl); new ledger row [gcc-template-id-slot-adl](../gcc/DEVIATIONS.md#gcc-template-id-slot-adl). | **PASS**: 88 → **94 passes / 0 failures**, the 6 being the new test (1 compile + 5 scan-tree-dump). Verified failing first — on the pre-fix binary `` ax `g<int>` ay `` gave *"'g' was not declared in this scope"*, *"expected primary-expression before 'int'"* and *"expected '`' before 'int'"*; after, the dump reads `r_pure = ns::g<int> (…)` and `r_augment = ns2::h<int> (…)`. | same |
 | gcc-resync | 2026-09-06 | `backtick` (GCC), `daf5fa6feb0` | Module streaming of keyword-escaped names, **verified not broken**: `g++.dg/modules/backtick-escape-1_a.C` / `_b.C`. No production change. Closes [module-streaming-escapes](../BACKLOG.md#module-streaming-escapes). | **PASS**: `modules.exp=backtick-escape-1*` → **15 passes / 0 failures** (5 checks × 3 std variants), including the CMI being produced and both mangled names appearing in the importer's assembly. | same |
 | gcc-resync | 2026-09-06 | `backtick` (GCC), `12d3b5b0c07` | Three over-permissive `flag_backtick` guards narrowed: the escape is now carried on the `cp_declarator` and required by `grokdeclarator`, and both `case CPP_BACKTICK:` arms re-test the token because other cases fall through to them. 5 files. Closes [grokdeclarator-guard-scope](../BACKLOG.md#grokdeclarator-guard-scope); new ledger row [escape-arm-entry-token](../gcc/DEVIATIONS.md#escape-arm-entry-token). | **PASS**: 94 → **103 passes / 0 failures**, `EXIT=0`; the 9 are three new `dg-error` checks × 3 variants in `escape-diag.C`. `void new (int, int);` and a stray `^` now diagnose **character-identically with and without `-fbacktick`**, which they did not before. Wider sweep, all **0 unexpected failures**: `g++.dg/parse` 4905, `lookup` 3437, `template` 9874, `overload` 692, `init` 3632, `expr` 952. | same |
 | gcc-resync | 2026-09-06 | `docs/backtick-operator-design.md` §17.3 / §17.4, `ops/gcc/DEVIATIONS.md`, `ops/BACKLOG.md`, `ops/gcc/PLAN.md`, `CLAUDE.md` | §17.4 rewritten (ADL binds wherever the slot is an unqualified name, with or without template arguments; both compilers now deliver it and agree). §17.3 gains a status paragraph naming the one place the two implementations accept different programs. Ledger: [gcc-type-slot-parity](../gcc/DEVIATIONS.md#gcc-type-slot-parity) **RECONCILED**, [gcc-slot-adl](../gcc/DEVIATIONS.md#gcc-slot-adl) corrected to **RESOLVED** (its prose already said G10 fixed it), and three new entries — [gcc-template-id-slot-adl](../gcc/DEVIATIONS.md#gcc-template-id-slot-adl), [escape-arm-entry-token](../gcc/DEVIATIONS.md#escape-arm-entry-token), [gcc-wrapper-parity](../gcc/DEVIATIONS.md#gcc-wrapper-parity). Five `Closed by` cells filled. | **PASS on the docs gate**: every row this step claims is marked in its ledger and names the section *and* paragraph it landed in; the GCC ledger has **no `Status: OPEN` row left**. | same |
+| decision-brief | 2026-09-06 | `docs/open-decisions.md`; `docs/unicode-operators.md` §2 and `docs/backtick-operator-design.md` §3; `ops/unicode-operators/clang/DEVIATIONS.md`; `ops/BACKLOG.md`; `ops/unicode-operators/clang/REPLAY.md` | no branch — this repo only. **Answered by the design author: all five recommendations accepted as written, none overridden.** Recorded as five dated subsections in the brief plus a where-it-went table; `Log.` entries appended to 5 decision entries ([unary-forms](../../docs/unicode-operators.md#unary-forms) carries three of the five answers, plus [operator-function-id](../../docs/unicode-operators.md#operator-function-id), [user-infix-precedence](../../docs/unicode-operators.md#user-infix-precedence), [operator-identifier-disjointness](../../docs/unicode-operators.md#operator-identifier-disjointness), [precedence-level](../../docs/backtick-operator-design.md#precedence-level)); 5 ledger rows marked **OPEN — DECIDED** with the step that owes the writing. Nothing turned into code, so implement-decisions is marked **not-applicable**; the Coverage table splits [dependent-template-operator-id](../BACKLOG.md#dependent-template-operator-id) into its reword half and its report half; the silent fold guard is recorded in the gate facts and at the top of `REPLAY.md`. | **PASS** — box ticked. 5 answers recorded, 5 `Log.` entries appended, 5 ledger `Status:` fields marked, 1 backlog `Closed by` corrected. No `RECONCILED` marker set anywhere: **deciding is not reconciling**, and every row names its destination section and its owner. | [decision-brief](handoffs/decision-brief.handoff.md) |
