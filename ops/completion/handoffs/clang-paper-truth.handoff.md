@@ -5,8 +5,8 @@
   - `backtick-trunk` — `5f70443430b8` (`~/src/llvm/backtick-trunk`)
   - `backtick-23` — `2f4f59444d07` (`~/src/llvm/backtick`), cherry-picked and
     re-gated independently
-  - `unicode-operators` (this repo) — `docs:` for the design doc, `ops:` for
-    the ledgers, the backlog and the plan
+  - `unicode-operators` (this repo) — `413fbc3` (`docs:`, the design doc) and
+    `cf6c1ad` (`ops:`, the ledgers, the backlog, the plan and this handoff)
 - **Date / agent:** 2026-09-06.
 - **The dependency note the step file asked for:** [decision-brief](decision-brief.handoff.md)
   was **not** blocked — it was answered on 2026-09-06 and all five answers are
