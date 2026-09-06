@@ -163,6 +163,8 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
+**Log.** 2026-09-06 — the node's source range is now the *point* of it, and §17.5 says so. Triage of [inner-call-source-range](../ops/BACKLOG.md#inner-call-source-range) closed that row **WONTFIX**: the wrapper spans the written expression and the inner `CallExpr` begins at the operator, which is what Clang does for every desugaring — C++20's `CXXRewrittenBinaryOperator` spans `p < q` while the `CXXOperatorCallExpr` it wraps spans only `p <`. Two facts found while closing it, recorded because they are the ones a reader will check. First, it is *not* expensive to change: `CallExpr::setUsesMemberSyntax()` is public, clears the cached trailing `SourceLocation` and recomputes `getBeginLoc()` from argument 0, which is the wanted range. Second, it is declined anyway — that bit means "a call to an explicit-object member function written with member syntax", which these nodes are not, and it serializes into PCHs and modules for any later upstream consumer to read back. The range is right because the wrapper carries it, not because nothing cheaper was available.
+
 ### format-break-policy
 
 **Formerly:** `D8`.
@@ -1301,6 +1303,30 @@ behaviour ([gcc-template-id-slot-adl](../ops/gcc/DEVIATIONS.md#gcc-template-id-s
 Both are the same lesson for anyone implementing this: the slot has to reach
 the call builder unresolved, and "the slot" means every unqualified form of
 it, not the easiest one to spot with a two-token peek.
+
+### 17.5 Source ranges of the desugared node ([source-fidelity-node](#source-fidelity-node))
+
+A question an implementer will ask, answered here so the paper need not be
+asked it: **the wrapper node spans the written expression; the call it wraps
+does not, and that is deliberate.** `-ast-dump` of `x `f` y` shows the
+`BacktickInfixExpr` (and, for the Unicode feature, the `UserOperatorExpr`)
+covering the whole expression, while the inner `CallExpr` begins at the
+operator, because `CallExpr::getBeginLoc` takes its begin from the callee.
+
+That is not a defect of this design; it is what Clang does for every
+desugaring. The precedent is C++20's rewritten comparisons: for `p < q` the
+`CXXRewrittenBinaryOperator` spans `p < q`, and the synthesized
+`CXXOperatorCallExpr` inside it spans only `p <`. Nobody treats that as a bug,
+because the semantic node is not the written form and is not what a diagnostic
+or an IDE points at — the node built for source fidelity is. This is precisely
+the job [source-fidelity-node](#source-fidelity-node) gave that node, and it is
+the reason it exists in the AST at all rather than the desugaring being done
+bare.
+
+The corollary for anyone replaying this: a tool that wants the written extent
+of a backtick expression must read the wrapper, not the call, exactly as a
+tool wanting the written extent of `p < q` must read the
+`CXXRewrittenBinaryOperator`.
 
 ---
 

@@ -31,7 +31,7 @@ and U§6's missing sixth worked example is a two-line doc sync owned by
 | 2 | [over-oper-restrictions](#over-oper-restrictions) — may a user operator be a static member function? | **Keep rejecting it**, and state the reason the prototype could not: a static member names neither of the two spellings the desugaring equivalence is defined over. | **none** (doc only) |
 | 3 | [fold-over-user-infix](#fold-over-user-infix) — may a user-introduced infix operator be a fold operator? | **No, for both features, in v1.** State it as a decision with its price, not as an omission. | **none** (already the behaviour; a one-line guard to keep) |
 | 4 | [postfix-operators](#postfix-operators) — are postfix user operators declined permanently, or declined for v1? | **Declined for v1, not foreclosed.** Carry U§13.1's four prices and the forward-compatibility result into the paper. | **none** (doc only) |
-| 5 | [dependent-template-operator-id](#dependent-template-operator-id) — `t.template operator⊞<int>(0)` on a dependent object expression is rejected; fix it or reword the word "anywhere"? | **Reword now; report upstream separately.** The reword is one clause; the fix is upstream's and is not this proposal's to make. | **none** here (the upstream report is [upstream-triage](../ops/completion/steps/upstream-triage.md)-shaped work) |
+| 5 | [dependent-template-operator-id](#dependent-template-operator-id) — `t.template operator⊞<int>(0)` on a dependent object expression is rejected; fix it or reword the word "anywhere"? | **Reword now; report upstream separately.** The reword is one clause; the fix is upstream's and is not this proposal's to make. **Answered (c) on 2026-09-06 and partly reopened on 2026-09-06** — the report half rests on a premise that turned out to be false; see [the reopening](#2026-09-06--dependent-template-operator-id-the-report-half-is-reopened). | **none** here (the reword stands; the upstream report cannot be filed as described) |
 
 Every recommendation above is "change no code". That is a result rather than
 a convenience, and it is worth reading as one: four of these five were logged
@@ -784,6 +784,89 @@ U§7.1 being its destination section. *Report owed:*
 [dependent-template-operator-id](../ops/BACKLOG.md#dependent-template-operator-id)
 therefore closes as a **pair** of steps, and neither is implement-decisions;
 `ops/completion/PLAN.md`'s Coverage table is corrected to say so.
+
+### 2026-09-06 — dependent-template-operator-id: the report half is reopened
+
+**The reword half stands. The report half cannot be filed as described, and
+the reason it cannot is a fact the paper needs.**
+
+[upstream-triage](../ops/completion/steps/upstream-triage.md) was given the
+report half, to be filed against the literal-operator reproducer
+`t.template operator""_lit<int>(0)` — chosen, per the answer above, *because*
+it "involves no user operator and no unmerged branch", which was taken to
+demonstrate that the limitation is C++11's rather than the new name kind's.
+On trying to write it, that reproducer does not survive contact:
+
+**A literal operator can never be a class member.** [over.literal]/1 says a
+literal-operator-id shall not be declared as a class member; Clang says
+`error: literal operator 'operator""_lit' must be in a namespace or global
+scope` for the member, static-member and member-template spellings alike, and
+GCC says `must be a non-member function`. A using-declaration cannot import
+one into a class either. So `t.template operator""_lit<...>` on a dependent
+object expression names nothing that could exist in any valid program, and
+Clang rejecting it is **correct behaviour, not a limitation**.
+
+Trunk says so at the site. `Sema::ActOnTemplateName`
+(`clang/lib/Sema/SemaTemplate.cpp`, read at `72417eb739e5`) handles the kind
+explicitly before falling through to the diagnostic:
+
+```cpp
+  case UnqualifiedIdKind::IK_LiteralOperatorId:
+    // This is a kind of template name, but can never occur in a dependent
+    // scope (literal operators can only be declared at namespace scope).
+    break;
+```
+
+A report filed against that reproducer would report deliberate, documented,
+correct behaviour as a bug, and would be closed with a pointer to that
+comment. **No draft was written**, and
+[`ops/completion/upstream-drafts/`](../ops/completion/upstream-drafts/README.md)
+says why in the same words.
+
+**What this changes.** The control that made this a *decision* rather than a
+defect was: the identical construct on a literal operator gives the identical
+diagnostic, therefore the limitation is inherited and not the new name kind's.
+The first half is true — both go through the same fall-through — but the
+conclusion does not follow. Literal operators share the **code path** and
+suffer **no limitation** from it, because there is no program the path costs
+them. The limitation is real for a user operator and for nothing else. So the
+sentence the reword was going to use — "a limitation user-defined literal
+operators have had since C++11" — is false and must not go into U§7.1 or the
+paper.
+
+**What is still true, and is the honest version.** `t.template
+operator+<int>(0)` compiles; `t.template operator⊞<int>(0)` does not; the
+cause is that `DependentTemplateStorage` is keyed by an `IdentifierInfo *` or
+an `OverloadedOperatorKind` and a user operator is neither. That is a genuine
+gap between the design's word "anywhere" and what a C++ with this feature
+would need, and it is the *only* one U10's sweep found. It is a consequence of
+adding a name kind to a data structure that predates it — which is the same
+thesis as [declaration-name-plumbing](../ops/unicode-operators/clang/DEVIATIONS.md#declaration-name-plumbing)
+and [operator-candidate-assembly](../ops/unicode-operators/clang/DEVIATIONS.md#operator-candidate-assembly),
+and is arguably better evidence for U§8's cost argument than an inherited
+limitation would have been.
+
+**The question for the author, and why it is not answered here.** Option (c)
+was "reword *and* report". The report leg is gone as specified. What remains is
+a choice between:
+
+- **(a) as originally offered** — reword only, and say the gap is this
+  feature's own, with no upstream issue. Nothing is pending; the row closes on
+  the reword alone.
+- **(c′) reword, and report the *user-operator* case anyway** — accurate, but
+  it needs an unmerged branch to reproduce, which is exactly the weakness (c)
+  was chosen to avoid. Upstream cannot act on a bug in a feature it does not
+  have; realistically it becomes an RFC on widening
+  `DependentTemplateStorage` to a `DeclarationName`, which is option (b)'s
+  refactor asked for rather than done.
+
+This is a decision, so it is not taken here.
+[upstream-triage](../ops/completion/steps/upstream-triage.md) explicitly
+declined to generalise the report into the user-operator form on its own
+authority. The reword owed by
+[reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md)
+is **unblocked either way** and should not wait — only its *justifying clause*
+changes, and this entry gives it.
 
 ## Where each answer was recorded
 

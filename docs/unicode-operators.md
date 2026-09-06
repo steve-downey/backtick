@@ -487,6 +487,10 @@ it is at worst a lookup/overload failure, the same category of error as
 `x.operator⊞(y)`), so [desugaring-target](backtick-operator-design.md#desugaring-target)'s inheritance list — overload resolution, ADL,
 templates, SFINAE, constexpr, conversions, value categories, codegen — and
 [evaluation-order](backtick-operator-design.md#evaluation-order)'s evaluation-order story carry over without modification.
+The `UserOperatorExpr` wrapper spans the written expression and the `CallExpr`
+inside it begins at the glyph, which is the same division of labour C++20's
+rewritten comparisons already use and is the reason the wrapper exists; see
+[source-fidelity-node](backtick-operator-design.md#source-fidelity-node) and §17.5 there.
 
 ### 7.1 Operator characters as ordinary names ([operator-identifier-disjointness](#operator-identifier-disjointness))
 
@@ -745,9 +749,21 @@ The objections are known in advance; pre-load the answers (§13.5 discipline).
   the fixed level — no §7-style delimiter pairing, no break-suppression
   zones. Strictly less work than backtick's formatting story.
 
----
+### operator-name-caret-range
 
-## 11. Prior art
+One diagnostic detail, recorded here so the paper answers it rather than being
+asked it. The caret for `error: use of undeclared 'operator⊞'` underlines the
+`operator` keyword and stops there — eight columns — rather than covering the
+glyph as well.
+
+**This is upstream's range for every operator-function-id, not a Unicode
+one.** In stock C++23 with the feature off, `operator+(a, a)` and
+`operator""_x(a)` on undeclared operators produce a caret of exactly the same
+eight columns. Nothing about a multi-byte name causes it and nothing in this
+proposal changes it; the glyph case is character-identical to the built-in
+case, which is the only claim the paper needs to make. Tightening the range
+would be a diagnostic-polish change to Clang affecting `operator+` first and
+this feature only incidentally, so it is not proposed here.
 
 - **Julia** — the closest model and the load-bearing precedent for [lexing-and-declarations](#lexing-and-declarations): the
   *parser* carries a fixed table of Unicode operator code points (parseable
