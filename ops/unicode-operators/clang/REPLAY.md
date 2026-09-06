@@ -960,3 +960,57 @@ place them immediately after the same upstream precedent —
 `VisitCXXRewrittenBinaryOperator` — rather than after a backtick neighbour.
 
 Cost: **4 production files, +24; 1 test file, +84.**
+
+## M2 — the second backtick merge, also never replayed
+
+`unicode-operators-experiment` @ `85734d71ce1c` is a **merge commit** bringing
+`5a2b586463d9` (BL02), `cfbc69be9d4f` (BL04's backtick CIR arms) and
+`5f70443430b8` (clang-paper-truth) from `backtick-trunk`. Classification, as for
+M1: **backtick dependency — unreplayable by design.** `unicode-operators-upstream`
+did not receive it and must never receive it.
+
+**It changes no row's classification.** Every hunk it lands is backtick-track
+code that the ledger has never classified and never will, and it introduced no
+Unicode-side change: the eight conflicts were resolved by keeping this branch's
+text everywhere it already said more (`Options.td`, `test/Lexer/backtick-c-mode.c`,
+the four CIR lead comments) and by keeping both declarations where both sides had
+added one (`Sema.h`, `SemaExpr.cpp`).
+
+**But it does move the figures, and M1's identity claim does not survive** —
+for a reason that is not the merge:
+
+```
+git diff --shortstat 5f70443430b8..85734d71ce1c  → 119 files, +7600/−47
+git diff -U0 5f70443430b8..85734d71ce1c | grep -c '^@@'  → 217
+```
+
+against U19's 110 files / 204 hunks / +7341−29. **Nine of the nine new files are
+BL03's and BL04's**, which landed on this branch after U19 audited it: four
+analyzer production files plus `test/Analysis/unicode-operator-analysis.cpp`,
+four CIR production files plus `test/CIR/CodeGen/unicode-operator.cpp`. Both have
+their own sections above and both are classified `upstream replay`. The residual
+line movement is three shared lead comments this merge resolved in favour of the
+both-features wording, plus the six-line comment in `de76585ae45d`.
+
+**The contamination scan re-run** (§1's `awk` recipe, over the changed lines of
+`5f70443430b8..85734d71ce1c`) hits the same six production files it always did —
+`OperatorPrecedence.h`, `OperatorPrecedence.cpp`, `ParseExpr.cpp`,
+`Format/Format.cpp`, `Format/FormatToken.h`, `Format/TokenAnnotator.cpp` — plus
+`SemaOverload.cpp`'s one doc-comment cross-reference, the test files, and **four
+new comment-only entries** created by the merge resolutions and by BL03/BL04:
+`Options.td` (3 lines), `test/Lexer/backtick-c-mode.c` (5),
+`CIR/CodeGen/CIRGenExprScalar.cpp` (3) and `Analysis/CFG.cpp` (1). All four are
+prose in a comment, none is code, and all four sit in hunks the ledger already
+tells U20 to drop or to re-anchor: U04's row drops the `defm backtick` guard and
+`backtick-c-mode.c` outright, and BL03's and BL04's sections already record that
+the upstream branch's lead comments name one wrapper where this branch's name two.
+
+**The fold guard was re-verified here by removing it**, which is stronger than
+the reading this file's standing warning asks for and is recorded because the
+result narrows the warning: with `&& Level != prec::UserInfix` deleted,
+`clang/test/Parser/unicode-operator-precedence.cpp` fails on **line 322 only** —
+the *right* fold `(N ⊞ ...)`. The two left folds, section 9's `(... ⊞ N)` at line
+320 and section 10's backtick twin `(... `f` N)` at 405, still produce
+`expected expression` without the guard, failing earlier in the parse for an
+unrelated reason. **So a replay that keeps only a left-fold negative test leaves
+the guard unpinned while appearing to cover it.** Keep the right fold.
