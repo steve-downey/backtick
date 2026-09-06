@@ -168,15 +168,15 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Question.** How does a user operator mangle?
 
-**Status.** **Proposed — open (ABI)**
+**Status.** **Proposed — open (ABI)** — what the prototype *implements* is settled and written out in [mangling-derivation-rule](#mangling-derivation-rule); what the paper *asks for* is the open part and is the author's, in [abi-production-request](#abi-production-request).
 
-**Decision.** Mangling: Itanium **vendor-extended operator** (`v <arity> <source-name>`) with a code-point-derived source-name, e.g. `⊞` binary → `v2` + `op_u229E`
+**Decision.** Mangling: Itanium **vendor-extended operator** (`v <arity> <source-name>`) with a code-point-derived source-name, e.g. `⊞` binary → `v2` + `op_u229E`. The derivation rule — `op_u` + uppercase hex, minimum four digits, widened above the BMP — is stated in full in [mangling-derivation-rule](#mangling-derivation-rule); the example above is not the rule.
 
-**Why.** The `v` production exists precisely for operators the grammar didn't anticipate; precedent for naming-by-derived-source-name is `li<name>` for literal-operator suffixes, and precedent for retrofitting a real code is `aw` for `co_await`. A standardized feature would want a first-class `<operator-name>` production keyed by code point, which needs cross-vendor agreement — flagged open, not resolved. MSVC mangling unexamined.
+**Why.** The `v` production exists precisely for operators the grammar didn't anticipate; precedent for naming-by-derived-source-name is `li<name>` for literal-operator suffixes, and precedent for retrofitting a real code is `aw` for `co_await`. A standardized feature would want a first-class `<operator-name>` production keyed by code point **and by fixity**, which needs cross-vendor agreement — flagged open, not resolved, and the recommendation with its options and costs is [abi-production-request](#abi-production-request). MSVC has no production to borrow at all: [microsoft-abi-position](#microsoft-abi-position).
 
-**Decided by.** Undecided — the whole log is Proposed until the paper is polled.
+**Decided by.** Undecided — the whole log is Proposed until the paper is polled, and this entry additionally awaits the author on [abi-production-request](#abi-production-request).
 
-**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged. 2026-09-06 — [mangling-abi](../ops/completion/steps/mangling-abi.md) wrote U§9 out as three named subsections and put the open half in [abi-production-request](#abi-production-request) with options, costs and a recommendation; the `v`-production derivation and the Microsoft position are settled there and no longer open.
 
 ### user-declared-fixity
 
@@ -686,12 +686,70 @@ upstream — the same discipline as [feature-gating](backtick-operator-design.md
 
 ## 9. ABI and mangling ([operator-mangling](#operator-mangling) — open)
 
-Prototype answer: the Itanium **vendor-extended operator** production,
-`v <digit> <source-name>`, exists for exactly this — e.g. binary `⊞` mangles
-as `v2` plus a code-point-derived source-name such as `op_u229E`, giving
-stable, demangler-tolerated symbols for the fork. Precedents: literal-operator
-suffixes mangle by derived name (`li<length><suffix>`), and `co_await` shows a
-new operator earning a first-class code (`aw`) when it standardizes.
+Mangling is the one place this feature touches ABI at all; everything else is
+front-end sugar, inherited from the ordinary function the operator desugars to.
+So this section has exactly three things to say, and says them in that order:
+what the prototype **implements** ([mangling-derivation-rule](#mangling-derivation-rule)), what the paper should **ask**
+the ABI groups for ([abi-production-request](#abi-production-request) — still open, and the only open thing here),
+and what is **unexamined** ([microsoft-abi-position](#microsoft-abi-position)).
+
+### mangling-derivation-rule
+
+The Itanium **vendor-extended operator** production exists for operators the
+grammar did not anticipate, and the prototype uses it:
+
+```
+<operator-name> ::= v <digit> <source-name>      # vendor extended operator
+```
+
+`<digit>` is the operator's **declared arity** — 1 prefix, 2 infix, counting a
+member's implicit object parameter, not its parameter count. `<source-name>`
+is derived from the operator's **code point**, never from a spelling, and
+emitted as an ordinary `<source-name>` (decimal byte length, then the
+identifier) exactly as `li <source-name>` does for a literal-operator suffix
+directly above it in the same table. The derivation rule, which is the
+sentence an ABI group would review and the one the paper will be quoted on:
+
+> `op_u`, followed by the code point in **uppercase hexadecimal**, with no
+> `U+` prefix, zero-padded to a **minimum of four digits** and widened as
+> required above the BMP — five digits from U+10000, six from U+100000.
+
+So U+229E → `op_u229E`, and binary `⊞` mangles as `v28op_u229E` (`v`, arity
+`2`, length `8`, the name). Injectivity comes from the hex, not from the
+padding: leading zeros are only ever added to reach four digits and every code
+point above U+FFFF already needs five, so no two operators can derive the same
+name. The rule is stated in the prototype's source beside the code, because it
+is an ABI statement rather than a formatting convenience.
+
+**Two branches of that rule are unexercised by construction, and will stay
+that way while [token-set](#token-set) is frozen.** Every [token-set](#token-set) code point lies in
+U+2190–U+2BFF, so every derived name is exactly four hex digits: the padding
+branch and the astral widening cannot be reached without changing the token
+set. That is a property of the frozen set, not a gap in testing — and it is
+the first thing to exercise if a later revision admits anything above the BMP,
+which the combining-mark and Latin-1 questions in U§13 would both do.
+
+**"Demangler-tolerated" undersells the measurement.** Both `llvm-cxxfilt` and
+GNU binutils `c++filt` 2.46 — a different vendor's demangler, unmodified —
+render every form tested, character-identically, including nested-name,
+const-qualified member, C++23 explicit-object member and template-id:
+
+```
+_Zv28op_u229E1SS_     -> operator op_u229E(S, S)
+_ZNK1Tv28op_u229EES_  -> T::operator op_u229E(T) const
+_Zv28op_u22A0IiEiT_S0_-> int operator op_u22A0<int>(int, int)
+_ZNH1Ev28op_u2297ES_S_-> E::operator op_u2297(this E, E)
+```
+
+Existing toolchains need **no change** to inspect these symbols, which is the
+first question an ABI reviewer asks and the strongest single thing the
+prototype can say about the `v` production. The symbols are pure ASCII by
+construction — the code point went into the name as hex — which matters more
+than it looks: `nm | c++filt` already loses *extended-identifier* names today,
+because `llvm-cxxfilt`'s stdin path splits its input on non-ASCII bytes. A
+scheme that put UTF-8 in the mangled name would inherit that defect; this one
+does not, and the operator spelling is therefore better behaved in shipped
+tooling than the extended-identifier-function spelling [operator-identifier-disjointness](#operator-identifier-disjointness) declines.
 
 **No new mangling is needed to keep operators apart from math-identifier
 functions** (U§7.1): a function *named* with an extended identifier —
@@ -708,19 +766,167 @@ name. (Under [operator-identifier-disjointness](#operator-identifier-disjointnes
 legal in both roles — but the manglings would not collide even if one
 were.)
 
-Open for a real proposal: a first-class `<operator-name>` production keyed by
-code point (cross-vendor agreement in the Itanium ABI group), and the MSVC
-scheme (unexamined). Mangling is the one place this feature touches ABI at
-all; everything else is front-end sugar. Flagged open, not resolved.
+**One wrinkle in the arity digit, inherited rather than introduced.** In
+`<base-unresolved-name>` position — a dependent `decltype(t.operator⊞(t))` —
+the digit is the *call's* argument count, so a member infix operator whose
+definition mangles `v2` mangles `on v1 …` there. Upstream does exactly the
+same for the built-in operators: `decltype(t.operator+(t))` mangles `onps`,
+i.e. **unary** plus, for a binary member `operator+`. It is invisible to
+linkage, since the defining symbol is unaffected, and bug-compatible with what
+a demangler already expects. It is also an argument about what to ask for: a
+production keyed by code point and fixity has no arity digit to disagree
+about.
 
-A first-class production would also need room for a fixity marker, which
-`v <digit> <source-name>` does not have — and fixity in mangling is easy to
-get wrong even where the ABI spells it out. U§13.1 has the evidence: Clang
-emits the postfix spelling for both fixities of `++` and `--` where the ABI
-(§5.1.3, §5.1.6) and GCC 15.2 distinguish `pp_` from `pp`. Reported upstream
-as **LLVM-ISSUE-PENDING**
-([draft](../ops/completion/upstream-drafts/increment-decrement-mangling.md),
-not yet filed).
+### abi-production-request
+
+**The question.** What does the paper ask the Itanium ABI group for? This is
+the one genuinely open decision in this section, and it is the author's — the
+ABI is not WG21's to legislate, so the paper is making a request, and the
+choice is how strong a request to make.
+
+**What was measured.**
+
+- *The vendor-extended form works, end to end.* Twelve symbols pinned by a
+  lit test — free, member, explicit-object, template instantiation, namespace
+  scope, both ends of [token-set](#token-set) — and two independent demanglers render all of
+  them (above). Nothing in the prototype needed an ABI change to ship.
+- *The ABI's own prose scopes that production more narrowly than the
+  prototype's use of it.* §5.1.3 *Operator Encodings*, immediately under the
+  production, reads: "Vendors who define builtin **extended operators** (e.g.
+  `__imag`) shall encode them as a `v` prefix followed by the operand count as
+  a single decimal digit, and the name in `<length,ID>` form." A user-declared
+  operator is not a vendor builtin. The prototype's encoding is grammatically
+  well formed and demangles everywhere, and it is outside the stated purpose
+  of the paragraph that defines it — which is exactly the argument for a
+  first-class production if the feature standardizes.
+- *`v <digit>` keys on arity, and arity is not fixity.* Prefix and postfix
+  unary operators share arity 1, so the production cannot tell them apart —
+  in a table whose own opening sentence is "Unlike Cfront, unary and binary
+  operators using the same symbol have different encodings", and which spends
+  four codes (`ps`, `ng`, `ad`, `de`) keeping `+`, `-`, `&` and `*` apart from
+  their binary selves. Distinguishing forms of one symbol is a principle the
+  ABI holds; the vendor production is simply the one place it has no room to.
+  That costs v1 nothing, because v1 has no postfix. It costs v2 everything:
+  postfix is **declined and explicitly not foreclosed** (U§13.1), and if
+  `v <digit> <source-name>` were ever to become the *standardized* encoding,
+  taking postfix later would require grafting a fixity convention onto a
+  production that has no room for one — which is a cross-vendor ABI change
+  made under pressure instead of one made now, in the open.
+- *Fixity in mangling is easy to get wrong even where the ABI spells it out.*
+  It spells it out twice: §5.1.3 gives `pp` and `mm` for the postfix forms in
+  `<expression>` context, §5.1.6 *Expressions* gives `pp_ <expression>` and
+  `mm_ <expression>` for the prefix ones. GCC 15.2.0 emits all four
+  distinctly; **Clang emits the postfix spelling for both fixities of both
+  operators**, so two function templates distinguished only by `++T{}` versus
+  `T{}++` collide — `error: definition with same mangled name`. LLVM's own
+  demangler already parses the trailing `_` its mangler never emits. U§13.1
+  has the reproducer and the symbols. Reported upstream as
+  **LLVM-ISSUE-PENDING**
+  ([draft](../ops/completion/upstream-drafts/increment-decrement-mangling.md),
+  not yet filed). A section arguing that the ABI needs room for fixity is a
+  great deal stronger for pointing at fixity going wrong today, in the exact
+  corner where the ABI *does* have room and an implementation still missed it.
+
+**The options.**
+
+- **(a) Describe the vendor-extended form and ask for nothing.** The paper
+  says what is implemented, observes that it needs no ABI action, and stops.
+- **(b) Ask for a first-class `<operator-name>` production, and say what it
+  should look like.** The paper carries the derivation rule as a proposal to
+  the ABI group, keyed by code point and carrying a fixity marker.
+- **(c) Say nothing normative and mark it a known gap** for the ABI groups —
+  what this section said before it was written out.
+
+**The cost of each.**
+
+- **(a)** is cheapest and is the honest description of what was built, and it
+  has two real defects. Nothing fixes the *derivation* across vendors, so two
+  implementations shipping the feature would each pick an `op_u…` convention
+  and disagree silently — a mangled name is a linker-visible contract, and
+  "whatever the prototype did" is not one. And it quietly resolves the postfix
+  question the wrong way: adopting an arity-keyed encoding as the answer
+  forecloses the fixity distinction that U§13.1 was careful to keep open. The
+  ABI's own scoping of `v` to vendor builtins makes it awkward on its own
+  terms besides.
+- **(b)** costs a commitment the paper may be argued out of, and it needs a
+  second body: the Itanium ABI group is not WG21, works on its own calendar,
+  and a Microsoft answer would still be missing ([microsoft-abi-position](#microsoft-abi-position)). Against
+  that, it is the only option that produces one encoding for everybody, and
+  the only one that keeps postfix takeable. The delta being asked for is
+  small — see the shape below — which is what makes it plausible to ask.
+- **(c)** is the weakest of the three and the easiest to write. "This is a
+  gap" invites precisely the question the prototype already has an answer to,
+  and it spends the strongest evidence in the section (two demanglers,
+  unmodified, rendering ten symbol forms) on nothing.
+
+**Recommendation: (a) and (b) together, non-normatively.** Describe the
+vendor-extended form as *the fallback that needs no ABI action* — that it
+exists is a genuine result, because it means the feature is implementable and
+inspectable with today's toolchains — and then ask the ABI group for a
+first-class production, with a concrete shape, marked explicitly as a request
+rather than as proposed wording. The shape to ask for is the `v` production
+with the vendor digit replaced by a fixity marker and the vendor prefix
+replaced by a standard code:
+
+```
+<operator-name> ::= uo <fixity> <source-name>    # user-defined operator
+<fixity>        ::= i                            # infix
+                ::= p                            # prefix
+                ::= s                            # postfix (reserved; no v1 spelling)
+```
+
+Three things about that shape are load-bearing and the letters are not; the
+ABI group picks the letters.
+
+1. **The fixity marker is the whole point of asking.** It is what `v <digit>`
+   cannot express, it is what §5.1.3/§5.1.6 already found necessary for `++`
+   and `--`, and reserving `s` now is what lets a later revision take postfix
+   without an ABI change. This is the clause the
+   [postfix-operators](../ops/unicode-operators/clang/DEVIATIONS.md#postfix-operators)
+   ledger row leaves to this section: v1 declines postfix, and declining it costs nothing later *only
+   if* the encoding it standardizes has somewhere to put the distinction.
+2. **The name stays the ASCII hex derivation**, not the operator's UTF-8
+   bytes, even though UTF-8 would demangle to `operator⊞` and read better.
+   The derivation is injective and mechanical, so a demangler that wants to
+   print the glyph can invert it; whereas putting non-ASCII into symbol names
+   buys that prettiness at the cost of every tool in the pipeline, one of
+   which — `llvm-cxxfilt` on stdin — is measurably broken for exactly this
+   today. Pretty demangling is a demangler feature; it should not be bought
+   with a mangling decision.
+3. **It is a small delta from something the ABI already has.** Same arity of
+   payload, same `<source-name>` encoding, same position in the table as
+   `li <source-name>`; only the key changes, from *which vendor invented this
+   builtin* to *which code point, in which fixity*. Asking for a production
+   nobody has to invent machinery for is a different conversation from asking
+   for a new mangling scheme.
+
+**Status: open.** [operator-mangling](#operator-mangling) stays `Proposed — open (ABI)` until this is
+answered. The other two subsections are settled either way: what the prototype
+implements and what Windows cannot do are facts, and the paper says them
+whichever request it makes.
+
+### microsoft-abi-position
+
+"Unexamined" reads as *not yet looked at*. The operative fact is sharper, and
+the paper should say it: **the Itanium ABI reserves a production for operators
+it did not anticipate and the Microsoft ABI does not**, so a portable version
+of this feature needs a Microsoft decision that Itanium does not need.
+
+The prototype found this out at the moment the name became declarable rather
+than at some future date, because `MicrosoftCXXNameMangler::mangleUnqualifiedName`
+switches exhaustively over the name kind. It **declined to invent a scheme**
+and reports the existing house diagnostic instead — `cannot mangle this
+Unicode user-defined operator yet` — so a Windows target accepts every
+*declaration*, since the name itself is representable, and rejects the first
+*definition* at codegen. That behaviour is pinned by a RUN line in the
+mangling test, so it is a stated position rather than an omission.
+
+Declining to invent an ABI is a defensible answer and a committee reader will
+recognize it as one; a silently invented scheme would have been the worst
+available outcome, since it would have been binding on Windows the day it
+shipped. So this is also the cleanest single answer to "how much does this
+feature touch ABI?" — **one production on Itanium, one unanswered question on
+Windows, and nothing else.**
 
 ---
 
