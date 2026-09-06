@@ -712,7 +712,7 @@ the deviation ledger it produced is the source for most of this paper's
 corrections to its own design.
 
 A defect found in passing and unrelated to this proposal: Clang mangles both
-prefix and postfix `operator++` as `pp`, where the Itanium ABI spells prefix
-`pp_` and postfix `pp`. Two overloads distinguished only by that mangle
-identically on Clang and distinctly on GCC 15.2. It is being reported
-upstream.
+prefix and postfix `operator++` — and `operator--` — as `pp` and `mm`, where
+the Itanium ABI (§5.1.3, §5.1.6) spells the prefix forms `pp_` and `mm_`. Two
+overloads distinguished only by that mangle identically on Clang and distinctly
+on GCC 15.2. Reported upstream as llvm/llvm-project LLVM-ISSUE-PENDING.

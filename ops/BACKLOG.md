@@ -319,17 +319,17 @@ Not ours, found while doing this work, and worth reporting.
 
 **Where.** U21 handoff
 
-**Closed by.** **BL05**
+**Closed by.** **NOT CLOSED — report [drafted](completion/upstream-drafts/increment-decrement-mangling.md) 2026-09-06 by [upstream-reports](completion/steps/upstream-reports.md), pending the maintainer filing it.** Re-confirmed against trunk `72417eb739e5`: both mangler sites read at that revision, and the collision reproduced on builds of `a815e6f267c1` and `d28193fa1ff6` for `++` **and** `--`, against `g++ 15.2.0`. Eight existing-issue searches, no duplicate. **The reproducer on file does not reproduce as written** — the two templates need explicit instantiations to force emission; the draft carries the corrected one. The row closes when the issue is posted and its number replaces the `LLVM-ISSUE-PENDING` token; until then [mangling-abi](completion/steps/mangling-abi.md) and [unicode-paper](completion/steps/unicode-paper.md) have no number to cite.
 
 ### unqualified-id-union-read
 
 **Formerly:** `B26`. **Severity:** P2.
 
-**Item.** **`ParseExprCXX.cpp:2297` reads the wrong union member** for `IK_LiteralOperatorId`. U07 guarded the new kind rather than fixing upstream's read; anyone adding a further `UnqualifiedId` payload hits it first.
+**Item.** **`ParseExprCXX.cpp:2297` reads the wrong union member** for `IK_LiteralOperatorId`. U07 guarded the new kind rather than fixing upstream's read; anyone adding a further `UnqualifiedId` payload hits it first. **[corrected 2026-09-06]** The cited line is no longer the defect: on trunk `72417eb739e5` the `err_missing_dependent_template_keyword` name-building block tests the kind and reads `Identifier`, which is right. The live read is the `OpKind` ternary in `Parser::ParseUnqualifiedIdTemplateId` (`ParseExprCXX.cpp:2374`), which excludes only `IK_Identifier` — and a **second, previously unrecorded** instance of the same ternary in `Parser::AnnotateTemplateIdToken` (`ParseTemplate.cpp:1155`), which has no kind guard at all.
 
 **Where.** U07 handoff
 
-**Closed by.** —
+**Closed by.** **NOT CLOSED — report [drafted](completion/upstream-drafts/unqualified-id-union-read.md) 2026-09-06 by [upstream-reports](completion/steps/upstream-reports.md), pending the maintainer filing it.** Confirmed by reading trunk `72417eb739e5`; still latent, with no observable misbehaviour (`operator""_x<'1','2'>()` compiles clean, because nothing downstream consumes the annotation's `Operator` for that kind). Four existing-issue searches: no duplicate, but **#20143** (open since 2014) is a sanitizer report of the *same* read at a third site, `Declarator::isStaticMember()`, which is kind-guarded on trunk today — cited in the draft as the precedent for the fix shape.
 
 ### cxxfilt-stdin-nonascii
 
@@ -379,7 +379,7 @@ Not ours, found while doing this work, and worth reporting.
 
 **Where.** BL04 handoff; `clang/lib/CIR/CodeGen/CIRGenFunction.cpp` `emitLValue` default arm; [cir-backtick-arms](DEVIATIONS.md#cir-backtick-arms) / [codegen-dispatch-sites](unicode-operators/clang/DEVIATIONS.md#codegen-dispatch-sites)
 
-**Closed by.** —
+**Closed by.** **NOT CLOSED — report [drafted](completion/upstream-drafts/clangir-lvalue-crash.md) 2026-09-06 by [upstream-reports](completion/steps/upstream-reports.md), pending the maintainer filing it.** **Widened by the confirmation: the default arm is one instance, not the pattern.** 21 arms of that one switch call `errorNYI(...)` and then `return LValue()`, and the enumerated ones are reachable from stock C++26 — `p...[0]` (`PackIndexingExpr`) in l-value position reproduces both failure modes with no feature flag: `p...[0] = 1;` gives BL04's exact `QualType::getCommonPtr` assertion, `return p...[0];` segfaults in `createStore` from `emitReturnStmt` instead. Verified against trunk `72417eb739e5` by reading `emitLValue` there, and by checking that the CIR build used (`6ee1358f7b47`, base `bb33de72920a`) differs from it only by BL04's two added arms, with `emitReturnStmt` identical. Seven existing-issue searches, no duplicate; **#202097** and **#214443** are the same "NYI, then continue with an invalid value" failure at other CIR sites, both closed, and are cited as prior art.
 
 ## 5. Environment and infrastructure
 

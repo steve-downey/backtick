@@ -709,6 +709,15 @@ code point (cross-vendor agreement in the Itanium ABI group), and the MSVC
 scheme (unexamined). Mangling is the one place this feature touches ABI at
 all; everything else is front-end sugar. Flagged open, not resolved.
 
+A first-class production would also need room for a fixity marker, which
+`v <digit> <source-name>` does not have — and fixity in mangling is easy to
+get wrong even where the ABI spells it out. U§13.1 has the evidence: Clang
+emits the postfix spelling for both fixities of `++` and `--` where the ABI
+(§5.1.3, §5.1.6) and GCC 15.2 distinguish `pp_` from `pp`. Reported upstream
+as **LLVM-ISSUE-PENDING**
+([draft](../ops/completion/upstream-drafts/increment-decrement-mangling.md),
+not yet filed).
+
 ---
 
 ## 10. Security, confusability, tooling
@@ -1005,6 +1014,15 @@ template <class T> void f(decltype(T{}++)) {}
 // clang: error: definition with same mangled name '_Z1fI1AEvDTpptlT_EE'
 // gcc:   _Z1fI1AEvDTpp_tlT_EE  and  _Z1fI1AEvDTpptlT_EE
 ```
+
+(The two templates need explicit instantiations — `template void f<A>(int);`
+and `template void f<A>(double);` — before anything is mangled and the
+collision fires. `operator--` fails identically. Re-confirmed against LLVM
+trunk `72417eb739e5` on 2026-09-06; reported upstream as
+**LLVM-ISSUE-PENDING** — the report is
+[drafted](../ops/completion/upstream-drafts/increment-decrement-mangling.md)
+and awaiting filing, and that token is the placeholder to replace with the
+issue number.)
 
 A user operator would need the same trailing-`_` convention grafted onto the
 `v <arity> <source-name>` production, which is a cross-vendor ABI change on
