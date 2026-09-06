@@ -51,7 +51,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** F23/F24 handoff
 
-**Closed by.** —
+**Closed by.** **[clang-paper-truth](completion/steps/clang-paper-truth.md)** — fixed on `backtick-trunk` and `backtick-23`. The escape now round-trips through `-ast-print`, pinned by new `-ast-print` RUN lines on `clang/test/Parser/backtick-escape.cpp` — including a second line that re-parses the printed output, which is the assertion that matters. The `PrintingPolicy` bit is `BacktickKeywordEscape`, initialised from `LangOptions::Backtick`; the diagnostic-wording question the row demanded is answered, deliberately and in the affirmative, at [keyword-escape-printing](../docs/backtick-operator-design.md#keyword-escape-printing), with the costs in [keyword-escape-printing](DEVIATIONS.md#keyword-escape-printing). **The row understated the scope by four sites**: `DeclarationName::print` alone is not enough, because three `DeclPrinter` declarator printers hand the name to the *type* printer as a placeholder and never reach it, and `StmtPrinter::VisitMemberExpr` prints through a policy-free stream operator. The diagnostic surface was also already split — `ak_declarationname` policy-free, `ak_nameddecl` not — so the two halves would have disagreed about the same name.
 
 ### c-mode-tokenization
 
@@ -61,7 +61,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** [flag-language-mode](unicode-operators/clang/DEVIATIONS.md#flag-language-mode) (resolved on the Unicode branch only); U04 handoff
 
-**Closed by.** **BL06**
+**Closed by.** **[clang-paper-truth](completion/steps/clang-paper-truth.md)** — `defm backtick` gained `ShouldParseIf<cplusplus.KeyPath>` on `backtick-trunk` and `backtick-23`, and `clang/test/Lexer/backtick-c-mode.c` was carried back from the Unicode branch to both. Re-graded once more and the row's own re-grade holds: measured on the pre-fix binary, `-cc1 -fbacktick -x c` on the reproducer exits **0** while the same compilation without the flag exits 1, so the test's assertion is the *rejection* — `not` on both compilations plus a `diff` of their output. Reconciled into [feature-gating](../docs/backtick-operator-design.md#feature-gating)'s 2026-09-06 log entry and §6.5.
 
 ### backtick-source-range
 
@@ -71,7 +71,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** F23/F24 handoff; U11 handoff
 
-**Closed by.** **BL06**
+**Closed by.** **[clang-paper-truth](completion/steps/clang-paper-truth.md)** — fixed on `backtick-trunk` and `backtick-23`, modelled on `UserOperatorExpr::getBeginLoc` as the row asked. `` 1 `add` 2 `` was `<col:16, col:19>` and is now `<col:13, col:21>`. **Wider than the row said**: the type slot ([type-name-slot](../docs/backtick-operator-design.md#type-name-slot)) desugars to construction, so `getCallExpr()` is null for it and a call-only fix would have left `` 1 `Pt` 2 `` reporting the slot alone; `BacktickInfixExpr::getOperand` recognises the same three shapes the pretty-printer does. The test assertions were wildcards that could not have failed, and are now literal columns. Reconciled into §17.5 and [source-fidelity-node](../docs/backtick-operator-design.md#source-fidelity-node)'s 2026-09-06 log entry; [backtick-source-locations](DEVIATIONS.md#backtick-source-locations) carries the correction to the clause that said the inner call's paren locations were enough.
 
 ### backtick-ast-matchers
 
