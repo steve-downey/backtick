@@ -110,7 +110,7 @@ differ only in their final clang-format-conformance commit; see
 |-------|--------|------|-----------------|-----------|
 | Clang | `backtick-23` | `upstream/release/23.x` (llvmorg-23.1.0-rc2) | `~/src/llvm/backtick` | `~/src/llvm/build-backtick` |
 | Clang | `backtick-trunk` | `upstream/main` | `~/src/llvm/backtick-trunk` | `~/src/llvm/build-backtick-trunk` |
-| GCC   | `backtick` | GCC trunk `c9ee2c5ab6c` | `~/bld/gcc/gcc-backtick` | `~/bld/gcc/gcc-backtick-build` |
+| GCC   | `backtick` | GCC trunk `4df5e1e9b152` | `~/bld/gcc/gcc-backtick` | `~/bld/gcc/gcc-backtick-build` |
 
 Clang tests for both branches: `clang/test/**/backtick-*.cpp`,
 `clang/test/Driver/fbacktick.c`, `clang/unittests/Format/`.

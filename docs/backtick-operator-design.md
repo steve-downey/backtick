@@ -1261,17 +1261,44 @@ arise. The keyword-escape use of backtick (§12) occupies operand/declarator
 position, not the post-operand infix position, so there is no collision.
 Blessed as a consistent, useful consequence rather than a special rule.
 
+**Implementation status: one compiler, and that is a claim the paper has to
+make carefully.** Clang implements it — a bare name is looked up as a type
+with a CTAD placeholder, a qualified one via a tentative scope parse, a
+builtin through the functional-cast machinery, and all three route to the
+`T(x, y)` build path. **GCC does not**: its slot is parsed as an expression,
+so `` 1 `P` 2 `` is rejected there, and under `-fbacktick` the two compilers
+accept different programs
+([gcc-type-slot-parity](../ops/gcc/DEVIATIONS.md#gcc-type-slot-parity)). This
+is the one place where the two implementations disagree about what is
+well-formed, and it is a gap rather than a design consequence — nothing about
+GCC's parser-level desugaring prevents the type arm, it simply has not been
+written. Until it is, the implementation-experience section must say that
+this section has **single-compiler evidence**, and say which compiler.
+
 ### 17.4 ADL is normative (cross-compiler note)
 
 `x `f` y` performs argument-dependent lookup on the slot exactly as the call
 `f(x, y)` would ([desugaring-target](#desugaring-target)). This is **normative**: backtick must not silently have
-weaker lookup than the call it desugars to. Implementation status, for the
-implementation-experience section: Clang delivers full ADL (the slot reaches
-`BuildCallExpr` as an `UnresolvedLookupExpr`); GCC currently resolves the slot
-name at parse time, so pure-ADL and ADL-augmentation fail ([gcc-slot-adl](../ops/gcc/DEVIATIONS.md#gcc-slot-adl)). That is a
-**defect to correct** in the in-progress GCC track — carry the slot as an
-unresolved/dependent name into `finish_call_expr` — not a permitted
-cross-compiler difference.
+weaker lookup than the call it desugars to. It binds wherever ADL binds in a
+call — that is, wherever the slot is an unqualified name, whether or not it
+carries template arguments. A qualified name, a member access, or any other
+expression in the slot gets no ADL for the same reason the equivalent call
+gets none.
+
+Implementation status, for the implementation-experience section: **both
+compilers now deliver it, and they agree.** Clang carries the slot to
+`BuildCallExpr` as an `UnresolvedLookupExpr`. GCC keeps a bare unqualified-id
+slot as an `IDENTIFIER_NODE` and a bare template-id slot as a
+`TEMPLATE_ID_EXPR` over one, and runs `perform_koenig_lookup` before
+`finish_call_expr`; anything else in the slot is parsed as an ordinary
+expression, which is the right answer for it. Getting there took two goes —
+resolving the slot name at parse time defeated pure ADL entirely
+([gcc-slot-adl](../ops/gcc/DEVIATIONS.md#gcc-slot-adl)), and the fix for that
+detected only a bare name, so a template-id slot silently kept the old
+behaviour ([gcc-template-id-slot-adl](../ops/gcc/DEVIATIONS.md#gcc-template-id-slot-adl)).
+Both are the same lesson for anyone implementing this: the slot has to reach
+the call builder unresolved, and "the slot" means every unqualified form of
+it, not the easiest one to spot with a two-token peek.
 
 ---
 

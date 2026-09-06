@@ -33,9 +33,18 @@ build (`--disable-bootstrap --enable-languages=c,c++`), and the `g++.dg` gate
   cd ~/bld/gcc/gcc-backtick-build && make -j18 all-target-libstdc++-v3
   ```
   Recorded by BL01 (`ops/BACKLOG.md` B34); nothing needs it today.
-- **The track is pinned at GCC trunk `c9ee2c5ab6c`** while Clang has moved to
-  23.x and 24.x. Re-sync before any fresh cross-compiler divergence testing
-  (`ops/BACKLOG.md` B13).
+- **The branch is based on GCC trunk `4df5e1e9b152` (2026-09-06)**, re-synced
+  from `c9ee2c5ab6c` (2026-06-24) by
+  [gcc-resync](../completion/steps/gcc-resync.md); see
+  [gcc-trunk-pin](../BACKLOG.md#gcc-trunk-pin) for the arithmetic. Re-sync
+  again before any fresh cross-compiler divergence testing.
+- **The libstdc++ header farm in the build dir goes stale across a re-sync.**
+  `x86_64-pc-linux-gnu/libstdc++-v3/include` is a symlink tree built at
+  configure time; after 2158 upstream commits it was missing headers the new
+  sources reference, and `g++.dg/parse/parse5.C` failed with
+  `bits/inplace_tags.h: No such file or directory` — nothing to do with the
+  feature. `make -C x86_64-pc-linux-gnu/libstdc++-v3/include` refreshes it in
+  a couple of minutes and is worth doing straight after any rebase.
 
 ## Checklist
 ### GCC infix operator (mirrors Clang Phase A)

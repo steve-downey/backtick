@@ -133,7 +133,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** G10 handoff; [gcc-slot-adl](gcc/DEVIATIONS.md#gcc-slot-adl)'s neighbourhood
 
-**Closed by.** —
+**Closed by.** [gcc-resync](completion/steps/gcc-resync.md), 2026-09-06. Fixed, not reworded: `cp_parser_backtick_template_id_slot` keeps a bare template-id slot unresolved as a `TEMPLATE_ID_EXPR` and hands it to `perform_koenig_lookup`, at both handler sites. §17.4 rewritten to say ADL binds wherever the slot is an unqualified name, with or without template arguments. New test `g++.dg/backtick/infix-adl-template-id.C`; ledger [gcc-template-id-slot-adl](gcc/DEVIATIONS.md#gcc-template-id-slot-adl).
 
 ### module-streaming-escapes
 
@@ -143,7 +143,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** G07, G08, G09, G10 handoffs
 
-**Closed by.** —
+**Closed by.** [gcc-resync](completion/steps/gcc-resync.md), 2026-09-06. **Verified not broken** — deferred four times, and it works untouched. A module exporting `` `new` `` and `` Widget::`delete` `` produces a CMI, the importer sees ordinary identifiers, and both mangle with the module-attachment prefix (`_ZW15backtick_escape3newii`, `_ZNW15backtick_escape6Widget6deleteEv`). `module.cc`'s `IDENTIFIER_KEYWORD_P` checks needed no change. Now guarded by `g++.dg/modules/backtick-escape-1_a.C` / `_b.C`.
 
 ### grokdeclarator-guard-scope
 
@@ -153,7 +153,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** [gcc-keyword-declarator](gcc/DEVIATIONS.md#gcc-keyword-declarator); G07–G10 handoffs
 
-**Closed by.** —
+**Closed by.** [gcc-resync](completion/steps/gcc-resync.md), 2026-09-06. Guard narrowed: the escape is recorded on the `cp_declarator` (`backtick_escaped_p`, set from a parser flag that `cp_parser_unqualified_id` raises), and `grokdeclarator` requires it rather than trusting `flag_backtick`. Narrowing it turned up a *reachable* sibling — both escape arms were entered on the flag alone although other cases fall through to their `case CPP_BACKTICK` labels, so a bare keyword and a stray `^` diagnosed differently with the flag on; see [escape-arm-entry-token](gcc/DEVIATIONS.md#escape-arm-entry-token).
 
 ### gcc-wrapper-parity
 
@@ -163,7 +163,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** F23/F24 handoff
 
-**Closed by.** —
+**Closed by.** [gcc-resync](completion/steps/gcc-resync.md), 2026-09-06. **Recorded, not implemented**, which was the row's own conclusion: GCC desugars in the parser, so there is no AST wrapper node and no analyzer analogue to teach — a difference in *kind*, not in behaviour. Written up as [gcc-wrapper-parity](gcc/DEVIATIONS.md#gcc-wrapper-parity) in the GCC ledger, with what the paper should say about the parts of the Clang work that have no GCC counterpart by construction.
 
 ### gcc-trunk-pin
 
@@ -173,7 +173,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** R23, R24 handoffs
 
-**Closed by.** —
+**Closed by.** [gcc-resync](completion/steps/gcc-resync.md), 2026-09-06. Rebased `c9ee2c5ab6c` (2026-06-24) → `4df5e1e9b152` (2026-09-06), 2158 upstream commits, 177 of them in `gcc/cp`, `gcc/c-family` or `libcpp`. Conflict-free, and the feature diff's added and removed lines are byte-identical across the move — only hunk offsets shifted. Gate 88 → 88 before any other change.
 
 ## 3. Unicode track — Clang (`unicode-operators-experiment`, `unicode-operators-upstream`)
 
