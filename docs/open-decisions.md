@@ -14,8 +14,11 @@ recommendation — that record is what
 [reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md)
 and [unicode-paper](../ops/completion/steps/unicode-paper.md) cite.
 
-Three further open items are deliberately **not** here: the ABI and mangling
-question is [mangling-abi](../ops/completion/steps/mangling-abi.md)'s, the
+Three further open items have their **pages** elsewhere, though their answers
+are recorded here with the rest: the ABI and mangling question is
+[mangling-abi](../ops/completion/steps/mangling-abi.md)'s and its page is
+[abi-production-request](unicode-operators.md#abi-production-request) in U§9
+itself, because that question's answer *is* a section of the design doc; the
 member/non-member operand sequencing question
 ([operand-sequencing](../ops/unicode-operators/clang/DEVIATIONS.md#operand-sequencing))
 is a CWG question with no implementation consequence and is written up by
@@ -31,7 +34,7 @@ and U§6's missing sixth worked example is a two-line doc sync owned by
 | 2 | [over-oper-restrictions](#over-oper-restrictions) — may a user operator be a static member function? | **Keep rejecting it**, and state the reason the prototype could not: a static member names neither of the two spellings the desugaring equivalence is defined over. | **none** (doc only) |
 | 3 | [fold-over-user-infix](#fold-over-user-infix) — may a user-introduced infix operator be a fold operator? | **No, for both features, in v1.** State it as a decision with its price, not as an omission. | **none** (already the behaviour; a one-line guard to keep) |
 | 4 | [postfix-operators](#postfix-operators) — are postfix user operators declined permanently, or declined for v1? | **Declined for v1, not foreclosed.** Carry U§13.1's four prices and the forward-compatibility result into the paper. | **none** (doc only) |
-| 5 | [dependent-template-operator-id](#dependent-template-operator-id) — `t.template operator⊞<int>(0)` on a dependent object expression is rejected; fix it or reword the word "anywhere"? | **Reword now; report upstream separately.** The reword is one clause; the fix is upstream's and is not this proposal's to make. **Answered (c) on 2026-09-06 and partly reopened on 2026-09-06** — the report half rests on a premise that turned out to be false; see [the reopening](#2026-09-06--dependent-template-operator-id-the-report-half-is-reopened). | **none** here (the reword stands; the upstream report cannot be filed as described) |
+| 5 | [dependent-template-operator-id](#dependent-template-operator-id) — `t.template operator⊞<int>(0)` on a dependent object expression is rejected; fix it or reword the word "anywhere"? | **Reword, and do not report.** Answered (c) on 2026-09-06, reopened the same day when the report half's premise turned out to be false, and **settled 2026-09-06 as (a)**: the gap is this feature's own, nothing is pending upstream, and the row closes on the reword alone. The justifying clause is the corrected one; the struck literal-operator clause must not be used. | **none** (one clause in U§7.1, and no report) |
 
 Every recommendation above is "change no code". That is a result rather than
 a convenience, and it is worth reading as one: four of these five were logged
@@ -868,6 +871,78 @@ authority. The reword owed by
 is **unblocked either way** and should not wait — only its *justifying clause*
 changes, and this entry gives it.
 
+### 2026-09-06 — abi-production-request: (a) and (b) together, non-normatively
+
+**The recommendation accepted as written.** The paper describes the Itanium
+**vendor-extended** form the prototype implements — `v <digit> <source-name>`
+with the `op_u` + uppercase-hex derivation — as *the fallback that needs no
+ABI action*, which is a genuine result rather than an apology: it means the
+feature is implementable and inspectable with today's toolchains, and two
+unmodified demanglers prove it. The paper then **asks** the Itanium ABI group
+for a first-class `<operator-name>` production, with the concrete shape
+sketched in
+[abi-production-request](unicode-operators.md#abi-production-request) —
+`uo <fixity> <source-name>`, `<fixity> ::= i | p | s` — and marks it
+**explicitly as a request rather than as proposed wording**, because the ABI
+is not WG21's to legislate. `s` is reserved so that postfix stays takeable;
+the letters are the ABI group's to pick and the paper must not present them as
+agreed.
+
+The decisive argument is the one the answer to
+[postfix-operators](#postfix-operators) generates: `v <digit>` keys on
+**arity**, prefix and postfix unaries share arity 1, so adopting the vendor
+form *as the standardized encoding* would quietly foreclose the option that
+answer was careful to keep open. Two facts read out of the ABI's own prose
+support the ask — §5.1.3 scopes the `v` production to "vendors who define
+builtin extended operators (e.g. `__imag`)", which a user-declared operator is
+not; and the same table opens "unlike Cfront, unary and binary operators using
+the same symbol have different encodings" and spends four codes keeping them
+apart. Distinguishing forms of one symbol is a principle the ABI already
+holds.
+
+*Doc work owed:* **none — the answer is the section.** U§9 is written, and its
+other two subsections
+([mangling-derivation-rule](unicode-operators.md#mangling-derivation-rule),
+[microsoft-abi-position](unicode-operators.md#microsoft-abi-position)) were
+settled facts either way. Owner of the paper's treatment:
+[unicode-paper](../ops/completion/steps/unicode-paper.md), which should write
+from the answered section and not from the recommendation.
+
+### 2026-09-06 — dependent-template-operator-id: (a), replacing the reopened half of (c)
+
+**Reword only. No upstream report.** The report leg of the 2026-09-06 answer
+(c) is withdrawn: it was specified against the literal-operator reproducer,
+that reproducer is *correctly* rejected, and
+[upstream-triage](../ops/completion/steps/upstream-triage.md) declined to
+generalise it on its own authority — see [the
+reopening](#2026-09-06--dependent-template-operator-id-the-report-half-is-reopened).
+Option (c′), reporting the user-operator case, is **not** taken: it needs an
+unmerged branch to reproduce, which is exactly the weakness (c) was chosen to
+avoid. So nothing is pending upstream and the row closes on the reword alone.
+
+**The gap is this feature's own**, and that is the accurate justifying clause.
+`DependentTemplateStorage` is keyed by an `IdentifierInfo *` or an
+`OverloadedOperatorKind`, and a user operator is neither; literal operators
+share the code path but suffer no limitation from it, because
+[over.literal]/1 means no valid program contains the construct. This is the
+same closure-over-a-fixed-operator-table cost as
+[declaration-name-plumbing](../ops/unicode-operators/clang/DEVIATIONS.md#declaration-name-plumbing)
+and
+[operator-candidate-assembly](../ops/unicode-operators/clang/DEVIATIONS.md#operator-candidate-assembly),
+reaching a third data structure — which is better evidence for U§8's cost
+argument than an inherited limitation would have been.
+
+**The clause "a limitation user-defined literal operators have had since
+C++11" is false and must not enter U§7.1 or either paper.** The wording to use
+instead is in
+[operator-id-anywhere](../ops/unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere)'s
+*Recommended doc change* item (1), which carries both the replacement clause
+and the prohibition.
+
+*Doc work owed:* the U§7.1 reword, unchanged and unblocked —
+[reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md)'s,
+U§7.1 being its destination section. *Report owed:* **none.**
+
 ## Where each answer was recorded
 
 Per the convention that a ruling appends to its question's own Log rather than
@@ -880,8 +955,15 @@ getting a document of its own:
 | fold-over-user-infix | [user-infix-precedence](unicode-operators.md#user-infix-precedence), [precedence-level](backtick-operator-design.md#precedence-level) | [infix-parse-cost](../ops/unicode-operators/clang/DEVIATIONS.md#infix-parse-cost) (part 3 only) |
 | postfix-operators | [unary-forms](unicode-operators.md#unary-forms) | [postfix-operators](../ops/unicode-operators/clang/DEVIATIONS.md#postfix-operators) (substance; mangling clause untouched) |
 | dependent-template-operator-id | [operator-identifier-disjointness](unicode-operators.md#operator-identifier-disjointness) | [operator-id-anywhere](../ops/unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere), and the backlog row [dependent-template-operator-id](../ops/BACKLOG.md#dependent-template-operator-id) |
+| dependent-template-operator-id *(settled, 2026-09-06)* | same entry, second `Log.` line | [operator-id-anywhere](../ops/unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere) restated as reword-only, and the backlog row's `Closed by` and `Item` corrected |
+| abi-production-request | [operator-mangling](unicode-operators.md#operator-mangling) | none left to mark — [vendor-extended-mangling](../ops/unicode-operators/clang/DEVIATIONS.md#vendor-extended-mangling) and [msvc-mangling](../ops/unicode-operators/clang/DEVIATIONS.md#msvc-mangling) went **RECONCILED** in the same step, [postfix-operators](../ops/unicode-operators/clang/DEVIATIONS.md#postfix-operators)'s mangling clause with them |
 
 Every ledger row above stays **`OPEN`** with a dated **DECIDED** note naming
 the step that owes the writing. A row goes `RECONCILED` when its destination
 section says the new thing — deciding is not reconciling, and marking it
 otherwise would report work that has not happened.
+
+The ABI row is the exception that proves it: its answer *is* a design-doc
+section, so deciding and reconciling happened in the same step and its ledger
+rows are genuinely `RECONCILED`. Every other row on this page still owes its
+destination section a sentence.

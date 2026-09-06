@@ -168,15 +168,15 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Question.** How does a user operator mangle?
 
-**Status.** **Proposed — open (ABI)** — what the prototype *implements* is settled and written out in [mangling-derivation-rule](#mangling-derivation-rule); what the paper *asks for* is the open part and is the author's, in [abi-production-request](#abi-production-request).
+**Status.** **Proposed — open (ABI)** — open in the sense the whole log is open, i.e. until the paper is polled. Nothing in it is undecided: what the prototype *implements* is [mangling-derivation-rule](#mangling-derivation-rule), what the paper *asks for* was answered by the author on 2026-09-06 in [abi-production-request](#abi-production-request), and the Windows gap is [microsoft-abi-position](#microsoft-abi-position).
 
 **Decision.** Mangling: Itanium **vendor-extended operator** (`v <arity> <source-name>`) with a code-point-derived source-name, e.g. `⊞` binary → `v2` + `op_u229E`. The derivation rule — `op_u` + uppercase hex, minimum four digits, widened above the BMP — is stated in full in [mangling-derivation-rule](#mangling-derivation-rule); the example above is not the rule.
 
 **Why.** The `v` production exists precisely for operators the grammar didn't anticipate; precedent for naming-by-derived-source-name is `li<name>` for literal-operator suffixes, and precedent for retrofitting a real code is `aw` for `co_await`. A standardized feature would want a first-class `<operator-name>` production keyed by code point **and by fixity**, which needs cross-vendor agreement — flagged open, not resolved, and the recommendation with its options and costs is [abi-production-request](#abi-production-request). MSVC has no production to borrow at all: [microsoft-abi-position](#microsoft-abi-position).
 
-**Decided by.** Undecided — the whole log is Proposed until the paper is polled, and this entry additionally awaits the author on [abi-production-request](#abi-production-request).
+**Decided by.** The design author, 2026-09-06, on [abi-production-request](#abi-production-request) — the *ask* is settled. The entry as a whole stays Proposed on the same terms as the rest of the log: it is polled with the paper.
 
-**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged. 2026-09-06 — [mangling-abi](../ops/completion/steps/mangling-abi.md) wrote U§9 out as three named subsections and put the open half in [abi-production-request](#abi-production-request) with options, costs and a recommendation; the `v`-production derivation and the Microsoft position are settled there and no longer open.
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged. 2026-09-06 — [mangling-abi](../ops/completion/steps/mangling-abi.md) wrote U§9 out as three named subsections and put the open half in [abi-production-request](#abi-production-request) with options, costs and a recommendation; the `v`-production derivation and the Microsoft position are settled there and no longer open. 2026-09-06 — **the author answered [abi-production-request](#abi-production-request), accepting the recommendation as written**: describe the vendor-extended form as the fallback needing no ABI action *and* ask for a first-class production, as a request rather than as wording, with a fixity marker and `s` reserved so postfix stays takeable. Two facts from the ABI's prose carried the argument and are recorded there — §5.1.3 scopes `v` to vendor builtins, and the same table already spends four codes distinguishing unary from binary forms of one symbol.
 
 ### user-declared-fixity
 
@@ -900,10 +900,20 @@ ABI group picks the letters.
    nobody has to invent machinery for is a different conversation from asking
    for a new mangling scheme.
 
-**Status: open.** [operator-mangling](#operator-mangling) stays `Proposed — open (ABI)` until this is
-answered. The other two subsections are settled either way: what the prototype
-implements and what Windows cannot do are facts, and the paper says them
-whichever request it makes.
+**Answered 2026-09-06 by the design author: the recommendation above, as
+written.** Describe the vendor-extended form as the fallback that needs no ABI
+action, then ask the ABI group for a first-class production with the shape
+sketched above — **marked explicitly as a request rather than as proposed
+wording**, since the Itanium ABI is not WG21's to legislate — with `s`
+reserved so that postfix stays takeable. The letters are still the ABI group's
+to pick and the paper must not present them as agreed.
+
+So the paper's ABI section has a settled shape: *this is what we built and it
+needs nothing from you; this is what we would ask for if the feature
+standardizes; and this is the one question Windows still owes an answer to.*
+[operator-mangling](#operator-mangling) stays `Proposed — open (ABI)` for the
+reason the whole log is Proposed — it is polled with the paper, not before —
+and no longer because anything here is undecided.
 
 ### microsoft-abi-position
 
