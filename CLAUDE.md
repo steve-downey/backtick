@@ -60,9 +60,15 @@ and a Status-log row so base-commit changes are not lost.
 
 - `docs/unicode-operators.md` — the Unicode design doc, the exact counterpart
   of the backtick one below: the decisions log (§2, one slugged entry per
-  question), the token set, the grammar, the implementation sketch, ABI, and
-  the open questions. The
+  question), the token set, the grammar, the implementation sketch, ABI (§9,
+  three slugged subsections — what is implemented, what the paper asks the ABI
+  groups for, and the Microsoft gap), and the open questions. The
   `DXXXXR0` paper is written from it.
+- `docs/open-decisions.md` — the questions the implementation measured and
+  only the design author can settle, one slug-headed page each (question /
+  what was measured / options / cost / recommendation), with the author's
+  dated answers recorded at the bottom. Written by `ops/completion`'s
+  `decision-brief`; the reconcile steps and both papers cite the answers.
 - `docs/backtick-operator-design.md` — the canonical design + decisions log
   (§3, one slugged entry per question), precedence rationale (§4), the
   same-delimiter parsing problem (§5),

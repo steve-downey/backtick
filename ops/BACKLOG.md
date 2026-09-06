@@ -245,7 +245,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** U09 handoff; [vendor-extended-mangling](unicode-operators/clang/DEVIATIONS.md#vendor-extended-mangling)
 
-**Closed by.** —
+**Closed by.** **[mangling-abi](completion/steps/mangling-abi.md), 2026-09-06 — recorded, not fixed, because there is nothing to fix.** It is a property of the frozen [token-set](../docs/unicode-operators.md#token-set), not a coverage gap: the padding branch and the astral widening are unreachable while every code point is in U+2190–U+2BFF, and reaching them means changing the token set, which is a design change and would bring its own tests. Written into [`docs/unicode-operators.md`](../docs/unicode-operators.md) **U§9's [mangling-derivation-rule](../docs/unicode-operators.md#mangling-derivation-rule)**, the paragraph beginning *"Two branches of that rule are unexercised by construction"*, which also names the two U§13 questions (combining-mark sequences, Latin-1 stragglers) that would first make them reachable. Whether that paragraph reaches the *paper* follows the author's answer to [abi-production-request](../docs/unicode-operators.md#abi-production-request): under the recommendation it does, because the derivation is then part of what is being proposed and its untested branches are part of what an ABI reviewer is entitled to know.
 
 ### ucd-input-manifest
 

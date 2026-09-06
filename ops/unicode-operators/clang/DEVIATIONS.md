@@ -14,9 +14,13 @@ cross-references link to it. `Formerly:` carries the serial number the entry
 used to have, because the completed tracks' handoffs still say it and are not
 rewritten. [`ops/SLUGS.md`](../../SLUGS.md) is the whole map.
 
-**Every entry here is `Status: OPEN`.** This ledger has never marked a row
-reconciled, which is accurate — none has been. A step that reconciles one
-changes its `Status` to `**RECONCILED**` (or `**RESOLVED**` / `**FIXED**`,
+**Two entries are `**RECONCILED**` and the rest are `Status: OPEN`.**
+[`vendor-extended-mangling`](#vendor-extended-mangling) and
+[`msvc-mangling`](#msvc-mangling) were reconciled into U§9 on 2026-09-06 by
+[mangling-abi](../../completion/steps/mangling-abi.md); every other row is
+still open, and [`postfix-operators`](#postfix-operators) is partly so — its
+mangling clause is closed and the rest is not, which the row says. A step that
+reconciles one changes its `Status` to `**RECONCILED**` (or `**RESOLVED**` / `**FIXED**`,
 the words the backtick and GCC ledgers use) and names the section *and the
 paragraph* the finding landed in. A reconciliation that cannot say where it
 went did not happen.
@@ -121,7 +125,9 @@ went did not happen.
 
 ### vendor-extended-mangling
 
-**Formerly:** `DEV-U08`. **Status:** OPEN
+**Formerly:** `DEV-U08`. **Status:** **RECONCILED** 2026-09-06 by [mangling-abi](../../completion/steps/mangling-abi.md), into [`docs/unicode-operators.md`](../../../docs/unicode-operators.md) **U§9's [mangling-derivation-rule](../../../docs/unicode-operators.md#mangling-derivation-rule)** — all three clauses landed and each has its own paragraph. (a) The derivation **rule** is the block quote after the `v <digit> <source-name>` grammar box (`op_u` + uppercase hex, minimum four digits, widened above the BMP), with the injectivity sentence in the paragraph under it; the untested padding and astral branches are the **"Two branches of that rule are unexercised by construction"** paragraph that follows, which is also where [`astral-plane-mangling`](../../BACKLOG.md#astral-plane-mangling) closes. (b) "Demangler-tolerated" is gone: the **"'Demangler-tolerated' undersells the measurement"** paragraph names both demanglers, calls out binutils `c++filt` 2.46 as a different vendor's, unmodified, and carries four of the ten symbol forms in a code block. (c) The arity nuance is the closing **"One wrinkle in the arity digit, inherited rather than introduced"** paragraph, which ends on the argument the row asked for — a production keyed by code point and fixity has no arity digit to disagree about — and that argument is carried into [abi-production-request](../../../docs/unicode-operators.md#abi-production-request)'s recommendation. The [operator-mangling](../../../docs/unicode-operators.md#operator-mangling) log entry records the same date.
+
+**Superseded prose below.** Kept verbatim as the record of what was found; U§9 is now the authority.
 
 **Found by.** U09
 
@@ -135,7 +141,9 @@ went did not happen.
 
 ### msvc-mangling
 
-**Formerly:** `DEV-U09`. **Status:** OPEN
+**Formerly:** `DEV-U09`. **Status:** **RECONCILED** 2026-09-06 by [mangling-abi](../../completion/steps/mangling-abi.md), into [`docs/unicode-operators.md`](../../../docs/unicode-operators.md) **U§9's [microsoft-abi-position](../../../docs/unicode-operators.md#microsoft-abi-position)**, all three paragraphs of it. The row's asked-for sentence — *Itanium reserves a production for operators it did not anticipate and Microsoft has none, so a portable version of this feature needs a Microsoft decision that Itanium does not need* — is the **first** paragraph, in bold, and replaces the bare "unexamined" parenthetical that used to sit in U§9's closing paragraph. The **second** paragraph is what the prototype does (the exhaustive `mangleUnqualifiedName` switch, the honest `cannot mangle this Unicode user-defined operator yet` diagnostic, declaration accepted / definition rejected at codegen, pinned by a RUN line). The **third** is the row's "we declined to invent an ABI" argument and its closing summary of the whole ABI footprint — one production on Itanium, one unanswered question on Windows, nothing else. [operator-mangling](../../../docs/unicode-operators.md#operator-mangling)'s **Why** now links here instead of saying "MSVC mangling unexamined".
+
+**Superseded prose below.** Kept verbatim as the record of what was found; U§9 is now the authority.
 
 **Found by.** U09
 
@@ -331,7 +339,7 @@ went did not happen.
 
 ### postfix-operators
 
-**Formerly:** `DEV-U23`. **Status:** **OPEN — substance DECIDED 2026-09-06; mangling clause untouched.** [postfix-operators](../../../docs/open-decisions.md#postfix-operators), option (a): postfix is **declined for v1 and explicitly not foreclosed**, argued in the *affordable and declined* terms rather than the *ambiguous* terms, because greedy-infix only ever reinterprets programs v1 rejects. U§13.1 keeps its full subsection: a priced negative result is the point, not an appendix. Still `OPEN` on two counts — this row's recommended doc changes (1), (4) and (5) are unwritten ([reconcile-remainder](../../completion/steps/reconcile-remainder.md)'s U§13, and the U§12 routing consequence), and **clause (3), the mangling clause, is not covered by this answer at all**: a first-class `<operator-name>` needing room for a fixity marker is [mangling-abi](../../completion/steps/mangling-abi.md)'s, as is the `pp_`/`pp` cross-vendor divergence this row found in passing.
+**Formerly:** `DEV-U23`. **Status:** **OPEN — substance DECIDED 2026-09-06; mangling clause RECONCILED 2026-09-06 into U§9's [abi-production-request](../../../docs/unicode-operators.md#abi-production-request); the remaining doc changes unwritten.** [postfix-operators](../../../docs/open-decisions.md#postfix-operators), option (a): postfix is **declined for v1 and explicitly not foreclosed**, argued in the *affordable and declined* terms rather than the *ambiguous* terms, because greedy-infix only ever reinterprets programs v1 rejects. U§13.1 keeps its full subsection: a priced negative result is the point, not an appendix. Still `OPEN` on one count: this row's recommended doc changes (1), (4) and (5) are unwritten ([reconcile-remainder](../../completion/steps/reconcile-remainder.md)'s U§13, and the U§12 routing consequence). **Clause (3), the mangling clause, is taken and closed** — [mangling-abi](../../completion/steps/mangling-abi.md) wrote it on 2026-09-06 into [`docs/unicode-operators.md`](../../../docs/unicode-operators.md) **U§9's [abi-production-request](../../../docs/unicode-operators.md#abi-production-request)**, in two places: the **third "What was measured" bullet** (*`v <digit>` keys on arity, and arity is not fixity*), which is the clause's substance — that the vendor-extended form cannot tell prefix from postfix and would foreclose v2 if it became the standardized encoding — and **point 1 of the Recommendation** (*The fixity marker is the whole point of asking*), which is what the paper would ask the ABI group for and links back to this row. The `pp_`/`pp` cross-vendor divergence is the **fourth "What was measured" bullet**, extended to `--` and to both fixities and still citing `LLVM-ISSUE-PENDING`. Nothing in that section forecloses postfix; it is written to keep it takeable.
 
 **Found by.** U21
 
