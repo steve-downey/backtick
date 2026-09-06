@@ -275,7 +275,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** [operator-id-anywhere](unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere); U07, U10 handoffs
 
-**Closed by.** —
+**Closed by.** [decision-brief](completion/steps/decision-brief.md) has re-triaged this as a decision — the options, their costs and a recommendation are [dependent-template-operator-id](../docs/open-decisions.md#dependent-template-operator-id) — and it stays **open** until the author answers there. On the recommendation it closes as a *pair*: the U§7.1 reword is [reconcile-declaring-using](completion/steps/reconcile-declaring-using.md)'s and the upstream report is [upstream-triage](completion/steps/upstream-triage.md)-shaped work.
 
 ### inner-call-source-range
 
@@ -421,21 +421,45 @@ mis-diagnosis, and each is recorded in a gate-facts section somewhere.
 ## 6. Not defects — open design decisions
 
 Recorded here only so this file is a complete index. Each is measured, has a
-recommendation, and needs an author's decision, not an implementer's:
+recommendation, and needs an author's decision, not an implementer's. **The
+questions themselves are no longer restated here** — five of them, with their
+options, their measured costs and a recommendation each, are in
+[`docs/open-decisions.md`](../docs/open-decisions.md), written by
+[decision-brief](completion/steps/decision-brief.md), and the author's answers
+get recorded in that file:
 
-- **[prefix-arity-selection](unicode-operators/clang/DEVIATIONS.md#prefix-arity-selection)** — a prefix use finds a two-parameter operator through its
-  default argument. Keep and document, or reinstate [over.oper]p8.
+- [prefix-arity-selection](../docs/open-decisions.md#prefix-arity-selection) —
+  ledger row
+  [prefix-arity-selection](unicode-operators/clang/DEVIATIONS.md#prefix-arity-selection).
+- [over-oper-restrictions](../docs/open-decisions.md#over-oper-restrictions) —
+  ledger row
+  [over-oper-restrictions](unicode-operators/clang/DEVIATIONS.md#over-oper-restrictions).
+- [fold-over-user-infix](../docs/open-decisions.md#fold-over-user-infix) — the
+  U§13 question, answered once for both features; recorded in ledger row
+  [infix-parse-cost](unicode-operators/clang/DEVIATIONS.md#infix-parse-cost)
+  part (3).
+- [postfix-operators](../docs/open-decisions.md#postfix-operators) — ledger row
+  [postfix-operators](unicode-operators/clang/DEVIATIONS.md#postfix-operators),
+  priced in U§13.1.
+- [dependent-template-operator-id](../docs/open-decisions.md#dependent-template-operator-id)
+  — the defect row [dependent-template-operator-id](#dependent-template-operator-id)
+  re-triaged as a decision, since it falsifies U§7.1's word "anywhere".
+
+The two that are **not** in that file, and where each is answered instead:
+
 - **[operand-sequencing](unicode-operators/clang/DEVIATIONS.md#operand-sequencing)** — member versus non-member operand sequencing, decided by
-  overload resolution. CWG question.
-- **[over-oper-restrictions](unicode-operators/clang/DEVIATIONS.md#over-oper-restrictions)** — static member user operators, currently rejected with no
-  design guidance.
-- **U§13** — fold expressions over the user-infix level, to be answered once
-  for both features.
+  overload resolution. A CWG question with no implementation consequence;
+  written up by
+  [reconcile-declaring-using](completion/steps/reconcile-declaring-using.md).
 - **[operator-mangling](../docs/unicode-operators.md#operator-mangling) / [msvc-mangling](unicode-operators/clang/DEVIATIONS.md#msvc-mangling)** — the Itanium first-class `<operator-name>`, and the
-  Microsoft ABI, which has no production to borrow.
-- **[postfix-operators](unicode-operators/clang/DEVIATIONS.md#postfix-operators) / U21** — postfix operators, deferred with a measured account.
+  Microsoft ABI, which has no production to borrow. Its own step,
+  [mangling-abi](completion/steps/mangling-abi.md).
+
+And one that is a doc sync rather than a decision:
+
 - **U§6** — owes a sixth worked example (`⊖a ⊞ 2 * ⊖b`), evidenced in the
-  tree and not yet written into the design.
+  tree and not yet written into the design;
+  [reconcile-remainder](completion/steps/reconcile-remainder.md)'s.
 
 ## 7. Suggested order
 
