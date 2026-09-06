@@ -35,3 +35,30 @@ one step** and stop. Follow this without improvising on process.
    d. If anything contradicted the design doc, also append a row to
       `ops/DEVIATIONS.md`.
 7. **Stop.** Do not begin the next step.
+
+## Naming, for anything you add
+
+**Name it, do not number it.** Every identifier this repo hands to a second
+document — a decision, an open question, a deviation row, a backlog entry, a
+plan step — is a **slug**: a short kebab-case name for *the question, or the
+job*, never for the answer. `mangling-abi`, not `use-vendor-prefix`;
+`nesting-vs-chaining`, not `bare-nesting-is-legal`. A slug named for a
+conclusion has to be renamed the moment the conclusion reverses, which breaks
+every reference to it at exactly the moment the work is under most pressure.
+Named for the question, it survives being answered.
+
+- Give the entry **a section headed by its slug**, so the slug is a Markdown
+  anchor, in the ledger that owns it (`docs/backtick-operator-design.md` §3,
+  `docs/unicode-operators.md` §2, the three `DEVIATIONS.md`, `ops/BACKLOG.md`).
+- Make **every reference to it a link to that anchor**, not a bare mention.
+  Links can be followed, and a rename becomes a detectable break rather than a
+  silent one.
+- An ordinal in a checklist is *reading order* and shifts when a step is
+  inserted. Carry both if you like — `Stage 3 — grade-concept`, the ordinal
+  for reading order and the slug linked — but cross-reference by slug only.
+- [`ops/SLUGS.md`](SLUGS.md) maps every retired serial number to its slug, and
+  records what was deliberately left numbered: the completed tracks' step ids
+  and their handoffs. Read an old handoff with that file open.
+
+See `~/.claude/CLAUDE.md`, "Name things for what they are, not what number they
+came in at", for the standing convention this follows.

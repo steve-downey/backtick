@@ -1,4 +1,4 @@
-# decision-brief — The decision brief: four open questions, and `B23`
+# decision-brief — The decision brief: four open questions, and [`dependent-template-operator-id`](../../BACKLOG.md#dependent-template-operator-id)
 
 **Goal.** The seven items in `ops/BACKLOG.md` §6 have been "measured, with a
 recommendation, needing an author's decision" since the tracks closed, and
@@ -7,31 +7,31 @@ have never been put in front of the author in one place. Four of them have
 and writing twice. This step is the one thing that blocks the most.
 
 **Depends on:** nothing. Desk work — no build, no branch.
-**Closes:** `B23`. Unblocks implement-decisions, reconcile-declaring-using, and (with mangling-abi) unicode-paper.
-**Refs:** `ops/unicode-operators/clang/DEVIATIONS.md` rows `DEV-U06`,
-`DEV-U15`, `DEV-U16`, `DEV-U23`; `docs/unicode-operators.md` §13 and §13.1;
+**Closes:** [`dependent-template-operator-id`](../../BACKLOG.md#dependent-template-operator-id). Unblocks implement-decisions, reconcile-declaring-using, and (with mangling-abi) unicode-paper.
+**Refs:** `ops/unicode-operators/clang/DEVIATIONS.md` rows [`over-oper-restrictions`](../../unicode-operators/clang/DEVIATIONS.md#over-oper-restrictions),
+[`prefix-arity-selection`](../../unicode-operators/clang/DEVIATIONS.md#prefix-arity-selection), [`operand-sequencing`](../../unicode-operators/clang/DEVIATIONS.md#operand-sequencing), [`postfix-operators`](../../unicode-operators/clang/DEVIATIONS.md#postfix-operators); `docs/unicode-operators.md` §13 and §13.1;
 `ops/unicode-operators/clang/handoffs/U21-postfix-probe.handoff.md`.
 
 ## Scope — four questions plus one re-triage
 
 The three §6 items **not** here: the ABI question is mangling-abi (it is large enough
-to be its own step and it wants upstream-reports's issue number), `DEV-U16` is a CWG
+to be its own step and it wants upstream-reports's issue number), [`operand-sequencing`](../../unicode-operators/clang/DEVIATIONS.md#operand-sequencing) is a CWG
 question with no implementation consequence and is recorded by reconcile-declaring-using, and
 U§6's sixth worked example is a two-line doc sync done by reconcile-remainder.
 
-1. **`DEV-U15` — a prefix use finds a two-parameter operator through its
+1. **[`prefix-arity-selection`](../../unicode-operators/clang/DEVIATIONS.md#prefix-arity-selection) — a prefix use finds a two-parameter operator through its
    default argument.** Keep and document, or reinstate [over.oper]p8. Note
-   this one interacts with `DEV-U06`(b); do not decide them apart.
-2. **`DEV-U06` — static member user operators**, currently rejected with no
+   this one interacts with [`over-oper-restrictions`](../../unicode-operators/clang/DEVIATIONS.md#over-oper-restrictions)(b); do not decide them apart.
+2. **[`over-oper-restrictions`](../../unicode-operators/clang/DEVIATIONS.md#over-oper-restrictions) — static member user operators**, currently rejected with no
    design guidance behind the rejection.
 3. **U§13 — fold expressions over the user-infix level.** To be answered
    **once for both features**, which is what makes it worth a decision rather
    than a defect: the answer belongs in both papers or neither.
-4. **`DEV-U23` / `U21` — postfix operators.** Already deferred *with a
+4. **[`postfix-operators`](../../unicode-operators/clang/DEVIATIONS.md#postfix-operators) / `U21` — postfix operators.** Already deferred *with a
    measured account* — U21 was a feasibility probe and its finding is the
    evidence. The decision is whether the deferral is permanent and what the
    papers say about it.
-5. **`B23` — `t.template operator⊞<int>(0)` on a dependent object expression
+5. **[`dependent-template-operator-id`](../../BACKLOG.md#dependent-template-operator-id) — `t.template operator⊞<int>(0)` on a dependent object expression
    is rejected.** Not a §6 item, but the same shape: inherited, not
    introduced (`DependentTemplateStorage` holds an identifier or a built-in
    operator kind and nothing else, and user-defined literal operators have had

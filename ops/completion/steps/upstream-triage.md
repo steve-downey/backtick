@@ -1,4 +1,4 @@
-# upstream-triage — Triage the upstream annoyances: `B24`, `B27`–`B30`
+# upstream-triage — Triage the upstream annoyances: [`inner-call-source-range`](../../BACKLOG.md#inner-call-source-range), [`cxxfilt-stdin-nonascii`](../../BACKLOG.md#cxxfilt-stdin-nonascii)–[`operator-caret-range`](../../BACKLOG.md#operator-caret-range)
 
 **Goal.** Five rows that have sat as "upstream's problem, probably" get a
 decision each: **report**, or **WONTFIX with the reason recorded**. Either
@@ -6,11 +6,11 @@ closes the row. An untriaged row is the thing this step exists to remove.
 
 **Depends on:** nothing. Independent of every other step; good work for a
 spare agent.
-**Closes:** `B24`, `B27`, `B28`, `B29`, `B30`.
+**Closes:** [`inner-call-source-range`](../../BACKLOG.md#inner-call-source-range), [`cxxfilt-stdin-nonascii`](../../BACKLOG.md#cxxfilt-stdin-nonascii), [`auto-return-round-trip`](../../BACKLOG.md#auto-return-round-trip), [`pch-ast-print-order`](../../BACKLOG.md#pch-ast-print-order), [`operator-caret-range`](../../BACKLOG.md#operator-caret-range).
 
 ## The five, and what each already knows
 
-- **`B24` — the inner `CallExpr`'s source range begins at the operator.**
+- **[`inner-call-source-range`](../../BACKLOG.md#inner-call-source-range) — the inner `CallExpr`'s source range begins at the operator.**
   The row **asks for this re-triage by name.** It was listed as cheap, and it
   is not: `CallExpr::getBeginLoc` takes the begin from the callee and trunk
   *caches* it in a trailing `SourceLocation`
@@ -23,17 +23,17 @@ spare agent.
   desugaring in the language. If you agree, say so in the row and in the
   design docs — it is a defensible position, not a dodge, and the papers
   should state it rather than leave a reader to notice.
-- **`B27` — `llvm-cxxfilt`'s stdin path splits on non-ASCII.** `_Z3∂i` piped
+- **[`cxxfilt-stdin-nonascii`](../../BACKLOG.md#cxxfilt-stdin-nonascii) — `llvm-cxxfilt`'s stdin path splits on non-ASCII.** `_Z3∂i` piped
   in is not demangled; the same string as an argv argument is. Affects
   extended-identifier function names, **not** this feature's operator names,
   which are ASCII-derived by construction. A clean small upstream report.
-- **`B28` — `-ast-print` cannot round-trip an `auto`-returning function
+- **[`auto-return-round-trip`](../../BACKLOG.md#auto-return-round-trip) — `-ast-print` cannot round-trip an `auto`-returning function
   template.** Pre-existing, and it costs five minutes to everyone who writes a
   round-trip test — evidence-debt has to work around it. Report.
-- **`B29` — `-ast-print` after a PCH prints a class's fields last** if they
+- **[`pch-ast-print-order`](../../BACKLOG.md#pch-ast-print-order) — `-ast-print` after a PCH prints a class's fields last** if they
   precede its methods. Pre-existing; breaks any naive PCH print-diff test.
   Report, and note that U17's round-trip test had to be written around it.
-- **`B30` — the caret for `use of undeclared 'operator⊞'` underlines only the
+- **[`operator-caret-range`](../../BACKLOG.md#operator-caret-range) — the caret for `use of undeclared 'operator⊞'` underlines only the
   `operator` keyword**, not the glyph. **Upstream's shape, not a regression:**
   `operator+` and `operator""_x` produce the identical 8-column range. Weigh
   WONTFIX; if reported, report it as the general case, not as a Unicode one.
@@ -45,9 +45,9 @@ spare agent.
    closed row; a WONTFIX without one is the same open row with a new label.
 2. File the ones you decided to report. Search first; several of these are
    old enough to already exist.
-3. For `B24` and `B30`, if the decision is WONTFIX, add one sentence to the
-   affected design doc — `docs/backtick-operator-design.md` §17 for `B24`'s
-   backtick half, `docs/unicode-operators.md` for the Unicode half and `B30` —
+3. For [`inner-call-source-range`](../../BACKLOG.md#inner-call-source-range) and [`operator-caret-range`](../../BACKLOG.md#operator-caret-range), if the decision is WONTFIX, add one sentence to the
+   affected design doc — `docs/backtick-operator-design.md` §17 for [`inner-call-source-range`](../../BACKLOG.md#inner-call-source-range)'s
+   backtick half, `docs/unicode-operators.md` for the Unicode half and [`operator-caret-range`](../../BACKLOG.md#operator-caret-range) —
    so the papers can answer the question rather than be asked it.
 
 ## Verify (gate)

@@ -36,12 +36,12 @@ done — just do not half-rename.
   material: five Clang work items rather than three, 32 dispatch sites in 21
   files over `StmtClass` and 33 over `NameKind` on a disjoint axis, the
   four-category taxonomy of how a compiler does and does not tell you about
-  your obligations, the four-for-four sibling pattern with `B19` as the first
+  your obligations, the four-for-four sibling pattern with [`matcher-operator-name`](../../BACKLOG.md#matcher-operator-name) as the first
   refusal, and the conclusion that **opening a closed operator table costs a
   parallel implementation, never a widened one — which is why the relaxation
   provably cannot leak into `operator+`.** The paper's "Implementation
   experience" section is where this goes and it will roughly double.
-- **`DEV-U24`(c)**: every shape emits CIR **instruction-for-instruction
+- **[`codegen-dispatch-sites`](../../unicode-operators/clang/DEVIATIONS.md#codegen-dispatch-sites)(c)**: every shape emits CIR **instruction-for-instruction
   identical** to the explicit call. That is the desugaring thesis checked at
   the last place it could have failed, and it belongs near the top of the
   implementation-experience argument, not in a footnote.

@@ -27,7 +27,7 @@ four questions asked in order:
    late means implementing twice and writing twice. This is the critical
    path and it was in no plan at all.
 2. **What does a paper currently say that is false?** Paper-truth defects.
-   `B01` was the last one anybody had scheduled; there are more.
+   [`type-slot-implementation`](../BACKLOG.md#type-slot-implementation) was the last one anybody had scheduled; there are more.
 3. **What did the implementation learn that no paper says?** 29 deviation
    rows, of which the Unicode ledger's 24 have *never* been reconciled. This
    is the largest single body of remaining work and the most perishable —
@@ -54,28 +54,37 @@ can cite the issue number, and issues take calendar time to be triaged.
 
 The four from `ops/backlog/PLAN.md` still hold — one step per agent, no green
 no check, everything gated behind `-fbacktick` / `-funicode-operators`,
-minimal diffs — plus three that are specific to this track:
+minimal diffs — plus four that are specific to this track:
 
 - **A docs step has a gate too.** It is not `check-clang`; it is that every
   row the step claims to close is *marked* closed in its ledger, with the
   section and paragraph it landed in named. A reconciliation that cannot say
   where it went did not happen.
-- **Mark the ledger, not just the doc.** `ops/DEVIATIONS.md` and
-  `ops/gcc/DEVIATIONS.md` use a `**RECONCILED**` / `**RESOLVED**` marker in
-  the last column; `ops/unicode-operators/clang/DEVIATIONS.md` has never used
-  one and must start. Same convention, same column.
+- **Mark the ledger, not just the doc.** Every deviation entry carries a
+  `**Status:**` line: `OPEN` until a step reconciles it, then the
+  `**RECONCILED**` / `**RESOLVED**` / `**FIXED**` marker `ops/DEVIATIONS.md`
+  and `ops/gcc/DEVIATIONS.md` already use in their prose.
+  `ops/unicode-operators/clang/DEVIATIONS.md` has never marked a row and its
+  24 entries are all `OPEN`; it uses the same field and the same words.
 - **Decisions are the author's.** A `Decide` step produces options, costs and
   a recommendation. It does not choose. It ends by asking, and the next step
   is blocked until it is answered — that is a legitimate BLOCKED handoff, not
   a failure.
-
 - **Everything new is named, not numbered.** Steps, decisions, questions and
   defects get slugs — short kebab-case names for the question or the job,
   never for the answer, so a slug survives its own conclusion reversing. The
   ordinals in the checklist are reading order only; cross-reference by slug.
   See `~/.claude/CLAUDE.md`, "Name things for what they are, not what number
-  they came in at", and `slug-the-ledgers`, which retires the numbers this
-  repo already has.
+  they came in at", and [slug-the-ledgers](steps/slug-the-ledgers.md), which
+  retired the numbers this repo used to have.
+
+  This is now a rule for **anything a step adds**, not only for what that step
+  renamed. A new decision, a new deviation row, a new backlog entry: give it a
+  section headed by its slug in the ledger that owns it, so the slug is a
+  Markdown anchor, and make every reference to it a **link** to that anchor —
+  links can be followed, and a rename becomes a detectable break instead of a
+  silent one. Add the pair to [`ops/SLUGS.md`](../SLUGS.md) only if you are
+  retiring a number; a slug that never had one needs no row there.
 
 Commit prefixes: `[backtick] <slug>: …` / `[unicode] <slug>: …` on the feature
 branches, `docs: …` for design-doc and paper edits, `ops: <slug> — …` for
@@ -89,9 +98,9 @@ files, and this plan reuses them rather than restating them:
 
 | Old | New home |
 |---|---|
-| `BL05` (`B25`) | **upstream-reports** — executes `steps/BL05-upstream-mangling.md` unchanged |
-| `BL06` (`B03 B04 B06 B08 B35`) | split by purpose: `B03 B04` → **clang-paper-truth**, `B08` → **gcc-resync**, `B06 B35` → **reconcile-remainder** |
-| `BL07` (`B16 B17 B21`) | **gcc-resync**, whose step file supersedes `BL07`'s |
+| `BL05` ([`increment-decrement-mangling`](../BACKLOG.md#increment-decrement-mangling)) | **upstream-reports** — executes `steps/BL05-upstream-mangling.md` unchanged |
+| `BL06` ([c-mode-tokenization](../BACKLOG.md#c-mode-tokenization) [backtick-source-range](../BACKLOG.md#backtick-source-range) [dead-nesting-diagnostic](../BACKLOG.md#dead-nesting-diagnostic) [template-ast-print-test](../BACKLOG.md#template-ast-print-test) [libclang-cursor-arm](../BACKLOG.md#libclang-cursor-arm)) | split by purpose: [c-mode-tokenization](../BACKLOG.md#c-mode-tokenization) [backtick-source-range](../BACKLOG.md#backtick-source-range) → **clang-paper-truth**, [`template-ast-print-test`](../BACKLOG.md#template-ast-print-test) → **gcc-resync**, [dead-nesting-diagnostic](../BACKLOG.md#dead-nesting-diagnostic) [libclang-cursor-arm](../BACKLOG.md#libclang-cursor-arm) → **reconcile-remainder** |
+| `BL07` ([lldb-hunk-verification](../BACKLOG.md#lldb-hunk-verification) [code-completion-priority](../BACKLOG.md#code-completion-priority) [ucd-input-manifest](../BACKLOG.md#ucd-input-manifest)) | **gcc-resync**, whose step file supersedes `BL07`'s |
 | `M2` | unchanged, still in `ops/unicode-operators/clang/PLAN.md` Phase G; runs after **clang-paper-truth** |
 
 `BL06`'s five rows are the clearest case of the old ordering: they were one
@@ -125,7 +134,7 @@ Do not build in it. *Running* its binaries is fine and is how BL04 proved the
 All of `ops/backlog/PLAN.md`'s "Gate facts" section still applies and is not
 restated here — read it. Two updates:
 
-- **`B31` is reopened and is an environment condition, not a defect to fix.**
+- **[`inotify-watch-budget`](../BACKLOG.md#inotify-watch-budget) is reopened and is an environment condition, not a defect to fix.**
   `cloud-drive-dae` is the machine's continuous backup, so watching every file
   is its job and its hoard tracks the tree size; it grew from ~65k to 523,774
   of the raised 524288. 524288 is a better ceiling than the 65536 default, not
@@ -141,7 +150,7 @@ restated here — read it. Two updates:
 ## Baselines
 
 `ops/backlog/PLAN.md`'s table, as BL04 updated it: `backtick-trunk`
-54108/48222/**0**, `backtick-23` 54342/48500/**1** (`B33`),
+54108/48222/**0**, `backtick-23` 54342/48500/**1** ([`stray-clang-format-config`](../BACKLOG.md#stray-clang-format-config)),
 `unicode-operators-experiment` 54183/48295/**0**,
 `unicode-operators-upstream` 54241/48323/**0**; XFAIL 27 and skipped 6
 throughout. Steps that add a test update that table in *this* file's Status
@@ -154,7 +163,7 @@ shifts whenever a step is inserted or split; **the slug is the identity, and
 every cross-reference in this repo uses it.** Never write "step 7".
 
 ### Phase A — Naming (first, so nothing downstream is written twice)
-- [ ] 1. [slug-the-ledgers](steps/slug-the-ledgers.md) — retire `BNN`, `DEV-NN`, `D1`–`D16`, `U1`–`U11` in favour of slugs (dep: none)
+- [x] 1. [slug-the-ledgers](steps/slug-the-ledgers.md) — retire the serial numbers in the two decision logs, the three deviation ledgers and the backlog in favour of slugs; [`ops/SLUGS.md`](../SLUGS.md) is the map (dep: none)
 
 ### Phase B — Upstream citizenship (no dependencies; early because issues take calendar time)
 - [ ] 2. [upstream-reports](steps/upstream-reports.md) — file the three upstream defects (dep: none)
@@ -187,7 +196,7 @@ every cross-reference in this repo uses it.** Never write "step 7".
 
 ### Maintenance (not plan steps)
 - **M2** — forward-port `BL02` + clang-paper-truth's backtick fixes to `unicode-operators-experiment`. Runs after **clang-paper-truth**. Note that BL04 already put CIR arms on `backtick-trunk` that the experiment branch has too; expect a trivial conflict in the shared lead comment, not a semantic one.
-- **B31** — needs root, and is the maintainer's. Not an agent step.
+- **[inotify-watch-budget](../BACKLOG.md#inotify-watch-budget)** — needs root, and is the maintainer's. Not an agent step.
 - **Housekeeping** — `CLAUDE.md`'s Layout section does not mention
   `docs/unicode-operators.md`, the 857-line Unicode design doc that is the
   exact counterpart of `backtick-operator-design.md`. Fix it in whichever step
@@ -220,40 +229,44 @@ everything** and are the right work for a spare agent.
 
 ## Coverage — every open item has a home
 
-31 open `BNN` rows (37 + `B38`, less the 7 closed by `BL01`–`BL04`):
+31 open `BNN` rows (37 + [`clangir-lvalue-crash`](../BACKLOG.md#clangir-lvalue-crash), less the 7 closed by `BL01`–`BL04`):
 
 | Step | Rows |
 |---|---|
-| upstream-reports | `B25` `B26` `B38` |
-| upstream-triage | `B24` `B27` `B28` `B29` `B30` |
-| decision-brief | `B23` (fix-or-reword) |
-| mangling-abi | `B20` |
-| clang-paper-truth | `B02` `B03` `B04` |
-| null-return-suppression | `B37` |
-| gcc-resync | `B09` `B10` `B11` `B12` `B13` |
-| evidence-debt | `B08` `B16` `B17` `B21` |
-| reconcile-implementation-cost | `B19` (recorded as designed, and as evidence) |
-| hygiene-parity | `B05` `B06` `B07` `B35`, and `B18` `B22` recorded |
+| upstream-reports | [`increment-decrement-mangling`](../BACKLOG.md#increment-decrement-mangling) [`unqualified-id-union-read`](../BACKLOG.md#unqualified-id-union-read) [`clangir-lvalue-crash`](../BACKLOG.md#clangir-lvalue-crash) |
+| upstream-triage | [`inner-call-source-range`](../BACKLOG.md#inner-call-source-range) [`cxxfilt-stdin-nonascii`](../BACKLOG.md#cxxfilt-stdin-nonascii) [`auto-return-round-trip`](../BACKLOG.md#auto-return-round-trip) [`pch-ast-print-order`](../BACKLOG.md#pch-ast-print-order) [`operator-caret-range`](../BACKLOG.md#operator-caret-range) |
+| decision-brief | [`dependent-template-operator-id`](../BACKLOG.md#dependent-template-operator-id) (fix-or-reword) |
+| mangling-abi | [`astral-plane-mangling`](../BACKLOG.md#astral-plane-mangling) |
+| clang-paper-truth | [`keyword-escape-round-trip`](../BACKLOG.md#keyword-escape-round-trip) [`c-mode-tokenization`](../BACKLOG.md#c-mode-tokenization) [`backtick-source-range`](../BACKLOG.md#backtick-source-range) |
+| null-return-suppression | [`null-return-suppression`](../BACKLOG.md#null-return-suppression) |
+| gcc-resync | [`template-id-slot-adl`](../BACKLOG.md#template-id-slot-adl) [`module-streaming-escapes`](../BACKLOG.md#module-streaming-escapes) [`grokdeclarator-guard-scope`](../BACKLOG.md#grokdeclarator-guard-scope) [`gcc-wrapper-parity`](../BACKLOG.md#gcc-wrapper-parity) [`gcc-trunk-pin`](../BACKLOG.md#gcc-trunk-pin) |
+| evidence-debt | [`template-ast-print-test`](../BACKLOG.md#template-ast-print-test) [`lldb-hunk-verification`](../BACKLOG.md#lldb-hunk-verification) [`code-completion-priority`](../BACKLOG.md#code-completion-priority) [`ucd-input-manifest`](../BACKLOG.md#ucd-input-manifest) |
+| reconcile-implementation-cost | [`matcher-operator-name`](../BACKLOG.md#matcher-operator-name) (recorded as designed, and as evidence) |
+| hygiene-parity | [`backtick-ast-matchers`](../BACKLOG.md#backtick-ast-matchers) [`dead-nesting-diagnostic`](../BACKLOG.md#dead-nesting-diagnostic) [`slot-split-penalty`](../BACKLOG.md#slot-split-penalty) [`libclang-cursor-arm`](../BACKLOG.md#libclang-cursor-arm), and [`template-id-code-point`](../BACKLOG.md#template-id-code-point) [`confusable-spellings`](../BACKLOG.md#confusable-spellings) recorded |
 | slug-the-ledgers | none directly — it renames every row above, and `ops/SLUGS.md` is the map |
-| — | `B31`, maintainer's, needs root |
+| — | [`inotify-watch-budget`](../BACKLOG.md#inotify-watch-budget), maintainer's, needs root |
 
 29 open deviation rows, written out in full so a grep for one finds its step:
 
 | Step | Rows |
 |---|---|
-| mangling-abi | `DEV-U08` `DEV-U09` `DEV-U23` (mangling clause) |
-| reconcile-implementation-cost | `DEV-U04` `DEV-U05` `DEV-U07` `DEV-U12` `DEV-U13` `DEV-U14` `DEV-U17` `DEV-U24` |
-| reconcile-declaring-using | `DEV-U01` `DEV-U02` `DEV-U06` `DEV-U10` `DEV-U11` `DEV-U15` `DEV-U16` |
-| reconcile-remainder | `DEV-U03` `DEV-U18` `DEV-U19` `DEV-U20` `DEV-U21` `DEV-U22`; `DEV-06` `DEV-07` `DEV-08` `DEV-09`; `DEV-G08` |
+| mangling-abi | [`vendor-extended-mangling`](../unicode-operators/clang/DEVIATIONS.md#vendor-extended-mangling) [`msvc-mangling`](../unicode-operators/clang/DEVIATIONS.md#msvc-mangling) [`postfix-operators`](../unicode-operators/clang/DEVIATIONS.md#postfix-operators) (mangling clause) |
+| reconcile-implementation-cost | [`declaration-name-plumbing`](../unicode-operators/clang/DEVIATIONS.md#declaration-name-plumbing) [`declaring-side-parse-cost`](../unicode-operators/clang/DEVIATIONS.md#declaring-side-parse-cost) [`flag-language-mode`](../unicode-operators/clang/DEVIATIONS.md#flag-language-mode) [`operator-candidate-assembly`](../unicode-operators/clang/DEVIATIONS.md#operator-candidate-assembly) [`expression-node-cost`](../unicode-operators/clang/DEVIATIONS.md#expression-node-cost) [`serialization-tooling-cost`](../unicode-operators/clang/DEVIATIONS.md#serialization-tooling-cost) [`ast-node-shape`](../unicode-operators/clang/DEVIATIONS.md#ast-node-shape) [`codegen-dispatch-sites`](../unicode-operators/clang/DEVIATIONS.md#codegen-dispatch-sites) |
+| reconcile-declaring-using | [`ucd-version-drift`](../unicode-operators/clang/DEVIATIONS.md#ucd-version-drift) [`disjointness-evidence`](../unicode-operators/clang/DEVIATIONS.md#disjointness-evidence) [`over-oper-restrictions`](../unicode-operators/clang/DEVIATIONS.md#over-oper-restrictions) [`operator-id-anywhere`](../unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere) [`infix-parse-cost`](../unicode-operators/clang/DEVIATIONS.md#infix-parse-cost) [`prefix-arity-selection`](../unicode-operators/clang/DEVIATIONS.md#prefix-arity-selection) [`operand-sequencing`](../unicode-operators/clang/DEVIATIONS.md#operand-sequencing) |
+| reconcile-remainder | [`exclusion-list-derivation`](../unicode-operators/clang/DEVIATIONS.md#exclusion-list-derivation) [`ucn-operator-spellings`](../unicode-operators/clang/DEVIATIONS.md#ucn-operator-spellings) [`exclusion-diagnostics`](../unicode-operators/clang/DEVIATIONS.md#exclusion-diagnostics) [`clang-format-user-operators`](../unicode-operators/clang/DEVIATIONS.md#clang-format-user-operators) [`feature-coupling`](../unicode-operators/clang/DEVIATIONS.md#feature-coupling) [`replay-ordering`](../unicode-operators/clang/DEVIATIONS.md#replay-ordering); [`wrapper-inner-shape`](../DEVIATIONS.md#wrapper-inner-shape) [`analysis-layer-sites`](../DEVIATIONS.md#analysis-layer-sites) [`type-slot-cost`](../DEVIATIONS.md#type-slot-cost) [`cir-backtick-arms`](../DEVIATIONS.md#cir-backtick-arms); [`gcc-type-slot-parity`](../gcc/DEVIATIONS.md#gcc-type-slot-parity) |
 
-`DEV-U15` and `DEV-U16` are decided by decision-brief and *written* by reconcile-declaring-using — a decision
+[`prefix-arity-selection`](../unicode-operators/clang/DEVIATIONS.md#prefix-arity-selection) and [`operand-sequencing`](../unicode-operators/clang/DEVIATIONS.md#operand-sequencing) are decided by decision-brief and *written* by reconcile-declaring-using — a decision
 and its documentation are different steps, and implement-decisions owns only the ones that
-turn into code. `DEV-U23` is split: its mangling clause is mangling-abi's, its postfix
+turn into code. [`postfix-operators`](../unicode-operators/clang/DEVIATIONS.md#postfix-operators) is split: its mangling clause is mangling-abi's, its postfix
 substance is decision-brief's.
 
 7 design decisions: four in decision-brief, the ABI in mangling-abi, U§6's example in reconcile-remainder, and
-`DEV-U16` recorded in reconcile-declaring-using as the CWG question it is.
+[`operand-sequencing`](../unicode-operators/clang/DEVIATIONS.md#operand-sequencing) recorded in reconcile-declaring-using as the CWG question it is.
 
 ## Status log (each agent appends one row per branch or per document)
 | Step | Date | Branch / doc | Commit | Gate result | Handoff |
 |------|------|--------------|--------|-------------|---------|
+| slug-the-ledgers | 2026-09-05 | `docs/backtick-operator-design.md` §3, `docs/unicode-operators.md` §2 | no branch — this repo only. 16 + 12 decisions converted from table rows to slug-headed sections with the full **Question / Status / Decision / Why / Log** shape plus `Decided by`; `Formerly:` keeps the old number. Two `Decision` cells were topics rather than decisions (`D2`, `D8`) and were restated. | **PASS** — every entry is an anchor, and every link into these two logs resolves (1029 local links checked, 1007 anchored, 0 broken). | [slug-the-ledgers](handoffs/slug-the-ledgers.handoff.md) |
+| slug-the-ledgers | 2026-09-05 | `ops/DEVIATIONS.md`, `ops/gcc/DEVIATIONS.md`, `ops/unicode-operators/clang/DEVIATIONS.md` | 9 + 7 + 24 rows converted to slug-headed sections. Every entry now carries a `**Status:**` field; the Unicode ledger's 24 are all `OPEN`, which is accurate — it has never marked a row. | **PASS** — 40 entries, 40 anchors, 0 collisions. | same |
+| slug-the-ledgers | 2026-09-05 | `ops/BACKLOG.md`, `ops/SLUGS.md` (new) | 38 defect rows converted to slug-headed sections keeping `Severity` / `Item` / `Where` / `Closed by`. `ops/SLUGS.md` maps all **106** retired identifiers both directions and records what was deliberately *not* renamed. | **PASS** — 106 mappings, both directions, every one resolving to a live anchor. | same |
+| slug-the-ledgers | 2026-09-05 | cross-reference sweep: both papers, `ops/completion/**`, `ops/backlog/steps/BL05`–`BL07`, `CLAUDE.md`, `ops/AGENT_PROTOCOL.md`, `ops/HANDOFF_TEMPLATE.md` | 792 bare mentions rewritten as links to anchors; 19 internal identifiers **removed** from `papers/d4307r0.md` / `papers/dxxxxr0.md` rather than renamed, per the public-text rule. Protocol and ground rules now require slugs for anything added later. | **PASS** — the three gate greps are clean over `docs/`, `papers/`, `ops/*.md`, `ops/completion/` except `ops/SLUGS.md` (the map) and `steps/slug-the-ledgers.md` (the step's own quotation of what it retired); papers cite no identifier at all. | same |

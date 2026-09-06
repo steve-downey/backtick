@@ -1,15 +1,15 @@
-# BL07 — Unicode batch: `B16`, `B17`, `B21`
+# BL07 — Unicode batch: [`lldb-hunk-verification`](../../BACKLOG.md#lldb-hunk-verification), [`code-completion-priority`](../../BACKLOG.md#code-completion-priority), [`ucd-input-manifest`](../../BACKLOG.md#ucd-input-manifest)
 
 **Goal.** Three small Unicode-track defects closed. Only one is a clang
 source edit, which is what makes the batch cheap — and the whole risk sits in
-`B17`'s gate.
+[`code-completion-priority`](../../BACKLOG.md#code-completion-priority)'s gate.
 
 **Depends on:** BL01.
-**Closes:** `B16`, `B17`, `B21`.
+**Closes:** [`lldb-hunk-verification`](../../BACKLOG.md#lldb-hunk-verification), [`code-completion-priority`](../../BACKLOG.md#code-completion-priority), [`ucd-input-manifest`](../../BACKLOG.md#ucd-input-manifest).
 **Refs:** `ops/unicode-operators/clang/handoffs/U06-declaration-name.handoff.md:130`,
 `:359-364`; `REPLAY.md:27`, `:234-236`, `:826`;
 `U07-operator-function-id.handoff.md:263-269` and the five later handoffs that
-carried `B17`; `U02-charset-tables.handoff.md:41-56`, `:72-86`, `:104-108`,
+carried [`code-completion-priority`](../../BACKLOG.md#code-completion-priority); `U02-charset-tables.handoff.md:41-56`, `:72-86`, `:104-108`,
 `:259-262`.
 
 Work on `unicode-operators-experiment`, then replay onto
@@ -17,7 +17,7 @@ Work on `unicode-operators-experiment`, then replay onto
 
 ## Do
 
-### `B17` — completion-priority grouping (the only source edit)
+### [`code-completion-priority`](../../BACKLOG.md#code-completion-priority) — completion-priority grouping (the only source edit)
 
 `~/src/llvm/unicode/clang/lib/Sema/SemaCodeComplete.cpp:1053-1065`, inside
 the `DC->isRecord()` arm:
@@ -53,7 +53,7 @@ observable exists:
 **Verify it fails before the fix.** Anything less deletes a TODO rather than
 closing a defect.
 
-### `B16` — the lldb hunk, compile-unverified
+### [`lldb-hunk-verification`](../../BACKLOG.md#lldb-hunk-verification) — the lldb hunk, compile-unverified
 
 `lldb/source/Plugins/ExpressionParser/Clang/ClangASTSource.cpp:125` — a
 single `case DeclarationName::CXXUserOperatorName:` joining the existing
@@ -87,10 +87,10 @@ recorded twice, at `REPLAY.md:234-236` and `:826`. Update both, plus
 `U06-declaration-name.handoff.md:359-364`. No `check-clang` re-run is needed
 for this item.
 
-### `B21` — the UCD manifest
+### [`ucd-input-manifest`](../../BACKLOG.md#ucd-input-manifest) — the UCD manifest
 
 `docs/pattern-syntax-audit.py` (379 lines, in *this* repo, not in LLVM)
-derives the frozen U1 operator set and, with `--emit-header`, generates
+derives the frozen [token-set](../../../docs/unicode-operators.md#token-set) operator set and, with `--emit-header`, generates
 `~/src/llvm/unicode/clang/lib/Lex/UnicodeOperatorCharSets.h`. It needs five
 UCD files, and **none of them is in either repo**:
 
@@ -104,7 +104,7 @@ UCD files, and **none of them is in either repo**:
 
 Pinned: UCD **17.0.0**, `DerivedAge.txt` dated **2025-07-30**. Never
 `latest/` — it is 18.0 now, and re-deriving against it silently produces a
-different set, which is the exact failure mode U1 exists to prevent.
+different set, which is the exact failure mode [token-set](../../../docs/unicode-operators.md#token-set) exists to prevent.
 
 **Do this:**
 
@@ -117,7 +117,7 @@ different set, which is the exact failure mode U1 exists to prevent.
 **This is the only item in either batch with an external dependency.** It
 needs network access to unicode.org before a single hash can be written. If
 that is unavailable, this item is **BLOCKED** — write the BLOCKED handoff for
-it and complete `B16` and `B17`; do not fabricate a manifest of
+it and complete [`lldb-hunk-verification`](../../BACKLOG.md#lldb-hunk-verification) and [`code-completion-priority`](../../BACKLOG.md#code-completion-priority); do not fabricate a manifest of
 expected-only URLs.
 
 The exact generator command, which the generated header also records at
@@ -133,16 +133,16 @@ a regeneration is diffable and still self-documenting.
 
 ## Build
 
-`ninja -C ~/src/llvm/build-unicode clang` (for `B17` only).
+`ninja -C ~/src/llvm/build-unicode clang` (for [`code-completion-priority`](../../BACKLOG.md#code-completion-priority) only).
 
 ## Verify (gate)
 
-- **`B17`**: the new `clang/test/CodeCompletion/` test passes *and* fails on
+- **[`code-completion-priority`](../../BACKLOG.md#code-completion-priority)**: the new `clang/test/CodeCompletion/` test passes *and* fails on
   a build with the `||` clause reverted. Say in the handoff that you checked
   both directions.
-- **`B16`**: `ninja … lldbPluginExpressionParserClang` exits 0 with no
+- **[`lldb-hunk-verification`](../../BACKLOG.md#lldb-hunk-verification)**: `ninja … lldbPluginExpressionParserClang` exits 0 with no
   `-Wswitch` on `ClangASTSource.cpp`, on both Unicode branches.
-- **`B21`**: re-fetch → hashes match the manifest → re-run the generator →
+- **[`ucd-input-manifest`](../../BACKLOG.md#ucd-input-manifest)**: re-fetch → hashes match the manifest → re-run the generator →
   `diff` against the committed `UnicodeOperatorCharSets.h` is **empty,
   byte-for-byte**; and
   `AllClangUnitTests --gtest_filter='UnicodeOperatorCharSets*'` stays 14/14
@@ -153,15 +153,15 @@ a regeneration is diffable and still self-documenting.
 
 ## REPLAY ledger
 
-`B17` and `B16` are `upstream replay`. `B21` is plan-repo only and touches no
+[`code-completion-priority`](../../BACKLOG.md#code-completion-priority) and [`lldb-hunk-verification`](../../BACKLOG.md#lldb-hunk-verification) are `upstream replay`. [`ucd-input-manifest`](../../BACKLOG.md#ucd-input-manifest) is plan-repo only and touches no
 LLVM source — note it as out-of-band rather than giving it a replay class.
 
 ## Capture in handoff
 
-For `B17`, the completion-ordering test's before/after output — it is the
+For [`code-completion-priority`](../../BACKLOG.md#code-completion-priority), the completion-ordering test's before/after output — it is the
 first observable anyone has found for this priority table, and six steps
 declined the item for want of exactly that.
 
-For `B21`, whether the byte-identical regeneration held. If it did, the
+For [`ucd-input-manifest`](../../BACKLOG.md#ucd-input-manifest), whether the byte-identical regeneration held. If it did, the
 paper's reproducibility claim is now *checked* rather than asserted, which is
 worth a sentence in `docs/unicode-operators.md` U§4.

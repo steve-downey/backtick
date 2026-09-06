@@ -19,22 +19,22 @@ this is the formal register — a WG21 paper, not the blog post.
 
 Work through these rather than re-reading the whole thing cold:
 
-- **`BL02` implemented D16** — a type-name in the operator slot. `D4307R0` is
-  the nearer paper and `B01` existed precisely because the paper said
+- **`BL02` implemented [type-name-slot](../../../docs/backtick-operator-design.md#type-name-slot)** — a type-name in the operator slot. `D4307R0` is
+  the nearer paper and [`type-slot-implementation`](../../BACKLOG.md#type-slot-implementation) existed precisely because the paper said
   something the implementation did not do. Check that §"Design choices and
   decisions" and the wording section now match the implementation, including
   the `-ast-print` round trip and the CTAD and dependent forms.
 - **clang-paper-truth's three fixes** change three claims: the flag is now C++-only in fact
-  as well as intent (`B03`), the keyword escape round-trips (`B02`), and the
-  node's source range spans its operands (`B04`).
-- **`DEV-09` (reconcile-remainder)** gives §17 the back-end symmetry sentence: the two
+  as well as intent ([`c-mode-tokenization`](../../BACKLOG.md#c-mode-tokenization)), the keyword escape round-trips ([`keyword-escape-round-trip`](../../BACKLOG.md#keyword-escape-round-trip)), and the
+  node's source range spans its operands ([`backtick-source-range`](../../BACKLOG.md#backtick-source-range)).
+- **[`cir-backtick-arms`](../../DEVIATIONS.md#cir-backtick-arms) (reconcile-remainder)** gives §17 the back-end symmetry sentence: the two
   features diverge in the front end and converge in the back end, which is the
   design's own claim about where the sugar stops mattering.
 - **upstream-reports's issue numbers.** Wherever the paper says a defect was found in
   Clang, cite it.
-- **upstream-triage's WONTFIX reasons**, if `B24` or `B30` went that way — the paper
+- **upstream-triage's WONTFIX reasons**, if [`inner-call-source-range`](../../BACKLOG.md#inner-call-source-range) or [`operator-caret-range`](../../BACKLOG.md#operator-caret-range) went that way — the paper
   should answer those questions rather than let a reviewer raise them.
-- **`B12` from gcc-resync**: parts of the Clang work have **no GCC counterpart by
+- **[`gcc-wrapper-parity`](../../BACKLOG.md#gcc-wrapper-parity) from gcc-resync**: parts of the Clang work have **no GCC counterpart by
   construction**. A two-implementation paper has to say which parts, and why
   that is a fact about the compilers rather than a gap in the experiment.
 

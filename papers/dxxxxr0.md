@@ -238,7 +238,7 @@ mangling `op_u0000`, while a token dump looked perfectly correct. Every test
 that would have caught it had to be a declaration-and-use cross-spelling
 assertion; no token-level comparison can see it.
 
-The equivalence U11 claims is an equivalence of entities, and a paper that
+The equivalence the UCN rule claims is an equivalence of entities, and a paper that
 says "structurally free" should say that.
 
 # Fitting the grammar
@@ -494,8 +494,8 @@ above: every program a postfix rule would reinterpret is a program this
 proposal rejects, so the door stays open.
 
 One consequence of the sequencing rules deserves committee attention, because
-no existing operator behaves this way. D15 of the backtick design says the
-operator introduces no evaluation-order rule and inherits [expr.call]
+no existing operator behaves this way. The backtick design says the operator
+introduces no evaluation-order rule and inherits [expr.call]
 wholesale. That holds for the non-member form: the operands are function
 arguments, indeterminately sequenced. For a **member** operator, the left
 operand is the object expression, part of the postfix-expression, and

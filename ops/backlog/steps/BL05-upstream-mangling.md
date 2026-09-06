@@ -1,4 +1,4 @@
-# BL05 — `B25`: report Clang's `operator++` / `operator--` mangling defect
+# BL05 — [`increment-decrement-mangling`](../../BACKLOG.md#increment-decrement-mangling): report Clang's `operator++` / `operator--` mangling defect
 
 **Goal.** An upstream bug report exists for a live cross-vendor mangling
 divergence that neither feature caused, so it stops being a private note in
@@ -6,9 +6,9 @@ divergence that neither feature caused, so it stops being a private note in
 
 **Depends on:** nothing. Independent of every other step; it can run at any
 time, including first.
-**Closes:** `B25`.
+**Closes:** [`increment-decrement-mangling`](../../BACKLOG.md#increment-decrement-mangling).
 **Refs:** `ops/unicode-operators/clang/handoffs/U21-postfix-probe.handoff.md:112-129`
-and `:246`; DEV-U23 clause (c); `docs/unicode-operators.md:807-822`;
+and `:246`; [postfix-operators](../../unicode-operators/clang/DEVIATIONS.md#postfix-operators) clause (c); `docs/unicode-operators.md:807-822`;
 `papers/dxxxxr0.md:715-716`.
 
 Nothing lands on either feature branch. This step writes no compiler code.
@@ -84,12 +84,12 @@ The issue URL, the trunk revision it was confirmed against, and the ABI
 paragraph reference.
 
 Then update the three places that carry this as a private note —
-`ops/unicode-operators/clang/DEVIATIONS.md` (DEV-U23 c),
+`ops/unicode-operators/clang/DEVIATIONS.md` ([postfix-operators](../../unicode-operators/clang/DEVIATIONS.md#postfix-operators) c),
 `docs/unicode-operators.md:807-822` and `papers/dxxxxr0.md:715-716` — to
 point at the issue. A paper that says "we found a Clang bug" is stronger when
 it can say which one.
 
-Note for the paper, from `U21:240-244`: this is *why* U8 stays open. A
+Note for the paper, from `U21:240-244`: this is *why* [operator-mangling](../../../docs/unicode-operators.md#operator-mangling) stays open. A
 first-class `<operator-name>` production needs room for a fixity marker that
 `v <digit> <source-name>` does not have — and the `pp`/`pp_` divergence is
 evidence that fixity in mangling is easy to get wrong even where the ABI

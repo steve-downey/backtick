@@ -1,10 +1,10 @@
-# upstream-reports — File the upstream defects: `B25`, `B38`, `B26`
+# upstream-reports — File the upstream defects: [`increment-decrement-mangling`](../../BACKLOG.md#increment-decrement-mangling), [`clangir-lvalue-crash`](../../BACKLOG.md#clangir-lvalue-crash), [`unqualified-id-union-read`](../../BACKLOG.md#unqualified-id-union-read)
 
 **Goal.** Three defects that are LLVM's, not this feature's, stop being
 private notes in `ops/` and become issues the papers can cite.
 
 **Depends on:** nothing.
-**Closes:** `B25`, `B38`, `B26`.
+**Closes:** [`increment-decrement-mangling`](../../BACKLOG.md#increment-decrement-mangling), [`clangir-lvalue-crash`](../../BACKLOG.md#clangir-lvalue-crash), [`unqualified-id-union-read`](../../BACKLOG.md#unqualified-id-union-read).
 
 Placed first in the plan not because it is urgent but because **an issue takes
 calendar time to be triaged**, and mangling-abi and unicode-paper both want to cite one. Nothing
@@ -12,7 +12,7 @@ lands on any feature branch. This step writes no compiler code.
 
 ## Do
 
-### 1. `B25` — the `operator++` / `operator--` mangling divergence (P1)
+### 1. [`increment-decrement-mangling`](../../BACKLOG.md#increment-decrement-mangling) — the `operator++` / `operator--` mangling divergence (P1)
 
 **Execute `ops/backlog/steps/BL05-upstream-mangling.md` exactly as written.**
 It is a complete step file: the reproducer, both compilers' symbols, the three
@@ -23,10 +23,10 @@ do not improve on it.
 
 One correction to its closing note: the three places it asks you to update
 afterwards **all exist** — `docs/unicode-operators.md`, `papers/dxxxxr0.md`,
-and `DEV-U23` clause (c) — but its line numbers predate BL02 and BL04. Search
+and [`postfix-operators`](../../unicode-operators/clang/DEVIATIONS.md#postfix-operators) clause (c) — but its line numbers predate BL02 and BL04. Search
 for the text.
 
-### 2. `B38` — `emitLValue`'s crash-on-default (new, found by BL04)
+### 2. [`clangir-lvalue-crash`](../../BACKLOG.md#clangir-lvalue-crash) — `emitLValue`'s crash-on-default (new, found by BL04)
 
 `CIRGenFunction::emitLValue`'s default arm emits
 `errorNYI("emitLValue: unsupported l-value class")` and then `return LValue()`.
@@ -53,7 +53,7 @@ from that switch and can be an l-value in plain C++, and check the reproducer
 against a *clean* trunk CIR build or against upstream's own CI, not against
 that scratch dir.
 
-### 3. `B26` — `ParseExprCXX.cpp:2297` reads the wrong union member
+### 3. [`unqualified-id-union-read`](../../BACKLOG.md#unqualified-id-union-read) — `ParseExprCXX.cpp:2297` reads the wrong union member
 
 For `IK_LiteralOperatorId`. U07 guarded the new kind rather than fixing
 upstream's read, so it is latent: the next person to add a `UnqualifiedId`
@@ -74,6 +74,6 @@ said — it will have moved.
 ## Capture in handoff
 
 The three URLs and the trunk revision each was confirmed against. Then update
-`docs/unicode-operators.md`, `papers/dxxxxr0.md` and `DEV-U23` (c) to cite the
-`B25` issue by number, per BL05's own instruction — a paper that says "we found
+`docs/unicode-operators.md`, `papers/dxxxxr0.md` and [`postfix-operators`](../../unicode-operators/clang/DEVIATIONS.md#postfix-operators) (c) to cite the
+[`increment-decrement-mangling`](../../BACKLOG.md#increment-decrement-mangling) issue by number, per BL05's own instruction — a paper that says "we found
 a Clang bug" is stronger when it can say which one.

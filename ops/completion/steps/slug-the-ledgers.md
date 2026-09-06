@@ -1,5 +1,11 @@
 # slug-the-ledgers — Retire the serial numbers
 
+> **Executed 2026-09-05.** The map is [`ops/SLUGS.md`](../../SLUGS.md).
+> Every serial number named below is quoted here as *history* — this file and
+> `ops/SLUGS.md` are the two places in the live tree that must still spell the
+> retired identifiers, for the same reason the ledger entries carry a
+> `Formerly:` line. The verification grep is read against that exemption.
+
 **Goal.** Every internal identifier in this repo is a serial number: `B03`,
 `DEV-U13`, `D16`, `U8`, `S04`, `G10`, `BL02`. None of them says what it is.
 A reader who meets `DEV-U13` in a handoff has to go and look it up, and a

@@ -17,98 +17,423 @@ Severity is about the paper and the prototype, not about shipping:
 - **P2** — real defect, bounded blast radius, no paper claim depends on it.
 - **P3** — verification debt, cosmetic, or an upstream annoyance.
 
-**Scheduled work lives in `ops/completion/PLAN.md`** (16 steps, named by slug), which
-supersedes `ops/backlog/PLAN.md` (BL01–BL04 green, BL05–BL07 absorbed). The
-`Closed by` column below is filled in by the step that closes the row; an
-empty cell means nobody owns it yet. Rows re-graded on 2026-08-05 against
-measurements rather than handoff prose are marked **[re-graded]**.
+**Scheduled work lives in [`ops/completion/PLAN.md`](completion/PLAN.md)** (16
+steps, named by slug), which supersedes `ops/backlog/PLAN.md` (BL01–BL04 green,
+BL05–BL07 absorbed). Each entry's `Closed by` field is filled in by the step
+that closes it; an em dash means nobody owns it yet. Rows re-graded on
+2026-08-05 against measurements rather than handoff prose are marked
+**[re-graded]**.
+
+Every entry is headed by its **slug** and is therefore a Markdown anchor;
+cross-references link to it. `Formerly:` carries the serial number the entry
+used to have, because the completed tracks' handoffs still say it and are not
+rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 ---
 
 ## 1. Backtick track — Clang (`backtick-trunk`, `backtick-23`)
 
-| ID | Sev | Item | Where | Closed by |
-|----|-----|------|-------|-----------|
-| B01 | **P1** | **§17.3's D16 is not implemented.** `` 1 `P` 2 `` for a class `P` is rejected with *'P' does not refer to a value*. The design doc blesses type-name-in-slot and D4307 has a section asserting it, so the paper currently claims a feature the implementation does not deliver. **[re-graded]** It is *three* failure modes, not one — a bare class name, a class template (`use of class template 'pr' requires template arguments`, and a class template is the paper's own example), and a qualified or builtin type (`expected '(' for function-style cast or type construction`). Worse, the claim sits in the **normative** example at `papers/d4307r0.md:940` while the proposed grammar at `:911-914` is `backtick-operator: assignment-expression`, which `std::pair` is not — so the wording contradicts itself. Resolution chosen: **implement**. | F23/F24 handoff; `docs/backtick-operator-design.md` §17.3, D16; `papers/d4307r0.md` | **BL02 — fixed (Clang, both branches) + paper grammar corrected.** All four shapes now construct: bare class, qualified, class template (CTAD via the `getTypeName` deduced-template placeholder), builtin (which then fails with exactly `int(1, 2)`'s semantic diagnostic — parser parity, not a parser error). Dependent slots give `CXXUnresolvedConstructExpr`; `-ast-print` round-trips. `backtick-operator` production now `assignment-expression \| simple-type-specifier \| typename-specifier` with a lookup-based disambiguation paragraph. Cost measured in DEV-08. GCC still lacks D16 — recorded as DEV-G08, deliberately not part of BL02. |
-| B02 | P2 | **The keyword escape does not round-trip through `-ast-print`.** `` void `new`(); `` prints as `void new();`, which does not re-parse. Different node from the infix wrapper, and a different defect from the one F23/F24 fixed. `backtick-escape.cpp` never runs `-ast-print`, which is why nine steps missed it. The site is `DeclarationName::print`'s `Identifier` arm (`clang/lib/AST/DeclarationName.cpp:131-148`), which is also the **diagnostic** path — so this needs a `PrintingPolicy` bit and a decision about diagnostic wording, not just a guard. | F23/F24 handoff | |
-| B03 | P2 | **`-fbacktick` still lacks `ShouldParseIf<cplusplus.KeyPath>`.** The flag changes C-mode tokenization for a grammar that is C++-only. The Unicode branch carries the paired one-line fix for both flags; the backtick track owes itself the `defm backtick` half. **[re-graded]** The symptom is worse than DEV-U07 records: C does not merely lose a diagnostic, it **accepts** the grammar — `` int f(int a,int b){ return a `g` b; } `` compiled as C with `-fbacktick` exits 0. | DEV-U07 (resolved on the Unicode branch only); U04 handoff | **BL06** |
-| B04 | P2 | **`BacktickInfixExpr`'s source range does not span its operands** — it is `<col:22, col:23>`, just the callee. Cheap now that `getCallExpr()` exists. Model the fix on `UserOperatorExpr::getBeginLoc` (`ExprCXX.h:471-491`), whose doc comment diagnoses the identical root cause. | F23/F24 handoff; U11 handoff | **BL06** |
-| B05 | P2 | **ASTMatchers and clang-tidy do not know `BacktickInfixExpr`.** The same gap U17 closed for `UserOperatorExpr` on the Unicode side, still open here. Sized from U17: ~5 production/docs files at +58 lines plus +59 of test. `clang-tidy` itself needs nothing. Note `clang/docs/LibASTMatchersReference.html` is generated and gated by `clang/test/AST/ast_matchers_updated.test` — adding a matcher without regenerating fails the gate. | F23/F24 handoff | |
-| B06 | P3 | **`err_backtick_nested_requires_parens` is dead code**, carried since S04 and never fired. Remove it — DEV-04 is RESOLVED in the other direction (§17.1: bare nesting is blessed D1 chaining and cannot be diagnosed), so the diagnostic is unfireable *as specified*. Do not implement the D3 lookahead. | S04–S11, R23, R24, F23/F24 handoffs (carried nine times) | **BL06** |
-| B07 | P3 | **D8's slot-interior `SplitPenalty` bump is unimplemented.** The hard constraints suffice for identifier and qualified-name slots; a long multi-token slot would format badly. | S10 handoff, carried through R23/R24 | |
-| B08 | P3 | **No `-ast-print` test covers a backtick expression in a template context**, so `TransformBacktickInfixExpr` is unexercised for round-trip. Watch B28 — write an explicit return type, not `auto`. | S11 handoff | **BL06** |
-| B35 | P3 | **libclang does not know `BacktickInfixExpr`.** `clang/tools/libclang/CXCursor.cpp`'s exhaustive `MakeCXCursor` switch has no arm, so a `-Wswitch` warning is still live on this `WERROR=OFF` build and libclang maps a backtick expression to `CXCursor_NotImplemented`. F24 closed the sibling gap in `ExprEngine.cpp`; U17 left the backtick half alone. One line next to `CXXRewrittenBinaryOperatorClass`. *(Added 2026-08-05.)* | U17 handoff `:196-200`, `:472-476` | **BL06** |
+### type-slot-implementation
+
+**Formerly:** `B01`. **Severity:** **P1**.
+
+**Item.** **§17.3's [type-name-slot](../docs/backtick-operator-design.md#type-name-slot) is not implemented.** `` 1 `P` 2 `` for a class `P` is rejected with *'P' does not refer to a value*. The design doc blesses type-name-in-slot and D4307 has a section asserting it, so the paper currently claims a feature the implementation does not deliver. **[re-graded]** It is *three* failure modes, not one — a bare class name, a class template (`use of class template 'pr' requires template arguments`, and a class template is the paper's own example), and a qualified or builtin type (`expected '(' for function-style cast or type construction`). Worse, the claim sits in the **normative** example at `papers/d4307r0.md:940` while the proposed grammar at `:911-914` is `backtick-operator: assignment-expression`, which `std::pair` is not — so the wording contradicts itself. Resolution chosen: **implement**.
+
+**Where.** F23/F24 handoff; `docs/backtick-operator-design.md` §17.3, [type-name-slot](../docs/backtick-operator-design.md#type-name-slot); `papers/d4307r0.md`
+
+**Closed by.** **BL02 — fixed (Clang, both branches) + paper grammar corrected.** All four shapes now construct: bare class, qualified, class template (CTAD via the `getTypeName` deduced-template placeholder), builtin (which then fails with exactly `int(1, 2)`'s semantic diagnostic — parser parity, not a parser error). Dependent slots give `CXXUnresolvedConstructExpr`; `-ast-print` round-trips. `backtick-operator` production now `assignment-expression | simple-type-specifier | typename-specifier` with a lookup-based disambiguation paragraph. Cost measured in [type-slot-cost](DEVIATIONS.md#type-slot-cost). GCC still lacks [type-name-slot](../docs/backtick-operator-design.md#type-name-slot) — recorded as [gcc-type-slot-parity](gcc/DEVIATIONS.md#gcc-type-slot-parity), deliberately not part of BL02.
+
+### keyword-escape-round-trip
+
+**Formerly:** `B02`. **Severity:** P2.
+
+**Item.** **The keyword escape does not round-trip through `-ast-print`.** `` void `new`(); `` prints as `void new();`, which does not re-parse. Different node from the infix wrapper, and a different defect from the one F23/F24 fixed. `backtick-escape.cpp` never runs `-ast-print`, which is why nine steps missed it. The site is `DeclarationName::print`'s `Identifier` arm (`clang/lib/AST/DeclarationName.cpp:131-148`), which is also the **diagnostic** path — so this needs a `PrintingPolicy` bit and a decision about diagnostic wording, not just a guard.
+
+**Where.** F23/F24 handoff
+
+**Closed by.** —
+
+### c-mode-tokenization
+
+**Formerly:** `B03`. **Severity:** P2.
+
+**Item.** **`-fbacktick` still lacks `ShouldParseIf<cplusplus.KeyPath>`.** The flag changes C-mode tokenization for a grammar that is C++-only. The Unicode branch carries the paired one-line fix for both flags; the backtick track owes itself the `defm backtick` half. **[re-graded]** The symptom is worse than [flag-language-mode](unicode-operators/clang/DEVIATIONS.md#flag-language-mode) records: C does not merely lose a diagnostic, it **accepts** the grammar — `` int f(int a,int b){ return a `g` b; } `` compiled as C with `-fbacktick` exits 0.
+
+**Where.** [flag-language-mode](unicode-operators/clang/DEVIATIONS.md#flag-language-mode) (resolved on the Unicode branch only); U04 handoff
+
+**Closed by.** **BL06**
+
+### backtick-source-range
+
+**Formerly:** `B04`. **Severity:** P2.
+
+**Item.** **`BacktickInfixExpr`'s source range does not span its operands** — it is `<col:22, col:23>`, just the callee. Cheap now that `getCallExpr()` exists. Model the fix on `UserOperatorExpr::getBeginLoc` (`ExprCXX.h:471-491`), whose doc comment diagnoses the identical root cause.
+
+**Where.** F23/F24 handoff; U11 handoff
+
+**Closed by.** **BL06**
+
+### backtick-ast-matchers
+
+**Formerly:** `B05`. **Severity:** P2.
+
+**Item.** **ASTMatchers and clang-tidy do not know `BacktickInfixExpr`.** The same gap U17 closed for `UserOperatorExpr` on the Unicode side, still open here. Sized from U17: ~5 production/docs files at +58 lines plus +59 of test. `clang-tidy` itself needs nothing. Note `clang/docs/LibASTMatchersReference.html` is generated and gated by `clang/test/AST/ast_matchers_updated.test` — adding a matcher without regenerating fails the gate.
+
+**Where.** F23/F24 handoff
+
+**Closed by.** —
+
+### dead-nesting-diagnostic
+
+**Formerly:** `B06`. **Severity:** P3.
+
+**Item.** **`err_backtick_nested_requires_parens` is dead code**, carried since S04 and never fired. Remove it — [bare-nesting-detection](DEVIATIONS.md#bare-nesting-detection) is RESOLVED in the other direction (§17.1: bare nesting is blessed [chaining-associativity](../docs/backtick-operator-design.md#chaining-associativity) chaining and cannot be diagnosed), so the diagnostic is unfireable *as specified*. Do not implement the [nesting-vs-chaining](../docs/backtick-operator-design.md#nesting-vs-chaining) lookahead.
+
+**Where.** S04–S11, R23, R24, F23/F24 handoffs (carried nine times)
+
+**Closed by.** **BL06**
+
+### slot-split-penalty
+
+**Formerly:** `B07`. **Severity:** P3.
+
+**Item.** **[format-break-policy](../docs/backtick-operator-design.md#format-break-policy)'s slot-interior `SplitPenalty` bump is unimplemented.** The hard constraints suffice for identifier and qualified-name slots; a long multi-token slot would format badly.
+
+**Where.** S10 handoff, carried through R23/R24
+
+**Closed by.** —
+
+### template-ast-print-test
+
+**Formerly:** `B08`. **Severity:** P3.
+
+**Item.** **No `-ast-print` test covers a backtick expression in a template context**, so `TransformBacktickInfixExpr` is unexercised for round-trip. Watch [auto-return-round-trip](#auto-return-round-trip) — write an explicit return type, not `auto`.
+
+**Where.** S11 handoff
+
+**Closed by.** **BL06**
+
+### libclang-cursor-arm
+
+**Formerly:** `B35`. **Severity:** P3.
+
+**Item.** **libclang does not know `BacktickInfixExpr`.** `clang/tools/libclang/CXCursor.cpp`'s exhaustive `MakeCXCursor` switch has no arm, so a `-Wswitch` warning is still live on this `WERROR=OFF` build and libclang maps a backtick expression to `CXCursor_NotImplemented`. F24 closed the sibling gap in `ExprEngine.cpp`; U17 left the backtick half alone. One line next to `CXXRewrittenBinaryOperatorClass`. *(Added 2026-08-05.)*
+
+**Where.** U17 handoff `:196-200`, `:472-476`
+
+**Closed by.** **BL06**
 
 ## 2. Backtick track — GCC (`backtick`)
 
-| ID | Sev | Item | Where | Closed by |
-|----|-----|------|-------|-----------|
-| B09 | P2 | **Pure ADL on a template-id slot still fails.** `` x `add<int>` y `` takes the old path, because G10's two-token lookahead (`CPP_NAME` + `CPP_BACKTICK`) does not detect a template-id. §17.4's normative claim holds for bare names only. | G10 handoff; DEV-G05's neighbourhood | |
-| B10 | P2 | **Module streaming of keyword-escaped names is untested.** `IDENTIFIER_KEYWORD_P` checks in `module.cc:20117` and `:20160` may need attention if a keyword-named entity is exported. Deferred three times. | G07, G08, G09, G10 handoffs | |
-| B11 | P3 | **The `flag_backtick` guard in `grokdeclarator` is over-permissive** — it suppresses the keyword-declarator error for *all* keyword names when the flag is set, not only explicitly escaped ones. Benign today because the parser rejects non-escaped keywords earlier. | DEV-G07a; G07–G10 handoffs | |
-| B12 | P3 | **GCC has neither F23 nor F24 fix, and cannot have the first**: no phase-2 AST wrapper was ever built there, and there is no analyzer analogue. No cross-compiler divergence row is warranted — there is nothing to diverge from. | F23/F24 handoff | |
-| B13 | P3 | **The GCC track is pinned at trunk `c9ee2c5ab6c`** while Clang has moved to 23.x and 24.x. Re-sync before any fresh cross-compiler divergence testing. | R23, R24 handoffs | |
+### template-id-slot-adl
+
+**Formerly:** `B09`. **Severity:** P2.
+
+**Item.** **Pure ADL on a template-id slot still fails.** `` x `add<int>` y `` takes the old path, because G10's two-token lookahead (`CPP_NAME` + `CPP_BACKTICK`) does not detect a template-id. §17.4's normative claim holds for bare names only.
+
+**Where.** G10 handoff; [gcc-slot-adl](gcc/DEVIATIONS.md#gcc-slot-adl)'s neighbourhood
+
+**Closed by.** —
+
+### module-streaming-escapes
+
+**Formerly:** `B10`. **Severity:** P2.
+
+**Item.** **Module streaming of keyword-escaped names is untested.** `IDENTIFIER_KEYWORD_P` checks in `module.cc:20117` and `:20160` may need attention if a keyword-named entity is exported. Deferred three times.
+
+**Where.** G07, G08, G09, G10 handoffs
+
+**Closed by.** —
+
+### grokdeclarator-guard-scope
+
+**Formerly:** `B11`. **Severity:** P3.
+
+**Item.** **The `flag_backtick` guard in `grokdeclarator` is over-permissive** — it suppresses the keyword-declarator error for *all* keyword names when the flag is set, not only explicitly escaped ones. Benign today because the parser rejects non-escaped keywords earlier.
+
+**Where.** [gcc-keyword-declarator](gcc/DEVIATIONS.md#gcc-keyword-declarator); G07–G10 handoffs
+
+**Closed by.** —
+
+### gcc-wrapper-parity
+
+**Formerly:** `B12`. **Severity:** P3.
+
+**Item.** **GCC has neither F23 nor F24 fix, and cannot have the first**: no phase-2 AST wrapper was ever built there, and there is no analyzer analogue. No cross-compiler divergence row is warranted — there is nothing to diverge from.
+
+**Where.** F23/F24 handoff
+
+**Closed by.** —
+
+### gcc-trunk-pin
+
+**Formerly:** `B13`. **Severity:** P3.
+
+**Item.** **The GCC track is pinned at trunk `c9ee2c5ab6c`** while Clang has moved to 23.x and 24.x. Re-sync before any fresh cross-compiler divergence testing.
+
+**Where.** R23, R24 handoffs
+
+**Closed by.** —
 
 ## 3. Unicode track — Clang (`unicode-operators-experiment`, `unicode-operators-upstream`)
 
-| ID | Sev | Item | Where | Closed by |
-|----|-----|------|-------|-----------|
-| B14 | **P1** | ~~The static analyzer almost certainly mishandles `UserOperatorExpr`, and nobody has looked.~~ **[re-graded 2026-08-05 — measured, not suspected.]** Three of F24's five defects are **observed** on `build-unicode`: `clang_analyzer_eval(x == 3)` after `int x = 1 ⊞ 2;` reports **both `FALSE` and `TRUE`** where the explicit `operator⊞(1,2)` reports `TRUE` only; `const S &r = 1 ⊞ 2;` yields `(CXXRecordTypedCall, [B1.6])` where the explicit call yields `[B1.8]`, character-for-character F24's symptom; and the CFG carries a temporary-object destructor *and* the implicit one. Only the dropped-successor defect is absent, because U16's `ExprEngine` case keeps the path alive. The node is not transparent to *transformation*, so F24's fix does not transplant unchanged — and there is no `getSubExpr()`, only `getSemanticForm()`. **`CFG.cpp` and `ExprEngine.cpp` are coupled**: U16's grouping is self-consistent only while `CFG.cpp` has no case. | U16 handoff; F24 handoff (`Environment.cpp:37`, `CFG.cpp`, `LiveVariables.cpp`, `ExprEngine.cpp`) | **BL03 — fixed on both Unicode branches.** All six arms landed, each audited against its F24 counterpart rather than transplanted (`getSemanticForm()`, not `getSubExpr()`). **Five of the six are load-bearing, proven by reverting each arm in turn and re-running the new test: every one of the five fails it, and each fails it in its own way** — `findConstructionContexts` → `[B1.6]` not `[B1.8]`; `CFGBuilder::Visit` → `[B1.9]`, the wrapper an element again; `VisitForTemporaries` → a second `~Res() (Temporary object destructor)`; `LiveVariables` → 7 `TRUE` down to 4; `Environment` → down to 3. **The sixth, `ExprEngine`, is unobservable**: with the CFG looking through the node it is unreachable, proven with an `llvm_unreachable` probe that never fired across the whole `clang/test/Analysis` tree. It is changed anyway because the old grouping *asserts* the wrapper is a modelled element, which the CFG change makes false. New defect found in passing: **B37**. |
-| B15 | **P1** | **`clang/lib/CIR/` has never been compiled on this branch and has never seen a `UserOperatorExpr`.** `LLVM_ENABLE_PROJECTS` is `clang;clang-tools-extra`, so the ClangIR code generator is not built. Flagged unchanged by six consecutive steps. **[re-graded]** Not "unknown whether it needs a case at all": U19 identified it as a genuine hole, the four sites are known (`CIRGenExprScalar.cpp:585-587`, `CIRGenExprAggregate.cpp:440-442`, `CIRGenExprComplex.cpp:275-277`, `CIRGenFunction.cpp:1187-1190`), three are copy-paste from the `CXXRewrittenBinaryOperator` arms because `getSemanticForm()` already exists, and the fallbacks are `errorNYI` rather than crashes — so the worst case is a hard NYI diagnostic, not a miscompile. **[the last clause is wrong — measured by BL04.]** Three of the four fallbacks are bounded; the l-value one is not. `emitLValue`'s default arm returns a default-constructed `LValue`, whose null `QualType` asserts in `QualType::getCommonPtr`, so an l-value-returning operator **crashes the compiler** after emitting the NYI diagnostic. The remaining unknown is only whether the build passes. Needs MLIR **and** `CLANG_ENABLE_CIR=ON`; the CMake `FATAL_ERROR`s otherwise. | U04, U05, U12, U14, U15 handoffs; U16 `:390-394`; U19 `:131-133` | **BL04 — measured and fixed on both Unicode branches.** `clang/lib/CIR/` compiled for the first time on this hardware (scratch dir `~/src/llvm/build-cir-scratch`, `mlir` + `CLANG_ENABLE_CIR=ON`). All four sites were real, and each failed in its own way: scalar → `NYI "scalar expression kind: : UserOperatorExpr"`; aggregate → `NYI "AggExprEmitter::VisitStmt: UserOperatorExpr"`; complex → `errorUnsupported`, `"cannot compile this complex expression yet"`, **which does not name the node**; l-value → `NYI "unsupported l-value class"` followed by an **assertion failure**, `!isNull()` in `QualType::getCommonPtr`. Three arms are the predicted copy-paste. The fourth is not: unlike the `CXXRewrittenBinaryOperator` arm beside it, `emitLValue` recurses into the semantic form rather than diagnosing, because an operator returning a reference *is* a call returning a reference. New test `clang/test/CIR/CodeGen/unicode-operator.cpp` checks all five shapes against the explicit call written by hand; the two forms emit instruction-for-instruction identical CIR. |
-| B16 | P2 | **The lldb hunk is compile-unverified.** One line in `ClangASTSource.cpp:125`; lldb is not in this build's projects. The only hunk in the whole feature no compiler has seen. Prerequisites are all present on this machine; building `lldbPluginExpressionParserClang` alone compiles the TU without linking lldb. | U06 handoff; REPLAY row | **BL07** |
-| B17 | P2 | **`SemaCodeComplete.cpp:1061`'s completion-priority grouping was never updated.** Left alone by U06, U07, U08, U09, U11 and U16 in turn. Completion after an infix user operator is a reachable state. The reason it kept being deferred is that priorities are not printed — but results *are* priority-sorted (`CodeCompleteConsumer.cpp:645`), so an ordering-based test is the observable. | U08–U16 handoffs (carried six times) | **BL07** |
-| B18 | P2 | **`TemplateIdAnnotation` carries no code point** for `operator⊞<T>` (`TemplateII = nullptr`, `OpKind = OO_None`) — the same gap upstream has for literal operators, marked there with a pre-existing FIXME. Resolution goes through the `TemplateName`, so nothing is wrong today. | U07 handoff | |
-| B19 | P2 | **`hasAnyOperatorName()` cannot express a user operator** and was deliberately not supported: it returns a `StringRef` into a static spelling table and a user operator's spelling is computed. A matcher API that structurally cannot name the operator. | U17 handoff; DEV-U14 | |
-| B20 | P3 | **The astral-plane and zero-padding branches of the mangling derivation are untested by construction** — every U1 code point is in 0x2190–0x2BFF, so every derived name is exactly four digits. First thing to test if U1 ever grows past the BMP. | U09 handoff; DEV-U08 | |
-| B21 | P3 | **The UCD 17.0.0 inputs are in neither repo**, so the generated character tables cannot be regenerated without re-fetching five files. A hash manifest in `docs/` is the cheap fix, and the paper's reproducibility claim wants one. Needs network access to unicode.org — it is the only item in either cheap batch with an external dependency. | U02 handoff | **BL07** |
-| B22 | P3 | **The confusable-to-ASCII spellings are a judgement call, not derived.** ∙ ⋅ → `.` and ⇔ → `<=>` were assigned by hand; the generator has no `confusables.txt` input. They now appear in user-facing diagnostics. The table shape already supports deriving them. | U02, U05 handoffs; DEV-U03 | |
-| B23 | P3 | **`t.template operator⊞<int>(0)` on a dependent object expression is rejected.** Inherited, not introduced: `DependentTemplateStorage` holds an identifier or a built-in operator kind and nothing else, and user-defined literal operators have had the identical limitation since C++11. Falsifies the word "anywhere" in U§7.1. | DEV-U10; U07, U10 handoffs | |
-| B24 | P3 | **The inner `CallExpr`'s source range begins at the operator**, after its own first child. `UserOperatorExpr` spans correctly; the inner node does not. Shared artifact with backtick (B04). **[re-graded]** *Not* cheap, and no longer part of the B04 batch: `CallExpr::getBeginLoc` takes the begin from the callee and trunk **caches** it in a trailing `SourceLocation` (`CallExprBits.HasTrailingSourceLoc`, written by `updateTrailingSourceLoc()` from `CallExpr::Create`) with no public setter. Fixing it needs an upstream-shaped `CallExpr::Create` overload. Re-triage: own step, or WONTFIX on the grounds that the node *as written* spans correctly and a semantic form carrying the callee's range is what `-ast-dump` does for every desugaring. | U11, U16 handoffs | |
-| B36 | P3 | **`clang/lib/CIR/` has never seen a `BacktickInfixExpr` either.** The exact twin of B15 on the backtick branches, using `getSubExpr()` in place of `getSemanticForm()`. The file had no row for it. *(Added 2026-08-05.)* | derived from B15 | **BL04 — fixed on both backtick branches.** The twin was exact, including the crash: all four sites failed with the same diagnostics as `UserOperatorExpr`, naming `BacktickInfixExpr` instead. **That symmetry is the evidence that the l-value crash belongs to `emitLValue`'s default arm rather than to either node** — two unrelated wrappers, one abort. Verified in the same scratch build: `unicode-operators-experiment` carries both features, so one CIR build could compile and run both halves. The backtick-only hunks were then compiled and tested there in isolation (backtick arms alone → `backtick-infix.cpp` passes, `unicode-operator.cpp` fails, and vice versa) and the lines landed on `backtick-trunk`/`backtick-23` are byte-identical to the ones so verified. New test `clang/test/CIR/CodeGen/backtick-infix.cpp`. |
-| B37 | P2 | **Both wrapper nodes defeat the analyzer's null-return suppression, so the operator form reports false positives the explicit call is spared.** `suppress-null-return-paths` (default **on**) suppresses a null-dereference report whose null came from an inlined callee's return. The suppression is gated on `CallEvent::isCallStmt(E)` in `BugReporterVisitors.cpp`'s handler (`:2365`), and `E` is the tracked expression — for `` p `identity` 0 `` or `p ⊘ 0` that is the *wrapper*, not the `CallExpr`, so the handler bails and the report is emitted. Measured post-BL03 in one TU: the operator form reports, the identically-desugaring explicit call does not; with `suppress-null-return-paths=false` both report. **This is a parity break in the noisy direction**, and it is *not* a BL03 regression — it is inherited from F24 and present on `backtick-trunk`/`backtick-23` too. Worse, **`clang/test/Analysis/backtick-infix.cpp`'s load-bearing assertion silently depends on it**: `bugs_are_still_found` passes only because the suppression misses the wrapper. BL03's own test sets `suppress-null-return-paths=false` deliberately so it tests parity rather than resting on the divergence. Fix is a seventh site — peel both wrappers before the `isCallStmt` test — but it changes an F24 test's premise, so it wants its own step. *(Added 2026-08-09 by BL03.)* | BL03 handoff; `clang/lib/StaticAnalyzer/Core/BugReporterVisitors.cpp:2365`; `clang/test/Analysis/backtick-infix.cpp` | |
+### unicode-analyzer-sites
+
+**Formerly:** `B14`. **Severity:** **P1**.
+
+**Item.** ~~The static analyzer almost certainly mishandles `UserOperatorExpr`, and nobody has looked.~~ **[re-graded 2026-08-05 — measured, not suspected.]** Three of F24's five defects are **observed** on `build-unicode`: `clang_analyzer_eval(x == 3)` after `int x = 1 ⊞ 2;` reports **both `FALSE` and `TRUE`** where the explicit `operator⊞(1,2)` reports `TRUE` only; `const S &r = 1 ⊞ 2;` yields `(CXXRecordTypedCall, [B1.6])` where the explicit call yields `[B1.8]`, character-for-character F24's symptom; and the CFG carries a temporary-object destructor *and* the implicit one. Only the dropped-successor defect is absent, because U16's `ExprEngine` case keeps the path alive. The node is not transparent to *transformation*, so F24's fix does not transplant unchanged — and there is no `getSubExpr()`, only `getSemanticForm()`. **`CFG.cpp` and `ExprEngine.cpp` are coupled**: U16's grouping is self-consistent only while `CFG.cpp` has no case.
+
+**Where.** U16 handoff; F24 handoff (`Environment.cpp:37`, `CFG.cpp`, `LiveVariables.cpp`, `ExprEngine.cpp`)
+
+**Closed by.** **BL03 — fixed on both Unicode branches.** All six arms landed, each audited against its F24 counterpart rather than transplanted (`getSemanticForm()`, not `getSubExpr()`). **Five of the six are load-bearing, proven by reverting each arm in turn and re-running the new test: every one of the five fails it, and each fails it in its own way** — `findConstructionContexts` → `[B1.6]` not `[B1.8]`; `CFGBuilder::Visit` → `[B1.9]`, the wrapper an element again; `VisitForTemporaries` → a second `~Res() (Temporary object destructor)`; `LiveVariables` → 7 `TRUE` down to 4; `Environment` → down to 3. **The sixth, `ExprEngine`, is unobservable**: with the CFG looking through the node it is unreachable, proven with an `llvm_unreachable` probe that never fired across the whole `clang/test/Analysis` tree. It is changed anyway because the old grouping *asserts* the wrapper is a modelled element, which the CFG change makes false. New defect found in passing: **[null-return-suppression](#null-return-suppression)**.
+
+### clangir-unicode-arms
+
+**Formerly:** `B15`. **Severity:** **P1**.
+
+**Item.** **`clang/lib/CIR/` has never been compiled on this branch and has never seen a `UserOperatorExpr`.** `LLVM_ENABLE_PROJECTS` is `clang;clang-tools-extra`, so the ClangIR code generator is not built. Flagged unchanged by six consecutive steps. **[re-graded]** Not "unknown whether it needs a case at all": U19 identified it as a genuine hole, the four sites are known (`CIRGenExprScalar.cpp:585-587`, `CIRGenExprAggregate.cpp:440-442`, `CIRGenExprComplex.cpp:275-277`, `CIRGenFunction.cpp:1187-1190`), three are copy-paste from the `CXXRewrittenBinaryOperator` arms because `getSemanticForm()` already exists, and the fallbacks are `errorNYI` rather than crashes — so the worst case is a hard NYI diagnostic, not a miscompile. **[the last clause is wrong — measured by BL04.]** Three of the four fallbacks are bounded; the l-value one is not. `emitLValue`'s default arm returns a default-constructed `LValue`, whose null `QualType` asserts in `QualType::getCommonPtr`, so an l-value-returning operator **crashes the compiler** after emitting the NYI diagnostic. The remaining unknown is only whether the build passes. Needs MLIR **and** `CLANG_ENABLE_CIR=ON`; the CMake `FATAL_ERROR`s otherwise.
+
+**Where.** U04, U05, U12, U14, U15 handoffs; U16 `:390-394`; U19 `:131-133`
+
+**Closed by.** **BL04 — measured and fixed on both Unicode branches.** `clang/lib/CIR/` compiled for the first time on this hardware (scratch dir `~/src/llvm/build-cir-scratch`, `mlir` + `CLANG_ENABLE_CIR=ON`). All four sites were real, and each failed in its own way: scalar → `NYI "scalar expression kind: : UserOperatorExpr"`; aggregate → `NYI "AggExprEmitter::VisitStmt: UserOperatorExpr"`; complex → `errorUnsupported`, `"cannot compile this complex expression yet"`, **which does not name the node**; l-value → `NYI "unsupported l-value class"` followed by an **assertion failure**, `!isNull()` in `QualType::getCommonPtr`. Three arms are the predicted copy-paste. The fourth is not: unlike the `CXXRewrittenBinaryOperator` arm beside it, `emitLValue` recurses into the semantic form rather than diagnosing, because an operator returning a reference *is* a call returning a reference. New test `clang/test/CIR/CodeGen/unicode-operator.cpp` checks all five shapes against the explicit call written by hand; the two forms emit instruction-for-instruction identical CIR.
+
+### lldb-hunk-verification
+
+**Formerly:** `B16`. **Severity:** P2.
+
+**Item.** **The lldb hunk is compile-unverified.** One line in `ClangASTSource.cpp:125`; lldb is not in this build's projects. The only hunk in the whole feature no compiler has seen. Prerequisites are all present on this machine; building `lldbPluginExpressionParserClang` alone compiles the TU without linking lldb.
+
+**Where.** U06 handoff; REPLAY row
+
+**Closed by.** **BL07**
+
+### code-completion-priority
+
+**Formerly:** `B17`. **Severity:** P2.
+
+**Item.** **`SemaCodeComplete.cpp:1061`'s completion-priority grouping was never updated.** Left alone by U06, U07, U08, U09, U11 and U16 in turn. Completion after an infix user operator is a reachable state. The reason it kept being deferred is that priorities are not printed — but results *are* priority-sorted (`CodeCompleteConsumer.cpp:645`), so an ordering-based test is the observable.
+
+**Where.** U08–U16 handoffs (carried six times)
+
+**Closed by.** **BL07**
+
+### template-id-code-point
+
+**Formerly:** `B18`. **Severity:** P2.
+
+**Item.** **`TemplateIdAnnotation` carries no code point** for `operator⊞<T>` (`TemplateII = nullptr`, `OpKind = OO_None`) — the same gap upstream has for literal operators, marked there with a pre-existing FIXME. Resolution goes through the `TemplateName`, so nothing is wrong today.
+
+**Where.** U07 handoff
+
+**Closed by.** —
+
+### matcher-operator-name
+
+**Formerly:** `B19`. **Severity:** P2.
+
+**Item.** **`hasAnyOperatorName()` cannot express a user operator** and was deliberately not supported: it returns a `StringRef` into a static spelling table and a user operator's spelling is computed. A matcher API that structurally cannot name the operator.
+
+**Where.** U17 handoff; [serialization-tooling-cost](unicode-operators/clang/DEVIATIONS.md#serialization-tooling-cost)
+
+**Closed by.** —
+
+### astral-plane-mangling
+
+**Formerly:** `B20`. **Severity:** P3.
+
+**Item.** **The astral-plane and zero-padding branches of the mangling derivation are untested by construction** — every [token-set](../docs/unicode-operators.md#token-set) code point is in 0x2190–0x2BFF, so every derived name is exactly four digits. First thing to test if [token-set](../docs/unicode-operators.md#token-set) ever grows past the BMP.
+
+**Where.** U09 handoff; [vendor-extended-mangling](unicode-operators/clang/DEVIATIONS.md#vendor-extended-mangling)
+
+**Closed by.** —
+
+### ucd-input-manifest
+
+**Formerly:** `B21`. **Severity:** P3.
+
+**Item.** **The UCD 17.0.0 inputs are in neither repo**, so the generated character tables cannot be regenerated without re-fetching five files. A hash manifest in `docs/` is the cheap fix, and the paper's reproducibility claim wants one. Needs network access to unicode.org — it is the only item in either cheap batch with an external dependency.
+
+**Where.** U02 handoff
+
+**Closed by.** **BL07**
+
+### confusable-spellings
+
+**Formerly:** `B22`. **Severity:** P3.
+
+**Item.** **The confusable-to-ASCII spellings are a judgement call, not derived.** ∙ ⋅ → `.` and ⇔ → `<=>` were assigned by hand; the generator has no `confusables.txt` input. They now appear in user-facing diagnostics. The table shape already supports deriving them.
+
+**Where.** U02, U05 handoffs; [exclusion-list-derivation](unicode-operators/clang/DEVIATIONS.md#exclusion-list-derivation)
+
+**Closed by.** —
+
+### dependent-template-operator-id
+
+**Formerly:** `B23`. **Severity:** P3.
+
+**Item.** **`t.template operator⊞<int>(0)` on a dependent object expression is rejected.** Inherited, not introduced: `DependentTemplateStorage` holds an identifier or a built-in operator kind and nothing else, and user-defined literal operators have had the identical limitation since C++11. Falsifies the word "anywhere" in U§7.1.
+
+**Where.** [operator-id-anywhere](unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere); U07, U10 handoffs
+
+**Closed by.** —
+
+### inner-call-source-range
+
+**Formerly:** `B24`. **Severity:** P3.
+
+**Item.** **The inner `CallExpr`'s source range begins at the operator**, after its own first child. `UserOperatorExpr` spans correctly; the inner node does not. Shared artifact with backtick ([backtick-source-range](#backtick-source-range)). **[re-graded]** *Not* cheap, and no longer part of the [backtick-source-range](#backtick-source-range) batch: `CallExpr::getBeginLoc` takes the begin from the callee and trunk **caches** it in a trailing `SourceLocation` (`CallExprBits.HasTrailingSourceLoc`, written by `updateTrailingSourceLoc()` from `CallExpr::Create`) with no public setter. Fixing it needs an upstream-shaped `CallExpr::Create` overload. Re-triage: own step, or WONTFIX on the grounds that the node *as written* spans correctly and a semantic form carrying the callee's range is what `-ast-dump` does for every desugaring.
+
+**Where.** U11, U16 handoffs
+
+**Closed by.** —
+
+### clangir-backtick-arms
+
+**Formerly:** `B36`. **Severity:** P3.
+
+**Item.** **`clang/lib/CIR/` has never seen a `BacktickInfixExpr` either.** The exact twin of [clangir-unicode-arms](#clangir-unicode-arms) on the backtick branches, using `getSubExpr()` in place of `getSemanticForm()`. The file had no row for it. *(Added 2026-08-05.)*
+
+**Where.** derived from [clangir-unicode-arms](#clangir-unicode-arms)
+
+**Closed by.** **BL04 — fixed on both backtick branches.** The twin was exact, including the crash: all four sites failed with the same diagnostics as `UserOperatorExpr`, naming `BacktickInfixExpr` instead. **That symmetry is the evidence that the l-value crash belongs to `emitLValue`'s default arm rather than to either node** — two unrelated wrappers, one abort. Verified in the same scratch build: `unicode-operators-experiment` carries both features, so one CIR build could compile and run both halves. The backtick-only hunks were then compiled and tested there in isolation (backtick arms alone → `backtick-infix.cpp` passes, `unicode-operator.cpp` fails, and vice versa) and the lines landed on `backtick-trunk`/`backtick-23` are byte-identical to the ones so verified. New test `clang/test/CIR/CodeGen/backtick-infix.cpp`.
+
+### null-return-suppression
+
+**Formerly:** `B37`. **Severity:** P2.
+
+**Item.** **Both wrapper nodes defeat the analyzer's null-return suppression, so the operator form reports false positives the explicit call is spared.** `suppress-null-return-paths` (default **on**) suppresses a null-dereference report whose null came from an inlined callee's return. The suppression is gated on `CallEvent::isCallStmt(E)` in `BugReporterVisitors.cpp`'s handler (`:2365`), and `E` is the tracked expression — for `` p `identity` 0 `` or `p ⊘ 0` that is the *wrapper*, not the `CallExpr`, so the handler bails and the report is emitted. Measured post-BL03 in one TU: the operator form reports, the identically-desugaring explicit call does not; with `suppress-null-return-paths=false` both report. **This is a parity break in the noisy direction**, and it is *not* a BL03 regression — it is inherited from F24 and present on `backtick-trunk`/`backtick-23` too. Worse, **`clang/test/Analysis/backtick-infix.cpp`'s load-bearing assertion silently depends on it**: `bugs_are_still_found` passes only because the suppression misses the wrapper. BL03's own test sets `suppress-null-return-paths=false` deliberately so it tests parity rather than resting on the divergence. Fix is a seventh site — peel both wrappers before the `isCallStmt` test — but it changes an F24 test's premise, so it wants its own step. *(Added 2026-08-09 by BL03.)*
+
+**Where.** BL03 handoff; `clang/lib/StaticAnalyzer/Core/BugReporterVisitors.cpp:2365`; `clang/test/Analysis/backtick-infix.cpp`
+
+**Closed by.** —
 
 ## 4. Upstream LLVM defects found in passing
 
 Not ours, found while doing this work, and worth reporting.
 
-| ID | Sev | Item | Where | Closed by |
-|----|-----|------|-------|-----------|
-| B25 | **P1** | **Clang mis-mangles `operator++` — and `operator--`.** The Itanium ABI spells prefix `pp_` / `mm_` and postfix `pp` / `mm`; Clang emits the postfix form for both. `template<class T> void f(decltype(++T{})); template<class T> void f(decltype(T{}++));` is `error: definition with same mangled name` on Clang and two distinct symbols on GCC 15.2. **[re-graded]** `operator--` fails identically (`_Z1fI1AEvDTmmtlT_EE`), which was recorded nowhere; and LLVM's own demangler *implements* the distinction it cannot emit (`ItaniumDemangle.h:5177-5178`, `:5223-5229`) — `llvm-cxxfilt` round-trips both spellings. A live cross-vendor divergence, unrelated to either feature. **Report upstream.** | U21 handoff | **BL05** |
-| B26 | P2 | **`ParseExprCXX.cpp:2297` reads the wrong union member** for `IK_LiteralOperatorId`. U07 guarded the new kind rather than fixing upstream's read; anyone adding a further `UnqualifiedId` payload hits it first. | U07 handoff | |
-| B27 | P3 | **`llvm-cxxfilt`'s stdin path splits on non-ASCII**, so `_Z3∂i` piped in is not demangled while the same string as an argv argument is. Affects extended-identifier function names, not this feature's ASCII-derived operator names. | U09 handoff; DEV-U08 | |
-| B28 | P3 | **`-ast-print` cannot round-trip an `auto`-returning function template** (deduced return type versus the `auto` primary). Pre-existing; costs five minutes to anyone writing a round-trip test. | U16 handoff | |
-| B29 | P3 | **`-ast-print` after a PCH prints a class's fields last** if they precede its methods. Pre-existing; breaks any naive PCH print-diff test. | U17 handoff | |
-| B30 | P3 | **The caret for `use of undeclared 'operator⊞'` underlines only the `operator` keyword**, not the glyph. Upstream's shape — `operator+` and `operator""_x` produce the identical 8-column range. Cosmetic and shared. | U10 handoff | |
-| B38 | P2 | **`CIRGenFunction::emitLValue`'s default arm turns any unhandled l-value class into an assertion failure, not a diagnostic.** It calls `errorNYI("emitLValue: unsupported l-value class")` and then `return LValue()`; the default-constructed `LValue` carries a null `QualType`, which asserts downstream in `QualType::getCommonPtr` (`!isNull() && "Cannot retrieve a NULL type pointer"`). So the ClangIR NYI path, which is meant to be a hard diagnostic, aborts instead for this one site. Measured by BL04 with **both** wrapper nodes — `BacktickInfixExpr` and `UserOperatorExpr` abort identically at the same arm, which is what localizes it to the arm rather than to either node. Neither feature causes it and neither flag is needed to reach it: any `Expr` class missing from that switch, in l-value position, in a CIR build, does the same. Reachable today only in a `CLANG_ENABLE_CIR=ON` build, which is why nobody here had seen it. BL04 fixed the two arms it needed and left the default alone, since making the default diagnose properly is upstream's design call, not ours. *(Added 2026-09-03 by BL04.)* | BL04 handoff; `clang/lib/CIR/CodeGen/CIRGenFunction.cpp` `emitLValue` default arm; DEV-09 / DEV-U24 | |
+### increment-decrement-mangling
+
+**Formerly:** `B25`. **Severity:** **P1**.
+
+**Item.** **Clang mis-mangles `operator++` — and `operator--`.** The Itanium ABI spells prefix `pp_` / `mm_` and postfix `pp` / `mm`; Clang emits the postfix form for both. `template<class T> void f(decltype(++T{})); template<class T> void f(decltype(T{}++));` is `error: definition with same mangled name` on Clang and two distinct symbols on GCC 15.2. **[re-graded]** `operator--` fails identically (`_Z1fI1AEvDTmmtlT_EE`), which was recorded nowhere; and LLVM's own demangler *implements* the distinction it cannot emit (`ItaniumDemangle.h:5177-5178`, `:5223-5229`) — `llvm-cxxfilt` round-trips both spellings. A live cross-vendor divergence, unrelated to either feature. **Report upstream.**
+
+**Where.** U21 handoff
+
+**Closed by.** **BL05**
+
+### unqualified-id-union-read
+
+**Formerly:** `B26`. **Severity:** P2.
+
+**Item.** **`ParseExprCXX.cpp:2297` reads the wrong union member** for `IK_LiteralOperatorId`. U07 guarded the new kind rather than fixing upstream's read; anyone adding a further `UnqualifiedId` payload hits it first.
+
+**Where.** U07 handoff
+
+**Closed by.** —
+
+### cxxfilt-stdin-nonascii
+
+**Formerly:** `B27`. **Severity:** P3.
+
+**Item.** **`llvm-cxxfilt`'s stdin path splits on non-ASCII**, so `_Z3∂i` piped in is not demangled while the same string as an argv argument is. Affects extended-identifier function names, not this feature's ASCII-derived operator names.
+
+**Where.** U09 handoff; [vendor-extended-mangling](unicode-operators/clang/DEVIATIONS.md#vendor-extended-mangling)
+
+**Closed by.** —
+
+### auto-return-round-trip
+
+**Formerly:** `B28`. **Severity:** P3.
+
+**Item.** **`-ast-print` cannot round-trip an `auto`-returning function template** (deduced return type versus the `auto` primary). Pre-existing; costs five minutes to anyone writing a round-trip test.
+
+**Where.** U16 handoff
+
+**Closed by.** —
+
+### pch-ast-print-order
+
+**Formerly:** `B29`. **Severity:** P3.
+
+**Item.** **`-ast-print` after a PCH prints a class's fields last** if they precede its methods. Pre-existing; breaks any naive PCH print-diff test.
+
+**Where.** U17 handoff
+
+**Closed by.** —
+
+### operator-caret-range
+
+**Formerly:** `B30`. **Severity:** P3.
+
+**Item.** **The caret for `use of undeclared 'operator⊞'` underlines only the `operator` keyword**, not the glyph. Upstream's shape — `operator+` and `operator""_x` produce the identical 8-column range. Cosmetic and shared.
+
+**Where.** U10 handoff
+
+**Closed by.** —
+
+### clangir-lvalue-crash
+
+**Formerly:** `B38`. **Severity:** P2.
+
+**Item.** **`CIRGenFunction::emitLValue`'s default arm turns any unhandled l-value class into an assertion failure, not a diagnostic.** It calls `errorNYI("emitLValue: unsupported l-value class")` and then `return LValue()`; the default-constructed `LValue` carries a null `QualType`, which asserts downstream in `QualType::getCommonPtr` (`!isNull() && "Cannot retrieve a NULL type pointer"`). So the ClangIR NYI path, which is meant to be a hard diagnostic, aborts instead for this one site. Measured by BL04 with **both** wrapper nodes — `BacktickInfixExpr` and `UserOperatorExpr` abort identically at the same arm, which is what localizes it to the arm rather than to either node. Neither feature causes it and neither flag is needed to reach it: any `Expr` class missing from that switch, in l-value position, in a CIR build, does the same. Reachable today only in a `CLANG_ENABLE_CIR=ON` build, which is why nobody here had seen it. BL04 fixed the two arms it needed and left the default alone, since making the default diagnose properly is upstream's design call, not ours. *(Added 2026-09-03 by BL04.)*
+
+**Where.** BL04 handoff; `clang/lib/CIR/CodeGen/CIRGenFunction.cpp` `emitLValue` default arm; [cir-backtick-arms](DEVIATIONS.md#cir-backtick-arms) / [codegen-dispatch-sites](unicode-operators/clang/DEVIATIONS.md#codegen-dispatch-sites)
+
+**Closed by.** —
 
 ## 5. Environment and infrastructure
 
 These are not code defects, but each one has already cost an agent a
 mis-diagnosis, and each is recorded in a gate-facts section somewhere.
 
-| ID | Sev | Item | Closed by |
-|----|-----|------|-----------|
-| B31 | P2 | **The inotify watch budget is exhausted by a `cloud-drive-dae` process** (65,045 of 65,536), so 8 `DirectoryWatcherTest.*` cases fail intermittently on every branch. Not ours — the untouched binaries fail identically. Fix needs root: uncomment `/etc/sysctl.d/50-ubuntustudio.conf:6` (`fs.inotify.max_user_watches = 524288`, already present and commented out) and `sudo sysctl --system`. **[re-graded by BL01]** They do **not** fail unconditionally: the dependency is on *free* watches, and with ~155 free all 8 pass — BL01's unfiltered gate was clean on both branches with the budget in exactly that state. So do not budget them as expected failures. Also: there is no `DirectoryWatcherTests` binary; clang's unittests are consolidated into `AllClangUnitTests`. | **CLOSED 2026-08-08 — the maintainer applied the root fix** (uncommented the sysctl line, `sysctl --system`). `fs.inotify.max_user_watches` now reports **524288**; all 8 `DirectoryWatcherTest.*` cases verified passing directly (`AllClangUnitTests --gtest_filter='DirectoryWatcherTest.*'`, 8/8). The latent load-dependent failure mode is gone — 8× headroom over `cloud-drive-dae`'s ~65k hoard. The `GTEST_FILTER` gate-around is obsolete; unfiltered runs stay the standard. **REOPENED 2026-09-03 by BL04 — the root fix does not hold, because the daemon grows into whatever budget it is given.** BL04's first gate failed all 8 with `No space left on device : inotify_add_watch()`; `sysctl` still reported the raised **524288**, and `cloud-drive-dae` was holding **523,774** of it. The 8× headroom argument was wrong: the hoard scaled with the limit. Confirmed environmental the same way as before — all 8 fail identically on the maintainer's untouched `~/src/llvm/build-main` binary. It remains *intermittent*, not deterministic: two later full runs the same day gave 0 failures (the CIR scratch build, unfiltered, `EXIT=0`) and 3 (`build-unicode`, run concurrently with it). So the earlier re-grade stands — still do not budget them as expected failures, still do not filter — but a gate that fails only these 8 is an environment reading, not a regression, and the check is `AllClangUnitTests --gtest_filter='DirectoryWatcherTest.*'` on a build dir your diff never touched. **Not a misbehaving process — `cloud-drive-dae` is the machine's continuous backup**, and watching every file is its job, so its hoard tracks the file count and will grow into any ceiling it is given. 524288 is at least a *plausible* ceiling for this tree rather than the 65536 default that was obviously too small, so the fix was worth making and should not be reverted. What it cannot be is a *guarantee*: with a legitimate consumer sized to the filesystem, free watches stay a shared, load-dependent resource, and these 8 tests are the only thing in `check-clang` that competes for it. Treat that as a standing condition of the environment, not an open defect to design around — the re-grade stands (never filter, never budget as expected failures), and a gate whose only failures are these 8 is an environment reading. Raising the ceiling again is the lever if it recurs, and it needs root. |
-| B32 | P2 | **`CLANG_EXECUTABLE_VERSION` was set to `24-backtick` / `23-backtick`** in both backtick build dirs on 2026-08-02, and two tests assert on the driver binary's basename: `Analysis/scan-build/cxx-name.test` and `Driver/hip-gz-options.hip`. Proven environmental — the stale pre-edit binaries pass, the identically-sourced `clang-*-backtick` fail. Either revert the setting or add both tests to the backtick track's known-failures list. Both Unicode build dirs are plain `24`. | **BL01 — fixed.** Reverted to `24`/`23`; 2-edge rebuild; both tests verified failing before and passing after; the orphaned `clang-*-backtick` binaries deleted. |
-| B33 | P3 | **A stray 2018 `/home/sdowney/src/.clang-format`**, outside any repo, is picked up by clang-format walking up the tree and fails `Format/dump-config-objc-stdin.m` on `backtick-23` only. Documented as a known failure; do not "fix" the file. | **BL01 — documented, no action.** Confirmed as the *only* remaining failure on `backtick-23`, and absent on `backtick-trunk`. `CLAUDE.md`'s known-failure section rewritten, which previously implied it applied to every branch. |
-| B34 | P3 | **GCC's libstdc++ is not built** in `gcc-backtick-build`, so no G-test can link and run. Add `make -j18 all-target-libstdc++-v3` if one ever needs to. | **BL01 — recorded, no action.** Recipe added to `ops/gcc/PLAN.md`'s new gate-facts section, with the `cc1plus`-not-`xg++` fact and the B13 pin. |
+### inotify-watch-budget
+
+**Formerly:** `B31`. **Severity:** P2.
+
+**Item.** **The inotify watch budget is exhausted by a `cloud-drive-dae` process** (65,045 of 65,536), so 8 `DirectoryWatcherTest.*` cases fail intermittently on every branch. Not ours — the untouched binaries fail identically. Fix needs root: uncomment `/etc/sysctl.d/50-ubuntustudio.conf:6` (`fs.inotify.max_user_watches = 524288`, already present and commented out) and `sudo sysctl --system`. **[re-graded by BL01]** They do **not** fail unconditionally: the dependency is on *free* watches, and with ~155 free all 8 pass — BL01's unfiltered gate was clean on both branches with the budget in exactly that state. So do not budget them as expected failures. Also: there is no `DirectoryWatcherTests` binary; clang's unittests are consolidated into `AllClangUnitTests`.
+
+**Closed by.** **CLOSED 2026-08-08 — the maintainer applied the root fix** (uncommented the sysctl line, `sysctl --system`). `fs.inotify.max_user_watches` now reports **524288**; all 8 `DirectoryWatcherTest.*` cases verified passing directly (`AllClangUnitTests --gtest_filter='DirectoryWatcherTest.*'`, 8/8). The latent load-dependent failure mode is gone — 8× headroom over `cloud-drive-dae`'s ~65k hoard. The `GTEST_FILTER` gate-around is obsolete; unfiltered runs stay the standard. **REOPENED 2026-09-03 by BL04 — the root fix does not hold, because the daemon grows into whatever budget it is given.** BL04's first gate failed all 8 with `No space left on device : inotify_add_watch()`; `sysctl` still reported the raised **524288**, and `cloud-drive-dae` was holding **523,774** of it. The 8× headroom argument was wrong: the hoard scaled with the limit. Confirmed environmental the same way as before — all 8 fail identically on the maintainer's untouched `~/src/llvm/build-main` binary. It remains *intermittent*, not deterministic: two later full runs the same day gave 0 failures (the CIR scratch build, unfiltered, `EXIT=0`) and 3 (`build-unicode`, run concurrently with it). So the earlier re-grade stands — still do not budget them as expected failures, still do not filter — but a gate that fails only these 8 is an environment reading, not a regression, and the check is `AllClangUnitTests --gtest_filter='DirectoryWatcherTest.*'` on a build dir your diff never touched. **Not a misbehaving process — `cloud-drive-dae` is the machine's continuous backup**, and watching every file is its job, so its hoard tracks the file count and will grow into any ceiling it is given. 524288 is at least a *plausible* ceiling for this tree rather than the 65536 default that was obviously too small, so the fix was worth making and should not be reverted. What it cannot be is a *guarantee*: with a legitimate consumer sized to the filesystem, free watches stay a shared, load-dependent resource, and these 8 tests are the only thing in `check-clang` that competes for it. Treat that as a standing condition of the environment, not an open defect to design around — the re-grade stands (never filter, never budget as expected failures), and a gate whose only failures are these 8 is an environment reading. Raising the ceiling again is the lever if it recurs, and it needs root.
+
+### clang-executable-version
+
+**Formerly:** `B32`. **Severity:** P2.
+
+**Item.** **`CLANG_EXECUTABLE_VERSION` was set to `24-backtick` / `23-backtick`** in both backtick build dirs on 2026-08-02, and two tests assert on the driver binary's basename: `Analysis/scan-build/cxx-name.test` and `Driver/hip-gz-options.hip`. Proven environmental — the stale pre-edit binaries pass, the identically-sourced `clang-*-backtick` fail. Either revert the setting or add both tests to the backtick track's known-failures list. Both Unicode build dirs are plain `24`.
+
+**Closed by.** **BL01 — fixed.** Reverted to `24`/`23`; 2-edge rebuild; both tests verified failing before and passing after; the orphaned `clang-*-backtick` binaries deleted.
+
+### stray-clang-format-config
+
+**Formerly:** `B33`. **Severity:** P3.
+
+**Item.** **A stray 2018 `/home/sdowney/src/.clang-format`**, outside any repo, is picked up by clang-format walking up the tree and fails `Format/dump-config-objc-stdin.m` on `backtick-23` only. Documented as a known failure; do not "fix" the file.
+
+**Closed by.** **BL01 — documented, no action.** Confirmed as the *only* remaining failure on `backtick-23`, and absent on `backtick-trunk`. `CLAUDE.md`'s known-failure section rewritten, which previously implied it applied to every branch.
+
+### gcc-libstdcxx-build
+
+**Formerly:** `B34`. **Severity:** P3.
+
+**Item.** **GCC's libstdc++ is not built** in `gcc-backtick-build`, so no G-test can link and run. Add `make -j18 all-target-libstdc++-v3` if one ever needs to.
+
+**Closed by.** **BL01 — recorded, no action.** Recipe added to `ops/gcc/PLAN.md`'s new gate-facts section, with the `cc1plus`-not-`xg++` fact and the [gcc-trunk-pin](#gcc-trunk-pin) pin.
 
 ## 6. Not defects — open design decisions
 
 Recorded here only so this file is a complete index. Each is measured, has a
 recommendation, and needs an author's decision, not an implementer's:
 
-- **DEV-U15** — a prefix use finds a two-parameter operator through its
+- **[prefix-arity-selection](unicode-operators/clang/DEVIATIONS.md#prefix-arity-selection)** — a prefix use finds a two-parameter operator through its
   default argument. Keep and document, or reinstate [over.oper]p8.
-- **DEV-U16** — member versus non-member operand sequencing, decided by
+- **[operand-sequencing](unicode-operators/clang/DEVIATIONS.md#operand-sequencing)** — member versus non-member operand sequencing, decided by
   overload resolution. CWG question.
-- **DEV-U06** — static member user operators, currently rejected with no
+- **[over-oper-restrictions](unicode-operators/clang/DEVIATIONS.md#over-oper-restrictions)** — static member user operators, currently rejected with no
   design guidance.
 - **U§13** — fold expressions over the user-infix level, to be answered once
   for both features.
-- **U8 / DEV-U09** — the Itanium first-class `<operator-name>`, and the
+- **[operator-mangling](../docs/unicode-operators.md#operator-mangling) / [msvc-mangling](unicode-operators/clang/DEVIATIONS.md#msvc-mangling)** — the Itanium first-class `<operator-name>`, and the
   Microsoft ABI, which has no production to borrow.
-- **DEV-U23 / U21** — postfix operators, deferred with a measured account.
+- **[postfix-operators](unicode-operators/clang/DEVIATIONS.md#postfix-operators) / U21** — postfix operators, deferred with a measured account.
 - **U§6** — owes a sixth worked example (`⊖a ⊞ 2 * ⊖b`), evidenced in the
   tree and not yet written into the design.
 
@@ -127,23 +452,28 @@ that instead, and its §"Coverage" table maps every open row to a step.
 Kept below because the severity reasoning is still true and still useful
 when two items compete for one agent:
 
-**BL01 (`B31`–`B34`) first**, ahead of everything. B31+B32 inject 10 spurious
+**BL01 — the four environment rows,
+[inotify-watch-budget](#inotify-watch-budget),
+[clang-executable-version](#clang-executable-version),
+[stray-clang-format-config](#stray-clang-format-config) and
+[gcc-libstdcxx-build](#gcc-libstdcxx-build) — first**, ahead of everything.
+The first two inject 10 spurious
 failures into every backtick gate, and until they are gone each step's Status
 row spends a paragraph explaining failures that are not real.
 
-**B01** next among the substantive items: it is still the only place a paper
+**[type-slot-implementation](#type-slot-implementation)** next among the substantive items: it is still the only place a paper
 says something the implementation does not do, and D4307 is the nearer paper.
 
-**B14 outranks B01 on evidence**, though not on paper-truth. It was written
+**[unicode-analyzer-sites](#unicode-analyzer-sites) outranks [type-slot-implementation](#type-slot-implementation) on evidence**, though not on paper-truth. It was written
 here as a suspicion; it is now three measured defects including a double
-destructor. If the two ever compete for one agent, B14 is the more urgent.
-B15 goes with it — the same class of unknown, though a smaller one than this
+destructor. If the two ever compete for one agent, [unicode-analyzer-sites](#unicode-analyzer-sites) is the more urgent.
+[clangir-unicode-arms](#clangir-unicode-arms) goes with it — the same class of unknown, though a smaller one than this
 file first claimed.
 
-**B25** is independent of everything and should go upstream on its own; it
+**[increment-decrement-mangling](#increment-decrement-mangling)** is independent of everything and should go upstream on its own; it
 can run at any time.
 
-The rest batch: **B03, B04, B06, B08 and B35** are one sitting on the
-backtick branches; **B16, B17 and B21** are one sitting on the Unicode
-branches. **B24 is not in that first batch** — it was listed here as cheap
+The rest batch: **[c-mode-tokenization](#c-mode-tokenization), [backtick-source-range](#backtick-source-range), [dead-nesting-diagnostic](#dead-nesting-diagnostic), [template-ast-print-test](#template-ast-print-test) and [libclang-cursor-arm](#libclang-cursor-arm)** are one sitting on the
+backtick branches; **[lldb-hunk-verification](#lldb-hunk-verification), [code-completion-priority](#code-completion-priority) and [ucd-input-manifest](#ucd-input-manifest)** are one sitting on the Unicode
+branches. **[inner-call-source-range](#inner-call-source-range) is not in that first batch** — it was listed here as cheap
 and it is not; see its row.

@@ -1,4 +1,4 @@
-# null-return-suppression — `B37`: the analyzer's null-return suppression, on all four branches
+# null-return-suppression — [`null-return-suppression`](../../BACKLOG.md#null-return-suppression): the analyzer's null-return suppression, on all four branches
 
 **Goal.** Both wrapper nodes defeat the static analyzer's null-return
 suppression, so the operator form reports false positives the identically
@@ -7,7 +7,7 @@ deliberately did not fix it, because fixing it **changes the premise of a test
 F24 wrote**.
 
 **Depends on:** nothing. Independent of every other step.
-**Closes:** `B37`.
+**Closes:** [`null-return-suppression`](../../BACKLOG.md#null-return-suppression).
 **Refs:** `ops/backlog/handoffs/BL03-analyzer-useroperator.handoff.md`;
 `clang/lib/StaticAnalyzer/Core/BugReporterVisitors.cpp:2365`;
 `clang/test/Analysis/backtick-infix.cpp`;

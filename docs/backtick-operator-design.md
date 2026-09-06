@@ -31,7 +31,7 @@ a `f` b `g` c           // g(f(a, b), c)        // left-associative
   operators attach symmetrically: `-x `f` -y` == `f(-x, -y)`.
 - **Operator slot (between backticks):** an arbitrary expression, parsed
   as an *assignment-expression* (no top-level comma). Nested backticks in
-  the operator slot must be parenthesised (see D3).
+  the operator slot must be parenthesised (see [nesting-vs-chaining](#nesting-vs-chaining)).
 - **Desugaring:** a plain call expression, built in Sema/the front end so
   overload resolution, ADL, templates, SFINAE, constexpr, and codegen are
   all inherited rather than reimplemented.
@@ -40,32 +40,275 @@ a `f` b `g` c           // g(f(a, b), c)        // left-associative
 
 ## 3. Decisions log
 
-| ID | Decision | Status | Rationale |
-|----|----------|--------|-----------|
-| D1 | Left-associative | **Resolved** | `(x `op` y) `op` z`; matches reading order; fewest surprises for chaining. |
-| D2 | Precedence vs. unary prefix | **Resolved — Option A (§4)** | Highest-precedence *binary* operator (looser than unary). `-x `f` -y` -> `f(-x, -y)` is symmetric, consistent with every other binary operator, and the most teachable; an implementor concurred. The rejected alternative (tighter than unary) made backtick the only operator floating a leading prefix out of its operand. |
-| D3 | Nesting requires parentheses; the bare form is a chain | **Resolved — reframed (§17.1)** | The slot's open/close are the same token, so the first interior backtick closes it: the slot can never hold a bare backtick, and "bare nesting" is *token-identical* to a D1 left-assoc chain (`x `f `g` h` y` == `h(f(x,g),y)`). It therefore cannot be diagnosed without contradicting D1. To nest, parenthesize — `x `(f `g` h)` y` == `(g(f,h))(x,y)`; without parens you get a chain — ordinary operator grouping, the same answer-changing-but-undiagnosed regroup as non-associative binary minus (`a-b-c` ≠ `a-(b-c)`). The original "produces a parse error" wording was impossible; this reclassifies DEV-04 / DEV-G04 from deferred-enforcement to no-enforcement-needed. |
-| D4 | Operator slot = assignment-expression | **Resolved** | Excludes a top-level comma operator in the operator slot; operands and the operator slot all read as call arguments would. |
-| D5 | Gated behind a language flag | **Resolved** | Non-standard during proposal; keeps existing valid programs unchanged and makes the feature opt-in. (A standardized form drops the gate; the flag is the prototype vehicle.) |
-| D6 | Desugar to a call expression for the MVP | **Resolved** | Inherits overload resolution / ADL / templates / constexpr / codegen with no new node. Enough for a working, testable compiler. |
-| D7 | Source-fidelity AST wrapper deferred to phase 2 | **Resolved** | A thin transparent node (delegating type / value category / constexpr / codegen / instantiation to the wrapped call) is purely additive and lands after the MVP, once people are kicking the tires. Enables `-ast-print` to round-trip backtick syntax. Does not affect clang-format (token-based) or the GCC front end. |
-| D8 | clang-format break policy | **Resolved** | Hard-forbid breaks adjacent to the backticks (after open, before close); allow breaks inside the operator slot but mildly disfavor them with a small split-penalty bump — slightly stickier than a normal expression, not a no-break zone. |
-| D9 | No braced-init-list operands | **Resolved** | Operands are cast-expressions (already implied by D2's grammar), which excludes braced-init-lists; the slot is never a list (not callable). A brace operand `x `f` {1,2}` would mean `f(x, {1,2})` — meaningful as a call argument, *not* meaningless — but supporting it needs initializer-clause operand grammar, and a leading-brace LHS collides with block syntax. Excluded for the MVP; write the call directly. Revisitable. |
-| D10 | Coexists with a backtick keyword-escape | **Resolved (mechanism); scope open (§10)** | Backtick stays one punctuator (no lexer identifier synthesis); the parser disambiguates by position — operand / primary / declarator-id position is a keyword-escaped identifier, post-operand position is the infix operator. Positions are mutually exclusive (same strategy as `*`, `&`, `<`). The escape yields a normal identifier, so lookup / mangling / linkage / ABI are unchanged. Details and examples in §12. |
-| D11 | Backtick is the sole spelling; no alternative/digraph spelling | **Proposed — disfavored alternatives recorded (§13)** | Markup friction (Markdown inline code) and keyboard ergonomics are real but minor: CommonMark's multi-backtick span already makes inline prose expressible and fenced blocks cover code samples (capability, not just ergonomics, is already there). A second spelling doubles teaching / clang-format / `-ast-print` / tooling surface, fragments the idiom, and swims against the trigraph-removed (C++17) / digraph-vestigial trend. If EWG ever forces one, an asymmetric self-delimiting pair (`\< … \>`) is the front-runner because it would *also* retire §5 and D3 — but that is a different operator, not a backtick alias. Full analysis and rebuttals in §13. |
-| D12 | Orthogonal to P2011 `\|>` (pipeline-rewrite, "pizza"); does not replace it | **Resolved** | Both bottom out in a call and the 2-arg case overlaps, but backtick is *symmetric binary infix* desugaring to an ordinary overload-resolved call, while `\|>` is a *non-overloadable syntactic rewrite* prepending the left operand to an arbitrary-arity call. Different shape, arity, precedence, mechanism, and idiom; they compose rather than compete. Backtick also deliberately declines the `\|>` spelling (§13.3 / §14.3) so both can coexist in one program. Full analysis in §15. |
-| D13 | Scope: pure core-language proposal; no standard-library additions | **Resolved** | Standardizing pipeline/composition helpers (`pipe`, `then`, `mbind`, …) would route the paper through LEWG as well as EWG/CWG — two tracks, the time-and-motion cost of D11 rebuttal 7 doubled. The operator needs no library to function; the §16 helpers are each a few lines of ordinary user code. Keep this paper language-only (EWG/CWG), target C++29, and defer any standard helpers to a companion library paper once usage experience shows which earn it. §16 carries them as *motivation*, not proposal. |
-| D14 | Both backtick usages (infix operator + keyword-escape) proposed jointly, in one paper | **Resolved** | Same lexical token (D10), same committee (EWG/CWG). Joint proposal *conserves EWG attention* — one "what does backtick mean" discussion, not two — and prevents the two uses being designed into *contradiction* if pursued independently (punctuator vs. lexer-synthesized identifier; divergent disambiguation). Consistent with D13, not contrary to it: the rule is **bundle what shares a design surface within one committee; split what is separable across committees** — so the two language uses bundle, the library layer (D13) splits off to LEWG. Resolves the §10 scope question. |
-| D15 | Evaluation order is the call's; operand order unspecified | **Resolved (§17.2)** | `x `f` y` is defined as `f(x, y)` and adds *no* evaluation-order rule: operand order is **unspecified** (the same [expr.call] situation that defeated past LTR/RTL proposals), and since C++17 the callee/slot is sequenced *before* both operands. Source order `(x, slot, y)` is therefore not the evaluation order `(slot, then {x, y})`. Falls out of "it is just the call." |
-| D16 | A type-name in the slot yields construction | **Resolved (§17.3)** | The slot is any callable expression and a type-name is callable, so `x `T` y` == `T(x, y)` (functional-style construction; CTAD applies). Always an *expression* (slot is an assignment-expression, D4; result is an expression by construction), so no most-vexing-parse declaration reading can arise, and no collision with the §12 escape (different grammatical position). Blessed as a consequence, not a special rule. |
-
 Backtick is available because it has no current meaning in C++ source
 outside string/character literals and raw-string delimiters, all of which
 are lexed before the punctuator stage and are therefore unaffected.
 
+Each decision is headed by its **slug** and is therefore a Markdown anchor;
+every cross-reference links to it. `Formerly:` carries the serial number the
+entry used to have, because the completed tracks' handoffs still say it and
+are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
+
+### chaining-associativity
+
+**Formerly:** `D1`.
+
+**Question.** How does a chain — ``x `f` y `g` z`` — group?
+
+**Status.** **Resolved**
+
+**Decision.** Left-associative
+
+**Why.** `(x `op` y) `op` z`; matches reading order; fewest surprises for chaining.
+
+**Decided by.** The design author.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### precedence-level
+
+**Formerly:** `D2`.
+
+**Question.** Where does the infix backtick sit in the precedence table, and how does it bind against unary prefix?
+
+**Status.** **Resolved — Option A (§4)**
+
+**Decision.** **Option A (§4)** — the highest-precedence *binary* operator: tighter than `*`, looser than unary prefix; operands are cast-expressions.
+
+**Why.** Highest-precedence *binary* operator (looser than unary). `-x `f` -y` -> `f(-x, -y)` is symmetric, consistent with every other binary operator, and the most teachable; an implementor concurred. The rejected alternative (tighter than unary) made backtick the only operator floating a leading prefix out of its operand.
+
+**Decided by.** The design author.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### nesting-vs-chaining
+
+**Formerly:** `D3`.
+
+**Question.** What does a backtick inside a backtick slot mean, and can the bare form be diagnosed?
+
+**Status.** **Resolved — reframed (§17.1)**
+
+**Decision.** Nesting requires parentheses; the bare form is a chain
+
+**Why.** The slot's open/close are the same token, so the first interior backtick closes it: the slot can never hold a bare backtick, and "bare nesting" is *token-identical* to a [chaining-associativity](#chaining-associativity) left-assoc chain (`x `f `g` h` y` == `h(f(x,g),y)`). It therefore cannot be diagnosed without contradicting [chaining-associativity](#chaining-associativity). To nest, parenthesize — `x `(f `g` h)` y` == `(g(f,h))(x,y)`; without parens you get a chain — ordinary operator grouping, the same answer-changing-but-undiagnosed regroup as non-associative binary minus (`a-b-c` ≠ `a-(b-c)`). The original "produces a parse error" wording was impossible; this reclassifies [bare-nesting-detection](../ops/DEVIATIONS.md#bare-nesting-detection) / [gcc-bare-nesting-detection](../ops/gcc/DEVIATIONS.md#gcc-bare-nesting-detection) from deferred-enforcement to no-enforcement-needed.
+
+**Decided by.** The design author.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### slot-grammar
+
+**Formerly:** `D4`.
+
+**Question.** Which grammar production is the operator slot?
+
+**Status.** **Resolved**
+
+**Decision.** Operator slot = assignment-expression
+
+**Why.** Excludes a top-level comma operator in the operator slot; operands and the operator slot all read as call arguments would.
+
+**Decided by.** The design author.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### feature-gating
+
+**Formerly:** `D5`.
+
+**Question.** Is the feature on by default, or behind a flag?
+
+**Status.** **Resolved**
+
+**Decision.** Gated behind a language flag
+
+**Why.** Non-standard during proposal; keeps existing valid programs unchanged and makes the feature opt-in. (A standardized form drops the gate; the flag is the prototype vehicle.)
+
+**Decided by.** The design author.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### desugaring-target
+
+**Formerly:** `D6`.
+
+**Question.** What does ``x `f` y`` desugar to, and in which layer?
+
+**Status.** **Resolved**
+
+**Decision.** Desugar to a call expression for the MVP
+
+**Why.** Inherits overload resolution / ADL / templates / constexpr / codegen with no new node. Enough for a working, testable compiler.
+
+**Decided by.** The design author.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### source-fidelity-node
+
+**Formerly:** `D7`.
+
+**Question.** Does the AST record that backtick syntax was written, and when is that node built?
+
+**Status.** **Resolved**
+
+**Decision.** Source-fidelity AST wrapper deferred to phase 2
+
+**Why.** A thin transparent node (delegating type / value category / constexpr / codegen / instantiation to the wrapped call) is purely additive and lands after the MVP, once people are kicking the tires. Enables `-ast-print` to round-trip backtick syntax. Does not affect clang-format (token-based) or the GCC front end.
+
+**Decided by.** The design author.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### format-break-policy
+
+**Formerly:** `D8`.
+
+**Question.** Where may clang-format break a backtick expression?
+
+**Status.** **Resolved**
+
+**Decision.** No break adjacent to either backtick (after the open, before the close); breaks allowed inside the operator slot but mildly disfavored by a small split-penalty bump.
+
+**Why.** Hard-forbid breaks adjacent to the backticks (after open, before close); allow breaks inside the operator slot but mildly disfavor them with a small split-penalty bump — slightly stickier than a normal expression, not a no-break zone.
+
+**Decided by.** The design author.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### braced-init-operands
+
+**Formerly:** `D9`.
+
+**Question.** May an operand be a braced-init-list?
+
+**Status.** **Resolved**
+
+**Decision.** No braced-init-list operands
+
+**Why.** Operands are cast-expressions (already implied by [precedence-level](#precedence-level)'s grammar), which excludes braced-init-lists; the slot is never a list (not callable). A brace operand `x `f` {1,2}` would mean `f(x, {1,2})` — meaningful as a call argument, *not* meaningless — but supporting it needs initializer-clause operand grammar, and a leading-brace LHS collides with block syntax. Excluded for the MVP; write the call directly. Revisitable.
+
+**Decided by.** The design author.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### keyword-escape-coexistence
+
+**Formerly:** `D10`.
+
+**Question.** Can one backtick token serve both the infix operator and a keyword escape, and what disambiguates them?
+
+**Status.** **Resolved (mechanism); scope open (§10)**
+
+**Decision.** Coexists with a backtick keyword-escape
+
+**Why.** Backtick stays one punctuator (no lexer identifier synthesis); the parser disambiguates by position — operand / primary / declarator-id position is a keyword-escaped identifier, post-operand position is the infix operator. Positions are mutually exclusive (same strategy as `*`, `&`, `<`). The escape yields a normal identifier, so lookup / mangling / linkage / ABI are unchanged. Details and examples in §12.
+
+**Decided by.** Undecided — recorded as proposed, with the alternatives in the section named under Status.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### alternative-spellings
+
+**Formerly:** `D11`.
+
+**Question.** Is backtick the sole spelling, or is an alternative or digraph offered alongside it?
+
+**Status.** **Proposed — disfavored alternatives recorded (§13)**
+
+**Decision.** Backtick is the sole spelling; no alternative/digraph spelling
+
+**Why.** Markup friction (Markdown inline code) and keyboard ergonomics are real but minor: CommonMark's multi-backtick span already makes inline prose expressible and fenced blocks cover code samples (capability, not just ergonomics, is already there). A second spelling doubles teaching / clang-format / `-ast-print` / tooling surface, fragments the idiom, and swims against the trigraph-removed (C++17) / digraph-vestigial trend. If EWG ever forces one, an asymmetric self-delimiting pair (`\< … \>`) is the front-runner because it would *also* retire §5 and [nesting-vs-chaining](#nesting-vs-chaining) — but that is a different operator, not a backtick alias. Full analysis and rebuttals in §13.
+
+**Decided by.** Undecided — recorded as proposed, with the alternatives in the section named under Status.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### pipeline-operator-relation
+
+**Formerly:** `D12`.
+
+**Question.** How does this relate to P2011's `|>` — competitor or complement?
+
+**Status.** **Resolved**
+
+**Decision.** Orthogonal to P2011 `|>` (pipeline-rewrite, "pizza"); does not replace it
+
+**Why.** Both bottom out in a call and the 2-arg case overlaps, but backtick is *symmetric binary infix* desugaring to an ordinary overload-resolved call, while `|>` is a *non-overloadable syntactic rewrite* prepending the left operand to an arbitrary-arity call. Different shape, arity, precedence, mechanism, and idiom; they compose rather than compete. Backtick also deliberately declines the `|>` spelling (§13.3 / §14.3) so both can coexist in one program. Full analysis in §15.
+
+**Decided by.** The design author.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### library-scope
+
+**Formerly:** `D13`.
+
+**Question.** Does the proposal carry standard-library additions?
+
+**Status.** **Resolved**
+
+**Decision.** Scope: pure core-language proposal; no standard-library additions
+
+**Why.** Standardizing pipeline/composition helpers (`pipe`, `then`, `mbind`, …) would route the paper through LEWG as well as EWG/CWG — two tracks, the time-and-motion cost of [alternative-spellings](#alternative-spellings) rebuttal 7 doubled. The operator needs no library to function; the §16 helpers are each a few lines of ordinary user code. Keep this paper language-only (EWG/CWG), target C++29, and defer any standard helpers to a companion library paper once usage experience shows which earn it. §16 carries them as *motivation*, not proposal.
+
+**Decided by.** The design author.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### paper-bundling
+
+**Formerly:** `D14`.
+
+**Question.** Do the infix operator and the keyword escape travel in one paper or two?
+
+**Status.** **Resolved**
+
+**Decision.** Both backtick usages (infix operator + keyword-escape) proposed jointly, in one paper
+
+**Why.** Same lexical token ([keyword-escape-coexistence](#keyword-escape-coexistence)), same committee (EWG/CWG). Joint proposal *conserves EWG attention* — one "what does backtick mean" discussion, not two — and prevents the two uses being designed into *contradiction* if pursued independently (punctuator vs. lexer-synthesized identifier; divergent disambiguation). Consistent with [library-scope](#library-scope), not contrary to it: the rule is **bundle what shares a design surface within one committee; split what is separable across committees** — so the two language uses bundle, the library layer ([library-scope](#library-scope)) splits off to LEWG. Resolves the §10 scope question.
+
+**Decided by.** The design author.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### evaluation-order
+
+**Formerly:** `D15`.
+
+**Question.** In what order are the operands and the slot evaluated?
+
+**Status.** **Resolved (§17.2)**
+
+**Decision.** Evaluation order is the call's; operand order unspecified
+
+**Why.** `x `f` y` is defined as `f(x, y)` and adds *no* evaluation-order rule: operand order is **unspecified** (the same [expr.call] situation that defeated past LTR/RTL proposals), and since C++17 the callee/slot is sequenced *before* both operands. Source order `(x, slot, y)` is therefore not the evaluation order `(slot, then {x, y})`. Falls out of "it is just the call."
+
+**Decided by.** The design author.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### type-name-slot
+
+**Formerly:** `D16`.
+
+**Question.** What does a type-name in the operator slot mean?
+
+**Status.** **Resolved (§17.3)**
+
+**Decision.** A type-name in the slot yields construction
+
+**Why.** The slot is any callable expression and a type-name is callable, so `x `T` y` == `T(x, y)` (functional-style construction; CTAD applies). Always an *expression* (slot is an assignment-expression, [slot-grammar](#slot-grammar); result is an expression by construction), so no most-vexing-parse declaration reading can arise, and no collision with the §12 escape (different grammatical position). Blessed as a consequence, not a special rule.
+
+**Decided by.** The design author.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+
 ---
 
-## 4. Precedence (D2 — resolved: Option A)
+## 4. Precedence ([precedence-level](#precedence-level) — resolved: Option A)
 
 Both options were left-associative and desugared to the same call; they
 differed only in how a **prefix operator on an operand** binds. Option A
@@ -83,7 +326,7 @@ backtick-expression:
     backtick-expression ` operator-expression ` cast-expression
 
 operator-expression:
-    assignment-expression       // nested backticks parenthesised (D3)
+    assignment-expression       // nested backticks parenthesised (nesting-vs-chaining)
 ```
 
 Behaviour:
@@ -145,7 +388,7 @@ for `>` inside template-argument lists:
   `GreaterThanIsOperatorScope` and the `GreaterThanIsOperator` parameter
   of `getBinOpPrecedence`. Add a `BacktickIsOperator` flag: false while
   parsing the operator slot, restored to true inside nested parens/brackets
-  so D3's parenthesised nesting works.
+  so [nesting-vs-chaining](#nesting-vs-chaining)'s parenthesised nesting works.
 - **GCC:** model on `parser->greater_than_is_operator_p`; add
   `backtick_is_operator_p`.
 
@@ -156,7 +399,7 @@ for `>` inside template-argument lists:
 1. **Lexer.** Add `PUNCTUATOR(backtick, "`")` to
    `clang/include/clang/Basic/TokenKinds.def`; add `case '`':` in the
    punctuator switch in `Lexer::LexTokenInternal`
-   (`clang/lib/Lex/Lexer.cpp`). Only mint the token when D5's flag is on.
+   (`clang/lib/Lex/Lexer.cpp`). Only mint the token when [feature-gating](#feature-gating)'s flag is on.
 2. **Precedence / level.** New top level in `prec::Level`
    (`OperatorPrecedence.h`); thread the `BacktickIsOperator` flag through
    `getBinOpPrecedence`.
@@ -173,21 +416,21 @@ for `>` inside template-argument lists:
    open/close paren locations (the inner `CallExpr`'s LParen/RParen), which is
    enough for source ranges and lets the phase-2 wrapper's pretty-printer
    reconstruct the syntax from structure (LHS, callee, RHS) rather than from
-   stored locations (DEV-05). Dedicated backtick-location storage is needed
+   stored locations ([backtick-source-locations](../ops/DEVIATIONS.md#backtick-source-locations)). Dedicated backtick-location storage is needed
    only if a diagnostic must point at an individual backtick token.
-5. **Gating** (D5). A `LANGOPT` in `LangOptions.def` — use the current 5-arg
+5. **Gating** ([feature-gating](#feature-gating)). A `LANGOPT` in `LangOptions.def` — use the current 5-arg
    form `LANGOPT(Name, Bits, Default, Compatibility, Description)`, e.g.
    `LANGOPT(Backtick, 1, 0, NotCompatible, "backtick operator")`; the old
-   4-arg form no longer compiles (DEV-02). The driver/`-cc1` flag lives in
+   4-arg form no longer compiles ([langopt-macro-arity](../ops/DEVIATIONS.md#langopt-macro-arity)). The driver/`-cc1` flag lives in
    `clang/include/clang/Options/Options.td` — the file moved there from
-   `.../Driver/Options.td` (DEV-01). Add marshalling in `CompilerInvocation.cpp`, but
+   `.../Driver/Options.td` ([options-td-path](../ops/DEVIATIONS.md#options-td-path)). Add marshalling in `CompilerInvocation.cpp`, but
    note marshalling alone does **not** forward the flag into the `-cc1` argv:
    `Clang.cpp::ConstructJob()` needs an explicit
    `Args.addLastArg(CmdArgs, OPT_fbacktick, OPT_fno_backtick)` (as
    `-fsized-deallocation` / `-freflection` do) for driver-level visibility
-   (DEV-03).
+   ([driver-flag-forwarding](../ops/DEVIATIONS.md#driver-flag-forwarding)).
 6. **Diagnostics.** Empty operator slot (` `` `), unterminated backtick,
-   D3 ambiguity (bare nested backtick). Callee/arity/constexpr errors fall
+   [nesting-vs-chaining](#nesting-vs-chaining) ambiguity (bare nested backtick). Callee/arity/constexpr errors fall
    out of `BuildCallExpr`.
 7. **Tests.** Lexer token kind; parser `-ast-dump` (shows the desugared
    call); precedence/associativity mixing with `*`, unary, `.`, `?:`; Sema
@@ -210,7 +453,7 @@ Work items (`clang/lib/Format/`):
   recognise the matched pair in `annotate()`; set spacing in
   `spaceRequiredBefore` / `spaceRequiredBetween` (proposed canonical style:
   spaces outside the pair, hug the operator inside — `x `f` y`).
-- **Break policy (D8):** hard-forbid a break after the open backtick and
+- **Break policy ([format-break-policy](#format-break-policy)):** hard-forbid a break after the open backtick and
   before the close backtick via `CanBreakBefore = false` in
   `canBreakBefore`. Inside the operator slot, breaks are allowed but mildly
   disfavored — a small additive bump to `SplitPenalty` on slot-interior
@@ -254,19 +497,19 @@ and port.
   for EWG/CWG. A desugar-only Clang MVP (phase 1, §11) is sufficient on its
   own; the AST wrapper and a Compiler Explorer deployment strengthen the
   story but are not blocking for Brazil.
-- Document **D2's resolution** and the rejected alternative (the
+- Document **[precedence-level](#precedence-level)'s resolution** and the rejected alternative (the
   `-a `f` -b` asymmetry) in §4 as design rationale — show EWG the choice was
   deliberate.
-- Document **D3** (parenthesised nesting) and **D4** (operator slot grammar)
+- Document **[nesting-vs-chaining](#nesting-vs-chaining)** (parenthesised nesting) and **[slot-grammar](#slot-grammar)** (operator slot grammar)
   as deliberate restrictions with rationale.
 - Carry this decisions log forward; record each EWG/CWG poll outcome
   against its decision ID.
 - Carry the **anticipated-objections rebuttals** (§18) — wrapper-type
   alternative answered with P0543's own precedent — alongside §13.5's
   spelling rebuttals.
-- Name the D2 precedence level the **user-infix level**, not the backtick
+- Name the [precedence-level](#precedence-level) precedence level the **user-infix level**, not the backtick
   level, and carry a short **informative future-directions appendix**
-  pointing at the Unicode operator sketch (`unicode-operators.md`, its U12):
+  pointing at the Unicode operator sketch (`unicode-operators.md`, its [paper-separation](unicode-operators.md#paper-separation)):
   EWG then has its one operators-and-infix discussion with the whole
   landscape visible, banks the shared decisions (one level, left-assoc,
   desugar-to-call) once, and the follow-on paper inherits them as adopted
@@ -278,13 +521,13 @@ and port.
 
 ## 10. Open questions
 
-- **Scope — Resolved (D14): jointly, one paper.** The infix operator and the
-  keyword-escape share one lexical token (D10), so they are co-designed in a
+- **Scope — Resolved ([paper-bundling](#paper-bundling)): jointly, one paper.** The infix operator and the
+  keyword-escape share one lexical token ([keyword-escape-coexistence](#keyword-escape-coexistence)), so they are co-designed in a
   single paper — to conserve EWG attention (one backtick discussion, not two)
   and to keep two independent designs from contradicting each other. The
   escape stays independently *motivated* (a future-keyword escape hatch; cf.
   Swift `` `class` ``, Rust `r#`) but is not independently *proposed*. Contrast
-  D13: the library layer *is* split off, because it is separable and crosses
+  [library-scope](#library-scope): the library layer *is* split off, because it is separable and crosses
   into LEWG — the rule is bundle-within-a-committee, split-across-committees.
 
 ---
@@ -292,16 +535,16 @@ and port.
 ## 11. Sequencing
 
 - **Phase 1 — MVP (Clang).** Lexer, precedence level, parser hook, Sema
-  desugar to a call (D6), gating flag, tests. Result: `x `op` y` compiles
+  desugar to a call ([desugaring-target](#desugaring-target)), gating flag, tests. Result: `x `op` y` compiles
   and runs identically to `op(x, y)`; `-ast-print` shows the desugared
   call. Enough for people to kick the tires and for the paper's
   implementation-experience section.
-- **Phase 2 — source fidelity (Clang).** Thin transparent AST wrapper (D7)
+- **Phase 2 — source fidelity (Clang).** Thin transparent AST wrapper ([source-fidelity-node](#source-fidelity-node))
   so `-ast-print` round-trips backtick syntax. The wrapper's pretty-printer
   reconstructs the surface form from structure (LHS, callee, RHS); the
   backtick token locations it needs are already the inner `CallExpr`'s
   open/close paren locations, so no separate `SourceLocation` fields are
-  required on the wrapper node (DEV-05). Purely additive; lands once the MVP
+  required on the wrapper node ([backtick-source-locations](../ops/DEVIATIONS.md#backtick-source-locations)). Purely additive; lands once the MVP
   is stable.
 - **Phase 3 — reach.** Compiler Explorer deployment once stable; GCC
   implementation in parallel for the second independent data point.
@@ -315,7 +558,7 @@ can name an entity — the hatch that lets a *future* keyword avoid breaking
 existing code that used that word as an identifier. The two uses coexist;
 this records why and how.
 
-**Mechanism.** Backtick stays a single punctuator token (D6); neither use
+**Mechanism.** Backtick stays a single punctuator token ([desugaring-target](#desugaring-target)); neither use
 synthesizes identifiers in the lexer. The parser disambiguates by
 grammatical position, always one of two mutually-exclusive kinds:
 
@@ -334,7 +577,7 @@ void `new`();        // declarator-id  -> escaped identifier "new"
 `new`(a, b);         // primary        -> call to function "new"
 obj.`delete`();      // after '.'      -> member named "delete"
 x `f` y;             // post-operand   -> infix: f(x, y)
-x `(`new`)` y;       // escaped callee -> new(x, y)   (uses D3 parens)
+x `(`new`)` y;       // escaped callee -> new(x, y)   (uses nesting-vs-chaining parens)
 ```
 
 **Reinforcement.** Inner content also differs — the escape wraps a single
@@ -350,7 +593,7 @@ source-level; external names and ABI unchanged.
 **Costs.** Bounded added context-sensitivity: tentative
 declaration-vs-expression parsing (`TryParseDeclarator` and friends) must
 recognize escapes, and clang-format / tooling must distinguish the two
-uses. The nested keyword-named-callee case reuses D3's parenthesisation, so
+uses. The nested keyword-named-callee case reuses [nesting-vs-chaining](#nesting-vs-chaining)'s parenthesisation, so
 needs no new rule.
 
 **Prior art (escape hatch):** Swift `` `class` ``, Kotlin backtick
@@ -358,7 +601,7 @@ identifiers, F# double-backtick names, Rust `r#` raw identifiers.
 
 ---
 
-## 13. Alternative spellings (considered, disfavored) — D11
+## 13. Alternative spellings (considered, disfavored) — [alternative-spellings](#alternative-spellings)
 
 Backtick is the proposed spelling and the strongly preferred one. This
 section exists so the alternatives are *explored on the record* with the
@@ -400,7 +643,7 @@ alternative spelling at its strongest point.
 ### 13.2 The lexical filter
 
 An alternative is an additional *alternative token* lexed by maximal munch
-(like the existing digraphs), minted only under `-fbacktick` (D5). To be
+(like the existing digraphs), minted only under `-fbacktick` ([feature-gating](#feature-gating)). To be
 unambiguous the two-character sequence must never appear adjacent in a valid
 current program. Three traps a candidate must survive — each has bitten a
 real digraph before:
@@ -419,11 +662,11 @@ real digraph before:
 
 | Spelling | Self-delim? | Lexically clean? | Verdict |
 |----------|-------------|------------------|---------|
-| `\< … \>` | yes | **yes** — `\` is never a token today; `\` first means it can't start a UCN (`\<`/`\>` ≠ `\u`), and not at EOL so no line-splice. No carve-out needed. | **Front-runner if forced.** Asymmetric → retires §5 and D3. |
+| `\< … \>` | yes | **yes** — `\` is never a token today; `\` first means it can't start a UCN (`\<`/`\>` ≠ `\u`), and not at EOL so no line-splice. No carve-out needed. | **Front-runner if forced.** Asymmetric → retires §5 and [nesting-vs-chaining](#nesting-vs-chaining). |
 | `<| … |>` | yes | yes — `|`/`>` can't start a UCN; `<\|`-style theft N/A. One cosmetic edge: `&X::operator<|x` re-munches `operator<` (ill-formed today regardless). | **Blocked:** `|>` is P2011's pipeline-rewrite operator (Revzin); collides with a live proposal. Also reads as "pipe" (F#/OCaml/Elm). |
 | `<\ … \>` | yes | **no** — `<\` munches the `<` of `a<éfoo` (UCN trap #3); needs a `<::`-style carve-out. | Inferior to `\< … \>` for no benefit; reject. |
 | `(\| … \|)` (banana brackets) | yes | yes — `(|`/`|)` not valid adjacent today. | Heavy; Haskell-idiom connotation; reads worse than backtick. |
-| single `\` (`x \op\ y`) | no | yes — stray `\` is ill-formed today. | Visually too light (confusable with escapes); symmetric, so keeps §5 + D3. |
+| single `\` (`x \op\ y`) | no | yes — stray `\` is ill-formed today. | Visually too light (confusable with escapes); symmetric, so keeps §5 + [nesting-vs-chaining](#nesting-vs-chaining). |
 | `<: :>`, `<% %>` | — | — | **Taken** — already digraphs for `[ ] { }`. |
 | `\|: … :\|` / `:\| …` | — | **no** — `\|:` munches `a\| ::b` (`| ::`, trap #2). | Reject. |
 | `$ … $` | no | **no** — `$` is an identifier char under `-fdollars-in-identifiers` (on by default in Clang/GCC); `a$b` already lexes as one identifier. | Reject. |
@@ -435,13 +678,13 @@ real digraph before:
 `\< … \>` is the only alternative that is both lexically bulletproof and
 asymmetric. The asymmetry is not incidental: distinct open/close tokens
 would **eliminate the same-delimiter parsing problem (§5)** — no
-`BacktickIsOperator` flag — and **eliminate D3**, since nesting becomes
+`BacktickIsOperator` flag — and **eliminate [nesting-vs-chaining](#nesting-vs-chaining)**, since nesting becomes
 unambiguous (`x \<f \<g\> h\> y` parses with no parentheses). That is a
 genuinely *better-engineered* operator than the backtick.
 
 It is therefore important to state plainly: adopting `\< … \>` would not be
 a backtick *alias* — it would be choosing a *different primary spelling*.
-The decision in D11 is to keep backtick as the single spelling, not to ship
+The decision in [alternative-spellings](#alternative-spellings) is to keep backtick as the single spelling, not to ship
 backtick *plus* an alias.
 
 ### 13.5 Rebuttals (pre-loaded for EWG)
@@ -480,7 +723,7 @@ Applicable to *any* alternative spelling:
 No alternative spelling is proposed, and the decision is taken *now* rather
 than deferred — because (rebuttal 7) deferring it is nearly as much
 committee work as settling it, so there is no option-value reason to leave
-it open. Backtick is the sole spelling (D11). The analysis is recorded so
+it open. Backtick is the sole spelling ([alternative-spellings](#alternative-spellings)). The analysis is recorded so
 that, if EWG raises the Markdown/keyboard ergonomics, the answer is ready:
 capability already exists, a second spelling is a standing tax against the
 trend, and the only alternative worth considering (`\< … \>`) is not an
@@ -637,7 +880,7 @@ program.
 - **Backtick** — `x `f` y` desugars to `f(x, y)`. Symmetric *binary infix*
   application of a callable: the **callee sits between two operands**, and the
   result is an ordinary call, so overload resolution, ADL, templates, and
-  function objects all apply (D6).
+  function objects all apply ([desugaring-target](#desugaring-target)).
 - **P2011 `|>`** — `x |> f(args...)` is *rewritten* to `f(x, args...)`. A
   **syntactic rewrite** that prepends the left operand as the first argument
   of the *call expression* written on the right. There is no `operator|>`; it
@@ -716,7 +959,7 @@ left-associatively. Those two facts let a handful of patterns — each a few
 lines of *ordinary user code*, no standard-library addition — reproduce most
 pipeline / `|>` / ranges-`|` outcomes with no core language change beyond
 backtick itself. **The paper proposes none of these helpers**; scope is
-language-only (§16.7 / D13). They appear here as *motivation* — showing the
+language-only (§16.7 / [library-scope](#library-scope)). They appear here as *motivation* — showing the
 operator's reach, and marking precisely where the one real gap vs. `|>` sits.
 
 ### 16.1 The threading pattern — `pipe(x, f) = f(x)`
@@ -774,7 +1017,7 @@ Compose stages into a named pipeline once, apply it many times:
 ```cpp
 inline constexpr auto then =
     [](auto f, auto g)
-    { return [=](auto&&... a) -> decltype(auto)
+    { return = -> decltype(auto)
         { return g(f(std::forward<decltype(a)>(a)...)); }; };
 
 auto clean = trim `then` lower `then` dedup;   // a reusable callable
@@ -869,9 +1112,9 @@ deliberate and load-bearing for process:
 
 - **Keeps the paper in one committee track.** A core-language operator goes
   through EWG/CWG. Bundling standard helpers would add an LEWG track — the
-  time-and-motion cost (D11 rebuttal 7, §13.5) doubled across two committees,
+  time-and-motion cost ([alternative-spellings](#alternative-spellings) rebuttal 7, §13.5) doubled across two committees,
   on two schedules, with two sets of bikeshedding. This proposal is
-  language-only (D13).
+  language-only ([library-scope](#library-scope)).
 - **The library layer is optional and can mature independently.** Because the
   operator is expressive enough that `pipe` / `then` / `mbind` are
   user-writable one-liners, there is no rush: land the language feature early
@@ -912,12 +1155,12 @@ section.)
 
 ---
 
-## 17. Further semantic clarifications (D3 reframed, D15, D16, ADL)
+## 17. Further semantic clarifications ([nesting-vs-chaining](#nesting-vs-chaining) reframed, [evaluation-order](#evaluation-order), [type-name-slot](#type-name-slot), ADL)
 
 Resolutions reached after implementation, sharpening four points the original
 decisions log under-specified.
 
-### 17.1 Nesting vs. chaining — the D3 grouping rule
+### 17.1 Nesting vs. chaining — the [nesting-vs-chaining](#nesting-vs-chaining) grouping rule
 
 The operator slot's open and close delimiters are the same token, so the first
 interior backtick always closes the slot. Two consequences: the slot can never
@@ -925,28 +1168,28 @@ contain a *bare* backtick, and what looks like "bare nesting" is
 token-identical to an ordinary left-associative chain.
 
 ```
-a ` f ` b ` g ` c     (D1 chain, blessed)   -->  g(f(a, b), c)
+a ` f ` b ` g ` c     (chaining-associativity chain, blessed)   -->  g(f(a, b), c)
 x ` f ` g ` h ` y     ("bare nesting")      -->  h(f(x, g), y)
 ```
 
 Same shape, different names. Therefore:
 
 - "Bare nesting" is not a distinct construct and **cannot be diagnosed** — it
-  is exactly the chain D1 already defines and blesses. A diagnostic would have
-  to fire on legal D1 chaining, a contradiction.
-- The original D3 wording ("bare nesting naturally produces a parse error") was
+  is exactly the chain [chaining-associativity](#chaining-associativity) already defines and blesses. A diagnostic would have
+  to fire on legal [chaining-associativity](#chaining-associativity) chaining, a contradiction.
+- The original [nesting-vs-chaining](#nesting-vs-chaining) wording ("bare nesting naturally produces a parse error") was
   not just wrong but impossible; the parser is correct to accept it, and Clang
-  and GCC agree (DEV-04 / DEV-G04, reclassified from "deferred enforcement" to
+  and GCC agree ([bare-nesting-detection](../ops/DEVIATIONS.md#bare-nesting-detection) / [gcc-bare-nesting-detection](../ops/gcc/DEVIATIONS.md#gcc-bare-nesting-detection), reclassified from "deferred enforcement" to
   "no enforcement needed").
 
-**Rule (D3, reframed):** to nest a backtick expression in the operator slot,
+**Rule ([nesting-vs-chaining](#nesting-vs-chaining), reframed):** to nest a backtick expression in the operator slot,
 parenthesize it — `x `(f `g` h)` y` == `(g(f, h))(x, y)`. Without parentheses
-you get a left-associative chain (D1). The syntax is new, but the problem class
+you get a left-associative chain ([chaining-associativity](#chaining-associativity)). The syntax is new, but the problem class
 is old and well-understood: it is the **binary-minus situation**. Subtraction
 is *non-associative*, so `a - b - c` == `(a - b) - c` ≠ `a - (b - c)` — the
 default left grouping silently changes the result, and the language has never
 diagnosed it. Parentheses override the grouping; they do not avoid an error.
-(The same `-` is also the precedent for D10's position-based disambiguation:
+(The same `-` is also the precedent for [keyword-escape-coexistence](#keyword-escape-coexistence)'s position-based disambiguation:
 `-` is unary in operand position, binary in post-operand position, exactly as
 backtick is escape vs. infix.)
 
@@ -977,7 +1220,7 @@ Murphy (honest mistakes), not Machiavelli (deliberate self-sabotage). Building `
 callable *and* a value *and* asymmetric, then omitting the parentheses, is
 self-inflicted; the fix is one pair of parentheses. It does not justify a
 normative diagnostic — least of all one that cannot distinguish itself from
-blessed D1 chaining.
+blessed [chaining-associativity](#chaining-associativity) chaining.
 
 *Possible QoI follow-up (non-normative).* It may still be worth investigating a
 *heuristic* Clang warning — e.g. when a chain's intermediate operand is itself
@@ -985,7 +1228,7 @@ a callable used in operand position, suggest parentheses. That would be opt-in,
 off-by-default diagnostic quality-of-implementation, never a language rule, and
 must not fire on ordinary chaining. Flagged for investigation, not committed.
 
-### 17.2 Evaluation order (D15)
+### 17.2 Evaluation order ([evaluation-order](#evaluation-order))
 
 `x `f` y` is defined as the call `f(x, y)`, so it introduces **no new
 evaluation-order rule** and inherits [expr.call] wholesale:
@@ -1001,7 +1244,7 @@ evaluation-order rule** and inherits [expr.call] wholesale:
 A feature of "it is just `f(x, y)`," not a special case: anyone who knows call
 semantics already knows backtick's.
 
-### 17.3 Type-name in the operator slot (D16)
+### 17.3 Type-name in the operator slot ([type-name-slot](#type-name-slot))
 
 The slot is any callable expression, and a type-name is callable, so a type in
 the slot is well-formed and yields construction:
@@ -1012,7 +1255,7 @@ a `std::pair` b  // == std::pair(a, b), with CTAD
 ```
 
 It is always an **expression** (the slot is parsed as an assignment-expression,
-D4; backtick's result is an expression by construction), so it can never appear
+[slot-grammar](#slot-grammar); backtick's result is an expression by construction), so it can never appear
 in declaration position — the most-vexing-parse declaration reading cannot
 arise. The keyword-escape use of backtick (§12) occupies operand/declarator
 position, not the post-operand infix position, so there is no collision.
@@ -1021,11 +1264,11 @@ Blessed as a consistent, useful consequence rather than a special rule.
 ### 17.4 ADL is normative (cross-compiler note)
 
 `x `f` y` performs argument-dependent lookup on the slot exactly as the call
-`f(x, y)` would (D6). This is **normative**: backtick must not silently have
+`f(x, y)` would ([desugaring-target](#desugaring-target)). This is **normative**: backtick must not silently have
 weaker lookup than the call it desugars to. Implementation status, for the
 implementation-experience section: Clang delivers full ADL (the slot reaches
 `BuildCallExpr` as an `UnresolvedLookupExpr`); GCC currently resolves the slot
-name at parse time, so pure-ADL and ADL-augmentation fail (DEV-G05). That is a
+name at parse time, so pure-ADL and ADL-augmentation fail ([gcc-slot-adl](../ops/gcc/DEVIATIONS.md#gcc-slot-adl)). That is a
 **defect to correct** in the in-progress GCC track — carry the slot as an
 unresolved/dependent name into `finish_call_expr` — not a permitted
 cross-compiler difference.
@@ -1098,7 +1341,7 @@ Carried in the paper's "Prior art" section. Sources verified 2026-07-11.
 - **Haskell** — since the first Report (1990): an ordinary identifier in
   grave accents is an infix operator (`` x `div` y ``).
 - **PureScript** — any function infix via backticks; **independently settled
-  on left-associative, highest precedence** — the same fixity as D1/D2.
+  on left-associative, highest precedence** — the same fixity as [chaining-associativity](#chaining-associativity)/[precedence-level](#precedence-level).
   Corroborating *design* precedent, not just lexical.
   [book.purescript.org/chapter3.html]
 - **Idris** — same construct, in the official tutorial.

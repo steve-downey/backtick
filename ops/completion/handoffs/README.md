@@ -16,6 +16,6 @@ branch. Three things are specific to this track:
   brief, attach it, stop. Do not choose on the author's behalf to have
   something to tick.
 - **Say what you checked, not only what you changed.** Several steps close a
-  row by *verifying it is not broken* — `B10`'s module streaming, `B21`'s
+  row by *verifying it is not broken* — [`module-streaming-escapes`](../../BACKLOG.md#module-streaming-escapes)'s module streaming, [`ucd-input-manifest`](../../BACKLOG.md#ucd-input-manifest)'s
   regenerated tables. A verified-not-broken row is a real result and the
   handoff is the only place the verification exists.

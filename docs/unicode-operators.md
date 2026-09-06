@@ -39,20 +39,203 @@ Vec operator⊖(Vec const&);          // one parameter -> unary prefix form
 
 ## 2. Decisions log (all Proposed)
 
-| ID | Decision | Status | Rationale |
-|----|----------|--------|-----------|
-| U1 | Operator tokens are **single non-ASCII code points** with the Pattern_Syntax property, drawn from the mathematical/arrow blocks, shipped as a **frozen enumeration pinned to Unicode 17.0** | **Proposed** | Pattern_Syntax is immutable *per code point* by Unicode stability policy — but not closed: 79 of its 2,760 code points are unassigned, and Unicode keeps assigning characters at them (453 since the 4.1 freeze; U§4). So the ceiling is guaranteed, the contents are not, and the list must be frozen by *this proposal*, not by Unicode. Single code point, NFC, no combining marks: keeps lexing trivial (one code point = one token), avoids the normalization/rendering questions Mn sequences drag in (negated operators like `⊕̸` are a v2 candidate, U§13). Non-ASCII by construction: every ASCII Pattern_Syntax character is already claimed or reserved by the grammar (§14). Confusables with existing punctuators are excluded by name (U§5). The standard would carry the final enumerated list normatively — the same standing as the existing UAX #31 reference for identifiers (U§4). |
-| U2 | `operator⊞` is an *operator-function-id*; an ordinary overloadable free or member function, with **no class/enum-parameter requirement** | **Proposed** | Exactly the existing operator-function machinery, one production wider. The explicit-call spelling `operator⊞(a, b)` works, as it does for every operator today. [over.oper]'s "at least one class or enum parameter" rule exists to protect the built-in meaning of the token — a user operator *has* no built-in meaning to protect, so `operator⊞(int, int)` is legal and `5 ⊞ 7` finds it. That is the point: the fundamental-type case (`5 ⊞ 7`) is the motivating one. |
-| U3 | Lexing is **declaration-independent**: every set member is always an operator token (under U7's flag), whether or not any `operator⊞` is in scope | **Proposed** | The lexer cannot consult declarations — tokenization precedes lookup (preprocessing, template bodies, header order). So the operator set is fixed by the *grammar*, not by what is declared; a use with no viable `operator⊞` fails at overload resolution with an ordinary "no match" diagnostic, exactly as an undeclared `operator+` on a class type does. This is Julia's model (fixed parse table, users define methods) and the opposite of Swift's (declaration-gated parsing), and it is the only model that works in C++ (U§11). |
-| U4 | Binary user operators occupy **the backtick precedence level** (D2 Option A): tighter than `*`, looser than unary; operands are cast-expressions; **left-associative** (D1) | **Proposed** | One level for *all* user-introduced infix — named (backtick) and symbolic (this) — so mixed chains group left with no precedence table to learn. Reuses D2's litigated resolution wholesale, including the symmetric-prefix property: `-a ⊞ -b` is `operator⊞(-a, -b)`. Everything §4 records in favour of Option A applies unchanged. |
-| U5 | **Unary prefix** operators are declared with one parameter; prefix vs infix is disambiguated by grammatical position; **no postfix forms** | **Proposed** | Arity selects the form, as it does for `operator-` today (two parameters / one member parameter = binary; one / none = prefix). Position disambiguates uses: post-operand → infix, operand position → prefix — the same strategy as `-`, `*`, `&`, and D10's escape-vs-operator split. Declining postfix eliminates the prefix/postfix ambiguity that forces Swift's whitespace-sensitivity rules; nothing mathematical is lost (postfix notation is rare outside `!`, and `!` is taken). **Priced by U21 (U§13.1), which reframes the decision from "postfix is ambiguous" to "postfix is a pure extension we can decline for free":** a one-token greedy-infix rule does resolve the ambiguity without whitespace sensitivity or backtracking, and a prototype of it works — but it costs the missing-right-operand diagnostic for *every* user of the feature, forces a hand-curated normative token list whose contents move with the dialect, needs a cross-vendor Itanium change (prefix and postfix unaries share an arity, and Clang already mis-mangles `++` where GCC does not), and adds LEWG to the routing via a compiler-known `std::postfix`. Since the rule only ever reinterprets programs v1 rejects, v1 declines it without foreclosing v2. |
-| U6 | Candidate assembly is that of the **existing overloaded operators**: member candidates + non-member candidates found by unqualified lookup and **ADL**; no built-in candidates | **Proposed** | §17.4's rule carries over verbatim and stays normative: `x ⊞ y` must find every `operator⊞` the call `operator⊞(x, y)` would, including by ADL into the operands' associated namespaces — the mechanism that makes `std::cout << x` work is the mechanism that makes a library's `⊗` work on its own types. The GCC parse-time-resolution defect (DEV-G05) is the cautionary tale: carry the name unresolved into the call machinery. There are no built-in candidates because there are no built-in meanings (U2). |
-| U7 | Gated behind its own flag, `-funicode-operators`, independent of and composable with `-fbacktick` | **Proposed** | Same D5 rationale: opt-in prototype vehicle, default build byte-identical to upstream. A separate flag because the features are separable proposals with separable fates; a translation unit may enable either, both, or neither, and U4's shared precedence level must parse identically whichever subset is on. |
-| U8 | Mangling: Itanium **vendor-extended operator** (`v <arity> <source-name>`) with a code-point-derived source-name, e.g. `⊞` binary → `v2` + `op_u229E` | **Proposed — open (ABI)** | The `v` production exists precisely for operators the grammar didn't anticipate; precedent for naming-by-derived-source-name is `li<name>` for literal-operator suffixes, and precedent for retrofitting a real code is `aw` for `co_await`. A standardized feature would want a first-class `<operator-name>` production keyed by code point, which needs cross-vendor agreement — flagged open, not resolved. MSVC mangling unexamined. |
-| U9 | **No user-declared precedence or associativity, ever** | **Proposed** | Fixity is the rock other designs founder on. A declared precedence is a semantic property that must travel with the name across headers, modules, and translation units; two TUs disagreeing about `a ⊕ b ⊗ c` is an ODR/IFNDR factory, and the parse of an expression comes to depend on which imports are visible (Haskell's fixity-import problem; Swift's precedencegroup conflicts). Fixed fixity makes the *parse* of any expression depend on nothing but the expression — only the *meaning* of `operator⊞` travels, and that is just ordinary lookup. This is D1/D2's "one level, left, learn it once" argument with the alternative's failure mode named. |
-| U11 | **UCN spellings form operator tokens**: a universal-character-name (including `\N{...}`) designating a U1 code point is that operator token | **Proposed** | Preserves the extended-character ≡ UCN equivalence the language maintains for identifiers, for the same reason it exists there: the escape hatch when the source encoding, font, or review tool can not carry or render the glyph — `operator\N{SQUARED PLUS}` stays writable and legible where `operator⊞` is tofu. The absence of UCN punctuators today is an accident of every punctuator being basic-character-set, not a rule to inherit; these are the first non-basic tokens. Structurally free: the UCN-designated code point takes the same phase-3 classification as a literal one on the lexer's existing UCN path (XID → identifier, U1 → operator, else ill-formed), so `a\u229Eb` ≡ `a ⊞ b` (U§8). |
-| U12 | **A separate paper from D4307** — with D4307 carrying an informative future-directions appendix, and its precedence level named the *user-infix level* | **Proposed** | D14's own rule decides it: bundle what shares a design surface within one committee, split what crosses committees. The measured wording overlap is one grammar production plus the precedence prose; everything else is disjoint (normative character table, UCN/identifier interplay, operator-function-id and [over.oper] changes, SG16 review, ABI note — none of which backtick touches). The routing differs (SG16 and the ABI group vs EWG/CWG alone), the maturity differs (two implementations vs none — bundling dilutes D4307's strongest asset), and the fates must stay separable: Unicode-allergy is real in the room and must not be able to sink backtick. The shared-discussion value is recovered without coupling: D4307 presents one *user-infix level* with an informative appendix showing this direction, EWG banks the shared decisions (one level, left-assoc, desugar-to-call) once with the whole landscape visible, and this paper inherits them as adopted precedent (U§12). |
-| U10 | **Operator characters are never identifier characters** — the token set and the identifier set stay disjoint | **Proposed** | TR31 partitions syntax space from identifier space by construction, and it holds empirically: Pattern_Syntax ∩ XID_Start = Pattern_Syntax ∩ XID_Continue = ∅ in UCD 17.0. It also holds *historically* in C++: the C++11–C++20 Annex E identifier whitelist has zero overlap with Pattern_Syntax (it even carves × and ÷ out of the middle of the Latin-1 letter ranges), so no standard has ever admitted a function *named* ⊞ and no existing code can conflict (U§7.1). The function-name use is already served: `operator⊞` *is* a name — callable, address-taken, passable — Haskell's `(⊞)` section spelled the C++ way. And admitting bare-⊞ identifiers would create the design's one true ambiguity, `⊞(x)` in operand position (U§7.1), whose only resolutions are whitespace sensitivity (the Swift trap U5 already declined) or worse. Composes cleanly with Clang's shipped math-identifier extension (D137051, Clang 16) and P3658R1: both admit exactly the TR31 §7.1 ID_Compat_Math sets, whose overlap with Pattern_Syntax is precisely {∂ ∇ ∞} — the three U1 already cedes to the identifier side — so operator set and extended identifier set stay disjoint even with the extension on, and mangling stays structurally distinct with nothing new (U§9). |
+Each decision is headed by its **slug** and is therefore a Markdown anchor;
+every cross-reference links to it. `Formerly:` carries the serial number the
+entry used to have, because the completed tracks' handoffs still say it and
+are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
+
+### token-set
+
+**Formerly:** `U1`.
+
+**Question.** Which code points are operator tokens, and who freezes the list?
+
+**Status.** **Proposed**
+
+**Decision.** Operator tokens are **single non-ASCII code points** with the Pattern_Syntax property, drawn from the mathematical/arrow blocks, shipped as a **frozen enumeration pinned to Unicode 17.0**
+
+**Why.** Pattern_Syntax is immutable *per code point* by Unicode stability policy — but not closed: 79 of its 2,760 code points are unassigned, and Unicode keeps assigning characters at them (453 since the 4.1 freeze; U§4). So the ceiling is guaranteed, the contents are not, and the list must be frozen by *this proposal*, not by Unicode. Single code point, NFC, no combining marks: keeps lexing trivial (one code point = one token), avoids the normalization/rendering questions Mn sequences drag in (negated operators like `⊕̸` are a v2 candidate, U§13). Non-ASCII by construction: every ASCII Pattern_Syntax character is already claimed or reserved by the grammar (§14). Confusables with existing punctuators are excluded by name (U§5). The standard would carry the final enumerated list normatively — the same standing as the existing UAX #31 reference for identifiers (U§4).
+
+**Decided by.** Undecided — the whole log is Proposed until the paper is polled.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### operator-function-id
+
+**Formerly:** `U2`.
+
+**Question.** What kind of entity is `operator⊞`, and which of [over.oper]'s restrictions apply to it?
+
+**Status.** **Proposed**
+
+**Decision.** `operator⊞` is an *operator-function-id*; an ordinary overloadable free or member function, with **no class/enum-parameter requirement**
+
+**Why.** Exactly the existing operator-function machinery, one production wider. The explicit-call spelling `operator⊞(a, b)` works, as it does for every operator today. [over.oper]'s "at least one class or enum parameter" rule exists to protect the built-in meaning of the token — a user operator *has* no built-in meaning to protect, so `operator⊞(int, int)` is legal and `5 ⊞ 7` finds it. That is the point: the fundamental-type case (`5 ⊞ 7`) is the motivating one.
+
+**Decided by.** Undecided — the whole log is Proposed until the paper is polled.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### lexing-and-declarations
+
+**Formerly:** `U3`.
+
+**Question.** Does tokenization depend on what has been declared?
+
+**Status.** **Proposed**
+
+**Decision.** Lexing is **declaration-independent**: every set member is always an operator token (under [unicode-feature-gating](#unicode-feature-gating)'s flag), whether or not any `operator⊞` is in scope
+
+**Why.** The lexer cannot consult declarations — tokenization precedes lookup (preprocessing, template bodies, header order). So the operator set is fixed by the *grammar*, not by what is declared; a use with no viable `operator⊞` fails at overload resolution with an ordinary "no match" diagnostic, exactly as an undeclared `operator+` on a class type does. This is Julia's model (fixed parse table, users define methods) and the opposite of Swift's (declaration-gated parsing), and it is the only model that works in C++ (U§11).
+
+**Decided by.** Undecided — the whole log is Proposed until the paper is polled.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### user-infix-precedence
+
+**Formerly:** `U4`.
+
+**Question.** Where do binary user operators sit in the precedence table, and how do they associate?
+
+**Status.** **Proposed**
+
+**Decision.** Binary user operators occupy **the backtick precedence level** ([precedence-level](backtick-operator-design.md#precedence-level) Option A): tighter than `*`, looser than unary; operands are cast-expressions; **left-associative** ([chaining-associativity](backtick-operator-design.md#chaining-associativity))
+
+**Why.** One level for *all* user-introduced infix — named (backtick) and symbolic (this) — so mixed chains group left with no precedence table to learn. Reuses [precedence-level](backtick-operator-design.md#precedence-level)'s litigated resolution wholesale, including the symmetric-prefix property: `-a ⊞ -b` is `operator⊞(-a, -b)`. Everything §4 records in favour of Option A applies unchanged.
+
+**Decided by.** Undecided — the whole log is Proposed until the paper is polled.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### unary-forms
+
+**Formerly:** `U5`.
+
+**Question.** Which unary forms exist, and what tells prefix from infix?
+
+**Status.** **Proposed**
+
+**Decision.** **Unary prefix** operators are declared with one parameter; prefix vs infix is disambiguated by grammatical position; **no postfix forms**
+
+**Why.** Arity selects the form, as it does for `operator-` today (two parameters / one member parameter = binary; one / none = prefix). Position disambiguates uses: post-operand → infix, operand position → prefix — the same strategy as `-`, `*`, `&`, and [keyword-escape-coexistence](backtick-operator-design.md#keyword-escape-coexistence)'s escape-vs-operator split. Declining postfix eliminates the prefix/postfix ambiguity that forces Swift's whitespace-sensitivity rules; nothing mathematical is lost (postfix notation is rare outside `!`, and `!` is taken). **Priced by U21 (U§13.1), which reframes the decision from "postfix is ambiguous" to "postfix is a pure extension we can decline for free":** a one-token greedy-infix rule does resolve the ambiguity without whitespace sensitivity or backtracking, and a prototype of it works — but it costs the missing-right-operand diagnostic for *every* user of the feature, forces a hand-curated normative token list whose contents move with the dialect, needs a cross-vendor Itanium change (prefix and postfix unaries share an arity, and Clang already mis-mangles `++` where GCC does not), and adds LEWG to the routing via a compiler-known `std::postfix`. Since the rule only ever reinterprets programs v1 rejects, v1 declines it without foreclosing v2.
+
+**Decided by.** Undecided — the whole log is Proposed until the paper is polled.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### candidate-assembly
+
+**Formerly:** `U6`.
+
+**Question.** How are candidates assembled for `x ⊞ y`?
+
+**Status.** **Proposed**
+
+**Decision.** Candidate assembly is that of the **existing overloaded operators**: member candidates + non-member candidates found by unqualified lookup and **ADL**; no built-in candidates
+
+**Why.** §17.4's rule carries over verbatim and stays normative: `x ⊞ y` must find every `operator⊞` the call `operator⊞(x, y)` would, including by ADL into the operands' associated namespaces — the mechanism that makes `std::cout << x` work is the mechanism that makes a library's `⊗` work on its own types. The GCC parse-time-resolution defect ([gcc-slot-adl](../ops/gcc/DEVIATIONS.md#gcc-slot-adl)) is the cautionary tale: carry the name unresolved into the call machinery. There are no built-in candidates because there are no built-in meanings ([operator-function-id](#operator-function-id)).
+
+**Decided by.** Undecided — the whole log is Proposed until the paper is polled.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### unicode-feature-gating
+
+**Formerly:** `U7`.
+
+**Question.** One flag for both features, or one flag each?
+
+**Status.** **Proposed**
+
+**Decision.** Gated behind its own flag, `-funicode-operators`, independent of and composable with `-fbacktick`
+
+**Why.** Same [feature-gating](backtick-operator-design.md#feature-gating) rationale: opt-in prototype vehicle, default build byte-identical to upstream. A separate flag because the features are separable proposals with separable fates; a translation unit may enable either, both, or neither, and [user-infix-precedence](#user-infix-precedence)'s shared precedence level must parse identically whichever subset is on.
+
+**Decided by.** Undecided — the whole log is Proposed until the paper is polled.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### operator-mangling
+
+**Formerly:** `U8`.
+
+**Question.** How does a user operator mangle?
+
+**Status.** **Proposed — open (ABI)**
+
+**Decision.** Mangling: Itanium **vendor-extended operator** (`v <arity> <source-name>`) with a code-point-derived source-name, e.g. `⊞` binary → `v2` + `op_u229E`
+
+**Why.** The `v` production exists precisely for operators the grammar didn't anticipate; precedent for naming-by-derived-source-name is `li<name>` for literal-operator suffixes, and precedent for retrofitting a real code is `aw` for `co_await`. A standardized feature would want a first-class `<operator-name>` production keyed by code point, which needs cross-vendor agreement — flagged open, not resolved. MSVC mangling unexamined.
+
+**Decided by.** Undecided — the whole log is Proposed until the paper is polled.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### user-declared-fixity
+
+**Formerly:** `U9`.
+
+**Question.** May a user declare precedence or associativity?
+
+**Status.** **Proposed**
+
+**Decision.** **No user-declared precedence or associativity, ever**
+
+**Why.** Fixity is the rock other designs founder on. A declared precedence is a semantic property that must travel with the name across headers, modules, and translation units; two TUs disagreeing about `a ⊕ b ⊗ c` is an ODR/IFNDR factory, and the parse of an expression comes to depend on which imports are visible (Haskell's fixity-import problem; Swift's precedencegroup conflicts). Fixed fixity makes the *parse* of any expression depend on nothing but the expression — only the *meaning* of `operator⊞` travels, and that is just ordinary lookup. This is [chaining-associativity](backtick-operator-design.md#chaining-associativity)/[precedence-level](backtick-operator-design.md#precedence-level)'s "one level, left, learn it once" argument with the alternative's failure mode named.
+
+**Decided by.** Undecided — the whole log is Proposed until the paper is polled.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### operator-identifier-disjointness
+
+**Formerly:** `U10`.
+
+**Question.** May an operator character also be an identifier character?
+
+**Status.** **Proposed**
+
+**Decision.** **Operator characters are never identifier characters** — the token set and the identifier set stay disjoint
+
+**Why.** TR31 partitions syntax space from identifier space by construction, and it holds empirically: Pattern_Syntax ∩ XID_Start = Pattern_Syntax ∩ XID_Continue = ∅ in UCD 17.0. It also holds *historically* in C++: the C++11–C++20 Annex E identifier whitelist has zero overlap with Pattern_Syntax (it even carves × and ÷ out of the middle of the Latin-1 letter ranges), so no standard has ever admitted a function *named* ⊞ and no existing code can conflict (U§7.1). The function-name use is already served: `operator⊞` *is* a name — callable, address-taken, passable — Haskell's `(⊞)` section spelled the C++ way. And admitting bare-⊞ identifiers would create the design's one true ambiguity, `⊞(x)` in operand position (U§7.1), whose only resolutions are whitespace sensitivity (the Swift trap [unary-forms](#unary-forms) already declined) or worse. Composes cleanly with Clang's shipped math-identifier extension (D137051, Clang 16) and P3658R1: both admit exactly the TR31 §7.1 ID_Compat_Math sets, whose overlap with Pattern_Syntax is precisely {∂ ∇ ∞} — the three [token-set](#token-set) already cedes to the identifier side — so operator set and extended identifier set stay disjoint even with the extension on, and mangling stays structurally distinct with nothing new (U§9).
+
+**Decided by.** Undecided — the whole log is Proposed until the paper is polled.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+
+### ucn-spellings
+
+**Formerly:** `U11`.
+
+**Question.** Does a universal-character-name spell an operator token?
+
+**Status.** **Proposed**
+
+**Decision.** **UCN spellings form operator tokens**: a universal-character-name (including `\N{...}`) designating a [token-set](#token-set) code point is that operator token
+
+**Why.** Preserves the extended-character ≡ UCN equivalence the language maintains for identifiers, for the same reason it exists there: the escape hatch when the source encoding, font, or review tool can not carry or render the glyph — `operator\N{SQUARED PLUS}` stays writable and legible where `operator⊞` is tofu. The absence of UCN punctuators today is an accident of every punctuator being basic-character-set, not a rule to inherit; these are the first non-basic tokens. Structurally free: the UCN-designated code point takes the same phase-3 classification as a literal one on the lexer's existing UCN path (XID → identifier, [token-set](#token-set) → operator, else ill-formed), so `a\u229Eb` ≡ `a ⊞ b` (U§8).
+
+**Decided by.** Undecided — the whole log is Proposed until the paper is polled.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### paper-separation
+
+**Formerly:** `U12`.
+
+**Question.** Does this ship inside D4307, or in a paper of its own?
+
+**Status.** **Proposed**
+
+**Decision.** **A separate paper from D4307** — with D4307 carrying an informative future-directions appendix, and its precedence level named the *user-infix level*
+
+**Why.** [paper-bundling](backtick-operator-design.md#paper-bundling)'s own rule decides it: bundle what shares a design surface within one committee, split what crosses committees. The measured wording overlap is one grammar production plus the precedence prose; everything else is disjoint (normative character table, UCN/identifier interplay, operator-function-id and [over.oper] changes, SG16 review, ABI note — none of which backtick touches). The routing differs (SG16 and the ABI group vs EWG/CWG alone), the maturity differs (two implementations vs none — bundling dilutes D4307's strongest asset), and the fates must stay separable: Unicode-allergy is real in the room and must not be able to sink backtick. The shared-discussion value is recovered without coupling: D4307 presents one *user-infix level* with an informative appendix showing this direction, EWG banks the shared decisions (one level, left-assoc, desugar-to-call) once with the whole landscape visible, and this paper inherits them as adopted precedent (U§12).
+
+**Decided by.** Undecided — the whole log is Proposed until the paper is polled.
+
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
 ---
 
@@ -64,24 +247,24 @@ what is already litigated.
 
 | Backtick | Here | Note |
 |----------|------|------|
-| D1 left-associative | U4 | Verbatim. |
-| D2 / §4 precedence (Option A) | U4 | Same level, shared with backtick; `-a ⊞ -b` symmetric for the §4 reasons. |
-| D4 slot = assignment-expression | — | No slot: the operator *is* the token. The whole slot-grammar question vanishes. |
-| D5 flag-gated | U7 | Own flag. |
-| D6 desugar to a call | U2/U6 | Call to `operator⊞` via operator-style candidate assembly rather than a slot expression. |
-| D9 no braced-init-list operands | carried | Operands are cast-expressions (U4), so excluded the same way. |
-| D10 position disambiguation | U5 | Reused for prefix-vs-infix instead of escape-vs-infix. |
-| D15 evaluation order is the call's | carried | It is just `operator⊞(x, y)`; [expr.call] wholesale, nothing new. |
-| D16 type-name in the slot | — | No slot, no analogue. |
+| [chaining-associativity](backtick-operator-design.md#chaining-associativity) left-associative | [user-infix-precedence](#user-infix-precedence) | Verbatim. |
+| [precedence-level](backtick-operator-design.md#precedence-level) / §4 precedence (Option A) | [user-infix-precedence](#user-infix-precedence) | Same level, shared with backtick; `-a ⊞ -b` symmetric for the §4 reasons. |
+| [slot-grammar](backtick-operator-design.md#slot-grammar) slot = assignment-expression | — | No slot: the operator *is* the token. The whole slot-grammar question vanishes. |
+| [feature-gating](backtick-operator-design.md#feature-gating) flag-gated | [unicode-feature-gating](#unicode-feature-gating) | Own flag. |
+| [desugaring-target](backtick-operator-design.md#desugaring-target) desugar to a call | [operator-function-id](#operator-function-id)/[candidate-assembly](#candidate-assembly) | Call to `operator⊞` via operator-style candidate assembly rather than a slot expression. |
+| [braced-init-operands](backtick-operator-design.md#braced-init-operands) no braced-init-list operands | carried | Operands are cast-expressions ([user-infix-precedence](#user-infix-precedence)), so excluded the same way. |
+| [keyword-escape-coexistence](backtick-operator-design.md#keyword-escape-coexistence) position disambiguation | [unary-forms](#unary-forms) | Reused for prefix-vs-infix instead of escape-vs-infix. |
+| [evaluation-order](backtick-operator-design.md#evaluation-order) evaluation order is the call's | carried | It is just `operator⊞(x, y)`; [expr.call] wholesale, nothing new. |
+| [type-name-slot](backtick-operator-design.md#type-name-slot) type-name in the slot | — | No slot, no analogue. |
 | §5 same-delimiter problem | **does not arise** | Each operator is one distinct token, not a matched pair. No `BacktickIsOperator` analogue, no suppression flag, nothing. |
 | §17.1 nesting vs chaining | **does not arise** | No delimiters to nest; chains are ordinary left-associative operator chains. |
-| §17.4 ADL is normative | U6 | Verbatim, with DEV-G05 as the recorded pitfall. |
+| §17.4 ADL is normative | [candidate-assembly](#candidate-assembly) | Verbatim, with [gcc-slot-adl](../ops/gcc/DEVIATIONS.md#gcc-slot-adl) as the recorded pitfall. |
 
 Two things do **not** transfer, and they are the feature's real costs:
 
 1. **A declaration is required.** Backtick needs no new declaration form; this
    needs `operator⊞` to be declarable, which touches declarators, name
-   mangling (U8), and both compilers' closed operator-name tables (U§8).
+   mangling ([operator-mangling](#operator-mangling)), and both compilers' closed operator-name tables (U§8).
 2. **A character-set decision is required.** Backtick spent one ASCII
    character; this must carve, freeze, and defend a set of thousands (U§5),
    with the confusability and input-method questions that come with it (U§10).
@@ -109,7 +292,7 @@ Facts checked against UAX #31 revision 43 (Unicode 17.0.0, 2025-08-20).
   **immutable is not closed**: the frozen set deliberately *contains
   unassigned code points*, and Unicode assigns new characters at them —
   see the audit below. This distinction is the first question EWG/SG16 will
-  ask, and it drives U1's frozen-enumeration shape.
+  ask, and it drives [token-set](#token-set)'s frozen-enumeration shape.
 - **A correction to the obvious reading of §7.1.** TR31's §7.1 "Mathematical
   Compatibility Notation Profile" is an *identifier* profile, not an operator
   one: it admits ∂, ∇, ∞ (and style variants, plus sub/superscripts) as
@@ -142,10 +325,10 @@ distinction, audited against UCD 17.0 (`PropList.txt` × `DerivedAge.txt`,
   characters; they are therefore excluded by this definition" — meaning the
   R3c operator set is defined over *assigned* characters and **grows** when
   a later version assigns one.
-- Within the U1 blocks specifically: **283** post-freeze assignments, **279**
+- Within the [token-set](#token-set) blocks specifically: **283** post-freeze assignments, **279**
   of them General_Category Sm/So — i.e. a predicate-defined operator set,
   re-derived per Unicode version, would have grown by 279 operators since
-  2005. Two code points in the U1 blocks (U+2B74, U+2B75) are unassigned
+  2005. Two code points in the [token-set](#token-set) blocks (U+2B74, U+2B75) are unassigned
   today; 18.0 could fill them.
 - General_Category is **not** immutable either: the stability policy permits
   gc changes that preserve a character's "fundamental identity" (only Cc,
@@ -160,9 +343,9 @@ previously-ill-formed programs well-formed — it can never change the meaning
 of a valid one (the same benignity argument that lets identifiers ride
 Unicode updates under the grows-only XID stability guarantee). Second,
 growth is nonetheless *unauditable in advance*: the UTS #39 confusability
-exclusion (U1) cannot be evaluated for characters that do not exist yet, so
+exclusion ([token-set](#token-set)) cannot be evaluated for characters that do not exist yet, so
 a predicate-defined set would auto-admit unvetted symbols. That asymmetry —
-benign to the lexer, blind to the audit — is why U1 freezes an enumeration
+benign to the lexer, blind to the audit — is why [token-set](#token-set) freezes an enumeration
 pinned to a named Unicode version instead of tracking the predicate, and why
 adopting later additions is a deliberate act of a future revision (U§13),
 not an automatic consequence of a UCD update.
@@ -176,7 +359,7 @@ companion to §14, not an application of it.
 
 ---
 
-## 5. The token set (U1)
+## 5. The token set ([token-set](#token-set))
 
 A code point is a *user-operator token* iff all of:
 
@@ -230,9 +413,9 @@ Notes on the shape of this definition:
 
 ---
 
-## 6. Grammar (U4, U5)
+## 6. Grammar ([user-infix-precedence](#user-infix-precedence), [unary-forms](#unary-forms))
 
-Binary user operators drop into the backtick level of §4's grammar (the D2
+Binary user operators drop into the backtick level of §4's grammar (the [precedence-level](backtick-operator-design.md#precedence-level)
 Option A slot), which becomes the level for *all* user-introduced infix:
 
 ```
@@ -243,20 +426,20 @@ infix-expression:                       // §4's backtick-expression, widened
 
 unary-expression:
     ...existing productions...
-    user-operator cast-expression       // prefix form (U5)
+    user-operator cast-expression       // prefix form (unary-forms)
 ```
 
-where *user-operator* is any single code point in the U1 set. One precedence
+where *user-operator* is any single code point in the [token-set](#token-set) set. One precedence
 level, left-associative, operands are cast-expressions; a prefix user operator
 binds like the other unary operators, tighter than any binary.
 
 Disambiguation between the infix and prefix productions is by grammatical
-position, exactly as for `-` (and as D10 disambiguates escape vs infix):
+position, exactly as for `-` (and as [keyword-escape-coexistence](backtick-operator-design.md#keyword-escape-coexistence) disambiguates escape vs infix):
 post-operand → infix; operand position → prefix. The expression grammar
 strictly alternates operand and operator positions, so the two never coincide.
 
 ```cpp
--a ⊞ -b            // operator⊞(-a, -b)                 symmetric (D2/§4)
+-a ⊞ -b            // operator⊞(-a, -b)                 symmetric (precedence-level/§4)
 a * b ⊞ c          // a * operator⊞(b, c)               ⊞ binds tighter than *
 a ⊞ b `f` c        // f(operator⊞(a, b), c)             shared level, left-assoc
 a ⊞ ⊖b             // operator⊞(a, operator⊖(b))        prefix in operand position
@@ -264,46 +447,46 @@ a ⊞ ⊖b             // operator⊞(a, operator⊖(b))        prefix in operan
 ```
 
 What does *not* appear: a same-delimiter suppression flag (§5), a nesting rule
-(§17.1), a slot grammar (D4). These operators are ordinary distinct tokens and
+(§17.1), a slot grammar ([slot-grammar](backtick-operator-design.md#slot-grammar)). These operators are ordinary distinct tokens and
 the ordinary operator-precedence machinery handles them; parsing is the *easy*
 part of this feature, easier even than backtick.
 
 ---
 
-## 7. Declarations, lookup, desugaring (U2, U3, U6)
+## 7. Declarations, lookup, desugaring ([operator-function-id](#operator-function-id), [lexing-and-declarations](#lexing-and-declarations), [candidate-assembly](#candidate-assembly))
 
 **Declaring.** *operator-function-id* grows one production: `operator`
 followed by a user-operator token. Everything downstream is the existing
 machinery: free function or member, any parameter types, templates,
-`constexpr`, `= delete`, the lot. Arity selects the form (U5): two parameters
+`constexpr`, `= delete`, the lot. Arity selects the form ([unary-forms](#unary-forms)): two parameters
 (or one, as a member) declare the infix form; one parameter (or none, as a
 member) declares the prefix form — the same convention as `operator-`.
 Unlike the existing operators there is **no class-or-enum parameter
-requirement** (U2): that rule protects built-in meanings, and user operators
+requirement** ([operator-function-id](#operator-function-id)): that rule protects built-in meanings, and user operators
 have none, so `constexpr int operator⊞(int a, int b) { return a + b; }` is
 legal and `5 ⊞ 7` is 12.
 
 **Using.** `x ⊞ y` assembles candidates exactly as an overloaded operator
 does: member candidates from the left operand's class, non-member candidates
-from unqualified lookup *and ADL* on both operands (U6, normative per §17.4's
+from unqualified lookup *and ADL* on both operands ([candidate-assembly](#candidate-assembly), normative per §17.4's
 rule). There are no built-in candidates. If nothing viable is found, the
 diagnostic is the ordinary no-viable-overload error, naming `operator⊞` — a
-use is never a *lexing* error in a translation unit with the feature on (U3);
+use is never a *lexing* error in a translation unit with the feature on ([lexing-and-declarations](#lexing-and-declarations));
 it is at worst a lookup/overload failure, the same category of error as
 `std::cout << my_type{}` without the `<<` overload.
 
 **Desugaring.** The result *is* the call `operator⊞(x, y)` (member form:
-`x.operator⊞(y)`), so D6's inheritance list — overload resolution, ADL,
+`x.operator⊞(y)`), so [desugaring-target](backtick-operator-design.md#desugaring-target)'s inheritance list — overload resolution, ADL,
 templates, SFINAE, constexpr, conversions, value categories, codegen — and
-D15's evaluation-order story carry over without modification.
+[evaluation-order](backtick-operator-design.md#evaluation-order)'s evaluation-order story carry over without modification.
 
-### 7.1 Operator characters as ordinary names (U10)
+### 7.1 Operator characters as ordinary names ([operator-identifier-disjointness](#operator-identifier-disjointness))
 
 Several languages let operator-ish characters appear in ordinary identifiers
 (Lisp/Scheme famously; Agda; Julia admits a few), so the question will come
 up: could a *function named* `⊞` — the bare character as an identifier —
 coexist with `operator⊞`? The instinct that the uses are distinguishable by
-grammatical position (the D10 move) is mostly right; here is the full
+grammatical position (the [keyword-escape-coexistence](backtick-operator-design.md#keyword-escape-coexistence) move) is mostly right; here is the full
 position analysis, and where it breaks.
 
 **First, the conflict cannot arise in C++ today — and never could have.**
@@ -317,14 +500,14 @@ Verified against the UCD and the historical standards (checks in
   context; the partition holds empirically.
 - **C++11 through C++20** ([charname.allowed], the Annex E whitelist): the
   allowed ranges have **zero overlap with Pattern_Syntax** — all 2,760, not
-  just the U1 blocks. The whitelist was generous about *future* characters
+  just the [token-set](#token-set) blocks. The whitelist was generous about *future* characters
   (all of U+3031–D7FF and planes 1–14, which is how the incoherent emoji
   identifiers of the P1949 motivation got in), but it deliberately stepped
   around the syntax blocks, down to carving × (U+00D7) and ÷ (U+00F7) out
-  of the middle of the Latin-1 letter ranges C0–D6/D8–F6.
+  of the middle of the Latin-1 letter ranges C0–[desugaring-target](backtick-operator-design.md#desugaring-target)/[format-break-policy](backtick-operator-design.md#format-break-policy)–F6.
 
 So no conforming C++ program in any standard has ever contained a function
-named `⊞`, and U1 does not change that: the operator set is carved from
+named `⊞`, and [token-set](#token-set) does not change that: the operator set is carved from
 Pattern_Syntax, the identifier set from XID, and they can never meet.
 
 **Second, the live extension surface: Clang already ships math identifiers,
@@ -344,7 +527,7 @@ and stays disjoint.** The user demand for operator-ish characters in
   code points (∂ ∇ ∞ plus ten plane-1 mathematical-style variants of ∂ and
   ∇), ID_Compat_Math_Continue is 43 (adding super/subscript digits and
   signs — none of them Pattern_Syntax), and **Pattern_Syntax ∩
-  ID_Compat_Math = exactly {∂, ∇, ∞}** — the three characters U1 already
+  ID_Compat_Math = exactly {∂, ∇, ∞}** — the three characters [token-set](#token-set) already
   excludes and cedes to the identifier side.
 
 So even with the Clang extension enabled, the operator set and the
@@ -352,7 +535,7 @@ So even with the Clang extension enabled, the operator set and the
 named by an ordinary (extended) identifier, `int operator⊞(int, int)` is an
 operator-function, and no code point is legal in both roles. The
 composition rule for any *future* identifier extension falls out: take the
-TR31 §7.1 side of the line, never admit a U1 code point, and every lexed
+TR31 §7.1 side of the line, never admit a [token-set](#token-set) code point, and every lexed
 code point classifies as exactly one of identifier-constituent or operator
 token — context-free, declaration-free.
 
@@ -380,7 +563,7 @@ code point `⊞` were *both* an identifier and an operator:
   `operator⊞` applied to the parenthesized expression `(x)`. Both readings
   are grammatical in the same position, and they name different entities.
   Every resolution costs something real: whitespace sensitivity (`⊞(x)`
-  call vs `⊞ (x)` prefix — the Swift rule U5 declined postfix specifically
+  call vs `⊞ (x)` prefix — the Swift rule [unary-forms](#unary-forms) declined postfix specifically
   to avoid); a prefer-the-call rule (then parenthesizing a prefix operand
   *changes its meaning* — `⊞x` versus `⊞(x)` — which is worse); or
   declaration-dependent disambiguation (new ambiguity machinery in
@@ -394,7 +577,7 @@ for existing operators. This is Haskell's `(⊞)` section, spelled the way C++
 has always spelled it. A bare-identifier `⊞` would buy use-site brevity
 only, at the price of the design's single genuine ambiguity.
 
-Hence U10: the sets stay disjoint. TR31 already made the right cut; the
+Hence [operator-identifier-disjointness](#operator-identifier-disjointness): the sets stay disjoint. TR31 already made the right cut; the
 proposal keeps it.
 
 ---
@@ -406,7 +589,7 @@ The parser side is small — smaller than backtick's, since §5/§17.1 vanish
 tables are closed**, and this feature opens them.
 
 **Token classification is a static range table, not a predicate.** Because
-U1 is a frozen enumeration, the lexer never evaluates Unicode properties:
+[token-set](#token-set) is a frozen enumeration, the lexer never evaluates Unicode properties:
 the derivation (Pattern_Syntax ∩ blocks ∩ Sm/So, minus the exclusions and
 the 12 emoji-presentation code points inside the blocks) runs once,
 offline, and yields — against UCD 17.0 — **1,381 code points in 32
@@ -417,7 +600,7 @@ exactly this shape of lookup for extended identifiers — Clang's static
 range arrays in `clang/lib/Lex/UnicodeCharSets.h` (whose XID tables run to
 hundreds of ranges) and libcpp's generated `ucnid.h` tables in GCC. ASCII
 sources never touch it, and the order of checks against XID is immaterial
-because U10 makes the sets disjoint.
+because [operator-identifier-disjointness](#operator-identifier-disjointness) makes the sets disjoint.
 
 Keep the **exclusion list as a second, tiny table with reasons**, not
 merely as absent entries: U+2212 in source should produce "U+2212 MINUS
@@ -427,8 +610,8 @@ a generic stray-character error. The exclusions exist for the *reader's*
 protection; the diagnostics should say so.
 
 Two rules that fall out of single-code-point tokens. First, **UCN spellings
-form operator tokens** (U11): a *universal-character-name* — including the
-C++23 named form — designating a U1 code point forms that operator token,
+form operator tokens** ([ucn-spellings](#ucn-spellings)): a *universal-character-name* — including the
+C++23 named form — designating a [token-set](#token-set) code point forms that operator token,
 exactly as a UCN designating an XID character participates in an identifier.
 `operator\u229E`, `operator\N{SQUARED PLUS}`, and `operator⊞` are the same
 declaration, and `a \N{CIRCLED TIMES} b` is `a ⊗ b`. An earlier draft of
@@ -441,7 +624,7 @@ and for every environment that renders math glyphs as tofu — must extend to
 them. No phase-ordering wrinkle arises: the lexer's existing UCN path
 already produces a code point during phase-3 token formation, and that code
 point takes the same three-way classification as a literal one (XID →
-identifier-constituent, U1 → operator token, otherwise ill-formed), so
+identifier-constituent, [token-set](#token-set) → operator token, otherwise ill-formed), so
 `a\u229Eb` lexes as `a ⊞ b` exactly as `a⊞b` does. Second, **no
 normalization runs at lex time** — the token is one scalar value however
 spelled; NFC questions arrive only with v2's combining-mark sequences
@@ -449,9 +632,9 @@ spelled; NFC questions arrive only with v2's combining-mark sequences
 
 **Clang.**
 
-- *Lexer:* the U1 set is a static property of a code point; lex a member as a
+- *Lexer:* the [token-set](#token-set) set is a static property of a code point; lex a member as a
   new token kind (e.g. `tok::user_operator`) carrying the code point, gated on
-  the U7 flag. UTF-8 decoding of non-ASCII already exists on the identifier
+  the [unicode-feature-gating](#unicode-feature-gating) flag. UTF-8 decoding of non-ASCII already exists on the identifier
   path; this adds a second consumer.
 - *Parser:* the `prec::Level` introduced for backtick serves as-is; a
   `tok::user_operator` case joins `tok::backtick` in
@@ -480,16 +663,16 @@ spelled; NFC questions arrive only with v2's combining-mark sequences
   operators: `cp_literal_operator_id` synthesizes an identifier
   (`operator""_suffix`) outside that table. A `cp_user_operator_id` doing the
   same for `operator⊞`, resolved through the ordinary
-  `perform_koenig_lookup`-inclusive call path (the DEV-G05 correction made
+  `perform_koenig_lookup`-inclusive call path (the [gcc-slot-adl](../ops/gcc/DEVIATIONS.md#gcc-slot-adl) correction made
   this path honest), is the parallel move.
 
-Both implementations stay behind their flag (U7); a default build lexes these
+Both implementations stay behind their flag ([unicode-feature-gating](#unicode-feature-gating)); a default build lexes these
 code points exactly as today (an error outside literals), byte-identical to
-upstream — the same discipline as D5.
+upstream — the same discipline as [feature-gating](backtick-operator-design.md#feature-gating).
 
 ---
 
-## 9. ABI and mangling (U8 — open)
+## 9. ABI and mangling ([operator-mangling](#operator-mangling) — open)
 
 Prototype answer: the Itanium **vendor-extended operator** production,
 `v <digit> <source-name>`, exists for exactly this — e.g. binary `⊞` mangles
@@ -509,7 +692,7 @@ disjoint by the mangling grammar itself — a source-name begins with a
 digit, an operator-name with letters — so the declarations are structurally
 distinguishable end to end: by the `operator` keyword in the declaration,
 by grammatical position at the use site, and by production in the mangled
-name. (Under U10 the question is doubly moot, since no code point can be
+name. (Under [operator-identifier-disjointness](#operator-identifier-disjointness) the question is doubly moot, since no code point can be
 legal in both roles — but the manglings would not collide even if one
 were.)
 
@@ -525,7 +708,7 @@ all; everything else is front-end sugar. Flagged open, not resolved.
 The objections are known in advance; pre-load the answers (§13.5 discipline).
 
 - **Confusables / Trojan-source.** The set *by construction* excludes UTS #39
-  confusables of existing tokens (U1's exclusion list) — the dangerous
+  confusables of existing tokens ([token-set](#token-set)'s exclusion list) — the dangerous
   direction (a char that renders like `-` but isn't) is a lexing error, never
   a quiet alias. Math symbols are bidi-neutral, and UTS #55's source-handling
   guidance (which TR31 itself points at) covers the rest; SG16 review is the
@@ -534,7 +717,7 @@ The objections are known in advance; pre-load the answers (§13.5 discipline).
   methods (LaTeX-name completion — `\boxplus<TAB>` — in every major editor
   Julia touched), plus the observation that code is read far more often than
   typed. Two fallbacks are always available: `operator⊞(a, b)` is an
-  ordinary call, and the UCN spelling `operator\N{SQUARED PLUS}` (U11)
+  ordinary call, and the UCN spelling `operator\N{SQUARED PLUS}` ([ucn-spellings](#ucn-spellings))
   stays writable — and legible, if verbose — in any encoding and any font.
   A project that hates the glyphs can simply not declare any.
 - **Grep and diff.** A single distinctive code point greps *better* than most
@@ -549,23 +732,23 @@ The objections are known in advance; pre-load the answers (§13.5 discipline).
 
 ## 11. Prior art
 
-- **Julia** — the closest model and the load-bearing precedent for U3: the
+- **Julia** — the closest model and the load-bearing precedent for [lexing-and-declarations](#lexing-and-declarations): the
   *parser* carries a fixed table of Unicode operator code points (parseable
   whether or not defined); users just add methods to a symbol. No fixity
   declarations. Julia demonstrates both the mechanism and two decades of the
   input-method story at scale. Divergence: Julia buckets its table into many
-  precedence classes mirroring math convention; U9 deliberately declines that
-  (one level, parenthesize) for the D1/D2 teachability reasons.
+  precedence classes mirroring math convention; [user-declared-fixity](#user-declared-fixity) deliberately declines that
+  (one level, parenthesize) for the [chaining-associativity](backtick-operator-design.md#chaining-associativity)/[precedence-level](backtick-operator-design.md#precedence-level) teachability reasons.
 - **Swift** — custom operators from a Unicode operator character set, but
   *declaration-gated parsing* (`infix operator ⊕: PrecedenceGroup`) plus
   precedencegroups plus whitespace-sensitivity rules for prefix/postfix. The
   cautionary tale on all three counts: parse-depends-on-declarations is
-  impossible in C++'s phase structure (U3), precedencegroups reintroduce the
-  fixity-travel problem (U9), and postfix is what forces the whitespace rules
-  (U5 declines postfix instead).
+  impossible in C++'s phase structure ([lexing-and-declarations](#lexing-and-declarations)), precedencegroups reintroduce the
+  fixity-travel problem ([user-declared-fixity](#user-declared-fixity)), and postfix is what forces the whitespace rules
+  ([unary-forms](#unary-forms) declines postfix instead).
 - **Haskell** — arbitrary symbolic operators with `infixl 0–9` fixity
   declarations; the fixity must be *known to parse*, so it travels with
-  imports — the module-boundary problem U9 names. (Backtick took Haskell's
+  imports — the module-boundary problem [user-declared-fixity](#user-declared-fixity) names. (Backtick took Haskell's
   named-infix side; this takes the symbolic side while refusing the fixity
   side.)
 - **OCaml** — user symbolic operators whose fixity is *derived from the first
@@ -594,7 +777,7 @@ Complementary, not competing — the same relationship §15 establishes with
 - **This**: fixed symbol set, declaration required, notation at the use site
   (`a ⊞ b`). The density upgrade for operations a library uses constantly.
 
-They share one precedence level (U4), so mixing is unsurprising, and a library
+They share one precedence level ([user-infix-precedence](#user-infix-precedence)), so mixing is unsurprising, and a library
 can offer both trivially (`operator⊞` delegating to `boxplus` or vice versa).
 Backtick also remains the honest baseline this proposal must beat: 90% of the
 value is available today by naming the function well. The case for symbols is
@@ -602,19 +785,19 @@ the residual 10% — domains (linear algebra, lattices, relational algebra,
 units) where the notation *is* the established vocabulary and `` `tensor` `` is
 the transliteration.
 
-**One paper or two — the evidence (U12).** D14 settled the bundling rule
+**One paper or two — the evidence ([paper-separation](#paper-separation)).** [paper-bundling](backtick-operator-design.md#paper-bundling) settled the bundling rule
 for this project: bundle what shares a design surface within one committee;
 split what is separable across committees. Applying it here:
 
 - *Wording overlap is small.* Backtick's wording: one punctuator, the
   infix-expression production, the desugaring clause, the escape. This
-  paper's wording: a normative ~1,381-entry character table (U1), UCN and
-  identifier interaction (U10/U11), the operator-function-id extension and
-  the [over.oper] class-or-enum carve-out (U2), and an ABI note (U§9). The
+  paper's wording: a normative ~1,381-entry character table ([token-set](#token-set)), UCN and
+  identifier interaction ([operator-identifier-disjointness](#operator-identifier-disjointness) / [ucn-spellings](#ucn-spellings)), the operator-function-id extension and
+  the [over.oper] class-or-enum carve-out ([operator-function-id](#operator-function-id)), and an ABI note (U§9). The
   intersection is one grammar production plus the precedence prose. The
   *rationale* overlaps heavily; the *wording* barely does.
-- *The routing differs* — SG16 first, and the ABI group for U8, neither of
-  which backtick needs. By D14's own criterion, that is a split.
+- *The routing differs* — SG16 first, and the ABI group for [operator-mangling](#operator-mangling), neither of
+  which backtick needs. By [paper-bundling](backtick-operator-design.md#paper-bundling)'s own criterion, that is a split.
 - *The maturity differs.* D4307's strongest asset is two independent
   implementations; this sketch has none. Bundling dilutes the implemented
   paper's credibility with the unimplemented half.
@@ -642,7 +825,7 @@ clang-tidy police taste. Both papers can state the expectation as
 non-normative guidance — backtick for named combinators, symbols for
 established notation — without pretending the grammar can enforce it.
 
-Scope otherwise mirrors D13: pure core language, no library additions; SG16
+Scope otherwise mirrors [library-scope](backtick-operator-design.md#library-scope): pure core language, no library additions; SG16
 review before EWG.
 
 ---
@@ -655,19 +838,19 @@ review before EWG.
   cuts both ways here — it must be answered with the notation-density
   argument (U§12) or the paper has no motivation section.
 - **Combining-mark sequences (v2).** R3c's Continue set admits Mn precisely
-  for negated operators (`⊕̸`). Excluded from v1 (U1) to keep one-codepoint
+  for negated operators (`⊕̸`). Excluded from v1 ([token-set](#token-set)) to keep one-codepoint
   lexing; a v2 could admit `<operator, Mn*>` sequences under NFC. Needs a
   rendering/confusability story first.
 - **Postfix operators (v2).** Answered, with a measurement, in §13.1: it is
   implementable and it is a pure extension of the v1 grammar, so v1 declines
   it without foreclosing it.
-- **Latin-1 stragglers.** ± × ÷ ¬ fail U1's block predicate but are the
+- **Latin-1 stragglers.** ± × ÷ ¬ fail [token-set](#token-set)'s block predicate but are the
   symbols users will ask for first. Admitting them means answering the
   aliasing question (is `×` a user operator or a confusable of `*`?) that the
   block restriction currently sidesteps.
 - **Feature-test macro.** `__cpp_unicode_operators` on the usual pattern.
 - **Track P3658R1.** If it lands, ∂ ∇ ∞ become *standard* identifier
-  characters and U1's exclusion of them stops being a courtesy to a profile
+  characters and [token-set](#token-set)'s exclusion of them stops being a courtesy to a profile
   and becomes a hard requirement of the identifier grammar. Either way the
   exclusion stands; only its citation changes.
 - **Set delivery — settled direction: enumerate.** The U§4 audit closes
@@ -687,13 +870,13 @@ review before EWG.
 
 ### 13.1 Postfix operators — the price, measured (U21)
 
-U5 declines postfix. The question comes back anyway, so here is the answer
+[unary-forms](#unary-forms) declines postfix. The question comes back anyway, so here is the answer
 with a number on it. Everything below was measured against Clang on the
 prototype branch, not reasoned from the grammar; a throwaway implementation
 of the candidate rule (68 lines, one file) was built and run on the witness
 expressions, then discarded.
 
-**The tempting design is wrong for a reason worth stating.** Partitioning U1
+**The tempting design is wrong for a reason worth stating.** Partitioning [token-set](#token-set)
 into an infix half and a postfix half makes fixity a property of the code
 point. It is not: the code point belongs to whoever is writing the domain,
 and pre-assigning its fixity pre-assigns its meaning. Fixity has to be
@@ -703,7 +886,7 @@ answer and forces the question to be about *parsing*.
 **Arity cannot declare it, and the `int` dummy is unavailable.** `operator++`
 tells its two forms apart by a dummy `int` parameter — `operator++(T)` is
 prefix, `operator++(T, int)` is postfix ([over.inc]p1, enforced in Clang at
-`SemaDeclCXX.cpp` `CheckOverloadedOperatorDeclaration`). U2 removes the
+`SemaDeclCXX.cpp` `CheckOverloadedOperatorDeclaration`). [operator-function-id](#operator-function-id) removes the
 class-or-enum parameter requirement, which makes `operator⊞(T, int)` a
 perfectly ordinary *infix* operator whose right operand is an `int`. So the
 convention is spent. A distinguished tag type is forced, not stylistic:
@@ -733,10 +916,10 @@ the fourth consecutive place where opening a closed operator concept costs a
 operator followed by a token that can begin a *cast-expression* is infix;
 otherwise it is postfix. One token of lookahead, no backtracking, no
 whitespace sensitivity, and — the property that matters — the parser still
-never consults a declaration (U3). Sema then resolves whichever shape the
+never consults a declaration ([lexing-and-declarations](#lexing-and-declarations)). Sema then resolves whichever shape the
 parser produced, and a postfix shape with no postfix overload in scope is an
 ordinary no-viable-overload error. It is the same greedy-operand preference
-D2/§4 already adopted for `-a ⊞ -b` == `⊞(-a, -b)`: a second application of a
+[precedence-level](backtick-operator-design.md#precedence-level)/§4 already adopted for `-a ⊞ -b` == `⊞(-a, -b)`: a second application of a
 litigated rule, not a new one, which is the framing EWG needs.
 
 **It works.** The prototype puts the decision in
@@ -780,12 +963,12 @@ case in Clang is gated on the language mode; `[` branches on C++ and
 Objective-C; `^` on blocks. A predicate derived from the compiler's own
 notion of "can begin an expression" therefore makes **the fixity of an
 expression depend on the dialect**, which is a fresh violation of exactly the
-property U9 was written to protect.
+property [user-declared-fixity](#user-declared-fixity) was written to protect.
 
 *Two: the chained-postfix wart is a hard error with an unhelpful message.*
 `a ⊖ ⊗` takes `⊗` as the start of an operand and then fails at the `;` with
 `expected expression`, pointing at the semicolon and mentioning neither
-postfix nor the fix. Unlike the backtick project's DEV-04, this one is
+postfix nor the fix. Unlike the backtick project's [bare-nesting-detection](../ops/DEVIATIONS.md#bare-nesting-detection), this one is
 diagnosable — the parser knows it has just taken a user operator as infix and
 run into a non-operand — so it is a QoI problem, not a grammatical one.
 
@@ -800,8 +983,8 @@ two are fold expressions, where the parse cascades into `expected ')'` and
 `expression contains unexpanded parameter pack`. That cost is paid by every
 user of the feature, not only by the ones who declare a postfix operator.
 
-*Four: it reopens the ABI question (U8), and not hypothetically.* Two unary
-forms have the same arity, so the U8 prototype scheme `v <arity>
+*Four: it reopens the ABI question ([operator-mangling](#operator-mangling)), and not hypothetically.* Two unary
+forms have the same arity, so the [operator-mangling](#operator-mangling) prototype scheme `v <arity>
 <source-name>` gives `⊖a` and `a⊖` the same mangled operator-name. The
 Itanium ABI already has this problem and already solved it: the
 `<expression>` production spells prefix `++` as `pp_` and postfix as `pp`.
@@ -817,7 +1000,7 @@ template <class T> void f(decltype(T{}++)) {}
 
 A user operator would need the same trailing-`_` convention grafted onto the
 `v <arity> <source-name>` production, which is a cross-vendor ABI change on
-top of a mangling U8 already flags as open. There is one escape: if the
+top of a mangling [operator-mangling](#operator-mangling) already flags as open. There is one escape: if the
 postfix use *synthesizes* the `std::postfix` tag as a real first argument —
 `operator++(int)`'s trick, generalized — then the postfix call has two
 arguments, mangles distinctly, and overload-resolves without a new mechanism.
@@ -831,7 +1014,7 @@ is not small: `ComparisonCategories.{h,cpp}` is 452 lines of dedicated AST
 support, `Sema::CheckComparisonCategoryType` is ninety more with its own
 `InvalidSTLDiagnoser`, and 26 files know about it. The consequence for the
 paper is the one that matters: **LEWG joins a proposal already routed to
-SG16, EWG/CWG and the ABI group.** D13's rule — bundle what shares a design
+SG16, EWG/CWG and the ABI group.** [library-scope](backtick-operator-design.md#library-scope)'s rule — bundle what shares a design
 surface within one committee, split what crosses committees — says on its own
 terms that this does not belong in v1.
 
@@ -850,7 +1033,7 @@ the fact that fixity stays user-declarable in both, which is the constraint
 the whole question exists to protect.
 
 The alternatives are worse and should be recorded as such: whitespace
-sensitivity (Swift's answer, declined by U5, and the reason this section
+sensitivity (Swift's answer, declined by [unary-forms](#unary-forms), and the reason this section
 exists) makes `a ⊖ b` and `a ⊖b` different programs; a code-point partition
 makes the committee choose fixity for every symbol in the table; and doing
 nothing at all is what v1 does, at the cost of one paragraph in the paper

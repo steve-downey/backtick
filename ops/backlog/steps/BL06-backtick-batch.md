@@ -1,15 +1,15 @@
-# BL06 — backtick batch: `B03`, `B04`, `B06`, `B08`, `B35`
+# BL06 — backtick batch: [`c-mode-tokenization`](../../BACKLOG.md#c-mode-tokenization), [`backtick-source-range`](../../BACKLOG.md#backtick-source-range), [`dead-nesting-diagnostic`](../../BACKLOG.md#dead-nesting-diagnostic), [`template-ast-print-test`](../../BACKLOG.md#template-ast-print-test), [`libclang-cursor-arm`](../../BACKLOG.md#libclang-cursor-arm)
 
 **Goal.** Five small backtick-track defects closed in one build and one gate.
 
 **Depends on:** BL01.
-**Closes:** `B03`, `B04`, `B06`, `B08`, `B35`.
-**Refs:** DEV-U07 (`ops/unicode-operators/clang/DEVIATIONS.md:20`);
+**Closes:** [`c-mode-tokenization`](../../BACKLOG.md#c-mode-tokenization), [`backtick-source-range`](../../BACKLOG.md#backtick-source-range), [`dead-nesting-diagnostic`](../../BACKLOG.md#dead-nesting-diagnostic), [`template-ast-print-test`](../../BACKLOG.md#template-ast-print-test), [`libclang-cursor-arm`](../../BACKLOG.md#libclang-cursor-arm).
+**Refs:** [flag-language-mode](../../unicode-operators/clang/DEVIATIONS.md#flag-language-mode) (`ops/unicode-operators/clang/DEVIATIONS.md:20`);
 `ops/unicode-operators/clang/handoffs/U04-lexer-ucn.handoff.md:33`, `:173-198`,
 `:309-311`; `ops/handoffs/15-defect-fixes.handoff.md:53-59`, `:260-266`,
-`:280-282`; `ops/handoffs/11-ast-wrapper.handoff.md:127`; DEV-04, DEV-05.
+`:280-282`; `ops/handoffs/11-ast-wrapper.handoff.md:127`; [bare-nesting-detection](../../DEVIATIONS.md#bare-nesting-detection), [backtick-source-locations](../../DEVIATIONS.md#backtick-source-locations).
 
-**Batch them.** `B03` and `B04` both touch widely-included files —
+**Batch them.** [`c-mode-tokenization`](../../BACKLOG.md#c-mode-tokenization) and [`backtick-source-range`](../../BACKLOG.md#backtick-source-range) both touch widely-included files —
 `Options.td` alone is ~709 ninja edges and ~9 minutes, as U04 measured, and
 `Expr.h` is a wide rebuild. One cycle instead of five is the point.
 
@@ -19,11 +19,11 @@ independently. F23/F24 established that both apply clean
 
 ## Do
 
-### `B03` — `-fbacktick` lacks `ShouldParseIf<cplusplus.KeyPath>`
+### [`c-mode-tokenization`](../../BACKLOG.md#c-mode-tokenization) — `-fbacktick` lacks `ShouldParseIf<cplusplus.KeyPath>`
 
 Append the guard to `defm backtick`, matching what the Unicode branch already
 carries at `~/src/llvm/unicode/clang/include/clang/Options/Options.td:4072-4076`,
-including its DEV-U07 comment block at `:4069-4071`:
+including its [flag-language-mode](../../unicode-operators/clang/DEVIATIONS.md#flag-language-mode) comment block at `:4069-4071`:
 
 ```
   NegFlag<SetFalse>, BothFlags<[], [ClangOption, CC1Option]>>,
@@ -34,7 +34,7 @@ including its DEV-U07 comment block at `:4069-4071`:
 - `backtick-23`: `clang/include/clang/Options/Options.td:4017-4020`
 
 Note the path: `clang/include/clang/**Options**/Options.td`, not `Driver/`
-(DEV-01, `ops/handoffs/00-baseline.handoff.md:33`).
+([options-td-path](../../DEVIATIONS.md#options-td-path), `ops/handoffs/00-baseline.handoff.md:33`).
 
 Bring over `clang/test/Lexer/backtick-c-mode.c`, which **already exists on
 the Unicode branch** — it was written there as a backtick-track file and
@@ -42,7 +42,7 @@ flagged in `REPLAY.md`'s U04 row precisely so it could be handed back. It
 pins the behaviour as a *diff* of flag-on versus flag-off output rather than
 as two expectations.
 
-**This is worse than `BACKLOG.md` says.** DEV-U07 describes the symptom as
+**This is worse than `BACKLOG.md` says.** [flag-language-mode](../../unicode-operators/clang/DEVIATIONS.md#flag-language-mode) describes the symptom as
 suppressing an accurate diagnostic. Measured:
 
 ```
@@ -58,9 +58,9 @@ reverted `CLANG_EXECUTABLE_VERSION`; use `bin/clang`.)
 So the flag does not merely change C-mode tokenization — it makes a C
 compilation accept `` a `g` b ``. (The keyword-escape half is already
 rejected in C: the declarator path runs through `ParseUnqualifiedId`.) Say
-this in the handoff and correct the `B03` row.
+this in the handoff and correct the [`c-mode-tokenization`](../../BACKLOG.md#c-mode-tokenization) row.
 
-### `B04` — `BacktickInfixExpr`'s source range does not span its operands
+### [`backtick-source-range`](../../BACKLOG.md#backtick-source-range) — `BacktickInfixExpr`'s source range does not span its operands
 
 `clang/include/clang/AST/Expr.h:2276-2281` forwards `getBeginLoc`/`getEndLoc`
 to `Inner`, so the range is the desugared call's — and `BuildCallExpr` takes
@@ -83,7 +83,7 @@ and returns null when a builtin with custom type checking rewrote the call
 `getSourceRange()` alongside.
 
 ~12 lines, header-only. No serialization change — the wrapper stores nothing
-(DEV-05). **Model: `UserOperatorExpr::getBeginLoc` at
+([backtick-source-locations](../../DEVIATIONS.md#backtick-source-locations)). **Model: `UserOperatorExpr::getBeginLoc` at
 `~/src/llvm/unicode/clang/include/clang/AST/ExprCXX.h:471-491`**, whose doc
 comment already diagnoses this exact root cause for the same reason.
 
@@ -96,21 +96,21 @@ fallback does not crash.
 
 Expect churn: the range change may move locations in other expected output.
 
-### `B06` — delete the dead diagnostic
+### [`dead-nesting-diagnostic`](../../BACKLOG.md#dead-nesting-diagnostic) — delete the dead diagnostic
 
 Remove `err_backtick_nested_requires_parens`,
 `clang/include/clang/Basic/DiagnosticParseKinds.td:214-217`. Grep over all of
 `clang/` finds exactly one hit: the definition. Carried unfired since S04,
 nine times.
 
-Deletion is **ledger-consistent, not merely convenient**: DEV-04 is
+Deletion is **ledger-consistent, not merely convenient**: [bare-nesting-detection](../../DEVIATIONS.md#bare-nesting-detection) is
 **RESOLVED** in the other direction — §17.1, bare nesting is token-identical
-to blessed D1 chaining, so it cannot and should not be diagnosed, and "the
+to blessed [chaining-associativity](../../../docs/backtick-operator-design.md#chaining-associativity) chaining, so it cannot and should not be diagnosed, and "the
 original 'parse error' wording was impossible". The diagnostic is unfireable
-*as specified*, not merely unfired. Do not implement the D3 lookahead it was
+*as specified*, not merely unfired. Do not implement the [nesting-vs-chaining](../../../docs/backtick-operator-design.md#nesting-vs-chaining) lookahead it was
 written for.
 
-### `B08` — `-ast-print` in a template context
+### [`template-ast-print-test`](../../BACKLOG.md#template-ast-print-test) — `-ast-print` in a template context
 
 Add a template case to `clang/test/Parser/backtick-ast-print.cpp` exercising
 `TreeTransform<Derived>::TransformBacktickInfixExpr`
@@ -122,17 +122,17 @@ today: the two backtick tests that use templates run only `-fsyntax-only
 Two traps the Unicode track already paid for:
 
 - `-ast-print` cannot round-trip an `auto`-returning function template
-  (**B28**). Write `template<class F> int apply(F f, int a, int b) { return a `f` b; }`,
+  (**[auto-return-round-trip](../../BACKLOG.md#auto-return-round-trip)**). Write `template<class F> int apply(F f, int a, int b) { return a `f` b; }`,
   with an explicit `int`.
 - It renders `requires(T a, T b)` with a space.
 
 **Also fix the false comment at `backtick-ast-print.cpp:44-47`**, which
 claims the escape's `-ast-print` behaviour is covered by
 `clang/test/Parser/backtick-escape.cpp`. That file's RUN lines are
-`-ast-dump` and `-fsyntax-only` only. That sentence is exactly what let `B02`
-hide for nine steps. Replace it with an accurate note pointing at `B02`.
+`-ast-dump` and `-fsyntax-only` only. That sentence is exactly what let [`keyword-escape-round-trip`](../../BACKLOG.md#keyword-escape-round-trip)
+hide for nine steps. Replace it with an accurate note pointing at [`keyword-escape-round-trip`](../../BACKLOG.md#keyword-escape-round-trip).
 
-### `B35` — libclang's `CXCursor.cpp`
+### [`libclang-cursor-arm`](../../BACKLOG.md#libclang-cursor-arm) — libclang's `CXCursor.cpp`
 
 `clang/tools/libclang/CXCursor.cpp`'s exhaustive `MakeCXCursor` switch has no
 `BacktickInfixExprClass` arm, so a `-Wswitch` warning is still live on a
@@ -162,9 +162,9 @@ One line next to `CXXRewrittenBinaryOperatorClass`.
 - `check-clang` green on `backtick-trunk`, then independently on
   `backtick-23`.
 
-## Not in this batch — `B24`
+## Not in this batch — [`inner-call-source-range`](../../BACKLOG.md#inner-call-source-range)
 
-**`B24` is not cheap**, against `BACKLOG.md` §7's grouping. The inner
+**[`inner-call-source-range`](../../BACKLOG.md#inner-call-source-range) is not cheap**, against `BACKLOG.md` §7's grouping. The inner
 `CallExpr`'s begin loc comes from its callee (`Expr.h:3321-3338`), and trunk
 now *caches* it in a trailing `SourceLocation`
 (`CallExprBits.HasTrailingSourceLoc`, written by `updateTrailingSourceLoc()`
@@ -177,7 +177,7 @@ close it WONTFIX with the note that the node *as written* spans correctly and
 a desugaring's semantic form carrying the callee's range is what `-ast-dump`
 does for every other desugaring. Do not attempt it here.
 
-`B02` and `B05` are also out of scope — each is its own sitting. `B02`
+[`keyword-escape-round-trip`](../../BACKLOG.md#keyword-escape-round-trip) and [`backtick-ast-matchers`](../../BACKLOG.md#backtick-ast-matchers) are also out of scope — each is its own sitting. [`keyword-escape-round-trip`](../../BACKLOG.md#keyword-escape-round-trip)
 additionally needs a *decision*: `DeclarationName::print`
 (`clang/lib/AST/DeclarationName.cpp:131-148`) is the diagnostic path as well
 as the printing path, so re-escaping keyword names naively changes diagnostic
@@ -185,7 +185,7 @@ text everywhere.
 
 ## Capture in handoff
 
-The measured C-mode behaviour for `B03` (it is a stronger claim than the
-ledger records), the churn `B04` caused in other expected output, and
-confirmation that `B24` was consciously excluded with the reason above — so
+The measured C-mode behaviour for [`c-mode-tokenization`](../../BACKLOG.md#c-mode-tokenization) (it is a stronger claim than the
+ledger records), the churn [`backtick-source-range`](../../BACKLOG.md#backtick-source-range) caused in other expected output, and
+confirmation that [`inner-call-source-range`](../../BACKLOG.md#inner-call-source-range) was consciously excluded with the reason above — so
 the next reader of §7 does not re-batch it.

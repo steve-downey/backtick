@@ -33,9 +33,12 @@ papers.
 Steps are **named by slug, never numbered** — the checklist's ordinals are
 reading order and shift when a step is inserted; the slug is the identity and
 is what every cross-reference uses. The plan's own first step,
-`slug-the-ledgers`, retires the serial numbers this repo already carries
-(`B03`, `DEV-U13`, `D16`, `U8`) for the same reason; see `~/.claude/CLAUDE.md`,
-"Name things for what they are, not what number they came in at".
+`slug-the-ledgers`, retired the serial numbers this repo used to carry in its
+decision logs, deviation ledgers and backlog, for the same reason.
+[`ops/SLUGS.md`](ops/SLUGS.md) is the map from every retired number to its
+slug, and it also records what was deliberately *not* renamed. See
+`~/.claude/CLAUDE.md`, "Name things for what they are, not what number they
+came in at".
 
 It is **ordered by what each item does to a paper**, not by severity and not
 by when the item was noticed — the implementation tracks are complete, so the
@@ -56,11 +59,13 @@ and a Status-log row so base-commit changes are not lost.
 ## Layout
 
 - `docs/unicode-operators.md` — the Unicode design doc, the exact counterpart
-  of the backtick one below: decisions log (U1–U11), the token set, the
-  grammar, the implementation sketch, ABI, and the open questions. The
+  of the backtick one below: the decisions log (§2, one slugged entry per
+  question), the token set, the grammar, the implementation sketch, ABI, and
+  the open questions. The
   `DXXXXR0` paper is written from it.
 - `docs/backtick-operator-design.md` — the canonical design + decisions log
-  (D1–D16), precedence rationale (§4), the same-delimiter parsing problem (§5),
+  (§3, one slugged entry per question), precedence rationale (§4), the
+  same-delimiter parsing problem (§5),
   per-compiler implementation plans (§6 Clang, §7 clang-format, §8 GCC), and
   post-implementation clarifications (§17). This is the source of truth the
   paper is written from; deviations get reconciled back into it.
@@ -71,9 +76,11 @@ and a Status-log row so base-commit changes are not lost.
   editing this prose.
 - `ops/PLAN.md` — master operational checklist (Clang phases A–C, then GCC).
 - `ops/gcc/PLAN.md` — the GCC sub-plan (G01–G10).
-- `ops/BACKLOG.md` — every defect the three tracks found and left standing
-  (`B01`–`B38`), with a `Closed by` column pointing at the step that closes
-  each one. Open *design* questions are not in it; §6 indexes those.
+- `ops/BACKLOG.md` — every defect the three tracks found and left standing,
+  one slugged entry each, with a `Closed by` field naming the step that closes
+  it. Open *design* questions are not in it; §6 indexes those.
+- `ops/SLUGS.md` — the map from every retired serial number to its slug, both
+  directions, and the record of what was left numbered on purpose.
 - `ops/completion/PLAN.md` — the completion track (16 steps, named by slug), which schedules
   and gates **everything** still outstanding: defects, reconciliation,
   decisions and the papers. The only plan with unchecked steps.
@@ -149,7 +156,8 @@ Two gotchas that make a failed gate look green — both cost real time already:
 in `ops/backlog/PLAN.md`'s gate facts; the short form:
 
 - **(closed 2026-08-08)** The 8 `DirectoryWatcherTest.*` cases used to fail
-  intermittently when the machine ran out of free inotify watches (B31).
+  intermittently when the machine ran out of free inotify watches
+  ([inotify-watch-budget](ops/BACKLOG.md#inotify-watch-budget)).
   The root fix is applied: `fs.inotify.max_user_watches` is now 524288, so
   they are ordinary tests — do **not** budget them as expected failures and
   do **not** filter them out. If they ever fail again, check
@@ -160,13 +168,14 @@ in `ops/backlog/PLAN.md`'s gate facts; the short form:
   2018, outside any repo) picked up by clang-format walking up the directory
   tree. It fails identically on the pristine `build-main` binary. It **passes**
   on every trunk-based branch, so do not budget it on `backtick-trunk` or the
-  Unicode branches — and do not "fix" it by touching that file (B33).
+  Unicode branches — and do not "fix" it by touching that file
+  ([stray-clang-format-config](ops/BACKLOG.md#stray-clang-format-config)).
 
 `Analysis/scan-build/cxx-name.test` and `Driver/hip-gz-options.hip` used to
 fail here too, from a `CLANG_EXECUTABLE_VERSION` of `23-backtick`/`24-backtick`.
 BL01 reverted that on 2026-08-05; both pass now and the suffixed binaries are
 gone. If you see them fail again, check the build dir's cache before anything
-else (B32).
+else ([clang-executable-version](ops/BACKLOG.md#clang-executable-version)).
 
 GCC (dev build is `--disable-bootstrap --enable-languages=c,c++`):
 ```bash
@@ -204,20 +213,31 @@ make -C gcc check-c++ RUNTESTFLAGS="dg.exp=g++.dg/backtick/*.C"
 
 ## Design facts worth knowing before editing
 
-- **Precedence (D2/§4):** highest-precedence *binary* operator — tighter than
-  `*`, looser than unary/prefix; operands are cast-expressions, so `-a `f` -b` ==
-  `f(-a, -b)` (symmetric). The slot is an assignment-expression (D4).
+- **Precedence (§4,
+  [precedence-level](docs/backtick-operator-design.md#precedence-level)):**
+  highest-precedence *binary* operator — tighter than `*`, looser than
+  unary/prefix; operands are cast-expressions, so `-a `f` -b` == `f(-a, -b)`
+  (symmetric). The slot is an assignment-expression
+  ([slot-grammar](docs/backtick-operator-design.md#slot-grammar)).
 - **Same-delimiter problem (§5):** open and close are the same token. Suppress
   the operator interpretation inside the slot — Clang `BacktickIsOperator`
   (modeled on `GreaterThanIsOperator`), GCC `backtick_is_operator_p` (modeled on
   `greater_than_is_operator_p`).
-- **Nesting vs. chaining (D3/§17.1):** "bare nesting" is *token-identical* to a
-  left-associative D1 chain and therefore correctly accepted, not diagnosed, by
-  both compilers (DEV-04 / DEV-G04). To nest, parenthesize the slot.
-- **Keyword-escape (D10/§12):** the same backtick token, disambiguated purely by
+- **Nesting vs. chaining (§17.1,
+  [nesting-vs-chaining](docs/backtick-operator-design.md#nesting-vs-chaining)):**
+  "bare nesting" is *token-identical* to a left-associative chain
+  ([chaining-associativity](docs/backtick-operator-design.md#chaining-associativity))
+  and therefore correctly accepted, not diagnosed, by both compilers
+  ([bare-nesting-detection](ops/DEVIATIONS.md#bare-nesting-detection),
+  [gcc-bare-nesting-detection](ops/gcc/DEVIATIONS.md#gcc-bare-nesting-detection)).
+  To nest, parenthesize the slot.
+- **Keyword-escape (§12,
+  [keyword-escape-coexistence](docs/backtick-operator-design.md#keyword-escape-coexistence)):**
+  the same backtick token, disambiguated purely by
   grammatical position (operand/declarator position → escaped identifier;
   post-operand position → infix operator). Yields an ordinary identifier;
   lookup/mangling/ABI unchanged.
 - **ADL is normative (§17.4):** the slot must get the same ADL as the plain call.
   Clang carries it as an `UnresolvedLookupExpr`; GCC resolves a bare-name slot
-  via explicit `perform_koenig_lookup` (the DEV-G05 defect, fixed in G10).
+  via explicit `perform_koenig_lookup` (the
+  [gcc-slot-adl](ops/gcc/DEVIATIONS.md#gcc-slot-adl) defect, fixed in G10).
