@@ -1,4 +1,4 @@
-# clang-paper-truth — Clang paper-truth: [`c-mode-tokenization`](../../BACKLOG.md#c-mode-tokenization), [`keyword-escape-round-trip`](../../BACKLOG.md#keyword-escape-round-trip), [`backtick-source-range`](../../BACKLOG.md#backtick-source-range)
+# clang-paper-truth — The three Clang defects that falsify a paper claim
 
 **Goal.** Three defects on the backtick branches where the implementation does
 not do what a document says. `BL06` had them in a batch with two hygiene items

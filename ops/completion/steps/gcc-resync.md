@@ -1,4 +1,4 @@
-# gcc-resync — GCC: re-sync ([`gcc-trunk-pin`](../../BACKLOG.md#gcc-trunk-pin)), then [`template-id-slot-adl`](../../BACKLOG.md#template-id-slot-adl), [`module-streaming-escapes`](../../BACKLOG.md#module-streaming-escapes), [`grokdeclarator-guard-scope`](../../BACKLOG.md#grokdeclarator-guard-scope), [`gcc-wrapper-parity`](../../BACKLOG.md#gcc-wrapper-parity)
+# gcc-resync — Re-sync GCC to current trunk, then its four open defects
 
 **Goal.** The GCC track has been parked since `G10`. It is pinned at trunk
 `c9ee2c5ab6c` while the Clang side has moved to 23.x and 24.x, and it carries

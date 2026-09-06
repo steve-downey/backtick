@@ -1,4 +1,4 @@
-# hygiene-parity — Hygiene: [`backtick-ast-matchers`](../../BACKLOG.md#backtick-ast-matchers), [`dead-nesting-diagnostic`](../../BACKLOG.md#dead-nesting-diagnostic), [`slot-split-penalty`](../../BACKLOG.md#slot-split-penalty), [`libclang-cursor-arm`](../../BACKLOG.md#libclang-cursor-arm), and record [`template-id-code-point`](../../BACKLOG.md#template-id-code-point) / [`confusable-spellings`](../../BACKLOG.md#confusable-spellings)
+# hygiene-parity — The tooling-parity gaps, the dead code, the formatting limit
 
 **Goal.** Six rows with no paper consequence. They are last on purpose — none
 of them changes what either paper can claim — but they are not optional,

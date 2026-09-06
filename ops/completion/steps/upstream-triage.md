@@ -1,4 +1,4 @@
-# upstream-triage — Triage the upstream annoyances: [`inner-call-source-range`](../../BACKLOG.md#inner-call-source-range), [`cxxfilt-stdin-nonascii`](../../BACKLOG.md#cxxfilt-stdin-nonascii)–[`operator-caret-range`](../../BACKLOG.md#operator-caret-range)
+# upstream-triage — Triage the five upstream annoyances
 
 **Goal.** Five rows that have sat as "upstream's problem, probably" get a
 decision each: **report**, or **WONTFIX with the reason recorded**. Either

@@ -1,4 +1,4 @@
-# null-return-suppression — [`null-return-suppression`](../../BACKLOG.md#null-return-suppression): the analyzer's null-return suppression, on all four branches
+# null-return-suppression — The analyzer's null-return suppression, on all four branches
 
 **Goal.** Both wrapper nodes defeat the static analyzer's null-return
 suppression, so the operator form reports false positives the identically

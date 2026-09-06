@@ -1,4 +1,4 @@
-# decision-brief — The decision brief: four open questions, and [`dependent-template-operator-id`](../../BACKLOG.md#dependent-template-operator-id)
+# decision-brief — Four open questions, and the "anywhere" claim
 
 **Goal.** The seven items in `ops/BACKLOG.md` §6 have been "measured, with a
 recommendation, needing an author's decision" since the tracks closed, and

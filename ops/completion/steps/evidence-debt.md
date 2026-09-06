@@ -1,4 +1,4 @@
-# evidence-debt — Discharge the evidence debt: [`lldb-hunk-verification`](../../BACKLOG.md#lldb-hunk-verification), [`code-completion-priority`](../../BACKLOG.md#code-completion-priority), [`ucd-input-manifest`](../../BACKLOG.md#ucd-input-manifest), [`template-ast-print-test`](../../BACKLOG.md#template-ast-print-test)
+# evidence-debt — Discharge the evidence debt: the unbuilt hunk, the unwritten test, the unregenerable table
 
 **Goal.** Four places where the prototype claims, or is about to claim, that
 something was checked and it was not. This step supersedes

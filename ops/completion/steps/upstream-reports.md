@@ -1,4 +1,4 @@
-# upstream-reports — File the upstream defects: [`increment-decrement-mangling`](../../BACKLOG.md#increment-decrement-mangling), [`clangir-lvalue-crash`](../../BACKLOG.md#clangir-lvalue-crash), [`unqualified-id-union-read`](../../BACKLOG.md#unqualified-id-union-read)
+# upstream-reports — File the three upstream defects
 
 **Goal.** Three defects that are LLVM's, not this feature's, stop being
 private notes in `ops/` and become issues the papers can cite.
