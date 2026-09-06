@@ -275,7 +275,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** [operator-id-anywhere](unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere); U07, U10 handoffs
 
-**Closed by.** **A pair of steps, not one.** [decision-brief](completion/steps/decision-brief.md) re-triaged this as a decision and the author answered it on 2026-09-06 — option (c), [dependent-template-operator-id](../docs/open-decisions.md#dependent-template-operator-id): **reword U§7.1 and report upstream, in that order, and do not gate the paper on the fix landing.** So this row closes when both halves are done: the U§7.1 reword by [reconcile-declaring-using](completion/steps/reconcile-declaring-using.md), and the upstream report — filed against the **literal-operator** reproducer `t.template operator""_lit<int>(0)`, which needs no user operator and no unmerged branch — by [upstream-triage](completion/steps/upstream-triage.md). Neither half is [implement-decisions](completion/steps/implement-decisions.md)'s; nothing here turns into code on this project's branches.
+**Closed by.** **A pair of steps, not one — and the second half is back with the author.** [decision-brief](completion/steps/decision-brief.md) re-triaged this as a decision and the author answered it on 2026-09-06 — option (c), [dependent-template-operator-id](../docs/open-decisions.md#dependent-template-operator-id): **reword U§7.1 and report upstream, in that order, and do not gate the paper on the fix landing.** The reword half stands and is [reconcile-declaring-using](completion/steps/reconcile-declaring-using.md)'s. **The report half cannot be filed as directed and no draft was written.** [upstream-triage](completion/steps/upstream-triage.md) found on 2026-09-06 that the literal-operator reproducer `t.template operator""_lit<int>(0)` is *correctly* rejected: a literal-operator-id shall not be declared as a class member ([over.literal]/1, and GCC agrees), so no valid program contains that construct, and trunk `SemaTemplate.cpp` says so at the site — `case UnqualifiedIdKind::IK_LiteralOperatorId:` carries the comment *"This is a kind of template name, but can never occur in a dependent scope (literal operators can only be declared at namespace scope)."* Filing it would report correct behaviour as a bug. **This falsifies the premise the answer rested on** — that the limitation is one "user-defined literal operators have had since C++11" — because literal operators share the code path but suffer no limitation from it. The limitation is exclusive to the new name kind. The question is reopened for the author in [`docs/open-decisions.md`](../docs/open-decisions.md#dependent-template-operator-id); this row stays **open** until it is answered again. Nothing here turns into code on this project's branches either way.
 
 ### inner-call-source-range
 
@@ -285,7 +285,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** U11, U16 handoffs
 
-**Closed by.** —
+**Closed by.** **WONTFIX, 2026-09-06, [upstream-triage](completion/steps/upstream-triage.md).** The node *as written* spans correctly (`UserOperatorExpr <col:30, col:36>` for `x ⊞ y`); the inner `CallExpr` is the semantic form, and taking its begin from its callee is what Clang does for every desugaring. Upstream's own C++20 rewritten comparison is the precedent: for `p < q` the outer `CXXRewrittenBinaryOperator` is `<col:28, col:32>` and the inner synthesized `CXXOperatorCallExpr` is `<col:28, col:30>`, which does not span the written form either and has never been treated as a defect. There is nothing to report upstream — upstream has no user-infix operators, so no upstream-visible symptom exists. **Correction to the re-grade above:** a public setter *does* exist. `CallExpr::setUsesMemberSyntax()` clears `HasTrailingSourceLoc` and calls `updateTrailingSourceLoc()`, and `getBeginLoc()` then takes the begin from argument 0 — exactly the wanted range, no `CallExpr::Create` overload needed. It is declined on meaning, not cost: that bit asserts "a call to an explicit-object member function written with member syntax", which is false of these nodes, and it is serialized into PCHs and modules for any later upstream consumer to read back. Recorded for the papers in [`docs/backtick-operator-design.md`](../docs/backtick-operator-design.md) §17.5, with a dated entry in [source-fidelity-node](../docs/backtick-operator-design.md#source-fidelity-node)'s Log, and in [`docs/unicode-operators.md`](../docs/unicode-operators.md) §7 "Desugaring".
 
 ### clangir-backtick-arms
 
@@ -339,7 +339,7 @@ Not ours, found while doing this work, and worth reporting.
 
 **Where.** U09 handoff; [vendor-extended-mangling](unicode-operators/clang/DEVIATIONS.md#vendor-extended-mangling)
 
-**Closed by.** —
+**Closed by.** **NOT CLOSED — report drafted 2026-09-06, pending the maintainer filing it**: [cxxfilt-stdin-nonascii draft](completion/upstream-drafts/cxxfilt-stdin-nonascii.md), by [upstream-triage](completion/steps/upstream-triage.md). Confirmed on two builds against trunk-identical source (`llvm-cxxfilt.cpp` is byte-identical between the build base and `72417eb739e5`); cause is `IsLegalItaniumChar` rejecting every byte `>= 0x80`, so the stdin splitter cuts a UTF-8 identifier into pieces. No duplicate in 5 queries; #39337 (the request that added the split) and #118705 cited as prior art. **#178767 is *not* this bug** — that symbol fails on the argv path too, so it is a demangler limitation, correcting the guess in [upstream-reports](completion/handoffs/upstream-reports.handoff.md)'s forward notes.
 
 ### auto-return-round-trip
 
@@ -349,7 +349,7 @@ Not ours, found while doing this work, and worth reporting.
 
 **Where.** U16 handoff
 
-**Closed by.** —
+**Closed by.** **NOT CLOSED — report drafted 2026-09-06, pending the maintainer filing it**: [auto-return-round-trip draft](completion/upstream-drafts/auto-return-round-trip.md), by [upstream-triage](completion/steps/upstream-triage.md). Confirmed on two builds; `DeclPrinter::VisitFunctionDecl` is identical between the build base and trunk `72417eb739e5`. Cause is `QualType Ty = D->getType()` — the type *after* deduction — where `FunctionDecl::getDeclaredReturnType()` exists and is documented for exactly this distinction. Control: the same shape with an explicit return type round-trips clean. No duplicate in 6 queries; #12178, #218420 and #147150 cited as prior art in the same family.
 
 ### pch-ast-print-order
 
@@ -359,7 +359,7 @@ Not ours, found while doing this work, and worth reporting.
 
 **Where.** U17 handoff
 
-**Closed by.** —
+**Closed by.** **NOT CLOSED — report drafted 2026-09-06, pending the maintainer filing it**: [pch-ast-print-order draft](completion/upstream-drafts/pch-ast-print-order.md), by [upstream-triage](completion/steps/upstream-triage.md). **Likely a comment on the open #24794, not a new issue** — same two functions, its "expels existing decls" half already fixed, this ordering half surviving because both loaders splice at the head. **Correction to the Item above:** the obvious reproducer does not reproduce. A class that sits in the PCH and is never named prints in source order; the class must be *used* from the main file, which is what forces `RecordDecl::LoadFieldsFromExternalStorage` to run before the full lexical load. `DeclBase.cpp` is byte-identical between the build base and trunk `72417eb739e5`. 7 queries.
 
 ### operator-caret-range
 
@@ -369,7 +369,7 @@ Not ours, found while doing this work, and worth reporting.
 
 **Where.** U10 handoff
 
-**Closed by.** —
+**Closed by.** **WONTFIX, 2026-09-06, [upstream-triage](completion/steps/upstream-triage.md).** This is upstream's caret range for *every* operator-function-id, not a Unicode one and not a regression: in stock C++23 with no feature flag, `operator+(a, a)` and `operator""_x(a)` on undeclared operators each underline exactly the 8 columns of `operator` and nothing after it, character-identically to the glyph case. Verified independently on two builds (`a815e6f267c1` pristine, and `783a9c1a5f6f` with the flag off). It is cosmetic, no paper claim depends on it, and reporting it as a Unicode defect would be wrong while reporting it as the general case would be a trivial diagnostic-polish issue this project has no standing to prioritise. 3 targeted queries found no existing issue. Recorded for the papers in [operator-name-caret-range](../docs/unicode-operators.md#operator-name-caret-range), a new §10 subsection.
 
 ### clangir-lvalue-crash
 
