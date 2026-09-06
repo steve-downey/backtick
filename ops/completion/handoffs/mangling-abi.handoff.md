@@ -1,16 +1,22 @@
 # Handoff — mangling-abi — The ABI question, and U§9 with it
 
-- **Status:** **BLOCKED on the author** — and, per this track's second rule,
-  that is what success looks like for a `Decide` step. U§9 is written; two of
-  its three subsections are settled and reconciled, and the third
-  ([abi-production-request](../../../docs/unicode-operators.md#abi-production-request))
-  is a recommendation with options and costs, not a choice. The box in
-  `ops/completion/PLAN.md` stays **unticked** until the answer is recorded,
-  exactly as [decision-brief](decision-brief.handoff.md) stood from 2026-09-05
-  to 2026-09-06.
+- **Status:** **GREEN (gate passed, and the step is complete).** It stood
+  BLOCKED on the author on 2026-09-06 — which is what success looks like for a
+  `Decide` step under this track's second rule — and the author answered the
+  same day, **accepting the recommendation as written**. The answer is
+  recorded, so the box is ticked. Same shape as
+  [decision-brief](decision-brief.handoff.md), which stood blocked from
+  2026-09-05 to 2026-09-06.
+- **A second answer was recorded here as bookkeeping**, because it lives in
+  the same document: [dependent-template-operator-id](../../../docs/open-decisions.md#dependent-template-operator-id)'s
+  reopened report half is settled as **option (a), reword only, no upstream
+  report**. None of the work it generates was done — the reword is
+  [reconcile-declaring-using](../steps/reconcile-declaring-using.md)'s. See
+  "The second answer" below.
 - **Branch / commit:** no branch. `unicode-operators` in *this* repo only —
-  `docs:` commit for U§9 and the decision entry, `ops:` commit for the
-  ledgers, the backlog row, the plan and `CLAUDE.md`. **Nothing was built and
+  `968cfe7` (`docs:`, U§9 and the decision entry), `97c7823` (`ops:`, the
+  ledgers, the backlog row, the plan and `CLAUDE.md`), and the two commits
+  recording the answers. **Nothing was built and
   no feature branch was touched**; `backtick-23`, `backtick-trunk`,
   `unicode-operators-experiment`, `unicode-operators-upstream` and the GCC
   `backtick` branch are untouched, as the step file's "No build; no feature
@@ -27,11 +33,12 @@ resolved". They are separable and only one of them needs the author:
 | | Settled? | Where |
 |---|---|---|
 | What the prototype **implements** | yes — it is a measurement | [mangling-derivation-rule](../../../docs/unicode-operators.md#mangling-derivation-rule) |
-| What the paper **asks for** | **no — the author's** | [abi-production-request](../../../docs/unicode-operators.md#abi-production-request) |
+| What the paper **asks for** | **answered 2026-09-06** — the recommendation, as written | [abi-production-request](../../../docs/unicode-operators.md#abi-production-request) |
 | What is **unexamined** (Windows) | yes — a stated position, not silence | [microsoft-abi-position](../../../docs/unicode-operators.md#microsoft-abi-position) |
 
 The three options are the step file's, with their costs measured rather than
-asserted, and the recommendation is:
+asserted. The recommendation, **accepted by the author on 2026-09-06 as
+written**, is:
 
 > **(a) and (b) together, non-normatively.** Describe the vendor-extended form
 > as the fallback that needs no ABI action — that it exists at all is a
@@ -67,6 +74,42 @@ became the standardized encoding, would quietly foreclose the thing that
 answer was careful to keep open. That is why the recommendation is not (a)
 alone, and why `s` is reserved in the sketch rather than omitted. Nothing in
 U§9 forecloses postfix; it is written to keep it takeable.
+
+## The second answer, recorded here as bookkeeping
+
+Not this step's question, and **none of the work it generates was done here.**
+It is recorded in this step because it lives in
+[`docs/open-decisions.md`](../../../docs/open-decisions.md), which this step
+had open.
+
+**[dependent-template-operator-id](../../../docs/open-decisions.md#dependent-template-operator-id),
+the report half [upstream-triage](upstream-triage.handoff.md) reopened →
+option (a): reword only, no upstream report.** The gap is this feature's own,
+not inherited. Nothing is pending upstream, no draft is owed, and the row
+closes on the reword alone.
+
+Recorded in four places, because the false clause was in four:
+
+| Where | What changed |
+|---|---|
+| [`docs/open-decisions.md`](../../../docs/open-decisions.md) | a dated answer after the reopening entry, and the **summary-table row 5** rewritten so it no longer reads as partly reopened |
+| [`operator-id-anywhere`](../../unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere) | `Status:` restated as final and reword-only; the report obligation dropped; a pointer to its own *Recommended doc change* item (1) as the wording to use |
+| [`dependent-template-operator-id`](../../BACKLOG.md#dependent-template-operator-id) | `Closed by` says it closes on the reword alone and names [reconcile-declaring-using](../steps/reconcile-declaring-using.md); the **Item** — which still asserted the false claim outright — carries a dated correction |
+| `ops/completion/PLAN.md` | a Status row saying the answer was recorded and the reword was not written |
+
+**The justifying clause reconcile-declaring-using must use**, so it does not
+have to reconstruct this: *`DependentTemplateStorage` is keyed by an
+`IdentifierInfo *` or an `OverloadedOperatorKind`, and a user operator is
+neither — the same closure-over-a-fixed-operator-table cost as*
+[declaration-name-plumbing](../../unicode-operators/clang/DEVIATIONS.md#declaration-name-plumbing)
+*and*
+[operator-candidate-assembly](../../unicode-operators/clang/DEVIATIONS.md#operator-candidate-assembly)
+*, reaching a third data structure.* **The clause it must not use** — *"a
+limitation user-defined literal operators have had since C++11"* — is false
+(literal operators share the code path but suffer no limitation from it, since
+[over.literal]/1 means no valid program contains the construct), and it is
+what an *earlier* version of that step's own ledger row recommended. The row
+now forbids it in the same item that supplies the replacement.
 
 ## What changed
 
@@ -227,17 +270,38 @@ decision-brief is blocked, so the same reasoning covers a blocked mangling-abi.
   needs saying, it belongs in `docs/backtick-operator-design.md`, and U§9's
   three subsections are about the *Unicode* operator name kind only.
 
+**Two carried-forward items that are currently unowned**, noted here because
+nothing else will remind anyone of them:
+
+- **The `static-member-operators` decision entry is the only *new* document
+  [decision-brief](decision-brief.handoff.md)'s answers require, and it has no
+  ledger row to prompt it.** The
+  [over-oper-restrictions](../../../docs/open-decisions.md#over-oper-restrictions)
+  answer says static members stay rejected *on the two-spellings reason*, and
+  that reason has to be written down somewhere a paper can cite.
+  [reconcile-declaring-using](../steps/reconcile-declaring-using.md) owns U§7
+  and is the natural home; the entry belongs in
+  `docs/unicode-operators.md` §2, slug-headed like its neighbours.
+- **`CheckUserOperatorDeclaration`'s comment still asserts the abandoned
+  reason.** On both Unicode branches it says the rejection is because a static
+  member has no implicit object parameter; the design has abandoned that
+  reason in favour of the two-spellings one. One line, on two branches, owned
+  by nobody — it wants whichever step next builds on
+  `unicode-operators-experiment` / `unicode-operators-upstream` (M2 is the
+  first that will), and it must land on **both**, gated behind the flag like
+  everything else.
+
 ## Open risks / TODOs
 
-- **The recommendation commits the paper to a shape it may be argued out of,
-  and that is the point of asking rather than deciding.** If the author picks
-  (a) or (c) instead, the edit is contained: replace the Recommendation block
-  in [abi-production-request](../../../docs/unicode-operators.md#abi-production-request),
-  keep the four measured bullets, and revisit the closing sentence of
+- **The answer commits the paper to a shape it may be argued out of in the
+  room, and that is the point of asking rather than deciding.** If it has to
+  move, the edit is contained: the Recommendation block in
+  [abi-production-request](../../../docs/unicode-operators.md#abi-production-request)
+  is the only prose that changes, the four measured bullets stand whatever is
+  asked for, and the one downstream consequence is already resolved —
   [`astral-plane-mangling`](../../BACKLOG.md#astral-plane-mangling)'s
-  `Closed by`, which is the only other place the choice changes anything — it
-  says whether the untested-branches paragraph reaches the *paper* or stays a
-  design-doc note.
+  `Closed by` now says the untested-branches paragraph **reaches the paper**,
+  because the derivation is part of what is being proposed.
 - **What the papers still cannot claim.** (i) **No issue number.** U§9 and
   `papers/dxxxxr0.md` both say `LLVM-ISSUE-PENDING`; until the maintainer
   files the [draft](../upstream-drafts/increment-decrement-mangling.md), the
