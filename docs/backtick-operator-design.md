@@ -131,6 +131,8 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
+**Log.** 2026-09-06 — the gate is **C++-only in the option table as well as in the grammar**, and it was not. `-fbacktick` carried no `ShouldParseIf<cplusplus.KeyPath>`, so it changed C *tokenization* — and the effect was not a lost diagnostic but an acceptance: `` int f(int a,int b){ return a `g` b; } `` compiled as C with the flag on exited 0 ([c-mode-tokenization](../ops/BACKLOG.md#c-mode-tokenization)). Fixed on both Clang branches by [clang-paper-truth](../ops/completion/steps/clang-paper-truth.md) and pinned by `clang/test/Lexer/backtick-c-mode.c`, whose assertion is the *rejection*: the flag-on and flag-off compilations must produce byte-identical output and both must fail. A test that checked only the diagnostic text would have passed with the bug present. The Unicode branch already carried the paired guard for both flags ([flag-language-mode](../ops/unicode-operators/clang/DEVIATIONS.md#flag-language-mode)); this is the backtick half of it.
+
 ### desugaring-target
 
 **Formerly:** `D6`.
@@ -164,6 +166,8 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
 **Log.** 2026-09-06 — the node's source range is now the *point* of it, and §17.5 says so. Triage of [inner-call-source-range](../ops/BACKLOG.md#inner-call-source-range) closed that row **WONTFIX**: the wrapper spans the written expression and the inner `CallExpr` begins at the operator, which is what Clang does for every desugaring — C++20's `CXXRewrittenBinaryOperator` spans `p < q` while the `CXXOperatorCallExpr` it wraps spans only `p <`. Two facts found while closing it, recorded because they are the ones a reader will check. First, it is *not* expensive to change: `CallExpr::setUsesMemberSyntax()` is public, clears the cached trailing `SourceLocation` and recomputes `getBeginLoc()` from argument 0, which is the wanted range. Second, it is declined anyway — that bit means "a call to an explicit-object member function written with member syntax", which these nodes are not, and it serializes into PCHs and modules for any later upstream consumer to read back. The range is right because the wrapper carries it, not because nothing cheaper was available.
+
+**Log.** 2026-09-06 — and until this date the wrapper did **not** carry it. `BacktickInfixExpr` forwarded `getBeginLoc`/`getEndLoc` to the node it wraps, so its range was the operator slot alone — `` 1 `add` 2 `` gave `<col:16, col:19>`, beginning after the left operand and ending before the right ([backtick-source-range](../ops/BACKLOG.md#backtick-source-range)). The entry above, and §17.5 with it, described what the design intended rather than what the build did. Fixed on both Clang branches by [clang-paper-truth](../ops/completion/steps/clang-paper-truth.md), modelled on the Unicode feature's `UserOperatorExpr::getBeginLoc` so that a reader comparing the two features finds the same shape; the ranges are now pinned as literal columns rather than wildcards, so the claim cannot silently lapse again.
 
 ### format-break-policy
 
@@ -212,6 +216,22 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 **Decided by.** Undecided — recorded as proposed, with the alternatives in the section named under Status.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+### keyword-escape-printing
+
+**Question.** When an entity's name is spelled with a keyword, what does a printer — and what does a diagnostic — call it?
+
+**Status.** **Resolved**
+
+**Decision.** The escape is part of the name's **spelling**, and every printer that is handed the compilation's `PrintingPolicy` puts it back: `-ast-print` emits `` void `new`(); ``, and a diagnostic names the entity `` `new` ``. `-ast-dump` is the one view that keeps the bare identifier `new`, because what it reports is the name's *identity*, which really is an ordinary identifier.
+
+**Why.** The escape has to round-trip or [source-fidelity-node](#source-fidelity-node)'s round-trip claim is only half true: `void new();` is not a program, so a printer that emits it has lost the source. The site that decides this — `DeclarationName::print`'s `Identifier` arm — is the **diagnostic** path as well as the printing path, so the two answers cannot be separated without a second policy bit and a second predicate, and that split would have to be defended. It does not need defending, because there is one honest answer for both: under the flag the escape is the *only* spelling of that name, so a diagnostic that calls the entity `new` names it with a spelling no program can contain, and text copied out of the diagnostic is ill-formed. `-ast-dump` goes the other way for exactly the reason §12's ABI paragraph exists — the dump is the evidence that the name is an ordinary identifier, and that evidence is the bare word.
+
+The switch is `PrintingPolicy::BacktickKeywordEscape`, initialised from `LangOptions::Backtick` the way `Bool`, `Restrict` and `Half` are initialised from their language facts, so a build without the flag prints byte-for-byte what it printed before. Nothing weaker is needed: a compilation without the escape cannot *have* an `Identifier` name whose spelling is a keyword.
+
+**Decided by.** [clang-paper-truth](../ops/completion/steps/clang-paper-truth.md), whose step file required the diagnostic half to be decided deliberately rather than changed as a side effect of the round-trip fix. It is reversible: confining the escape to source-reproducing printers costs one more policy bit and an opt-in at every printer entry point, and nothing else depends on the answer.
+
+**Log.** 2026-09-06 — recorded when [keyword-escape-round-trip](../ops/BACKLOG.md#keyword-escape-round-trip) was fixed on both Clang branches. One site does the escaping (`DeclarationName::print`); five more had to be routed *to* it, because upstream reaches those names through paths that carry no policy — three declarator printers in `DeclPrinter` that hand the name to the *type* printer as a placeholder string, `StmtPrinter::VisitMemberExpr`, and the `ak_declarationname` diagnostic argument (its `ak_nameddecl` sibling already used the context's policy, which is how the two halves of the diagnostic surface were found disagreeing). One site is gated the other way, `TextNodeDumper::VisitMemberExpr`, so that `-ast-dump` is bare consistently. The costs are in [keyword-escape-printing](../ops/DEVIATIONS.md#keyword-escape-printing).
 
 ### alternative-spellings
 
@@ -417,11 +437,15 @@ for `>` inside template-argument lists:
 4. **Sema** (`clang/lib/Sema/SemaExpr.cpp`). Small entry point forwarding
    to `BuildCallExpr` with callee = operator slot, args = {LHS, RHS}. The two
    backtick token locations need no dedicated fields — pass them as the call's
-   open/close paren locations (the inner `CallExpr`'s LParen/RParen), which is
-   enough for source ranges and lets the phase-2 wrapper's pretty-printer
-   reconstruct the syntax from structure (LHS, callee, RHS) rather than from
-   stored locations ([backtick-source-locations](../ops/DEVIATIONS.md#backtick-source-locations)). Dedicated backtick-location storage is needed
-   only if a diagnostic must point at an individual backtick token.
+   open/close paren locations (the inner `CallExpr`'s LParen/RParen), which
+   lets the phase-2 wrapper's pretty-printer reconstruct the syntax from
+   structure (LHS, callee, RHS) rather than from stored locations
+   ([backtick-source-locations](../ops/DEVIATIONS.md#backtick-source-locations)).
+   They are **not** enough for the wrapper's own source range: the desugared
+   call begins at its synthesized callee, so the wrapper computes its range
+   from the operands it recovers from the semantic form (§17.5). Dedicated
+   backtick-location storage is needed only if a diagnostic must point at an
+   individual backtick token.
 5. **Gating** ([feature-gating](#feature-gating)). A `LANGOPT` in `LangOptions.def` — use the current 5-arg
    form `LANGOPT(Name, Bits, Default, Compatibility, Description)`, e.g.
    `LANGOPT(Backtick, 1, 0, NotCompatible, "backtick operator")`; the old
@@ -432,7 +456,11 @@ for `>` inside template-argument lists:
    `Clang.cpp::ConstructJob()` needs an explicit
    `Args.addLastArg(CmdArgs, OPT_fbacktick, OPT_fno_backtick)` (as
    `-fsized-deallocation` / `-freflection` do) for driver-level visibility
-   ([driver-flag-forwarding](../ops/DEVIATIONS.md#driver-flag-forwarding)).
+   ([driver-flag-forwarding](../ops/DEVIATIONS.md#driver-flag-forwarding)). The
+   option itself takes `ShouldParseIf<cplusplus.KeyPath>`, because the grammar
+   it enables is C++-only: without the guard `-fbacktick` still changed C
+   *tokenization*, and a C compilation with the flag on **accepted** the infix
+   grammar ([feature-gating](#feature-gating)'s 2026-09-06 log entry).
 6. **Diagnostics.** Empty operator slot (` `` `), unterminated backtick,
    [nesting-vs-chaining](#nesting-vs-chaining) ambiguity (bare nested backtick). Callee/arity/constexpr errors fall
    out of `BuildCallExpr`.
@@ -593,6 +621,16 @@ disjointness; position alone suffices without it.
 the keyword, so lookup, mangling, and linkage treat it as a normal
 identifier — `void `new`();` links as a function named `new`. Purely
 source-level; external names and ABI unchanged.
+
+**Printing and diagnostics** ([keyword-escape-printing](#keyword-escape-printing)).
+The escape is part of the name's *spelling*, not of its identity, and both
+halves of that show up in tooling. `-ast-print` re-emits `` void `new`(); ``,
+because `void new();` is not a program and a printer that emitted it would
+have lost the source; a diagnostic names the entity `` `new` `` for the same
+reason, since under the flag there is no other way to write it. `-ast-dump`
+keeps showing the bare identifier `new` — which is the evidence for the ABI
+paragraph above: the name really is ordinary, and the backticks are how you
+say it.
 
 **Costs.** Bounded added context-sensitivity: tentative
 declaration-vs-expression parsing (`TryParseDeclarator` and friends) must
@@ -1327,6 +1365,31 @@ The corollary for anyone replaying this: a tool that wants the written extent
 of a backtick expression must read the wrapper, not the call, exactly as a
 tool wanting the written extent of `p < q` must read the
 `CXXRewrittenBinaryOperator`.
+
+**The wrapper does not get that range for free; it computes it, and until
+2026-09-06 it did not.** `BacktickInfixExpr::getBeginLoc` and `getEndLoc`
+recover the two operands *as written* from the semantic form and take their
+extremes. Three shapes have to be recognised, and they are the same three the
+pretty-printer already reconstructs the surface syntax from: the desugared
+call (including the member form, whose object argument is the operator slot
+and therefore not an operand), the construction a type slot desugars to
+([type-name-slot](#type-name-slot)), and that construction's dependent form.
+The operands are taken by index, not counted back from the end, because a
+selected overload may have default arguments beyond them. When none of the
+three matches — a builtin with custom type checking rewrites the call to a
+node that keeps neither the callee nor the call shape — nothing is
+recoverable and the range falls back to the semantic form's, which is the
+operator slot alone; that is the honest answer, and the only requirement on
+it is that asking does not crash.
+
+Before that date the wrapper forwarded both locations to the node it wrapped,
+so this section described an intention rather than a behaviour: `` 1 `add` 2 ``
+reported `<col:16, col:19>` — the operator slot — rather than `<col:13,
+col:21>`. The fix is modelled line for line on the Unicode feature's
+`UserOperatorExpr::getBeginLoc`, whose doc comment diagnoses the identical
+root cause, so a reader comparing the two features finds the same shape in
+both. The ranges are now pinned in the tests as literal columns rather than
+wildcards, which is what stops the claim lapsing again quietly.
 
 ---
 
