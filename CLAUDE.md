@@ -67,8 +67,8 @@ and a Status-log row so base-commit changes are not lost.
   of the backtick one below: the decisions log (§2, one slugged entry per
   question), the token set, the grammar, the implementation sketch, ABI (§9,
   three slugged subsections — what is implemented, what the paper asks the ABI
-  groups for, and the Microsoft gap), and the open questions. The
-  `DXXXXR0` paper is written from it.
+  groups for, and the Microsoft gap), and the open questions.
+  `papers/unicode-mathematical-operators.md` (D4345R0) is written from it.
 - `docs/open-decisions.md` — the questions the implementation measured and
   only the design author can settle, one slug-headed page each (question /
   what was measured / options / cost / recommendation), with the author's
@@ -80,11 +80,24 @@ and a Status-log row so base-commit changes are not lost.
   per-compiler implementation plans (§6 Clang, §7 clang-format, §8 GCC), and
   post-implementation clarifications (§17). This is the source of truth the
   paper is written from; deviations get reconciled back into it.
-- `docs/infix-backtick-operator.org` (+ `.meta`) — the actual WG21 proposal /
-  blog post prose, org-mode source with a Nikola `.meta` sidecar. This is the
-  reader-facing deliverable the design doc feeds; the `.org` is the paper, the
-  design doc is its rationale/worklog. Prefer the `voice` skill when drafting or
-  editing this prose.
+- `papers/` — the two WG21 papers, **named by name and not by number**, per
+  `~/.claude/CLAUDE.md`: the number lives in the front matter and in the prose,
+  because the upload system renames whatever is uploaded and a name is what a
+  reader finds later.
+  - `papers/backtick-infix-and-keyword-escape.md` — **D4307R0**, the backtick
+    paper, written from `docs/backtick-operator-design.md`.
+  - `papers/unicode-mathematical-operators.md` — **D4345R0**, the Unicode
+    paper, written from `docs/unicode-operators.md`.
+  - `make -C papers <basename>.html <basename>.pdf` builds either. **Build the
+    PDF, not only the HTML**, and read the log: a wg21 paper can exit 0 with
+    its content wrong. Both traps are live here — a `header-includes` key in
+    the front matter silently replaces the wg21 LaTeX preamble (`\pnum` then
+    undefined), and Latin Modern carries none of the Unicode operator glyphs,
+    so the Unicode paper sets `monofont`.
+- `docs/infix-backtick-operator.org` and `docs/unicode-infix-operators.org`
+  (each + a `.meta`) — the blog-post version of each paper, org-mode source
+  with a Nikola sidecar. Reader-facing prose the design docs feed, in the
+  informal register. Prefer the `voice` skill when drafting or editing either.
 - `ops/PLAN.md` — master operational checklist (Clang phases A–C, then GCC).
 - `ops/gcc/PLAN.md` — the GCC sub-plan (G01–G10).
 - `ops/BACKLOG.md` — every defect the three tracks found and left standing,

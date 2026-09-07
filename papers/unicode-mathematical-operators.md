@@ -1,7 +1,7 @@
 ---
-title: "Unicode User-Defined Operators for C++"
+title: "Extending C++ with Unicode Mathematical Operators"
 subtitle: "Declaring `operator⊞`, and what an implementation says about it"
-document: DXXXXR0
+document: D4345R0
 date: today
 audience: SG16, EWG
 author:
