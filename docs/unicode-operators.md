@@ -661,6 +661,19 @@ spelled; NFC questions arrive only with v2's combining-mark sequences
   threaded through declaration, lookup, and mangling. This is a real cost —
   DeclarationName plumbing fans out — but it is a *worked* precedent, not
   terra incognita.
+- *The static analyzer, which no site list contains:* `UserOperatorExpr` is a
+  source-fidelity wrapper of exactly [source-fidelity-node](backtick-operator-design.md#source-fidelity-node)'s
+  shape, and such a node owes the analyzer **parity with the call it desugars
+  to** — seven sites, six of which the toolchain never mentions. Six are
+  modelling sites that stop the analyzer seeing the wrapper as a thing that
+  happens; the seventh is in the bug *reporter*, and exists because of the
+  other six, since a node the CFG looks through has no program point for the
+  tracker to find. Missing it made `p ⊘ 0` report a null dereference that
+  `operator⊘(p, 0)` was spared, with two path notes where the call's report
+  carried eight. The full account is backtick §17.6, and the fact that it is
+  written up there rather than here is the finding: **both features had the
+  identical defect in the identical place**, so the obligation belongs to
+  wrapper nodes as such and not to either feature.
 
 **GCC.**
 

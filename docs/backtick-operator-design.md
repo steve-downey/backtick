@@ -169,6 +169,8 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Log.** 2026-09-06 — and until this date the wrapper did **not** carry it. `BacktickInfixExpr` forwarded `getBeginLoc`/`getEndLoc` to the node it wraps, so its range was the operator slot alone — `` 1 `add` 2 `` gave `<col:16, col:19>`, beginning after the left operand and ending before the right ([backtick-source-range](../ops/BACKLOG.md#backtick-source-range)). The entry above, and §17.5 with it, described what the design intended rather than what the build did. Fixed on both Clang branches by [clang-paper-truth](../ops/completion/steps/clang-paper-truth.md), modelled on the Unicode feature's `UserOperatorExpr::getBeginLoc` so that a reader comparing the two features finds the same shape; the ranges are now pinned as literal columns rather than wildcards, so the claim cannot silently lapse again.
 
+**Log.** 2026-09-06 — the wrapper's cost to the **static analyzer** is now fully measured, and it is *seven* sites rather than the six [analysis-layer-sites](../ops/DEVIATIONS.md#analysis-layer-sites) records. The seventh is in the bug *reporter* rather than in the modelling layers, and it exists **because** of the other six: a node the CFG is taught to look through is a node the exploded graph has no program point for, so the tracker's `findNodeForExpression` fails and the entire tracking chain is abandoned — the default null-return suppression and every explanatory note along with it. Both features had it, from their first analyzer pass; both are fixed ([null-return-suppression](../ops/BACKLOG.md#null-return-suppression)), and §17.6 states the rule for a reviewer who asks what a source-fidelity node costs.
+
 ### format-break-policy
 
 **Formerly:** `D8`.
@@ -1201,7 +1203,7 @@ section.)
 
 ## 17. Further semantic clarifications ([nesting-vs-chaining](#nesting-vs-chaining) reframed, [evaluation-order](#evaluation-order), [type-name-slot](#type-name-slot), ADL)
 
-Resolutions reached after implementation, sharpening four points the original
+Resolutions reached after implementation, sharpening points the original
 decisions log under-specified.
 
 ### 17.1 Nesting vs. chaining — the [nesting-vs-chaining](#nesting-vs-chaining) grouping rule
@@ -1392,6 +1394,75 @@ col:21>`. The fix is modelled line for line on the Unicode feature's
 root cause, so a reader comparing the two features finds the same shape in
 both. The ranges are now pinned in the tests as literal columns rather than
 wildcards, which is what stops the claim lapsing again quietly.
+
+
+### 17.6 The wrapper and the static analyzer ([source-fidelity-node](#source-fidelity-node))
+
+The second question an implementer will ask about a source-fidelity node, and
+the one that cost this project the most rediscovery: **what does the wrapper
+owe the static analyzer, and what tells you when you have not paid?** Nothing
+tells you. The obligation has two halves that pull in opposite directions, and
+the second half exists only because the first was met.
+
+**Modelling — the analyzer must not see the wrapper as a thing that happens.**
+Six sites deliver that, each replacing the wrapper with the expression it
+wraps: `CFGBuilder::Visit`, `findConstructionContexts` and `VisitForTemporaries`
+in the CFG builder, `LiveVariables::LookThroughExpr`,
+`Environment::ignoreTransparentExprs`, and `ExprEngine::Visit`. Miss the first
+and the wrapper becomes a CFG element of its own; miss the fourth and every
+result is reaped as dead the instant it is bound, so every operator expression
+reads back as unknown; miss the last and the path is dropped without a
+successor, so the *whole enclosing function* goes unanalyzed. Exactly one of the
+six is announced by the compiler, as a `-Wswitch` warning on a build whose
+`LLVM_ENABLE_WERROR` is off ([analysis-layer-sites](../ops/DEVIATIONS.md#analysis-layer-sites)).
+
+**Reporting — and here is the part that is not in anyone's site list.** Making
+the node transparent to the CFG makes it *invisible* to everything that keys on
+program points. The bug reporter's `Tracker::track` peels the transparent
+expressions it knows about and then asks `findNodeForExpression` for the
+exploded-graph node that computed the value. A wrapper is not a program-point
+statement — *precisely because* the six modelling sites removed it from the CFG
+— so the lookup returns nothing and the whole tracking chain is abandoned
+before a single handler runs. That is the seventh site, it is forced by
+nothing at all (no warning, no link error, no crash, no failing test), and
+both features carried it from their first analyzer pass until 2026-09-06.
+
+Two symptoms follow from that one omission, in opposite directions. The loud
+one: `suppress-null-return-paths` — on by default, and the reason
+`core.NullDereference` stays quiet about a null that came out of an inlined
+callee's `return` — never gets the chance to fire, so `` p `identity` 0 ``
+reports a false positive that the identically-desugaring `identity(p, 0)` is
+spared. The quiet one: every explanatory note the tracker would have produced
+is lost with it, so the report that *is* emitted carries **two** path notes
+where the explicit call's carries **eight** — no "Passing null pointer value
+via 1st parameter", no "Calling", no "Returning null pointer". The operator
+form was both noisier and less explained than the call it is sugar for.
+
+**The rule, and it is the one to put to a reviewer.** A transparent wrapper
+owes the analyzer *parity with the desugared call*, and parity is not a
+property any single site delivers: the modelling layer and the reporting layer
+must peel the same node, and teaching the first is exactly what makes the
+second necessary. The fix is one arm in `peelOffOuterExpr`, beside the
+`FullExpr` and `OpaqueValueExpr` arms already there, and it is worth stating
+why it belongs *there* rather than at the suppression's own
+`CallEvent::isCallStmt` test, which is where the defect was first diagnosed:
+peeled early, the operator form and the call become the **same expression**
+for everything downstream, so every later answer agrees by construction rather
+than by a second fix at each site that asks a question.
+
+**A parity test can be built on the very defect it should catch.** The backtick
+feature's `bugs_are_still_found` asserted that a null dereference is still
+found through the wrapper, and it passed — at the default configuration, where
+the explicit call it claimed parity with reported nothing at all. It pinned the
+divergence while reading as an assertion of parity, and fixing the defect broke
+it. The Unicode counterpart escaped only because its author had already noticed
+the defect and turned the suppression off deliberately, with a comment saying
+why. Both tests now run twice, once with the suppression off and once at its
+default, and a line carrying a directive for the first run and none for the
+second asserts both halves at once: the bug is found where it should be, and
+suppressed where it should be. **Diffing the operator form against the spelled
+call, at more than one configuration, is what found all of this** — three
+defects across two tracks that no site list contained.
 
 ---
 
