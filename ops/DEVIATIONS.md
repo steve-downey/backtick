@@ -110,6 +110,8 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Recommended doc change.** Add an implementation-experience note to §6/§11: a transparent front-end wrapper is *not* free — it costs five analysis-layer sites that the compiler will not tell you about, and getting them wrong silently disables the static analyzer rather than failing a build. This is the backtick counterpart of the Unicode track's "6 link / 8 unreachable / 1 warning / 13 silence" accounting ([expression-node-cost](unicode-operators/clang/DEVIATIONS.md#expression-node-cost)) and belongs in the same paragraph.
 
+**Note, 2026-09-06 ([null-return-suppression](completion/steps/null-return-suppression.md)) — the count is seven, not six, and the seventh is in a different layer.** `Status:` is untouched; this row is still [reconcile-remainder](completion/steps/reconcile-remainder.md)'s to reconcile, and what changes is the number it should carry. The six sites above are all *modelling* sites, and meeting them is what creates the seventh: a node the CFG is taught to look through has no program point in the exploded graph, so the bug reporter's `Tracker::track` — which calls `peelOffOuterExpr` and then `findNodeForExpression` — finds no node and abandons the whole tracking chain, taking the default `suppress-null-return-paths` and every explanatory note with it. Nothing forces it: no `-Wswitch` warning, no link error, no crash, no failing test, so it is *below* even the one warned-about site in this row's accounting. Both features carried it from their first analyzer pass; fixed on all four Clang branches, with the rule stated for a paper in `docs/backtick-operator-design.md` **§17.6**.
+
 ### type-slot-cost
 
 **Formerly:** `DEV-08`. **Status:** OPEN

@@ -1014,3 +1014,55 @@ the *right* fold `(N ⊞ ...)`. The two left folds, section 9's `(... ⊞ N)` at
 `expected expression` without the guard, failing earlier in the parse for an
 unrelated reason. **So a replay that keeps only a left-fold negative test leaves
 the guard unpinned while appearing to cover it.** Keep the right fold.
+
+## null-return-suppression — the seventh analyzer site
+
+Classification: **`upstream replay` — one arm, and landed.** The backtick half
+of the same fix is a **`backtick dependency`** and belongs to the backtick
+track; it is not replayed.
+
+| Site | Experiment | Upstream |
+|---|---|---|
+| `StaticAnalyzer/Core/BugReporterVisitors.cpp` `peelOffOuterExpr` | ✔ (both wrappers) | ✔ (`UserOperatorExpr` only) |
+| `test/Analysis/unicode-operator-analysis.cpp` | ✔ | ✔ (byte-identical) |
+
+The arm is `UserOperatorExpr`-only and carries **no backtick dependency**: it
+names `UserOperatorExpr` and calls `getSemanticForm()`, neither of which exists
+in the backtick feature. It is anchored against the *upstream* precedents it
+belongs beside — `FullExpr` and `OpaqueValueExpr`, three lines above — and not
+against a backtick arm, so on clean `main` it drops in where it stands. `grep
+-i backtick` over `git diff upstream/main..unicode-operators-upstream` still
+returns nothing.
+
+**Same shape as [BL03](#bl03--useroperatorexpr-in-the-static-analyzer), and
+that is the only thing to be careful about.** On the experiment branch the two
+wrappers' arms sit side by side under one shared lead comment naming both
+features; the upstream arm carries a single-feature rewrite of that comment.
+Same change, same semantics, different neighbours — exactly as BL03's six sites
+already record. Do **not** replay the experiment branch's comment text.
+
+**Why this row exists at all, when BL03 claimed the analyzer was done.** BL03's
+six sites are *modelling* sites, and meeting them is what creates this one: a
+node the CFG is taught to look through has no program point in the exploded
+graph, so `Tracker::track`'s `findNodeForExpression` finds nothing and abandons
+the whole tracking chain — the default `suppress-null-return-paths` and every
+path note with it. A replay that lands BL03's six and stops will reproduce the
+defect exactly: `p ⊘ 0` reporting a null dereference that `operator⊘(p, 0)` is
+spared, with 2 path notes against the call's 8, and no warning, no link error
+and no failing test to say so. **The seventh arm is not optional and is not
+cosmetic.**
+
+**The test file is the part a replay is most likely to get subtly wrong.**
+`unicode-operator-analysis.cpp` now has **three** RUN lines, not two: the
+`-verify` run is split into one with `suppress-null-return-paths=false`
+(`-verify=expected,nosupp`) and one at the default (`-verify=expected`). The
+second is the parity assertion, and it asserts by *absence* — the
+`bugs_are_still_found_*` lines carry a `nosupp-warning` directive and no
+`expected-warning` one, so dropping that RUN line, or promoting those
+directives back to `expected-`, silently removes the only thing that pins the
+fix. The `operand_bugs_are_found_*` cases are the opposite half: a
+dereference in an *operand*, which the suppression was never meant to reach,
+so they must report at both settings.
+
+Cost: **1 production file, +13/−0; 1 test file, +49/−12.** Both branches gate
+green.
