@@ -32,15 +32,28 @@ to stderr):
 
     python3 docs/pattern-syntax-audit.py <ucd-dir> --emit-header \\
         > ~/src/llvm/unicode/clang/lib/Lex/UnicodeOperatorCharSets.h
+
+The five inputs are not in this repo. `docs/ucd-17.0.0.sha256` records their
+version-pinned URLs and SHA-256 hashes, and `--verify-manifest` refuses to
+derive anything from an input that does not match one. `--emit-header`
+implies it, because a generated header whose inputs were not the published
+17.0.0 bytes is not reproducible and should not be committed; pass
+`--no-verify-manifest` to override, which is what auditing a *different* UCD
+version deliberately looks like.
 """
 
+import hashlib
 import sys
 from collections import defaultdict
 from pathlib import Path
 
 EMIT_HEADER = "--emit-header" in sys.argv[1:]
+NO_VERIFY = "--no-verify-manifest" in sys.argv[1:]
+VERIFY = not NO_VERIFY and ("--verify-manifest" in sys.argv[1:] or EMIT_HEADER)
 _args = [a for a in sys.argv[1:] if not a.startswith("--")]
 D = Path(_args[0]) if _args else Path(".")
+
+MANIFEST = Path(__file__).resolve().parent / "ucd-17.0.0.sha256"
 
 if EMIT_HEADER:
     # In header mode stdout carries the generated C++ and nothing else; the
@@ -51,6 +64,56 @@ if EMIT_HEADER:
     def print(*a, **kw):  # noqa: A001 - deliberate shadow
         kw.setdefault("file", sys.stderr)
         _stdout_print(*a, **kw)
+
+
+def read_manifest(path):
+    """`sha256sum` check format: `<hex>  <name>`, `#` comments, blank lines."""
+    want = {}
+    for line in open(path, encoding="utf-8"):
+        line = line.split("#")[0].strip()
+        if not line:
+            continue
+        digest, name = line.split(None, 1)
+        want[name.strip()] = digest
+    return want
+
+
+def verify_manifest(d, path):
+    """Refuse to derive from inputs that are not the published 17.0.0 bytes.
+
+    Exits non-zero on any mismatch rather than returning, because every number
+    downstream of here is a claim about a specific frozen set and a mismatched
+    input makes all of them wrong at once, silently.
+    """
+    if not path.exists():
+        sys.exit(f"error: manifest not found: {path}")
+    bad = []
+    for name, digest in read_manifest(path).items():
+        f = d / name
+        if not f.exists():
+            bad.append(f"{name}: missing from {d}")
+            continue
+        got = hashlib.sha256(f.read_bytes()).hexdigest()
+        if got != digest:
+            bad.append(f"{name}: sha256 {got}, manifest says {digest}")
+        else:
+            print(f"manifest ok: {name}")
+    if bad:
+        sys.exit(
+            "error: UCD inputs do not match "
+            + str(path)
+            + "\n  "
+            + "\n  ".join(bad)
+            + "\n\nThe operator set is frozen at UCD 17.0.0. Re-fetch the "
+            "version-pinned\nURLs the manifest records — not `latest/` — or "
+            "pass --no-verify-manifest\nif you mean to audit a different "
+            "version."
+        )
+    print(f"manifest ok: 5/5 inputs match {path}")
+
+
+if VERIFY:
+    verify_manifest(D, MANIFEST)
 
 
 def ranges(path, want=None):

@@ -358,6 +358,18 @@ pinned to a named Unicode version instead of tracking the predicate, and why
 adopting later additions is a deliberate act of a future revision (U§13),
 not an automatic consequence of a UCD update.
 
+**The audit is reproducible, and that is now checked rather than asserted.**
+`docs/pattern-syntax-audit.py` derives every number above, and the frozen
+token set with them, from five UCD 17.0.0 files that live in no repo.
+`docs/ucd-17.0.0.sha256` records their version-pinned URLs and SHA-256 hashes,
+and the script refuses to derive from an input that does not match — a check
+`--emit-header` performs by default, so the generated character table cannot
+be rebuilt from unverified bytes by accident. Re-fetched from unicode.org on
+2026-09-06, the five inputs matched, and the regenerated table was
+**byte-identical** to the one in the Clang branches. Freezing a set to a named
+Unicode version is only worth something if the frozen bytes can be shown to be
+the published ones; this is how.
+
 One more consequence of R3c worth stating: since Pattern_Syntax includes the
 ASCII operator characters (`+ < | !` …), R3c does not hand C++ a usable set
 directly. Every ASCII member is already a token, a token prefix, or blocked by

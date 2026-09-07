@@ -1331,6 +1331,22 @@ carries template arguments. A qualified name, a member access, or any other
 expression in the slot gets no ADL for the same reason the equivalent call
 gets none.
 
+> **Status correction, 2026-09-06 — do not write the next paragraph into a
+> paper.** Its Clang half is false and was never measured. Clang parses the
+> slot with `ParseExpression()`, so the name is resolved before
+> `BuildCallExpr` sees it and `Sema::UseArgumentDependentLookup` refuses ADL
+> on its first line; a hidden friend in the slot is *use of undeclared
+> identifier*, and — the shape that matters — a visible ordinary candidate
+> beats a better ADL one **with no diagnostic at all**, so `` u `pick` u ``
+> and `pick(u, u)` call different functions. The rule above stays normative
+> and is unaffected. What is open is whether Clang is fixed to meet it or
+> this paragraph is reworded to admit it does not; the measurements, the
+> mechanism and the two options are in
+> [clang-slot-adl](../ops/DEVIATIONS.md#clang-slot-adl), and
+> [reconcile-remainder](../ops/completion/steps/reconcile-remainder.md) owns
+> the rewrite either way. The GCC half of the paragraph is measured and
+> stands.
+
 Implementation status, for the implementation-experience section: **both
 compilers now deliver it, and they agree.** Clang carries the slot to
 `BuildCallExpr` as an `UnresolvedLookupExpr`. GCC keeps a bare unqualified-id
