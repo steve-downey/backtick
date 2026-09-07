@@ -4,7 +4,9 @@
 sections, wording included — written before four tracks of measurement landed.
 This step makes it say what is now true and finishes it.
 
-**Depends on:** clang-paper-truth (paper-truth defects fixed), reconcile-remainder (backtick ledger
+**Depends on:** clang-paper-truth (paper-truth defects fixed),
+[clang-slot-adl](clang-slot-adl.md) (§17.4 restored, and a finding to write),
+reconcile-remainder (backtick ledger
 reconciled, §17 updated), hygiene-parity (parity gaps closed so the paper does not have
 to explain them).
 **Closes:** nothing in `BACKLOG.md`. This is the deliverable.
@@ -34,6 +36,23 @@ Work through these rather than re-reading the whole thing cold:
   Clang, cite it.
 - **upstream-triage's WONTFIX reasons**, if [`inner-call-source-range`](../../BACKLOG.md#inner-call-source-range) or [`operator-caret-range`](../../BACKLOG.md#operator-caret-range) went that way — the paper
   should answer those questions rather than let a reviewer raise them.
+- **[clang-slot-adl](clang-slot-adl.md) leaves this step a finding, not a
+  repair.** [§17.4](../../../docs/backtick-operator-design.md#174-adl-is-normative-cross-compiler-note)
+  is normative and is now true again — but the four paragraphs under it are
+  written for a paper to take and are the strongest implementation-experience
+  material in the design doc. **The within-compiler control**: Clang carries
+  both features of this proposal in one build, and the Unicode operator
+  inherited ADL from the first commit while the backtick operator never had
+  it, differing in exactly one thing — whether the slot reaches the call
+  builder unresolved. That is a cleaner demonstration of *desugar early,
+  inherit everything downstream* than any cross-compiler comparison, because
+  it holds the compiler, the machine and the author constant. **And the
+  near-miss belongs in the paper too**: the defect survived nine
+  implementation steps because the one test that announced itself as the ADL
+  case used a *qualified* name, which gets no ADL either way. The shape that
+  catches it is augmentation — a visible viable candidate plus a better ADL
+  one — because that is the only shape whose failure is silent. Say what a
+  reviewer should ask for, not only what was built.
 - **[`gcc-wrapper-parity`](../../BACKLOG.md#gcc-wrapper-parity) from gcc-resync**: parts of the Clang work have **no GCC counterpart by
   construction**. A two-implementation paper has to say which parts, and why
   that is a fact about the compilers rather than a gap in the experiment.
