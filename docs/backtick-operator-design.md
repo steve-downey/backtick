@@ -327,11 +327,13 @@ The switch is `PrintingPolicy::BacktickKeywordEscape`, initialised from `LangOpt
 
 **Decision.** A type-name in the slot yields construction
 
-**Why.** The slot is any callable expression and a type-name is callable, so `x `T` y` == `T(x, y)` (functional-style construction; CTAD applies). Always an *expression* (slot is an assignment-expression, [slot-grammar](#slot-grammar); result is an expression by construction), so no most-vexing-parse declaration reading can arise, and no collision with the §12 escape (different grammatical position). Blessed as a consequence, not a special rule.
+**Why.** `x `T` y` == `T(x, y)`: functional-style construction, CTAD applies. Whichever production the slot takes the result is an *expression*, so no most-vexing-parse declaration reading can arise, and there is no collision with the §12 escape (different grammatical position). **This is a second slot production with a disambiguation rule — the type interpretation wins exactly when lookup finds a type or class template — and not a consequence of the expression slot**; see the Log below and §17.3.
 
 **Decided by.** The design author.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+**Log.** 2026-09-06 — **"blessed as a consequence, not a special rule" is struck: it was false as grammar and the implementation proved it.** ~~The slot is any callable expression and a type-name is callable, so the meaning falls out for free.~~ A bare type-name is not an *assignment-expression*, which is all [slot-grammar](#slot-grammar) admits, so the "consequence" contradicted this proposal's own grammar while a normative example depended on it; the first implementation rejected all four type-slot shapes with three different diagnostics. The decision is unchanged and the wording is not. Priced in §17.3, and reconciled by [reconcile-remainder](../ops/completion/steps/reconcile-remainder.md) from [type-slot-cost](../ops/DEVIATIONS.md#type-slot-cost). Struck rather than deleted, so the record of what was believed survives.
 
 
 ---
@@ -450,6 +452,24 @@ for `>` inside template-argument lists:
    from the operands it recovers from the semantic form (§17.5). Dedicated
    backtick-location storage is needed only if a diagnostic must point at an
    individual backtick token.
+
+   **What Sema hands back is not always a call, and the phase-2 wrapper must
+   be documented as holding a *semantic form* rather than "the desugared
+   `CallExpr`".** Three shapes reach it. A class-typed prvalue with a
+   non-trivial destructor arrives wrapped in a `CXXBindTemporaryExpr`, and
+   under ARC there is a consuming implicit cast on top of that; a builtin with
+   custom type checking replaces the call outright with a node that is neither
+   a call nor keeps a callee — `` a `__builtin_shufflevector` b `` yields a
+   shuffle node — and is not expressible as backtick syntax at all. A
+   pretty-printer that assumes a call crashes on the first and cannot round-trip
+   the second, and both were found that way. The fix is an accessor that looks
+   through the implicit nodes and **returns null when no call remains**, with
+   the printer falling back to printing the semantic form. So the round-trip
+   claim is the one that needs qualifying, not the desugaring claim: *sugar for
+   `op(x, y)`* is unaffected, while *`-ast-print` round-trips backtick syntax*
+   is correct for every well-formed use whose slot is a real callee and
+   degraded — correct, but spelled as the desugaring — for a builtin rewrite.
+   ([wrapper-inner-shape](../ops/DEVIATIONS.md#wrapper-inner-shape))
 5. **Gating** ([feature-gating](#feature-gating)). A `LANGOPT` in `LangOptions.def` — use the current 5-arg
    form `LANGOPT(Name, Bits, Default, Compatibility, Description)`, e.g.
    `LANGOPT(Backtick, 1, 0, NotCompatible, "backtick operator")`; the old
@@ -468,10 +488,36 @@ for `>` inside template-argument lists:
 6. **Diagnostics.** Empty operator slot (` `` `), unterminated backtick,
    [nesting-vs-chaining](#nesting-vs-chaining) ambiguity (bare nested backtick). Callee/arity/constexpr errors fall
    out of `BuildCallExpr`.
-7. **Tests.** Lexer token kind; parser `-ast-dump` (shows the desugared
+7. **The analysis layer, which no site list contained.** A new `Expr` node
+   owes the CFG builder, the liveness analysis, the environment and the path-
+   sensitive engine a rule for looking through it — **six modelling sites** —
+   and meeting those six creates a **seventh** in the bug reporter, because a
+   node the CFG no longer sees has no program point for the tracker to find.
+   Exactly one of the seven is announced by the compiler, and only as a
+   `-Wswitch` warning. Getting them wrong silently disables the static
+   analyzer rather than failing a build. §17.6 has the whole account and the
+   rule to give a reviewer; it is repeated here because the omission was in
+   *this* list, and this list is what an implementer reads first.
+8. **The code generator.** `BacktickInfixExpr` needs **four** arms — scalar,
+   aggregate, complex and l-value — and the four fallbacks are not alike. Two
+   emit a "not yet implemented" diagnostic naming the node, one emits a
+   generic complex-expression message that does not name it, and the l-value
+   default arm returns a default-constructed l-value whose null type then
+   asserts, so `` (b `at` 1) = 42 `` crashed the compiler. Three of the four
+   arms are a copy-paste through to the sub-expression; the l-value arm is
+   the one that is *not* a copy, because a backtick call returning a reference
+   is a call returning a reference and the existing call handling above it is
+   already right. (The asserting default arm is upstream's, not this
+   feature's, and is worth reporting as such.)
+   ([cir-backtick-arms](../ops/DEVIATIONS.md#cir-backtick-arms))
+9. **The type-name slot** is a second parser production, not a consequence —
+   see §17.3, which now prices it.
+10. **Tests.** Lexer token kind; parser `-ast-dump` (shows the desugared
    call); precedence/associativity mixing with `*`, unary, `.`, `?:`; Sema
    (overloads, ADL, dependent operands); constexpr; CodeGen IR; a couple of
-   preprocessor tests since backtick is now a real token in macro bodies.
+   preprocessor tests since backtick is now a real token in macro bodies; and
+   — the one this project learned late — **a diff of the operator form against
+   the spelled call, at more than one analyzer configuration** (§17.6).
 
 ---
 
@@ -580,8 +626,22 @@ and port.
   reconstructs the surface form from structure (LHS, callee, RHS); the
   backtick token locations it needs are already the inner `CallExpr`'s
   open/close paren locations, so no separate `SourceLocation` fields are
-  required on the wrapper node ([backtick-source-locations](../ops/DEVIATIONS.md#backtick-source-locations)). Purely additive; lands once the MVP
-  is stable.
+  required on the wrapper node ([backtick-source-locations](../ops/DEVIATIONS.md#backtick-source-locations)). Lands once the MVP is stable.
+
+  **"Purely additive" is the word this phase got wrong, and it is worth
+  correcting rather than deleting.** It is additive in the sense that no
+  existing behaviour changes and no existing node is modified — that part
+  held. It is not additive in the sense the phrase invites, that the work is
+  bounded by the node and the printer. A transparent front-end wrapper costs
+  **seven** sites in the analysis layer alone (§17.6), five in the exhaustive
+  `StmtClass` switches the site list did name, four in the code generator
+  (§6.8), and it does not hold "the desugared `CallExpr`" but whatever Sema
+  built (§6.4). Of all of those, exactly one is announced by the compiler.
+  **The transparency is what costs, not the node**: a wrapper the rest of the
+  compiler is meant not to notice is a wrapper nothing will remind you to
+  teach anything about, and every one of the silent sites is silent for
+  precisely that reason.
+  ([analysis-layer-sites](../ops/DEVIATIONS.md#analysis-layer-sites), [wrapper-inner-shape](../ops/DEVIATIONS.md#wrapper-inner-shape))
 - **Phase 3 — reach.** Compiler Explorer deployment once stable; GCC
   implementation in parallel for the second independent data point.
 
@@ -1201,7 +1261,7 @@ section.)
 
 ---
 
-## 17. Further semantic clarifications ([nesting-vs-chaining](#nesting-vs-chaining) reframed, [evaluation-order](#evaluation-order), [type-name-slot](#type-name-slot), ADL)
+## 17. Further semantic clarifications ([nesting-vs-chaining](#nesting-vs-chaining) reframed, [evaluation-order](#evaluation-order), [type-name-slot](#type-name-slot), ADL, and what the wrapper costs)
 
 Resolutions reached after implementation, sharpening points the original
 decisions log under-specified.
@@ -1292,20 +1352,53 @@ semantics already knows backtick's.
 
 ### 17.3 Type-name in the operator slot ([type-name-slot](#type-name-slot))
 
-The slot is any callable expression, and a type-name is callable, so a type in
-the slot is well-formed and yields construction:
+A type-name in the slot yields construction:
 
 ```cpp
 x `T` y          // == T(x, y) : a prvalue T, functional-style construction
 a `std::pair` b  // == std::pair(a, b), with CTAD
 ```
 
-It is always an **expression** (the slot is parsed as an assignment-expression,
-[slot-grammar](#slot-grammar); backtick's result is an expression by construction), so it can never appear
-in declaration position — the most-vexing-parse declaration reading cannot
-arise. The keyword-escape use of backtick (§12) occupies operand/declarator
-position, not the post-operand infix position, so there is no collision.
-Blessed as a consistent, useful consequence rather than a special rule.
+**This was recorded as a consequence rather than a rule, and that is wrong as
+grammar.** The argument was: the slot is any callable expression, a type-name
+is callable, so construction falls out. It does not fall out, because **a bare
+type-name is not an *assignment-expression***, and the slot production
+([slot-grammar](#slot-grammar)) admits only that. The "consequence" therefore contradicted the
+proposal's own grammar — while the normative example `` a `std::pair` b `` sat
+in the paper relying on it — and the first implementation duly rejected all
+four type-slot shapes (bare class, class template, qualified name, builtin
+type) with three different diagnostics. Nothing was blessed; something was
+assumed.
+
+**Stated correctly, it is a deliberate second production with a disambiguation
+rule**: the slot admits a *simple-type-specifier* or *typename-specifier*
+alongside an *assignment-expression*, and the type interpretation wins exactly
+when lookup finds a type or a class template. That rule is what makes a
+function hiding a same-named class resolve to the call, and it has to be
+written down.
+
+**And it is not free, which is the point of recording the price.** Delivering
+it cost two grammar productions and a disambiguation paragraph in the paper;
+one parser routine of about seventy lines (slot-local pre-annotation mirroring
+the expression parser's trigger set, a type-name probe for bare identifiers
+whose deduction-context default is also what makes CTAD work with no separate
+template arm, a tentative parse for qualified template-names, and a
+functional-cast arm for builtins); a parsed type threaded beside the slot's
+expression result; one Sema overload routing to the existing
+construct-expression build path, which is where CTAD, temporaries and
+dependent construction come back for free; and two printer arms to keep
+`-ast-print` round-tripping. No AST change at all — the wrapper's
+already-qualified inner-shape contract (§6.4) tolerated a non-call inner. The
+general lesson is the one to carry into any design document: **"consequences"
+of a design are not free, and a consequence that contradicts the grammar is
+not a consequence.**
+
+The result is always an **expression** — whichever production the slot takes,
+the whole form is an expression by construction — so it can never appear in
+declaration position and the most-vexing-parse reading cannot arise. The
+keyword-escape use of backtick (§12) occupies operand/declarator position, not
+the post-operand infix position, so there is no collision.
+([type-slot-cost](../ops/DEVIATIONS.md#type-slot-cost))
 
 **Implementation status: one compiler, and that is a claim the paper has to
 make carefully.** Clang implements it — a bare name is looked up as a type
@@ -1503,6 +1596,71 @@ second asserts both halves at once: the bug is found where it should be, and
 suppressed where it should be. **Diffing the operator form against the spelled
 call, at more than one configuration, is what found all of this** — three
 defects across two tracks that no site list contained.
+
+### 17.7 The two features diverge in the front end and converge in the back end
+
+The sharpest confirmation of the desugaring thesis came from the last place it
+could still have failed, and it is a *comparison* rather than a measurement of
+either feature alone.
+
+In the AST, the backtick wrapper and the Unicode user-operator node are not
+alike and must not be made alike (U§12): one may hide an already-built call
+because a backtick slot has no member candidates to lose, and the other must
+hold its operands and re-form the call because a user operator does. That
+asymmetry is real, it is a language consequence rather than a preference, and
+it makes the Unicode node strictly the more expensive of the two.
+
+**In the code generator the asymmetry vanishes completely.** Both nodes need
+**four** arms — scalar, aggregate, complex and l-value — in the same four
+files, at the same four places, with the same four distinct failure modes, and
+three of the four arms are the identical peel-through-to-the-sub-expression in
+both features. The fourth is the one that is not a copy in either: the l-value
+arm recurses rather than diagnosing, because a call returning a reference is a
+call returning a reference whichever syntax spelled it. The generated
+intermediate code is instruction-for-instruction identical to the spelled
+call's.
+
+**That is exactly where the design predicts the sugar should stop mattering,
+and it is a prediction that could have come out otherwise.** Code generation
+sees only the desugared call, so two front-end representations that differ in
+how much of the call they hold converge the moment the call is all that is
+left. A reader who accepts nothing else about *inherit, don't reimplement*
+should accept this: the front end is where two sugars for a call can cost
+different amounts, and the back end is where they provably cannot.
+
+One observation belongs to upstream rather than to either feature, and should
+be reported that way: the l-value emitter's default arm returns a
+default-constructed l-value whose null type then asserts, so **any** unhandled
+l-value expression class crashes the compiler instead of producing a
+not-yet-implemented diagnostic, as the other three arms do.
+([cir-backtick-arms](../ops/DEVIATIONS.md#cir-backtick-arms))
+
+### 17.8 Which of this is Clang's alone, and why
+
+§§17.5–17.7 — source ranges, the analyzer, the code generator — are all
+consequences of one Clang decision, and a paper must not let a reader take
+them for the cost of the *feature*. **They are the cost of the AST node**, and
+GCC has no counterpart to any of them **by construction**: it desugars in the
+parser and hands the semantic layer an ordinary call, so there is no wrapper
+node to teach anything about, nothing downstream of one, and no analyzer
+analogue that would need teaching. The two implementations still accept the
+same programs and emit the same code.
+
+So this is a difference in **kind**, not in behaviour, and it should be stated
+as a design consequence rather than left to read as GCC missing something: **a
+front end that desugars in the parser pays none of the AST-node cost, and gets
+none of the source fidelity that cost buys.** `-ast-print` round-tripping the
+surface syntax is Clang's dividend for the node, and it is the reason the node
+exists; a reviewer weighing the seven analyzer sites and the four code-
+generator arms is weighing the price of that dividend, not the price of infix
+application.
+
+Keep that separate from the one place the two implementations genuinely
+disagree, which is a gap and not a consequence: **GCC has no type-name slot**
+(§17.3), so under the flag the two compilers accept different programs there.
+The first belongs in the argument; the second belongs in the status table.
+([gcc-wrapper-parity](../ops/gcc/DEVIATIONS.md#gcc-wrapper-parity),
+[gcc-type-slot-parity](../ops/gcc/DEVIATIONS.md#gcc-type-slot-parity))
 
 ---
 

@@ -245,11 +245,13 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Decision.** **UCN spellings form operator tokens**: a universal-character-name (including `\N{...}`) designating a [token-set](#token-set) code point is that operator token
 
-**Why.** Preserves the extended-character ≡ UCN equivalence the language maintains for identifiers, for the same reason it exists there: the escape hatch when the source encoding, font, or review tool can not carry or render the glyph — `operator\N{SQUARED PLUS}` stays writable and legible where `operator⊞` is tofu. The absence of UCN punctuators today is an accident of every punctuator being basic-character-set, not a rule to inherit; these are the first non-basic tokens. Structurally free: the UCN-designated code point takes the same phase-3 classification as a literal one on the lexer's existing UCN path (XID → identifier, [token-set](#token-set) → operator, else ill-formed), so `a\u229Eb` ≡ `a ⊞ b` (U§8).
+**Why.** Preserves the extended-character ≡ UCN equivalence the language maintains for identifiers, for the same reason it exists there: the escape hatch when the source encoding, font, or review tool can not carry or render the glyph — `operator\N{SQUARED PLUS}` stays writable and legible where `operator⊞` is tofu. The absence of UCN punctuators today is an accident of every punctuator being basic-character-set, not a rule to inherit; these are the first non-basic tokens. *Classification* is free: the UCN-designated code point takes the same phase-3 classification as a literal one on the lexer's existing UCN path (XID → identifier, [token-set](#token-set) → operator, else ill-formed), so `a\u229Eb` ≡ `a ⊞ b` (U§8). *Identity* is not free, and this entry used to say "structurally free" without distinguishing them — see U§8.
 
 **Decided by.** Undecided — the whole log is Proposed until the paper is polled.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+**Log.** 2026-09-06 — **the equivalence this entry claims is an equivalence of *entities*, not of tokens, and that changes how it must be tested.** A reviewer's natural acceptance criterion — the spellings produce identical token streams — passes on an implementation that classifies UCNs correctly and then derives the operator's identity from the raw spelling, giving two entities with two mangled symbols that happen to print alike. The criterion has to be stated at declaration-and-use level instead: declare with `\N{SQUARED PLUS}`, define with the glyph, use with `\u229E`, and assert one entity and one mangled symbol. Recorded by [reconcile-remainder](../ops/completion/steps/reconcile-remainder.md); measured on `unicode-operators-upstream` @ `c0e07f78e679`, where those three spellings emit the single symbol `_Zv28op_u229E1SS_`. See [ucn-operator-spellings](../ops/unicode-operators/clang/DEVIATIONS.md#ucn-operator-spellings).
 
 ### paper-separation
 
@@ -430,18 +432,30 @@ A code point is a *user-operator token* iff all of:
 4. its General_Category is **Sm or So** — excluding the paired brackets
    (Ps/Pe: ⟨ ⟩ ⟦ ⟧ ⌈ ⌉ ⌊ ⌋ …), which are delimiters, not infix material, and
    are worth keeping unspent for any future bracketing proposal;
-5. it is **not on the named exclusion list**:
-   - **∂ ∇ ∞** — earmarked by TR31's mathematical profile as *identifier*
-     characters (U§4);
-   - **UTS #39 confusables of existing tokens** — U+2212 − (minus sign),
-     U+2215 ∕ and U+2044 ⁄ (division/fraction slashes), U+2217 ∗ (asterisk
-     operator), U+2223 ∣ (divides), U+2236 ∶ (ratio), U+22C5 ⋅ and the
-     middle-dot family, U+2264/U+2265 ≤ ≥ and the double-arrow implication
-     family ⇐ ⇒ ⇔ (confusable with `<=`, `>=`, `=>` digraph-space) — these
-     are **rejected outright, never aliased**: a program containing a
-     character that *looks like* `-` but isn't must fail to lex, not quietly
-     mean something else;
-   - anything with emoji presentation (TR31 §7.2's Emoji Profile carve-out).
+5. it is **not on the named exclusion list**, which is **28 code points in
+   three reason classes** — enumerated, like the set itself, and not a
+   description to be re-evaluated:
+   - **identifier profile, 3** — ∂ U+2202, ∇ U+2207, ∞ U+221E, earmarked by
+     TR31's mathematical profile as *identifier* characters (U§4);
+   - **confusable with an existing token, 13** — U+2212 − (`-`), U+2215 ∕
+     and U+2044 ⁄ (`/`), U+2217 ∗ (`*`), U+2223 ∣ (`|`), U+2236 ∶ (`:`),
+     U+2219 ∙ and U+22C5 ⋅ (`.`), U+2264 ≤ and U+21D0 ⇐ (`<=`), U+2265 ≥
+     (`>=`), U+21D2 ⇒ (`=>`), U+21D4 ⇔ (`<=>`) — **rejected outright, never
+     aliased**: a program containing a character that *looks like* `-` but
+     isn't must fail to lex, not quietly mean something else;
+   - **emoji presentation, 12** — ⌚ ⌛ ⏩ ⏪ ⏫ ⏬ ⏰ ⏳ ⬛ ⬜ ⭐ ⭕, TR31 §7.2's
+     Emoji Profile carve-out, which resolves to exactly these inside the
+     blocks.
+
+   Two corrections the enumeration forced on the prose this list replaces.
+   **"The middle-dot family" is not a UCD family**: inside the blocks it
+   resolves to exactly ∙ U+2219 and ⋅ U+22C5, because U+00B7 MIDDLE DOT is
+   **not** Pattern_Syntax — Unicode withheld it precisely because it is used
+   *in* identifiers, in Catalan — so it was never a candidate. And **U+2044 ⁄
+   FRACTION SLASH is outside the blocks** (they start at U+2190), so it
+   already fails predicate 3; it is the one named exclusion that would not
+   otherwise have qualified, and it is kept on the list so the list reads as
+   the confusability audit's own output rather than as a residue of it.
 
 Notes on the shape of this definition:
 
@@ -466,6 +480,55 @@ Notes on the shape of this definition:
   — ⊞ ⊠ ⊕ ⊖ ⊗ ⊘ ⊙ ∘ ⋄ ⋈ ∪ ∩ ⊎ ⊓ ⊔ ↦ ⇝ ⊢ ⊨ and their supplemental
   variants — which is the entire point: the ASCII inventory (§14.3) offered
   a handful of two-character sequences; this offers actual notation.
+
+### confusable-spelling-provenance
+
+**Question.** The confusable class names an ASCII token each of its 13 code
+points apes, and those strings reach the user in a diagnostic. Are they
+**derived** from UTS #39's `confusables.txt`, or **curated**?
+
+**Status.** **Proposed**
+
+**Decision.** **Curated, and the paper must say so.** The ASCII spelling
+beside each excluded code point is a hand-assigned editorial judgement, not a
+generator output. The generator's input is the five UCD files U§4 names;
+`confusables.txt` is not among them, and the table shape carries the spelling
+as a literal string per entry.
+
+**Why.** Deriving them would be worse, and the reason is visible in three of
+the thirteen. UTS #39 answers *"what does this look like"*; the diagnostic
+needs *"which C++ token does this look like"*, and the two questions come
+apart wherever a mathematical symbol's meaning and its shape disagree. ∙
+U+2219 BULLET OPERATOR and ⋅ U+22C5 DOT OPERATOR *mean* multiplication and
+*look like* `.`, and it is the look that endangers a reader, so both are
+spelled `.` — a derivation keyed on either property alone would produce `*`
+for one of the two questions and `.` for the other. ⇔ U+21D4 is spelled
+`<=>`, a token C++ acquired in 2020, which no confusability table published
+against a general programming-language corpus is obliged to know about. The
+curation is therefore doing real work, and its principle is statable in one
+line: **the spelling names the token a reader is most likely to mistake the
+character for, not the operation the character denotes.**
+
+That principle also fixes the wording. The message says the character **is
+confusable with** the token, never *"did you mean"* — an earlier draft of
+U§8's diagnostic sketch used the latter, and it is dishonest for exactly the
+entries that make the curation necessary: nobody writing `a ∙ b` meant
+`a . b`. For the same reason **no `FixItHint` is attached**, so an applied
+fix-it can never silently change what a program means. A confusability claim
+is an assertion about reading; an intent guess is an assertion about writing,
+and only the first is one the compiler is entitled to make.
+
+**Decided by.** Undecided — the whole log is Proposed until the paper is
+polled. What is settled here is that the paper claims them as curated and
+gives the principle, rather than claiming a derivation it does not have.
+
+**Log.** 2026-09-06 — recorded by
+[reconcile-remainder](../ops/completion/steps/reconcile-remainder.md), closing
+[confusable-spellings](../ops/BACKLOG.md#confusable-spellings) and the
+[exclusion-list-derivation](../ops/unicode-operators/clang/DEVIATIONS.md#exclusion-list-derivation)
+question behind it. The 13/3/12 split and every spelling above were
+re-derived from `clang/lib/Lex/UnicodeOperatorCharSets.h` on
+`unicode-operators-upstream` @ `c0e07f78e679` rather than copied forward.
 
 ---
 
@@ -494,18 +557,66 @@ position, exactly as for `-` (and as [keyword-escape-coexistence](backtick-opera
 post-operand → infix; operand position → prefix. The expression grammar
 strictly alternates operand and operator positions, so the two never coincide.
 
+**That is not merely a rule the parser follows; it is a rule that leaves the
+parser nothing to do.** The two productions are read by two different
+functions — the prefix one in operand position by `ParseCastExpression`, the
+infix one in operator position by `ParseRHSOfBinaryExpression` — and neither
+is ever called where the other's token could appear. So **no disambiguation
+state exists**: no flag, no lookahead, no backtracking, nothing carried from
+one production to the other. The contrast worth drawing is with §5's
+same-delimiter problem, where backtick's open and close are the same token and
+a suppression flag (`BacktickIsOperator`, `backtick_is_operator_p`) has to be
+threaded through the slot in both compilers. Distinct tokens buy that away
+entirely, and this is the mechanical reason why, not a restatement of the
+claim.
+
 ```cpp
 -a ⊞ -b            // operator⊞(-a, -b)                 symmetric (precedence-level/§4)
 a * b ⊞ c          // a * operator⊞(b, c)               ⊞ binds tighter than *
 a ⊞ b `f` c        // f(operator⊞(a, b), c)             shared level, left-assoc
 a ⊞ ⊖b             // operator⊞(a, operator⊖(b))        prefix in operand position
 ⊖a ⊞ b             // operator⊞(operator⊖(a), b)        same, on the left
+⊖a ⊞ 2 * ⊖b        // operator⊞(operator⊖(a), 2) * operator⊖(b)
 ```
+
+The last line is the one readers get wrong, and it is the only example that
+shows all three binding strengths at once — prefix tighter than ⊞, ⊞ tighter
+than `*`. It is included for that reason.
 
 What does *not* appear: a same-delimiter suppression flag (§5), a nesting rule
 (§17.1), a slot grammar ([slot-grammar](backtick-operator-design.md#slot-grammar)). These operators are ordinary distinct tokens and
-the ordinary operator-precedence machinery handles them; parsing is the *easy*
-part of this feature, easier even than backtick.
+the ordinary operator-precedence machinery handles them.
+
+**"Parsing is the easy part of this feature, easier even than backtick" — the
+first half survives measurement and the second does not, and the correction is
+itself a result.** This sketch said both, and the prototype contradicted the
+sentence from four independent directions, which is more than enough to make
+it a paragraph rather than a quiet edit. What is true:
+
+- **The parse really is easy, and easier than backtick's**, on both sides. The
+  *using* side is two `case`s in machinery that already exists, with the
+  paragraph above as the reason. The *declaring* side — the half this sketch
+  originally left out — is about ninety lines (U§8).
+- **The feature is not therefore easier than backtick**, because the parse is
+  not where either feature's cost lives. Backtick's cost is in the parse and
+  ends there; this feature's cost is in what a parsed operator has to *become*
+  — a **name**, in tables that are closed, and an **expression node** that
+  cannot be transparent because a user operator has member candidates and a
+  backtick slot does not. Both are measured in U§8, and the node is the one
+  place this feature is strictly more work than backtick.
+- **So the comparison inverts as soon as it leaves the parser.** "Easier than
+  backtick" is true of the grammar and false of the implementation, and a
+  proposal that says only the first is claiming credit it does not have.
+
+**The correction is worth reporting as a finding in its own right**, because
+of *how* the original sentence went wrong. It was not a bad guess about the
+parser — the parser estimate was right, and remains right. It was a design
+document measuring the part of a feature a design document can see. The
+parse is the part that is visible from the grammar, so it is the part that
+gets estimated; the name tables and the node are invisible until something is
+built, so they get omitted, and their omission looks like a claim that they
+are small. Anyone reading an implementation sketch for a language feature
+should expect that shape of error, in that direction.
 
 ---
 
@@ -822,11 +933,56 @@ sources never touch it, and the order of checks against XID is immaterial
 because [operator-identifier-disjointness](#operator-identifier-disjointness) makes the sets disjoint.
 
 Keep the **exclusion list as a second, tiny table with reasons**, not
-merely as absent entries: U+2212 in source should produce "U+2212 MINUS
-SIGN is not an operator; did you mean `-`?" — and ∂ ∇ ∞ "is an identifier
-character (mathematical notation profile), not an operator" — rather than
-a generic stray-character error. The exclusions exist for the *reader's*
-protection; the diagnostics should say so.
+merely as absent entries: an excluded code point in source should say which
+class it was excluded under, rather than producing a generic stray-character
+error. The exclusions exist for the *reader's* protection; the diagnostics
+should say so.
+
+**But the three reasons do not have the same scope, and one of them cannot be
+emitted where an implementer's first instinct puts it.** The rule, which is a
+property of the derivation rather than of any compiler and so can be stated
+normatively: **a reason is emittable at token classification if and only if
+its code points cannot also be identifier constituents.**
+
+- **Confusable (13) and emoji (12) satisfy it.** Pattern_Syntax excludes them
+  from XID by construction, so nothing but an operator could have been meant,
+  the classification is context-free, and the lexer emits the reason where it
+  classifies: `error: '−' U+2212 is not a user-defined operator: it is
+  confusable with '-'`.
+- **The identifier profile (∂ ∇ ∞) does not.** Those three *are* valid
+  identifier characters in Clang today, at every `-std=`, with no flag,
+  because the mathematical-notation extension (D137051, P3658R1) is on by
+  default: `int ∂(int); int u = ∂(1);` compiles, with a
+  `-Wc++2d-extensions` warning and no error. The design's message for them,
+  emitted at classification, would be **an error on every legitimate use of
+  one as a name** — it would break a shipping feature in the act of
+  implementing a new one, and would falsify
+  [operator-identifier-disjointness](#operator-identifier-disjointness)'s composability claim while purporting to test it. The
+  implementation emits it as a **note in operator-name position only**,
+  attached to a conversion-function-id parse that has already failed, because
+  `using ∞ = int; struct T { operator ∞(); };` is a perfectly good conversion
+  function that must go on working.
+
+**That asymmetry is the sharpest evidence for
+[operator-identifier-disjointness](#operator-identifier-disjointness) the prototype produced**, and it runs the other way
+from how it first reads. ∂ ∇ ∞ are excluded from [token-set](#token-set) *because* TR31 §7.1
+cedes them to the identifier side; a compiler implementing both profiles
+therefore must not take them back at lex time; and the fact that this
+constraint is even statable — that there is exactly one class of exclusion
+where it bites, and it is the class TR31 already named — is what makes the
+exclusion diagnostic implementable at all. Disjointness is not merely true on
+paper here. It is the thing that lets the lexer answer a question about
+operators without first answering a question about names.
+
+**And a second, independent argument for keeping the sets disjoint, measured
+in passing.** With the math-identifier extension on, `operator∂` **without a
+space** is a single identifier: `int operator∂(S, S);` silently declares an
+ordinary function *named* `operator∂`, and nothing in the operator-name path
+ever sees it. (`operator ∂`, with a space, is a conversion-function-id whose
+type name is unknown — the only context where an operator was unambiguously
+meant, which is exactly where the note is attached.) A future proposal that
+admitted [token-set](#token-set) code points into identifiers would break that corner
+silently, in both directions at once.
 
 Two rules that fall out of single-code-point tokens. First, **UCN spellings
 form operator tokens** ([ucn-spellings](#ucn-spellings)): a *universal-character-name* — including the
@@ -844,7 +1000,56 @@ them. No phase-ordering wrinkle arises: the lexer's existing UCN path
 already produces a code point during phase-3 token formation, and that code
 point takes the same three-way classification as a literal one (XID →
 identifier-constituent, [token-set](#token-set) → operator token, otherwise ill-formed), so
-`a\u229Eb` lexes as `a ⊞ b` exactly as `a⊞b` does. Second, **no
+`a\u229Eb` lexes as `a ⊞ b` exactly as `a⊞b` does.
+
+**An earlier draft called that "structurally free". Classification is free.
+Identity is not, and the difference is the whole finding.** The classification
+really does converge, and can be quantified rather than asserted: there is
+exactly **one** classification point, `Lexer::isUserOperatorCodePoint` — one
+flag test, one binary search — with **four** callers: the direct UTF-8 decode
+and the UCN decode in `LexTokenInternal`, plus the two identifier-*continuation*
+paths that must stop at an operator rather than absorb it. The token-formation
+half of the UCN rule is two lines, because by the time control reaches the
+escape the UCN has already been decoded to a scalar and there is nothing
+spelling-specific left to decide.
+
+**But a token is not an entity.** The identity function for the whole
+feature — the one whose result becomes the `DeclarationName`, the Itanium
+mangling, the printed form and the on-disk lookup key — decodes a *spelling*,
+and the first implementation decoded it as a single UTF-8 scalar, which
+answers zero for any UCN. Hooking the lexer without teaching that one function
+about UCNs would have made `operator\U0000229E` a **different entity** from
+`operator⊞`, with a different mangled symbol, while the token kind, the token
+stream and `-dump-tokens` output were all exactly right. The failure is silent
+in the one direction that matters, and no token-level comparison can see it:
+the acceptance criterion has to be stated at declaration-and-use level —
+declare with one spelling, define with another, use with a third, and assert
+**one entity and one mangled symbol**. The equivalence [ucn-spellings](#ucn-spellings) claims is an
+equivalence of *entities*, and a paper that says "structurally free" should
+say which half it means.
+
+The cost, once seen, is one canonicalization at one function — which is itself
+an argument for [token-set](#token-set)'s choice to make the **code point** the identity. Because
+a spelling becomes a scalar in exactly one place, "every spelling names one
+entity" holds by construction everywhere downstream, instead of having to be
+re-established at each consumer. The rule generalizes past Clang: a GCC
+implementation must build its operator identifier from the code point and not
+from the spelling, and has the same single place to do it.
+
+**The exclusion diagnostics fire in both spellings**, which is worth recording
+because it is the question the UCN rule raises next, and the answer is not the
+one the shape of the problem suggests. `1 − 2` and `1 \u2212 2` both produce the
+confusability error, with the same message text; only the caret differs,
+covering the six characters of the escape in the second case and the one glyph
+in the first. What remains asymmetric is inherited and is not this feature's:
+a code point that is neither in [token-set](#token-set) nor excluded nor XID — ¬ U+00AC, say —
+gets upstream's `unexpected character` error when spelled literally and **no
+lexer diagnostic at all** when spelled as a UCN, because the standard forbids
+discarding a preprocessing token that was written as an explicit UCN. Both
+spellings are still ill-formed, with the flag off and with it on; only one is
+told why, and that is upstream's rule at every `-std=`.
+
+Second, **no
 normalization runs at lex time** — the token is one scalar value however
 spelled; NFC questions arrive only with v2's combining-mark sequences
 (U§13).
@@ -1129,8 +1334,9 @@ symbol double-counts.
 
 ### closed-table-sibling-pattern
 
-Four times in one prototype, opening a closed operator table produced a
-**parallel** implementation rather than a widened one:
+Five times in one prototype, opening a closed operator table produced a
+**parallel** implementation rather than a widened one — or, twice, no
+implementation at all:
 
 | What is closed | The existing thing | What the feature got |
 |---|---|---|
@@ -1138,16 +1344,28 @@ Four times in one prototype, opening a closed operator table produced a
 | `OverloadedOperatorKind`, candidate assembly | `CreateOverloadedBinOp` | `CreateOverloadedUserOp` |
 | `OverloadedOperatorKind`, the AST node | `CXXOperatorCallExpr` | `UserOperatorExpr` |
 | a static spelling table, the matcher API | `hasAnyOperatorName()` | *nothing — a refusal* |
+| the fixity of a unary operator | `operator++`'s `int` dummy, re-derived at each consumer | *nothing exists to extend* (§13.1) |
 
 The first three are siblings, and each was written by discovering that the
 existing helper is keyed end to end on the operator kind. The fourth is the
-interesting one, because it is the first where the right answer is **not** a
-sibling: `hasAnyOperatorName()` returns a `StringRef` into a *static* spelling
-table, and a user operator's spelling is a UTF-8 encoding of a code point that
-has to be computed into a buffer, so a matcher over user operators must be
-keyed on the code point and the predicate simply does not apply to it. The
-matcher that does exist says so in its own documentation, which is the honest
-form of the refusal.
+first where the right answer is **not** a sibling: `hasAnyOperatorName()`
+returns a `StringRef` into a *static* spelling table, and a user operator's
+spelling is a UTF-8 encoding of a code point that has to be computed into a
+buffer, so a matcher over user operators must be keyed on the code point and
+the predicate simply does not apply to it. The matcher that does exist says so
+in its own documentation, which is the honest form of the refusal.
+
+The fifth is different again, and it is the reason the pattern is worth
+naming rather than merely counting: **postfix-ness has no representation in
+Clang to make a sibling of.** There is no `isPostfix()` on the operator-call
+node and no "can this token begin an expression" predicate anywhere; both are
+re-derived at each consumer from the operator kind plus an argument count.
+A feature that wanted user postfix operators would not be widening a closed
+table or writing a sibling beside it — it would be writing down, for the first
+time, a thing the language has always had and never stored. It is priced in
+§13.1 rather than taken, and it is the clearest single illustration that the
+cost of opening a closed operator concept is *parallel* work, never *shared*
+work.
 
 Little of this is Clang's in particular. GCC's `ansi_opname` is a fixed-size
 table indexed by tree code, and the move there is the same one:
@@ -1447,7 +1665,28 @@ The objections are known in advance; pre-load the answers (§13.5 discipline).
   reliably — this objection aged out with APL's era.
 - **clang-format** treats a user operator as a binary/unary operator token at
   the fixed level — no §7-style delimiter pairing, no break-suppression
-  zones. Strictly less work than backtick's formatting story.
+  zones. Strictly less work than backtick's formatting story, and now
+  measured: **three touch points, about forty lines across three production
+  files, no new `TokenType`, no annotator state, no custom spacing or break
+  rule, and no style option.** Enabling is one line, beside the backtick
+  track's, keyed on the *language* rather than on `LangOpts.CPlusPlus`
+  (JavaScript, Java and C# set that too). Classification is four lines:
+  binary after an operand, unary otherwise — position alone, no lookahead and
+  no declaration lookup, so U§6's parser result transfers to the formatter
+  verbatim, and `operator⊞` needs no rule at all because the existing
+  `operator`-keyword handler rewrites the annotation exactly as it does for
+  `operator +`.
+
+  **The third touch point is the one a reviewer will forget, and omitting it
+  breaks *wrapping* while leaving *spacing* correct.** The formatter's own
+  precedence query calls the shared `getBinOpPrecedence` with hard-coded
+  arguments, so without being told the feature is on it answers "unknown"; the
+  expression parser then builds no structure for a chain of user operators,
+  and a long chain wraps wrongly while every spacing and annotation test
+  passes. Backtick never met this, because its token's precedence takes no
+  flag argument. That is also a concrete argument for [user-declared-fixity](#user-declared-fixity)'s one fixed
+  level: the formatter needs *a* precedence for the token, and there is
+  exactly one to give it.
 
 ### operator-name-caret-range
 
@@ -1464,6 +1703,10 @@ proposal changes it; the glyph case is character-identical to the built-in
 case, which is the only claim the paper needs to make. Tightening the range
 would be a diagnostic-polish change to Clang affecting `operator+` first and
 this feature only incidentally, so it is not proposed here.
+
+---
+
+## 11. Prior art
 
 - **Julia** — the closest model and the load-bearing precedent for [lexing-and-declarations](#lexing-and-declarations): the
   *parser* carries a fixed table of Unicode operator code points (parseable
@@ -1531,12 +1774,88 @@ split what is separable across committees. Applying it here:
   *rationale* overlaps heavily; the *wording* barely does.
 - *The routing differs* — SG16 first, and the ABI group for [operator-mangling](#operator-mangling), neither of
   which backtick needs. By [paper-bundling](backtick-operator-design.md#paper-bundling)'s own criterion, that is a split.
-- *The maturity differs.* D4307's strongest asset is two independent
-  implementations; this sketch has none. Bundling dilutes the implemented
-  paper's credibility with the unimplemented half.
+- *The maturity differs.* D4307's strongest asset is **two independent**
+  implementations, in Clang and GCC. This feature has **one**, in Clang, and
+  the asymmetry is what the bundling rule is weighing: a single-implementation
+  half should not be able to spend the two-implementation half's credibility.
+  (This bullet used to say "none", which was true of the sketch and has not
+  been true since the prototype was built.)
 - *The fates must be separable.* Some of the room finds any non-ASCII token
   disqualifying; they must be able to vote that conviction without taking
   backtick down.
+- *And postfix, if it were ever taken, would move the routing again.* A
+  compiler-known `std::postfix` tag type — the escape §13.1 identifies for the
+  mangling collision — makes the feature library-affects-language, on the
+  `operator<=>` / `std::strong_ordering` precedent, and adds **LEWG** to a
+  proposal already going to SG16, EWG/CWG and the ABI group.
+  [library-scope](backtick-operator-design.md#library-scope)'s rule says on its own terms that a fourth committee keeps
+  it out of v1, which is a second, independent reason for §13.1's answer.
+
+**Separable fates are now an executed result, not an audit.** The Unicode work
+was prototyped on top of the backtick branch and then replayed onto pristine
+trunk, and the replayed branch carries no backtick dependency of any kind:
+
+```
+git diff <base>..unicode-operators-upstream | grep -i backtick   ->  nothing
+```
+
+That command is written with its base spelled out on purpose. Run against a
+*moving* `upstream/main` it is not reproducible — upstream has its own
+backticks, in Markdown fences and in an unrelated lldb variable, and they show
+up in the diff as the branch ages without anything about the feature having
+changed. Pinned to the branch's own base commit it is exact, and it was exact
+on 2026-09-06. Three separate maintenance steps since the replay have kept it
+so.
+
+**The coupling, measured, is three constructs and one enumerator's worth of
+design.** Not one, which is what the replay assumption predicted:
+
+- `prec::UserInfix`, the shared precedence level — the assumption's own item,
+  and the only one that is a *design* decision rather than a code artefact;
+- the fold-operator exclusion of that level, which is an **addition** on clean
+  trunk rather than a rename, and whose omission fails **silently** — a user
+  operator would simply become a fold operator with nothing to say so;
+- one file-static predicate in clang-format answering "does this token end an
+  operand", which the two features must agree about because they compose.
+
+Of the whole 110-file diff, **201 of 204 hunks survive onto clean trunk, and
+169 of 171 production hunks**; the three that do not are two refactors of
+backtick-track code and one backtick test file. Each standalone equivalent is
+under ten lines. So the shared design decision costs **one enumerator in every
+possible world** — backtick first, this first, both, or either alone — and
+that is the quantitative form of the separable-fates claim.
+
+**The shared level surfaced twice, independently**, which is the part worth a
+sentence in either paper: once in the parser as a precedence enumerator and
+once in the formatter as an end-of-operand predicate, in two subsystems that
+do not know about each other, each of which had to ask "is this a
+user-introduced infix operator?". One level for all user-introduced infix is a
+real design primitive and not a convenience of this prototype.
+
+**What the two features must *not* share is an AST representation.** They
+share a precedence level and they share a desugaring, and the temptation is to
+conclude that they should share a node shape. They should not, and the reason
+is a language consequence rather than a preference: a user-operator node holds
+its **operands** and re-forms the call, so it survives Sema re-wrapping its
+result and it survives template instantiation with its member candidates
+intact; a node that *hides* an already-built call does neither. The backtick
+wrapper can hide a call because a backtick slot has no member candidates to
+lose. Sharing the level is free; sharing the node would have been a bug in one
+of the two features, and which one depends on which node shape was copied.
+
+**They do not share a formatting story either, and this feature has the better
+one.** A Unicode user operator inherits `BreakBeforeBinaryOperators` and the
+ordinary split penalties because it *is* a binary operator token; backtick's
+delimiter pair needs, and gets, break suppression instead, so the option
+cannot apply to it. The formatting story is not merely cheaper here — it is
+better-behaved, and for a structural reason a reviewer can check.
+
+**A maintenance-cost datum, since a committee will ask for one.** The replay
+was performed 825 upstream commits past the branch point. That drift touched
+25 of the feature's 109 files (+319/−144) and cost **nothing**: the gate was
+baseline plus the feature's own tests with zero failures and no pre-existing
+test changed, and neither the name tables nor the Unicode character-set
+headers moved at all.
 
 The cost of splitting — EWG discussing user infix twice — is recovered
 structurally: D4307 names its precedence level the **user-infix level**
@@ -1597,9 +1916,31 @@ review before EWG.
   adopt later-assigned symbols the way it adopts anything else —
   deliberately, by paper, after audit — and the Pattern_Syntax ceiling
   guarantees any such addition lands inside the already-reserved 2,760.
-- **`operator` + token adjacency.** Whether `operator ⊞` (space) and
-  `operator⊞` both parse (they should — same as `operator +` / `operator+`),
-  and what clang-format canonicalizes.
+- **`operator` + token adjacency — answered, and kept here for the record.**
+  `operator ⊞` and `operator⊞` both parse, as `operator +` and `operator+` do,
+  and clang-format canonicalizes to the closed form under the same
+  `SpaceAfterOperatorKeyword` option that governs `operator+`. Nothing new was
+  written to make either true. The one adjacency question that *does* have a
+  surprising answer is not about spaces around the glyph but about the
+  math-identifier extension — `operator∂`, closed up, is a single ordinary
+  identifier (U§8) — and it arises only for the three excluded
+  identifier-profile characters.
+- **Fold expressions over the user-infix level — excluded in v1, and stated as
+  a decision rather than left as a diagnostic.** `(... ⊞ N)` and `(pack ⊞
+  ...)` are ill-formed, and so is the backtick form `` (... `f` N) ``: the two
+  features share the level, so this is **one answer for both of them** and it
+  should be taken once. What must not happen is what happens without the
+  sentence: a reader who tries it gets `expected expression` — character-
+  identical between the two features, measured — and no document anywhere says
+  the exclusion was chosen. It was. The exclusion costs one clause in the
+  existing fold-operator predicate; admitting folds would cost a change to the
+  fold AST node, which stores its operator as a fixed operator kind and has no
+  room for a user operator. And admitting them **later takes nothing back**:
+  every program a future revision would newly accept is one v1 rejects, which
+  is the same forward-compatibility shape as §13.1's answer on postfix. The
+  one thing an implementation must get right is that the exclusion is an
+  *addition* to that predicate and not a rename of something already there, so
+  dropping it is silent.
 
 ### 13.1 Postfix operators — the price, measured (U21)
 
@@ -1641,9 +1982,14 @@ count — `ExprCXX.cpp` `getSourceRangeImpl`, `StmtPrinter.cpp`
 synthesizes an `IntegerLiteral` `0` as a second argument precisely so that
 downstream code can recover the fixity it was not told. There is no
 `isPostfix()` on `CXXOperatorCallExpr` and no predicate anywhere in Clang for
-"this token can begin an expression". Both would have to be written. This is
-the fourth consecutive place where opening a closed operator concept costs a
-*parallel* mechanism rather than a widened one.
+"this token can begin an expression". Both would have to be written.
+
+This is the **fifth** instance of the pattern [closed-table-sibling-pattern](#closed-table-sibling-pattern) records, and
+the only one where the closed concept has no representation to extend at all:
+three of the five were answered by a sibling mechanism beside the existing
+one, one by a documented refusal, and this one cannot be answered either way
+until something is written down that does not currently exist. It is listed
+there as well, so the table is the one place the pattern is counted.
 
 **The candidate rule: greedy-infix.** After a complete operand, a user
 operator followed by a token that can begin a *cast-expression* is infix;

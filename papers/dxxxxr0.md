@@ -174,6 +174,20 @@ not `-` must fail to lex.
 **Emoji presentation.** Twelve code points inside the blocks (⌚ ⌛ ⏩ ⏪ ⏫ ⏬
 ⏰ ⏳ ⬛ ⬜ ⭐ ⭕), per TR31 §7.2's carve-out.
 
+The ASCII token named beside each confusable is **curated, not derived**. The
+generator takes no confusability data as input, and it should not: the
+published tables answer "what does this look like", while the diagnostic needs
+"which C++ token does this look like", and the two come apart. ∙ and ⋅ *mean*
+multiplication and *look like* `.`, and it is the look that endangers the
+reader; ⇔ is spelled `<=>`, a token this language acquired in 2020. The
+principle is one line, and the paper states it rather than claiming a
+derivation it does not have: **the spelling names the token a reader is most
+likely to mistake the character for, not the operation the character denotes.**
+For the same reason the message says the character *is confusable with* the
+token, never *did you mean*, and carries no fix-it: a confusability claim is an
+assertion about reading, an intent guess is an assertion about writing, and
+only the first is one a compiler is entitled to make.
+
 The design said to keep these in a table with reasons so the diagnostic can
 say why, instead of a generic stray-character error. That is right,
 and incomplete: **the three reasons need three different emission points.**
@@ -347,11 +361,23 @@ changing the meaning of any program this one accepts.
 
 ## Fold expressions
 
-A user operator is not a fold operator: `(... ⊞ N)` is `expected expression`.
-This is inherited from sharing the level, and the diagnostic is
-character-identical to the backtick form's. Whether the user-infix level
-should be admitted to `fold-operator` is an open question, and it should be
-answered once for both features.
+A user operator is not a fold operator: `(... ⊞ N)` is ill-formed, and the
+diagnostic is `expected expression`, character-identical to the backtick
+form's. **That is a decision, not an inheritance**, and this proposal states it
+rather than leaving it to be discovered. Because the two features share the
+precedence level, it is one decision for both of them, and it is taken once.
+
+Excluding costs one clause in the predicate that already decides which
+operators may be folded over. Admitting would cost a change to the
+fold-expression node itself, which stores its operator as a fixed operator
+kind and has nowhere to put a user operator. And admitting later takes nothing
+back: every program a future revision would newly accept is one this proposal
+rejects — the same forward-compatibility shape as the postfix answer above.
+
+One note for an implementer, because the exclusion fails quietly: it is an
+*addition* to that predicate, not a modification of something already there.
+Dropping it does not break a build or a test. It silently makes a user
+operator foldable.
 
 # Declaring, looking up, desugaring
 
@@ -652,11 +678,15 @@ advantage found in passing: it has no arity digit to disagree about.
 
 ## Formatting
 
-clang-format required 32 lines. A user operator is annotated as a binary or
-unary operator by position, with no delimiter pairing and no break-suppression
-rules, and the existing overloaded-operator handling rewrites the annotation
-after `operator` with no new rule. It also honours `BreakBeforeBinaryOperators`,
-which a delimiter-pair syntax structurally can not.
+clang-format required about forty lines across three files: no new token type,
+no annotator state, no custom spacing rule, no custom break rule and no style
+option. A user operator is annotated as a binary or unary operator by position,
+with no delimiter pairing and no break-suppression rules, and the existing
+overloaded-operator handling rewrites the annotation after `operator` with no
+new rule — so `operator ⊞` canonicalizes to `operator⊞` under the same option
+that governs `operator +`, and nothing was written to make that true. It also
+honours `BreakBeforeBinaryOperators`, which a delimiter-pair syntax
+structurally can not.
 
 One touch point was not obvious: the formatter's own precedence query needs the
 feature enabled, or the token answers "unknown", the expression parser builds
@@ -672,7 +702,6 @@ and annotation test passes.
   evaluation order is novel, and CWG should say what it wants.
 - **Default arguments in prefix position.** Keep the relaxation and document
   it, or reinstate [over.oper]p8 for user operators.
-- **Fold expressions** over the user-infix level, for both features at once.
 - **Postfix**, deferred with a measured account of what it would cost.
 - **Static member user operators**, currently rejected.
 - **Combining-mark operator sequences, and the Latin-1 candidates** (± × ÷ ¬),
