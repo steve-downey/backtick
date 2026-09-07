@@ -270,7 +270,7 @@ The step has no paper consequence, but that is a claim, so it was checked rather
 than assumed — the last three steps each found a paper carrying something its
 own answers had discarded.
 
-- `papers/d4307r0.md` §*Bare nesting is chaining; real nesting takes parentheses*
+- `papers/backtick-infix-and-keyword-escape.md` §*Bare nesting is chaining; real nesting takes parentheses*
   already says the form "cannot be diagnosed without contradicting
   left-associativity, and it does not need to be". Deleting the diagnostic
   **confirms** that paragraph; nothing to change.
@@ -373,7 +373,7 @@ Written after reading its step file.
   than its surroundings, not atomic*.
 - **§6 item 6 changed under you.** The design doc used to specify three
   diagnostics; it now specifies two, with a paragraph about the withdrawn third.
-  `papers/d4307r0.md` was checked and needs no change — its nesting section
+  `papers/backtick-infix-and-keyword-escape.md` was checked and needs no change — its nesting section
   already argues the form should not be diagnosed — but if you touch that
   section, the implementation now *agrees with it in code*, which it did not
   before, and that is a stronger sentence than the one there.

@@ -101,7 +101,7 @@ Of the step's six implementation items: 1 replaced (slot-local, tighter),
 
 ## Paper edits (this repo, same step)
 
-- `papers/d4307r0.md` `[expr.backtick]`: `backtick-operator` is now
+- `papers/backtick-infix-and-keyword-escape.md` `[expr.backtick]`: `backtick-operator` is now
   `assignment-expression | simple-type-specifier | typename-specifier`; new
   paragraph [2] defines the type interpretation via [expr.type.conv] and
   the lookup-based disambiguation (type wins iff lookup finds a type or

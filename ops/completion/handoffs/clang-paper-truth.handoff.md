@@ -61,7 +61,7 @@ reconstructs from.
 ### [keyword-escape-round-trip](../../BACKLOG.md#keyword-escape-round-trip) — the escape did not round-trip, and the fix is a decision
 
 `` void `new`(); `` printed as `void new();`, which does not re-parse. The
-paper claim it falsifies is `papers/d4307r0.md`'s implementation-experience
+paper claim it falsifies is `papers/backtick-infix-and-keyword-escape.md`'s implementation-experience
 bullet, *"a transparent AST wrapper so `-ast-print` round-trips the surface
 syntax"* — true of the infix form, false of the escape, and the escape is half
 the paper.
@@ -351,7 +351,7 @@ worth having in advance:
   diagnostics to stay bare, the change is confined to `ASTDiagnostic.cpp`'s
   gate plus a second bit; the two tests that pin it are the last block of
   `backtick-escape-diagnostics.cpp`.
-- **`papers/d4307r0.md` was not edited.** Its round-trip claim (the Clang
+- **`papers/backtick-infix-and-keyword-escape.md` was not edited.** Its round-trip claim (the Clang
   bullet in *Implementation experience*) was false for the escape and is now
   true, so nothing there needs correcting — but
   [backtick-paper](../steps/backtick-paper.md) can now say something stronger

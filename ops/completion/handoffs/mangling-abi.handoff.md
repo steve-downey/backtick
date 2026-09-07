@@ -164,7 +164,7 @@ the two `RECONCILED` markers above run long.
 - **It cites upstream-reports's issue** as far as one exists: the token
   `LLVM-ISSUE-PENDING`, in the fourth measured bullet, beside a link to the
   unfiled draft. `grep -rn LLVM-ISSUE-PENDING docs papers ops` is **unchanged
-  at 4 substitution points** (U§9, U§13.1, `papers/dxxxxr0.md`
+  at 4 substitution points** (U§9, U§13.1, `papers/unicode-mathematical-operators.md`
   Acknowledgments, [`postfix-operators`](../../unicode-operators/clang/DEVIATIONS.md#postfix-operators)
   clause (c)) plus the sites that merely describe the token. No number was
   invented.
@@ -303,7 +303,7 @@ nothing else will remind anyone of them:
   `Closed by` now says the untested-branches paragraph **reaches the paper**,
   because the derivation is part of what is being proposed.
 - **What the papers still cannot claim.** (i) **No issue number.** U§9 and
-  `papers/dxxxxr0.md` both say `LLVM-ISSUE-PENDING`; until the maintainer
+  `papers/unicode-mathematical-operators.md` both say `LLVM-ISSUE-PENDING`; until the maintainer
   files the [draft](../upstream-drafts/increment-decrement-mangling.md), the
   papers cannot say "reported as #N", and the fixity argument rests on a
   divergence a reader must reproduce themselves. (ii) **Nothing has been put
@@ -313,7 +313,7 @@ nothing else will remind anyone of them:
   stated, but it does mean the paper cannot claim the feature is portable.
   (iv) **The `uo` letters are this repo's invention**, offered as a shape; the
   paper must not present them as agreed.
-- **`papers/dxxxxr0.md` has not been updated to match the new §9** and
+- **`papers/unicode-mathematical-operators.md` has not been updated to match the new §9** and
   deliberately so — the paper is [unicode-paper](../steps/unicode-paper.md)'s,
   and it should be written from the *answered* section, not from a
   recommendation. Its Acknowledgments paragraph is the only place it currently

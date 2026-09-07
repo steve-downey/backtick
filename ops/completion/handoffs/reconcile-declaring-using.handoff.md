@@ -5,7 +5,7 @@
   `feccd46` (`docs:` — U§7, U§7.1, U§4 and the §2 decisions log, including the
   new [static-member-operators](../../../docs/unicode-operators.md#static-member-operators)
   entry), `e1bdd07` (`docs:` — the two falsifiable sentences in
-  `papers/dxxxxr0.md`) and the `ops:` commit carrying the eight ledger rows,
+  `papers/unicode-mathematical-operators.md`) and the `ops:` commit carrying the eight ledger rows,
   the ledger header, the backlog row, the plan and this handoff.
   **Nothing was built and no feature branch was touched.** The
   `unicode-operators-upstream` worktree and its pre-built binary were *read
@@ -30,7 +30,7 @@
 ## The finding that outranks the rewrite
 
 **Both papers were already carrying sentences the author's answers discarded,
-and nobody had gone to look.** `papers/dxxxxr0.md` asserted, in its own words:
+and nobody had gone to look.** `papers/unicode-mathematical-operators.md` asserted, in its own words:
 
 1. *"not a static member: kept. The arity rule presupposes an implicit object
    parameter, and a static member has none, so it can name neither form."*
@@ -175,7 +175,7 @@ a Unicode operator has no callee subexpression to sequence.
   in place** in its own earlier `Log.` — struck, not deleted, so the record of
   what was believed survives without a reader being able to quote it as fact.
 
-### `papers/dxxxxr0.md`
+### `papers/unicode-mathematical-operators.md`
 
 Two passages, both described above. Public text: **no internal identifier was
 introduced**, and one pre-existing internal reference (`U§4`) was removed as a
@@ -321,7 +321,7 @@ placeholder-example "breaks" earlier handoffs describe). The new
 
 ## Deviations from the step file
 
-1. **`papers/dxxxxr0.md` was edited, which the step file does not mention.**
+1. **`papers/unicode-mathematical-operators.md` was edited, which the step file does not mention.**
    The step's own material was already in the paper in falsified form; see the
    first section. The edit is confined to the two passages the author's answers
    contradict, cites no internal identifier, and leaves the rest of the paper
@@ -430,13 +430,13 @@ Written after reading its step file.
   accident. [unicode-paper](../steps/unicode-paper.md) and
   [backtick-paper](../steps/backtick-paper.md) should budget a *reading*, not
   only a rewrite of the sections they touch.
-- **`papers/dxxxxr0.md` still carries four `U§` cross-references** (to U§2
+- **`papers/unicode-mathematical-operators.md` still carries four `U§` cross-references** (to U§2
   twice, U§4 and U§7) — design-doc section numbers in public text, which a
   paper reader cannot resolve. Not introduced here, and one was removed here;
   the remaining four are [unicode-paper](../steps/unicode-paper.md)'s, and they
   are the same category of defect
   [slug-the-ledgers](slug-the-ledgers.handoff.md) cleaned up for slugs and
-  numbers. `grep -n 'U§' papers/dxxxxr0.md` finds them.
+  numbers. `grep -n 'U§' papers/unicode-mathematical-operators.md` finds them.
 - **`CheckUserOperatorDeclaration`'s comment still asserts the abandoned
   static-member reason** on both Unicode branches, and the design now
   contradicts it in a document a reviewer may read beside the code. Still

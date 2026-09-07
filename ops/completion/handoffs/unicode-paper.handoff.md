@@ -1,21 +1,21 @@
 # Handoff — unicode-paper — the Unicode paper, its number, and the blog version
 
-- **Status:** **BLOCKED on the author for the document number.** Everything
-  else in the step is done and green: three of the four gate bullets pass, the
-  paper builds in both formats, and the blog version is rewritten. The one
-  failing bullet is *"the paper renders, under its **real** number, with no
-  `DXXXX` left anywhere in the repo"*, and it fails on an administrative
-  dependency the step file names by itself. `papers/dxxxxr0.md` still says
-  `DXXXXR0` because a WG21 number is the author's to obtain, and **the rename
-  is deliberately not half-done** — the filename, the `document:` field and
-  every cross-reference in `docs/` and `ops/` still agree with each other.
-  Same shape as [decision-brief](decision-brief.handoff.md) and
-  [mangling-abi](mangling-abi.handoff.md): the box is ticked by a resumption of
-  *this* step when the number arrives, not by a new one.
+- **Status:** **GREEN (gate passed; all four bullets).** It stood BLOCKED on
+  the author for the document number earlier the same day — which is what
+  success looks like for this kind of dependency under this track's rules —
+  and the author answered: **D4345R0, *Extending C++ with Unicode Mathematical
+  Operators***, together with authorisation to rename the backtick paper as
+  well. Both are applied, so the box is ticked by a resumption of *this* step,
+  the same shape as [decision-brief](decision-brief.handoff.md) and
+  [mangling-abi](mangling-abi.handoff.md). **`ops/completion/PLAN.md` now has
+  no unchecked box.**
 - **Branch / commit:** no branch. `unicode-operators` in *this* repo only —
-  `cdbc86e` (`docs:` — `papers/dxxxxr0.md`, `docs/unicode-infix-operators.org`
-  + `.meta`, one typo in `docs/unicode-operators.md`) and an `ops:` commit
-  carrying the plan and this handoff. **Nothing was built and no feature branch
+  `cdbc86e` (`docs:` — the paper, `docs/unicode-infix-operators.org` + `.meta`,
+  one typo in `docs/unicode-operators.md`), `30c5385` (`ops:` — the plan and
+  this handoff, while the step was blocked), then the number-and-rename pair
+  once the author answered: a `docs:` commit carrying both `git mv`s, the two
+  front-matter fields, every path reference repo-wide and `CLAUDE.md`, and an
+  `ops:` commit correcting the plan and this handoff to green. **Nothing was built and no feature branch
   was touched.** Three pre-built compilers were *read and run* —
   `~/src/llvm/build-unicode-upstream/bin/{clang,clang++,clang-format,llvm-cxxfilt}`,
   `~/src/llvm/build-unicode/bin/clang++`, `~/src/llvm/build-cir-scratch/bin/clang++`
@@ -29,29 +29,81 @@
 
 ---
 
-## What to do about the number
+## The number, the title, and why neither file is named after a number
 
-The step file's *"Get it a number"* section is the whole of the block. Two
-things are worth knowing before someone finishes it.
+**`document: D4345R0`**, **`title: "Extending C++ with Unicode Mathematical
+Operators"`**. The subtitle is kept — *Declaring `operator⊞`, and what an
+implementation says about it* — because the author supplied a title and did
+not ask for the subtitle to go, and it is the half that says what the paper
+does.
 
-**The build already tells you.** `make dxxxxr0.html` and `make dxxxxr0.pdf`
-both emit
+**The filename is a judgement and here it is.** `~/.claude/CLAUDE.md` is
+explicit: a paper file is named by *name*, never by number —
+`papers/algorithms-for-trees.md`, never `papers/D4322R0-….md` — because the
+WG21 upload system renames whatever is uploaded, a name is what someone finds
+later, and the number belongs in the front matter and the prose. So renaming
+`papers/dxxxxr0.md` to `papers/d4345r0.md` would have satisfied nothing: it
+replaces a placeholder number with a real one and entrenches exactly the thing
+the convention forbids. The paper is now
 
-```
-[WARNING] mpark/wg21: Document number 'DXXXXR0' is an unrecognized format;
-          expected "[PD]([0-9]+)R[0-9]+".
-          This just means that [Latest] and [Status] links will be missing.
-```
+- **`papers/unicode-mathematical-operators.md`** — D4345R0, from the title.
 
-so the placeholder has a visible cost in the rendered paper, not only in the
-repo. That warning disappearing is a cheap check that the rename landed.
+**And the same decision, taken once, applies to the sibling.** The author
+authorised the second rename, so both papers leave this sitting consistent
+with each other and with the convention rather than one of each:
 
-**The rename is mechanical and its extent is known.** `grep -rli dxxxx` over
-the repo, excluding `papers/generated/`, is the list; the filename change is
-`git mv` plus the `document:` field plus every reference. Per `~/.claude/CLAUDE.md`
-the paper is named by *name* and not by number, so whether the file is renamed
-at all is the author's call — `papers/d4307r0.md` is number-named by local
-precedent, and this step did not change either convention.
+- **`papers/backtick-infix-and-keyword-escape.md`** — D4307R0, from its title
+  *An Infix Operator and a Keyword Escape for C++* and its subtitle *Two jobs
+  for the backtick*.
+
+**Why that basename and not `infix-backtick-operator`.**
+`docs/infix-backtick-operator.org` already exists and is the blog version of
+that paper. Giving the paper the same basename in a different directory would
+make one name mean two documents, which is the confusion the naming rule
+exists to prevent — and note the Unicode pair does not have that problem by
+accident, it has it by construction: `papers/unicode-mathematical-operators.md`
+against `docs/unicode-infix-operators.org`. `backtick-infix-and-keyword-escape`
+carries the token a reader would search for and names **both** jobs, which is
+the paper's own framing: they are proposed together, with equal standing,
+because they share the character.
+
+One consequence worth stating: the two papers were inconsistent for exactly as
+long as it took to ask, and **the backtick paper was the one out of line** —
+`d4307r0.md` was number-named from the day it was created. It is not any more.
+
+**The extent of the substitution.** Every occurrence of the *path* was
+rewritten, in 15 files for the Unicode paper and 14 for the backtick one,
+including historical handoffs: a path is a location, not a claim, and thirty
+pointers to a file that no longer exists are worse than a rewritten record.
+The *number* was changed only where a live document names the paper's number.
+`CLAUDE.md`'s Layout now lists `papers/` explicitly, with both filenames, both
+numbers, the naming rule and both PDF traps.
+
+**What `grep -rIn -i dxxxx` returns, and why it is not zero.** Three kinds of
+hit, and **no live document among them**:
+
+- `ops/completion/steps/unicode-paper.md` — this step's own spec, in the
+  sentences describing the state the step was *given* (*"still has `DXXXXR0`
+  as its document number"*). That file now opens with a dated note giving the
+  real number, both new paths, and the fact that the narrative below it
+  describes the past. Rewriting the spec would have falsified the record of
+  what the step was asked to do.
+- this handoff and `ops/completion/PLAN.md`, which cannot describe a
+  substitution without naming what was substituted.
+- nothing else. **No paper, no design doc, no ledger, no `CLAUDE.md`.**
+
+The step file's gate says *"no `DXXXX` left anywhere in the repo (`grep -ri
+dxxxx` is the check)"*, and that wording cannot be satisfied without editing
+the spec's own account of itself and the records that describe the change; the
+dated note is the honest reading of it.
+
+`grep -rIn dxxxxr0` — the old *path* — returns nothing outside those same
+three records. Every `papers/*.md` path in the repo was resolved against the
+filesystem: the only ones that do not exist are the two old names and two
+worked examples (`papers/d4345r0.md`, `papers/algorithms-for-trees.md`) quoted
+in this handoff and in the step file's note to explain the naming rule. **No
+pointer is dangling; the four are prose about names, not references to
+files.**
 
 ## The gate this step actually owns, and the part of it that is no longer true
 
@@ -78,14 +130,20 @@ The four are
 [`escape-alias-name-parity`](../../gcc/DEVIATIONS.md#escape-alias-name-parity)
 and [`escape-diagnostic-spelling`](../../gcc/DEVIATIONS.md#escape-diagnostic-spelling).
 **All four are backtick-track, none is owned, and none of them is this step's
-to reconcile** — this step's destinations are `papers/dxxxxr0.md` and
+to reconcile** — this step's destinations are `papers/unicode-mathematical-operators.md` and
 `docs/unicode-operators.md`, and reaching into the backtick ledger is exactly
 the scope creep the per-section reconciliation was designed to prevent.
 
 **So the gate was narrowed, deliberately, and here is the narrowing:** this
 step gates on **the Unicode ledger being clear** and **its own claims
-holding**. Both are met. The three-ledger clause is not met and is not this
-step's to meet. It needs a follow-up step; see *Open risks*.
+holding**. Both are met, and the four numbered gate bullets in the step file
+all pass. The step file's *closing* paragraph — the "when this is done" list,
+which says every plan is checked, both papers are finished, all three ledgers
+are empty and every `BNN` row has a `Closed by` cell — is now true of
+everything except the ledgers, and its own instruction covers that case:
+*"say which one is not, because that is the only thing left."* It is the
+ledgers, it is four rows, they are backtick-track, and they are unowned. The
+plan's Coverage table says so on both halves; see *Open risks*.
 
 ## The gate is a count: 89 claims checked, 14 failed
 
@@ -204,7 +262,7 @@ started counting.
 
 ## The paper's PDF could not show its own subject matter
 
-`make dxxxxr0.pdf` succeeded, exit 0, 14 pages — and emitted **136 `Missing
+`make unicode-mathematical-operators.pdf` succeeded, exit 0, 14 pages — and emitted **136 `Missing
 character` warnings**, one per operator glyph per occurrence. Latin Modern,
 which the wg21 template uses, has none of the mathematical and arrow blocks in
 either its roman or its mono face. `pdftotext` on the result:
@@ -241,7 +299,7 @@ characters.
 
 ## What changed, and where
 
-### `papers/dxxxxr0.md`
+### `papers/unicode-mathematical-operators.md`
 
 - **Front matter** — `monofont`, with a comment saying why it is not a style
   preference. No `header-includes` was added; the file never had one, which is
@@ -359,14 +417,39 @@ The paper had it right; the design doc did not.
 
 ### Builds
 
+Both papers, both formats, rebuilt after the renames, because a filename
+change is not inert until it has been shown to be:
+
 ```
-$ make -C papers dxxxxr0.html dxxxxr0.pdf
-  generated/dxxxxr0.html   110 KB
-  generated/dxxxxr0.pdf    142 KB, 14 pages, 0 missing characters
+$ make -C papers unicode-mathematical-operators.html unicode-mathematical-operators.pdf
+  generated/unicode-mathematical-operators.html  110 KB
+  generated/unicode-mathematical-operators.pdf   143 KB, 14 pages
+  Missing character warnings: 0        # 136 before this step
+  Other warnings:              none    # the placeholder's "unrecognized
+                                       # document number" warning is gone
+
+$ make -C papers backtick-infix-and-keyword-escape.html backtick-infix-and-keyword-escape.pdf
+  generated/backtick-infix-and-keyword-escape.html  155 KB
+  generated/backtick-infix-and-keyword-escape.pdf   155 KB, 18 pages
+  Missing character warnings: 1        # pre-existing; see below
 ```
 
-Before this step: 136 missing characters. The only remaining build warning is
-the document-number one quoted at the top.
+Neither regressed. The backtick paper's content is **byte-identical** to the
+committed `d4307r0.md` (`diff` against `git show HEAD:papers/d4307r0.md` is
+empty), so its PDF still builds on
+[backtick-paper](backtick-paper.handoff.md)'s `header-includes` fix and the
+rename touched nothing inside it.
+
+**One pre-existing defect the rebuild surfaced, and it is not mine to fix.**
+`papers/backtick-infix-and-keyword-escape.md` line 229 has a lone `≡` U+2261
+in a code comment — *`// short-circuiting logical implication:  p => q  ≡  !p
+|| q`* — and Latin Modern Mono does not carry it, so one character is missing
+from that PDF. It was there before this step and
+[backtick-paper](backtick-paper.handoff.md) did not catch it, because it
+counted the `\pnum` failure and not the warning log. Two one-line fixes exist
+— give that paper a `monofont` as this one has, or reword the comment — and
+both are edits to a paper outside this step's destinations, so it is recorded
+here rather than made. It is the smallest open thing in the track.
 
 `emacs --batch … org-html-export-to-html` on the `.org` completes with no
 errors; the export carries the new section headings. The generated HTML was
@@ -387,7 +470,7 @@ spells out in prose that the base has to be pinned.
 
 ### Public text stands alone
 
-Two sweeps over `papers/dxxxxr0.md`, `docs/unicode-infix-operators.org` and the
+Two sweeps over `papers/unicode-mathematical-operators.md`, `docs/unicode-infix-operators.org` and the
 `.meta`:
 
 1. Retired serial and internal-path forms — `DEV-*`, `B\d\d`, `BL\d\d`,
@@ -408,9 +491,15 @@ became *"frozen by this paper"* and *"the exclusion list below"*, `U§4` became
 
 ### Links
 
-**2371 local Markdown links** across every tracked `.md` outside
+**2420 local Markdown links** across every tracked `.md` outside
 `papers/wg21/`, **0 broken** — file existence plus GitHub-style anchor slugs,
 whitespace runs not collapsed, links inside code spans and fences excluded.
+Re-run after both renames. A second check, because a rename breaks *paths* and
+not only links: every `papers/*.md` path mentioned anywhere in the repo was
+resolved against the filesystem. Four do not exist, and none of them is a
+pointer — the two old names and two worked examples (`papers/d4345r0.md`,
+`papers/algorithms-for-trees.md`), all of them prose explaining the naming
+rule, in this handoff and in the step file's dated note.
 
 ## Deviations from the step file
 
@@ -475,80 +564,107 @@ whitespace runs not collapsed, links inside code spans and fences excluded.
 
 ## Forward notes
 
-**There is no next step.** This is the plan's last one, and it is the only one
-not ticked.
+**There is no next step, and no unchecked box.** `ops/completion/PLAN.md` is
+complete: seventeen steps, sixteen ticked and one marked not-applicable with
+its reason, plus the maintenance rows.
 
-For whoever resumes it: the *only* thing outstanding in the step is the
-document number. Take it, run `grep -rli dxxxx` (excluding
-`papers/generated/`), do the rename in one commit, confirm the pandoc
-document-number warning is gone, rebuild both formats, and tick the box with a
-Status row saying the block cleared. Nothing else in the paper is waiting on
-anything.
+What a later agent most needs from this step is not about the paper:
+
+- **A wg21 paper can build cleanly and be wrong, in two different ways, and
+  this repo has hit both.** `header-includes` in the front matter silently
+  replaces the wg21 LaTeX preamble; a font without your glyphs silently drops
+  them. `make` exits 0 for both. The check is
+  `make X.pdf 2>&1 | grep -c 'Missing character'` plus `pdftotext`, and it is
+  now written into `CLAUDE.md` so the next person does not have to rediscover
+  it.
+- **`monofont:` and `mainfont:` reach the LaTeX preamble without clobbering
+  `header-includes`**, because they are template variables consumed by
+  `$fonts.latex()$`. That is the safe channel into a wg21 preamble.
 
 ## Open risks / TODOs — the closing list for the whole track
 
-Everything below is outstanding across the *entire* completion track, since
-nothing after this will collect it.
+Everything below is outstanding across the *entire* completion track. Nothing
+after this will collect it: the plan is complete.
 
-1. **The document number.** The one thing blocking this step. Author's.
-2. **Four deviation rows are open and none is owned** —
+1. **Four deviation rows are open and none is owned** —
    [`escape-name-positions`](../../DEVIATIONS.md#escape-name-positions),
    [`type-slot-aggregate-shape`](../../DEVIATIONS.md#type-slot-aggregate-shape),
    [`escape-alias-name-parity`](../../gcc/DEVIATIONS.md#escape-alias-name-parity),
    [`escape-diagnostic-spelling`](../../gcc/DEVIATIONS.md#escape-diagnostic-spelling).
-   All backtick-track, opened 2026-09-07 after this plan was written, so no
-   step covers them and the plan's Coverage table does not know about them.
-   Three are one unwritten parser arm each; the fourth carries a design
-   question for the author about how far the keyword escape is meant to reach.
-   **Neither paper is blocked by any of them** — `papers/d4307r0.md` states all
-   four — but the track can no longer say "all three ledgers are clear", and a
-   follow-up step should be added rather than the claim quietly retired.
+   All backtick-track, all opened 2026-09-07 by
+   [backtick-paper](backtick-paper.handoff.md), after this plan was written, so
+   no step covers them. **The track can no longer claim all three ledgers are
+   clear** — that was true for one day, 2026-09-06 — and the claim should not
+   be restored without a step that closes them. Three are one unwritten parser
+   arm each; the fourth carries a design question for the author about how far
+   the keyword escape is meant to reach. **Neither paper is blocked by any of
+   them**; `papers/backtick-infix-and-keyword-escape.md` states all four.
+
+   *Correcting my own earlier note:* I previously wrote that the plan's
+   Coverage table predated these rows. Half true. Its **backlog** half already
+   had a `— (… no step)` row, added by backtick-paper; its **deviation** half
+   did not, and its "29 open deviation rows" count predated them. That was a
+   one-line honest fix and it is made: the deviation table gains the same
+   `— (no step)` row and the count now says what it counts and as of when.
+
+2. **A one-character defect in the backtick paper's PDF.** `≡` U+2261 in a code
+   comment, not in Latin Modern Mono. Pre-existing, found by rebuilding after
+   the rename, and deliberately not fixed here because that paper's prose is
+   outside this step. `monofont` or a reworded comment; either is one line.
+
 3. **Nothing is pushed.** This repo is ahead of every remote, as are the four
    LLVM worktrees and the GCC one. `origin/backtick-23` and
    `origin/backtick-trunk` are behind; the GCC `backtick` branch is ~2170
    commits ahead of `origin/backtick` and needs `--force-with-lease` after its
    re-base. **Both papers link to those public forks**, so a reader following
    the links today gets the pre-re-sync state. Pushing is the maintainer's call
-   and should happen before either paper circulates.
-4. **The two Unicode branches are not pushed either**, and this paper now
-   quotes figures measured against `unicode-operators-upstream` at
-   `c0e07f78e679`. If a reviewer asks to reproduce the volume table, the branch
-   has to be reachable.
-5. **The queued forward-port to `unicode-operators-experiment`.**
+   and should happen before either paper circulates. **The two Unicode branches
+   are not pushed either**, and the paper's volume table and site counts are
+   measured against `unicode-operators-upstream` at `c0e07f78e679`; a reviewer
+   who wants to reproduce them needs the branch to be reachable.
+
+4. **The queued forward-port to `unicode-operators-experiment`.**
    [clang-slot-adl](clang-slot-adl.handoff.md)'s fix has not reached it, which
    is what keeps `~/src/llvm/build-unicode` able to demonstrate the
    within-compiler ADL control on a live binary.
    [backtick-paper](backtick-paper.handoff.md) recorded that the merge destroys
-   that ability and that its own transcript is the record; this step used the
-   same binary for the both-flags-compose checks and did not need the defect.
+   that ability and that its transcript is the record. This step used the same
+   binary only for the both-flags-compose checks and did not need the defect.
    Nothing blocks the merge.
-6. **`CheckUserOperatorDeclaration`'s comment on `unicode-operators-upstream`
+
+5. **`CheckUserOperatorDeclaration`'s comment on `unicode-operators-upstream`
    still gives the abandoned static-member reason.** M2 fixed it on the
    experiment branch (`de76585ae45d`); the upstream branch was deliberately not
    merged and still says a static member "has no implicit object parameter",
-   which the design has replaced with the two-spellings reason this paper now
+   which the design has replaced with the two-spellings reason the paper now
    prints. One line, on one branch, owned by nobody.
-7. **`CLAUDE.md` says M2 is outstanding.** Its *Current state* section reads
+
+6. **`CLAUDE.md` says M2 is outstanding.** Its *Current state* section reads
    *"One maintenance merge is outstanding, M2 … it runs after
    clang-paper-truth"*, and [M2-forward-port](M2-forward-port.handoff.md) says
-   **DONE, 2026-09-06**, as does the plan's Maintenance section. The front door
-   is stale on this one point.
-8. **`ops/completion/PLAN.md`'s Coverage table predates four rows and one
-   reopened claim.** It is a completeness check that is no longer complete.
-9. **The paper asks the ABI group for something nobody has asked them yet.**
+   **DONE, 2026-09-06**, as does the plan's Maintenance section. This step
+   rewrote `CLAUDE.md`'s Layout for the renames and left *Current state* alone,
+   because correcting a claim about a merge is not a rename; it is still stale
+   on that one point.
+
+7. **The paper asks the ABI group for something nobody has asked them yet.**
    The `uo` letters are this repo's invention, offered as a shape and marked as
-   one. If the request moves in the room, the edit is contained: the sketch and
-   the three load-bearing notes are the only prose that changes, and the
+   one. If the request moves in the room the edit is contained: the sketch and
+   its three load-bearing notes are the only prose that changes, and the
    measured bullets stand whatever is asked for.
-10. **What the paper still cannot claim, and why.** No upstream issue number,
-    because the report is drafted and not filed — so the fixity argument rests
-    on a divergence a reader must reproduce (the reproducer is in the paper).
-    Nothing from any ABI group, because nothing has been put to one. Nothing
-    about Microsoft beyond the shape of the gap, so the paper cannot claim the
-    feature is portable. And **one implementation**: the paper says so, and it
-    is the whole reason the two papers are separate.
-11. **The counts in this paper will go stale the way the last ones did.** They
-    are dated and branch-stamped for that reason, and the taxonomy table sums,
-    so an omission is visible. If anything lands on either Unicode branch, the
-    volume table and the site counts need re-taking, and this step is the
-    evidence that nobody does it unprompted.
+
+8. **What the paper still cannot claim, and why.** No upstream issue number,
+   because the report is drafted and not filed — so the fixity argument rests
+   on a divergence a reader must reproduce, and the reproducer is in the paper.
+   Nothing back from any ABI group, because nothing has been put to one.
+   Nothing about Microsoft beyond the shape of the gap, so it cannot claim the
+   feature is portable. And **one implementation**, which the paper says, and
+   which is the whole reason the two papers are separate.
+
+9. **The counts in this paper will go stale the way the last ones did.** Six of
+   this step's fourteen failures were figures that went stale because the
+   branch kept growing and nobody re-took them — and two of the four steps that
+   grew it were in this plan. They are now dated and branch-stamped, and the
+   taxonomy table sums so an omission is visible. If anything lands on either
+   Unicode branch, the volume table and the site counts need re-taking, and
+   this step is the evidence that nobody does it unprompted.

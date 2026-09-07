@@ -22,7 +22,7 @@ sites), and the instruction not to attach a patch. Do not restate it here and
 do not improve on it.
 
 One correction to its closing note: the three places it asks you to update
-afterwards **all exist** — `docs/unicode-operators.md`, `papers/dxxxxr0.md`,
+afterwards **all exist** — `docs/unicode-operators.md`, `papers/unicode-mathematical-operators.md`,
 and [`postfix-operators`](../../unicode-operators/clang/DEVIATIONS.md#postfix-operators) clause (c) — but its line numbers predate BL02 and BL04. Search
 for the text.
 
@@ -74,6 +74,6 @@ said — it will have moved.
 ## Capture in handoff
 
 The three URLs and the trunk revision each was confirmed against. Then update
-`docs/unicode-operators.md`, `papers/dxxxxr0.md` and [`postfix-operators`](../../unicode-operators/clang/DEVIATIONS.md#postfix-operators) (c) to cite the
+`docs/unicode-operators.md`, `papers/unicode-mathematical-operators.md` and [`postfix-operators`](../../unicode-operators/clang/DEVIATIONS.md#postfix-operators) (c) to cite the
 [`increment-decrement-mangling`](../../BACKLOG.md#increment-decrement-mangling) issue by number, per BL05's own instruction — a paper that says "we found
 a Clang bug" is stronger when it can say which one.

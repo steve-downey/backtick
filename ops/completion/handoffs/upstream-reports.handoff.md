@@ -29,7 +29,7 @@ than papered over:
   says so and tells it to write around the placeholder.
 - **[unicode-paper](../steps/unicode-paper.md) inherits the same gap.** The
   papers currently say "we found a Clang bug" without being able to say which
-  one — `papers/dxxxxr0.md`'s Acknowledgments now names the ABI sections and
+  one — `papers/unicode-mathematical-operators.md`'s Acknowledgments now names the ABI sections and
   the `--` twin, but the issue number is the token `LLVM-ISSUE-PENDING`.
 
 Filing the three reports and substituting the numbers is one grep:
@@ -39,7 +39,7 @@ $ grep -rn LLVM-ISSUE-PENDING docs papers ops
 ```
 
 **Four substitution points**: `docs/unicode-operators.md` §9 and §13.1,
-`papers/dxxxxr0.md` Acknowledgments, and
+`papers/unicode-mathematical-operators.md` Acknowledgments, and
 [`postfix-operators`](../../unicode-operators/clang/DEVIATIONS.md#postfix-operators)
 clause (c). The grep also finds the token *described* rather than standing in
 for a number — in `ops/BACKLOG.md`, `ops/completion/PLAN.md`, the drafts README
@@ -75,7 +75,7 @@ Edited:
   first-class `<operator-name>` needs room for a fixity marker, and the
   `pp_`/`pp` divergence is the evidence that fixity is easy to get wrong — the
   sentence [mangling-abi](../steps/mangling-abi.md) was told to expect.
-- `papers/dxxxxr0.md` — Acknowledgments, third paragraph: `--` added, ABI
+- `papers/unicode-mathematical-operators.md` — Acknowledgments, third paragraph: `--` added, ABI
   §5.1.3 / §5.1.6 named, "It is being reported upstream" → "Reported upstream as
   llvm/llvm-project LLVM-ISSUE-PENDING". **No internal identifier or file path
   in the paper**, per `~/.claude/CLAUDE.md`'s public-text rule — the token is the

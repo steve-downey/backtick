@@ -3,7 +3,7 @@
 - **Status:** **DONE (docs gate passed).**
 - **Branch / commit:** no branch. `unicode-operators` in *this* repo only —
   `684c92d` (`docs:` — `docs/unicode-operators.md`, `docs/backtick-operator-design.md`,
-  `papers/dxxxxr0.md`, `papers/d4307r0.md`) and the `ops:` commit carrying
+  `papers/unicode-mathematical-operators.md`, `papers/backtick-infix-and-keyword-escape.md`) and the `ops:` commit carrying
   fourteen ledger rows, the Unicode ledger's rewritten header, the backlog row,
   `REPLAY.md` §5, the experiment plan, the plan and this handoff.
   **Nothing was built and no feature branch was touched.** Four LLVM worktrees
@@ -128,13 +128,13 @@ The nine deletions exist only on the experiment branch, and they are the
 refactor of the *backtick* track's inline post-operand test — not this
 feature's cost at all. **The standalone figure is both the larger and the
 simpler one**, and it is the one a paper wants, because it is what the feature
-costs a compiler that has never heard of backtick. `papers/dxxxxr0.md` said
+costs a compiler that has never heard of backtick. `papers/unicode-mathematical-operators.md` said
 "32 lines" and now says about forty across three files.
 
 ### Both papers were carrying claims their own answers had discarded — again
 
 This is the **third consecutive step** to find that, and the second to find it
-in `papers/dxxxxr0.md`.
+in `papers/unicode-mathematical-operators.md`.
 
 - Its *Fold expressions* section said the exclusion "is inherited from sharing
   the level" and that admitting the level to `fold-operator` "is an open
@@ -144,7 +144,7 @@ in `papers/dxxxxr0.md`.
 - The same paper listed **Fold expressions** under *What is not resolved*.
 - And the formatting figure above.
 
-`papers/d4307r0.md` had no fold sentence at all; the decision said it owed one,
+`papers/backtick-infix-and-keyword-escape.md` had no fold sentence at all; the decision said it owed one,
 and it now has it in *The productions*.
 
 **The rule from [reconcile-declaring-using](reconcile-declaring-using.handoff.md)
@@ -259,14 +259,14 @@ checklist, two Coverage rows and four Status-log rows.
 
 | Row | Destination |
 |---|---|
-| [`exclusion-list-derivation`](../../unicode-operators/clang/DEVIATIONS.md#exclusion-list-derivation) | U§5 predicate 5 (the 3/13/12 enumeration) and the paragraph after it beginning *"Two corrections the enumeration forced"*; the new [confusable-spelling-provenance](../../../docs/unicode-operators.md#confusable-spelling-provenance); `papers/dxxxxr0.md`'s exclusions section, the paragraph beginning *"The ASCII token named beside each confusable is curated, not derived"* |
+| [`exclusion-list-derivation`](../../unicode-operators/clang/DEVIATIONS.md#exclusion-list-derivation) | U§5 predicate 5 (the 3/13/12 enumeration) and the paragraph after it beginning *"Two corrections the enumeration forced"*; the new [confusable-spelling-provenance](../../../docs/unicode-operators.md#confusable-spelling-provenance); `papers/unicode-mathematical-operators.md`'s exclusions section, the paragraph beginning *"The ASCII token named beside each confusable is curated, not derived"* |
 | [`ucn-operator-spellings`](../../unicode-operators/clang/DEVIATIONS.md#ucn-operator-spellings) | U§8, the four-paragraph block beginning *"An earlier draft called that 'structurally free'"*, whose last paragraph answers clause (3) with the correction; [ucn-spellings](../../../docs/unicode-operators.md#ucn-spellings)'s amended **Why** and its new `Log.` |
 | [`exclusion-diagnostics`](../../unicode-operators/clang/DEVIATIONS.md#exclusion-diagnostics) | U§8 paragraph 2 — the paragraph beginning *"But the three reasons do not have the same scope"*, its two bullets, and the two paragraphs after them (*"That asymmetry is the sharpest evidence…"*, *"And a second, independent argument…"*); U§5's [confusable-spelling-provenance](../../../docs/unicode-operators.md#confusable-spelling-provenance), last two paragraphs |
 | [`clang-format-user-operators`](../../unicode-operators/clang/DEVIATIONS.md#clang-format-user-operators) | U§10's clang-format bullet and its sub-paragraph *"The third touch point is the one a reviewer will forget"*; U§13's rewritten adjacency bullet; U§12's paragraph *"They do not share a formatting story either"* |
 | [`feature-coupling`](../../unicode-operators/clang/DEVIATIONS.md#feature-coupling) | the experiment plan's *Upstream Replay Assumptions*, the struck bullet and its numbered three plus the soft-coupling bullet; U§12's paragraphs *"The coupling, measured, is three constructs…"* and *"The shared level surfaced twice, independently"* |
 | [`replay-ordering`](../../unicode-operators/clang/DEVIATIONS.md#replay-ordering) | `REPLAY.md` §5's *"Two ordering traps"*, both struck in place with corrections plus the conflicts-not-fuzz third; the experiment plan's *"The replay is executed, not assumed"* bullet; U§12's *"Separable fates are now an executed result"* paragraph and the maintenance-cost paragraph |
 | [`postfix-operators`](../../unicode-operators/clang/DEVIATIONS.md#postfix-operators) | (4) U§12's fourth bullet, *"And postfix, if it were ever taken, would move the routing again"*; (5) [closed-table-sibling-pattern](../../../docs/unicode-operators.md#closed-table-sibling-pattern)'s fifth table row and the paragraph *"The fifth is different again"*, with §13.1's *"fourth consecutive place"* corrected to *fifth* and cross-linked. (1) and (2) verified already written, not re-done |
-| [`infix-parse-cost`](../../unicode-operators/clang/DEVIATIONS.md#infix-parse-cost) | (1) U§6, the block beginning *"'Parsing is the easy part…' — the first half survives measurement"*; (3) U§13's new fold bullet, plus `papers/dxxxxr0.md`'s rewritten *Fold expressions* and `papers/d4307r0.md`'s new paragraph in *The productions*. Parenthetical now **RECONCILED (all three parts)** |
+| [`infix-parse-cost`](../../unicode-operators/clang/DEVIATIONS.md#infix-parse-cost) | (1) U§6, the block beginning *"'Parsing is the easy part…' — the first half survives measurement"*; (3) U§13's new fold bullet, plus `papers/unicode-mathematical-operators.md`'s rewritten *Fold expressions* and `papers/backtick-infix-and-keyword-escape.md`'s new paragraph in *The productions*. Parenthetical now **RECONCILED (all three parts)** |
 | [`prefix-arity-selection`](../../unicode-operators/clang/DEVIATIONS.md#prefix-arity-selection) | U§6, the paragraph beginning *"That is not merely a rule the parser follows"*. Parenthetical now **RECONCILED (all four recommendations)** |
 | [`ast-node-shape`](../../unicode-operators/clang/DEVIATIONS.md#ast-node-shape) | U§12, the paragraph beginning *"What the two features must not share is an AST representation"*. Parenthetical now **RECONCILED (both halves)** |
 | [`wrapper-inner-shape`](../../DEVIATIONS.md#wrapper-inner-shape) | `docs/backtick-operator-design.md` §6 item 4, the appended block *"What Sema hands back is not always a call"*; §11 phase 2's *"'Purely additive' is the word this phase got wrong"* |
@@ -354,7 +354,7 @@ none.
    named destinations and were left alone by that step, plus the fifth row of
    [closed-table-sibling-pattern](../../../docs/unicode-operators.md#closed-table-sibling-pattern),
    which resolves the four-versus-four collision described above.
-4. **`papers/dxxxxr0.md` and `papers/d4307r0.md` were edited**, which the step
+4. **`papers/unicode-mathematical-operators.md` and `papers/backtick-infix-and-keyword-escape.md` were edited**, which the step
    file does not mention. The fold decision explicitly owes a sentence in the
    backtick paper and names this step as owner of its documentation, and the
    Unicode paper's own fold section asserted the two things the answer
@@ -440,7 +440,7 @@ Written after reading its step file.
 
 ## Open risks / TODOs
 
-- **`papers/dxxxxr0.md`'s *What is not resolved* list still contains two items
+- **`papers/unicode-mathematical-operators.md`'s *What is not resolved* list still contains two items
   the author has since decided**, and they are not mine: *"Default arguments in
   prefix position. Keep the relaxation and document it, or reinstate
   [over.oper]p8"* was answered (keep the relaxation), and *"Static member user
@@ -450,14 +450,14 @@ Written after reading its step file.
   reading against `docs/open-decisions.md`'s answers line by line**, not
   grepped. *Member-versus-non-member sequencing* is genuinely still open and
   should stay.
-- **`papers/d4307r0.md`'s implementation-experience section does not say that
+- **`papers/backtick-infix-and-keyword-escape.md`'s implementation-experience section does not say that
   the type-name slot has single-compiler evidence**, which
   `docs/backtick-operator-design.md` §17.3 now says it must.
   [backtick-paper](../steps/backtick-paper.md)'s, flagged by
   [gcc-resync](gcc-resync.handoff.md) too, and §17.8 now gives it the framing:
   the wrapper's cost has no GCC counterpart *by construction*, the type slot is
   a *gap*, and the two must not be run together.
-- **`papers/dxxxxr0.md` still carries four `U§` cross-references.** Unchanged,
+- **`papers/unicode-mathematical-operators.md` still carries four `U§` cross-references.** Unchanged,
   still [unicode-paper](../steps/unicode-paper.md)'s.
 - **The stale `U§11` citations in ledger rows are not fixed.** The heading is
   restored, but §11 is *prior art* and the rows that say "U§11's open-question

@@ -2,7 +2,7 @@
 
 - **Status:** **DONE (gate passed).**
 - **Branch / commit:** no branch. `unicode-operators` in *this* repo only —
-  a `docs:` commit (`papers/d4307r0.md`, `docs/infix-backtick-operator.org`
+  a `docs:` commit (`papers/backtick-infix-and-keyword-escape.md`, `docs/infix-backtick-operator.org`
   + `.meta`, `docs/backtick-operator-design.md`) and an `ops:` commit (the two
   ledgers, the plan, this handoff). **Nothing was built and no feature branch
   was touched.** Four pre-built compilers were *read and run* to re-derive
@@ -99,7 +99,7 @@ Status has said was open since it was written.
 
 ## The paper could not produce a PDF, and nobody had noticed
 
-`make d4307r0.pdf` failed with `! Undefined control sequence. l.1443 \pnum`.
+`make backtick-infix-and-keyword-escape.pdf` failed with `! Undefined control sequence. l.1443 \pnum`.
 It is not LaTeX and it is not the wording: the paper's front matter carried a
 `header-includes` key holding an HTML `<style>` block, and a `header-includes`
 in the document **replaces** the one `wg21/data/metadata.yaml` supplies, which
@@ -107,12 +107,12 @@ is where `\pnum` — and the rest of the wg21 preamble — is defined. The
 `{=html}` block now sits at the top of the body, later in the cascade than the
 highlighter's own rule, so it still wins; both formats build.
 
-`papers/dxxxxr0.md` is unaffected because it uses no `{.pnum}` span. **It will
+`papers/unicode-mathematical-operators.md` is unaffected because it uses no `{.pnum}` span. **It will
 be affected the moment it gains wording**, which is [unicode-paper](../steps/unicode-paper.md)'s job.
 
 ## What changed, and where
 
-### `papers/d4307r0.md`
+### `papers/backtick-infix-and-keyword-escape.md`
 
 - **Front matter** — `header-includes` removed, the style block moved into the
   body with a comment saying why. This is the PDF fix.
@@ -213,9 +213,9 @@ and would otherwise have inherited them:
 ### Builds
 
 ```
-$ make -C papers d4307r0.html d4307r0.pdf
-  generated/d4307r0.html   154 KB
-  generated/d4307r0.pdf    154 KB, 18 pages     # did not build before this step
+$ make -C papers backtick-infix-and-keyword-escape.html backtick-infix-and-keyword-escape.pdf
+  generated/backtick-infix-and-keyword-escape.html   154 KB
+  generated/backtick-infix-and-keyword-escape.pdf    154 KB, 18 pages     # did not build before this step
 ```
 
 `emacs --batch … org-html-export-to-html` on the `.org` completes with no
@@ -225,7 +225,7 @@ HTML was deleted afterwards; `docs/` is source only.
 
 ### Public text stands alone
 
-Two sweeps over `papers/d4307r0.md`, `docs/infix-backtick-operator.org` and
+Two sweeps over `papers/backtick-infix-and-keyword-escape.md`, `docs/infix-backtick-operator.org` and
 the `.meta`:
 
 1. The retired-serial and internal-path forms —
@@ -316,12 +316,12 @@ Written after reading its step file.
   sentence is that every step is checked, both papers are finished, and four
   rows opened by the last paper pass remain unowned — which is a better
   ending than a false one.
-- **The PDF trap is waiting for you, and only for you.** `papers/dxxxxr0.md`
+- **The PDF trap is waiting for you, and only for you.** `papers/unicode-mathematical-operators.md`
   builds a PDF today because it has no `{.pnum}` span. Your step adds wording.
-  Check `papers/dxxxxr0.md`'s front matter for a `header-includes` key
+  Check `papers/unicode-mathematical-operators.md`'s front matter for a `header-includes` key
   **before** you write wording, and build the PDF, not just the HTML — the
   HTML target will not tell you.
-- **Do not re-tell the ADL control.** `papers/d4307r0.md` now carries it from
+- **Do not re-tell the ADL control.** `papers/backtick-infix-and-keyword-escape.md` now carries it from
   the backtick side, describing your feature as *"user-defined operators
   spelled with Unicode symbols, a companion design not proposed here"*. From
   your side the same fact is one clause, not a section: the Unicode operator
@@ -334,7 +334,7 @@ Written after reading its step file.
   its `.meta`, both present. Mine's `.meta` date moved to 2026-09-07; consider
   whether the two posts should be dated apart, since they will publish as
   neighbours.
-- **`LLVM-ISSUE-PENDING` is still in three places** — `papers/dxxxxr0.md`'s
+- **`LLVM-ISSUE-PENDING` is still in three places** — `papers/unicode-mathematical-operators.md`'s
   Acknowledgments and `docs/unicode-operators.md` twice. It is yours to
   decide what a paper does with an unfiled report; the author declined to file
   it, so *"reported upstream as PENDING"* is not a claim the paper can make.
@@ -343,10 +343,10 @@ Written after reading its step file.
   against `upstream/main` returns six hits that are all upstream's drift.
   Use `git log -p upstream/main..unicode-operators-upstream | grep -ic
   backtick`, or diff against the branch base `d28193fa1ff6`.
-- **The voice numbers to expect.** `papers/dxxxxr0.md` has not had a lexcheck
+- **The voice numbers to expect.** `papers/unicode-mathematical-operators.md` has not had a lexcheck
   pass in this track. Mine had six errors before I touched it, all of them
   in prose no step had ever revisited. Run
-  `python3 ~/.claude/skills/voice/scripts/lexcheck.py papers/dxxxxr0.md
+  `python3 ~/.claude/skills/voice/scripts/lexcheck.py papers/unicode-mathematical-operators.md
   --register formal` early — it is thirty seconds — and the same for the
   `.org` with `--register blog`, where the tell to expect is em-dash
   saturation.

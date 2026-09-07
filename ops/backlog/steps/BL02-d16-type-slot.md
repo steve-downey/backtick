@@ -7,7 +7,7 @@ implementation does not deliver.
 **Depends on:** BL01 (so the gate is readable).
 **Closes:** `B01`.
 **Design refs:** `docs/backtick-operator-design.md` D16 (`:60`) and §17.3
-(`:1004-1019`); `papers/d4307r0.md:541-553` (the prose), `:911-914` (the
+(`:1004-1019`); `papers/backtick-infix-and-keyword-escape.md:541-553` (the prose), `:911-914` (the
 grammar) and `:940` (the `r7` example). Read
 `ops/handoffs/15-defect-fixes.handoff.md:252-259`, which is where this defect
 was found, and `:53-59`, which describes `getCallExpr()`.
@@ -82,7 +82,7 @@ independently.
    *adds* a `-ast-print` round-trip hole** — exactly the DEV-06 shape F23
    just closed. Extend the printer to recover and print the type slot.
 7. **The grammar contradiction — the part `BACKLOG.md` misses.** The proposed
-   wording at `papers/d4307r0.md:911-914` is
+   wording at `papers/backtick-infix-and-keyword-escape.md:911-914` is
    `backtick-operator: assignment-expression`. `std::pair` is not an
    assignment-expression under any reading, so the `r7` line in the normative
    example at `:940` contradicts `[expr.backtick]`'s own grammar. **Change
@@ -139,6 +139,6 @@ been exercised.
 The maintainer chose to implement rather than cut, so **implement**. But if
 the parser arms turn out materially worse than they look, the fallback is
 three deletions rather than a rediscovery: `docs/backtick-operator-design.md`
-§17.3 (`:1004-1019`) and the D16 row (`:60`); `papers/d4307r0.md:541-553`;
+§17.3 (`:1004-1019`) and the D16 row (`:60`); `papers/backtick-infix-and-keyword-escape.md:541-553`;
 and the `r7` line at `:940`. Write a BLOCKED handoff making the case; do not
 take the fallback unilaterally.

@@ -9,7 +9,7 @@ time, including first.
 **Closes:** [`increment-decrement-mangling`](../../BACKLOG.md#increment-decrement-mangling).
 **Refs:** `ops/unicode-operators/clang/handoffs/U21-postfix-probe.handoff.md:112-129`
 and `:246`; [postfix-operators](../../unicode-operators/clang/DEVIATIONS.md#postfix-operators) clause (c); `docs/unicode-operators.md:807-822`;
-`papers/dxxxxr0.md:715-716`.
+`papers/unicode-mathematical-operators.md:715-716`.
 
 Nothing lands on either feature branch. This step writes no compiler code.
 
@@ -85,7 +85,7 @@ paragraph reference.
 
 Then update the three places that carry this as a private note —
 `ops/unicode-operators/clang/DEVIATIONS.md` ([postfix-operators](../../unicode-operators/clang/DEVIATIONS.md#postfix-operators) c),
-`docs/unicode-operators.md:807-822` and `papers/dxxxxr0.md:715-716` — to
+`docs/unicode-operators.md:807-822` and `papers/unicode-mathematical-operators.md:715-716` — to
 point at the issue. A paper that says "we found a Clang bug" is stronger when
 it can say which one.
 

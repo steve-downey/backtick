@@ -42,7 +42,7 @@ of *backtick*; here the parse is easy and the *name* and the *node* are not —
 and say that the correction is itself a finding.
 
 Also here: **§6 owes its sixth worked example**, `⊖a ⊞ 2 * ⊖b`. Note that it
-**already exists in `papers/dxxxxr0.md:271`** and is missing only from
+**already exists in `papers/unicode-mathematical-operators.md:271`** and is missing only from
 `docs/unicode-operators.md`, whose §6 stops at five. This is a sync, not
 authorship — copy it with its comment and check the precedence it shows still
 matches the tree.

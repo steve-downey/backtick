@@ -42,10 +42,10 @@ anchor**, across `CLAUDE.md`, both design docs, `ops/PLAN.md`,
 `ops/BACKLOG.md`, the three ledgers, all of `ops/completion/`, and
 `ops/backlog/steps/BL05`–`BL07`.
 
-**The papers lost their identifiers outright.** 17 in `papers/d4307r0.md` and
-2 in `papers/dxxxxr0.md` were **removed**, not renamed — nine section headings
+**The papers lost their identifiers outright.** 17 in `papers/backtick-infix-and-keyword-escape.md` and
+2 in `papers/unicode-mathematical-operators.md` were **removed**, not renamed — nine section headings
 shed a trailing `(D6)`-style parenthetical, and the running text now describes
-the reason or the effect. `papers/d4307r0.md`'s "Design choices and decisions"
+the reason or the effect. `papers/backtick-infix-and-keyword-escape.md`'s "Design choices and decisions"
 lead-in no longer promises that "EWG poll outcomes can be recorded against
 these numbers"; it says the decisions are one to a section so EWG can poll any
 one of them on its own, which is the thing that was actually wanted.
@@ -127,7 +127,7 @@ slug:
 
 ```
 grep -nE '\bDEV-[UG]?[0-9]+\b|\bB[0-9]{2}\b|\bD[0-9]{1,2}\b|\bU[0-9]{1,2}\b' \
-    papers/d4307r0.md papers/dxxxxr0.md papers/p0000r0.md docs/*.org
+    papers/backtick-infix-and-keyword-escape.md papers/unicode-mathematical-operators.md papers/p0000r0.md docs/*.org
     -> (no output)
 ```
 

@@ -138,7 +138,7 @@ Written after reading `steps/BL02-d16-type-slot.md`.
   ~12 min estimate now that both dirs are warm. Do **not** poll with `pgrep`.
 - **Two Status rows, not one.** And verify the `backtick-23` gate
   independently after the cherry-pick; do not infer it from a clean pick.
-- **Your step also edits the paper.** `papers/d4307r0.md:911-914` is the
+- **Your step also edits the paper.** `papers/backtick-infix-and-keyword-escape.md:911-914` is the
   grammar production, `:940` the `r7` example, `:541-553` the prose. The
   grammar edit is the one most likely to be forgotten and is the reason the
   step exists — without it the paper contradicts itself whether or not the

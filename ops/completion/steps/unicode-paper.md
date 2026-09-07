@@ -1,5 +1,15 @@
 # unicode-paper — The Unicode paper: a real number, and the blog version
 
+> **Completed 2026-09-07.** The author assigned **D4345R0**, *Extending C++
+> with Unicode Mathematical Operators*. The paper is now
+> [`papers/unicode-mathematical-operators.md`](../../../papers/unicode-mathematical-operators.md)
+> — named by name and not by number, per `~/.claude/CLAUDE.md`, so
+> `d4345r0.md` was **not** the target of the rename. The narrative below is
+> kept as written; where it says `papers/dxxxxr0.md` or `DXXXX` it is
+> describing the state this step was given, not the state of the repo.
+> `papers/d4307r0.md` was renamed in the same sitting and for the same reason;
+> it is `papers/backtick-infix-and-keyword-escape.md`.
+
 **Goal.** The last step. `papers/dxxxxr0.md` is a complete 718-line draft that
 **still has `DXXXXR0` as its document number** — it has never been submitted.
 This step finishes it and gives it one.
@@ -8,7 +18,7 @@ This step finishes it and gives it one.
 reconcile-implementation-cost, reconcile-declaring-using, reconcile-remainder (the whole Unicode ledger reconciled). It is last because it
 depends on nearly everything, which is the correct shape: the paper is what
 all of it was for.
-**Refs:** `papers/dxxxxr0.md`; `docs/unicode-operators.md`;
+**Refs:** `papers/unicode-mathematical-operators.md`; `docs/unicode-operators.md`;
 `docs/unicode-infix-operators.org` and its `.meta`; `docs/open-decisions.md`
 with the author's answers.
 

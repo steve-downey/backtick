@@ -185,7 +185,7 @@ Read after `steps/BL05-upstream-mangling.md`:
   `pp_` / `mm_` grammar lines) is the corroboration, not the citation.
 - After filing, the step asks you to update three places that hold this as a
   private note. **All three paths are live in this repo** — `docs/unicode-operators.md`,
-  `papers/dxxxxr0.md` and DEV-U23 clause (c) in
+  `papers/unicode-mathematical-operators.md` and DEV-U23 clause (c) in
   `ops/unicode-operators/clang/DEVIATIONS.md` — but the line numbers the step
   quotes are from before BL02 and BL04 edited neighbouring files, so search for
   the text rather than seeking to `:807` and `:715`.

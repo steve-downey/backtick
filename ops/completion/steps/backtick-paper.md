@@ -10,7 +10,7 @@ reconcile-remainder (backtick ledger
 reconciled, §17 updated), hygiene-parity (parity gaps closed so the paper does not have
 to explain them).
 **Closes:** nothing in `BACKLOG.md`. This is the deliverable.
-**Refs:** `papers/d4307r0.md`; `docs/backtick-operator-design.md`;
+**Refs:** `papers/backtick-infix-and-keyword-escape.md`; `docs/backtick-operator-design.md`;
 `docs/infix-backtick-operator.org` and its `.meta`; `papers/Makefile`
 (`include wg21/flat.mk`).
 
