@@ -247,7 +247,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** U17 handoff; [serialization-tooling-cost](unicode-operators/clang/DEVIATIONS.md#serialization-tooling-cost)
 
-**Closed by.** —
+**Closed by.** **[reconcile-implementation-cost](completion/steps/reconcile-implementation-cost.md), 2026-09-06 — recorded as designed, and cited as evidence.** There is nothing to fix: the predicate is keyed on a *static* spelling table and a user operator's spelling is a UTF-8 encoding of a code point computed into a buffer, so the right answer is a refusal and not a sibling. Verified today that the refusal is documented where a user meets it — `userOperatorExpr()`'s own doc comment says the operator's identity is its code point and that `hasAnyOperatorName()` does not apply — and that the matcher is registered for the dynamic layer. Written into [`docs/unicode-operators.md`](../docs/unicode-operators.md) **U§8's [closed-table-sibling-pattern](../docs/unicode-operators.md#closed-table-sibling-pattern)**, as the **fourth row of the table and the paragraph immediately beneath it**: the first three instances are siblings and this is the first where the right answer is a refusal, which is what makes the pattern a claim about closed tables rather than a claim about how much typing a sibling costs.
 
 ### astral-plane-mangling
 

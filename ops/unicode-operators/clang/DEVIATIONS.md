@@ -14,12 +14,36 @@ cross-references link to it. `Formerly:` carries the serial number the entry
 used to have, because the completed tracks' handoffs still say it and are not
 rewritten. [`ops/SLUGS.md`](../../SLUGS.md) is the whole map.
 
-**Two entries are `**RECONCILED**` and the rest are `Status: OPEN`.**
+**Ten entries are `**RECONCILED**` and the other fourteen are `Status: OPEN`.**
 [`vendor-extended-mangling`](#vendor-extended-mangling) and
 [`msvc-mangling`](#msvc-mangling) were reconciled into U§9 on 2026-09-06 by
-[mangling-abi](../../completion/steps/mangling-abi.md); every other row is
-still open, and [`postfix-operators`](#postfix-operators) is partly so — its
-mangling clause is closed and the rest is not, which the row says. A step that
+[mangling-abi](../../completion/steps/mangling-abi.md), and eight more into
+U§8 the same day by
+[reconcile-implementation-cost](../../completion/steps/reconcile-implementation-cost.md) —
+[`declaration-name-plumbing`](#declaration-name-plumbing),
+[`declaring-side-parse-cost`](#declaring-side-parse-cost),
+[`flag-language-mode`](#flag-language-mode),
+[`operator-candidate-assembly`](#operator-candidate-assembly),
+[`expression-node-cost`](#expression-node-cost),
+[`serialization-tooling-cost`](#serialization-tooling-cost),
+[`ast-node-shape`](#ast-node-shape) and
+[`codegen-dispatch-sites`](#codegen-dispatch-sites). **Three rows are *partly*
+closed and say so in their own `Status:` line**, because their recommendations
+name a second destination section that belongs to another step:
+[`operator-candidate-assembly`](#operator-candidate-assembly) (U§8 half closed,
+U§7 half open) and [`ast-node-shape`](#ast-node-shape) (U§8 half closed, one
+U§12 sentence open) are `RECONCILED`, while
+[`postfix-operators`](#postfix-operators) stays `OPEN` with its mangling clause
+taken.
+
+**Three of the eight carried a count that did not survive re-measurement**, and
+that is worth knowing before quoting any number in this file: see
+[`declaration-name-plumbing`](#declaration-name-plumbing) (33→34 sites),
+[`declaring-side-parse-cost`](#declaring-side-parse-cost) (9→12, and only 7 of
+them compiler-found) and [`expression-node-cost`](#expression-node-cost) /
+[`codegen-dispatch-sites`](#codegen-dispatch-sites) (28 and 32→43). Every
+figure in the reconciled prose is dated and carries the branch it was taken
+on. A step that
 reconciles one changes its `Status` to `**RECONCILED**` (or `**RESOLVED**` / `**FIXED**`,
 the words the backtick and GCC ledgers use) and names the section *and the
 paragraph* the finding landed in. A reconciliation that cannot say where it
@@ -69,7 +93,7 @@ went did not happen.
 
 ### declaration-name-plumbing
 
-**Formerly:** `DEV-U04`. **Status:** OPEN
+**Formerly:** `DEV-U04`. **Status:** **RECONCILED** — 2026-09-06, [reconcile-implementation-cost](../../completion/steps/reconcile-implementation-cost.md), into `docs/unicode-operators.md` **U§8**, the ***The name tables — `DeclarationName`*** bullet (fourth in the Clang list). The bullet keeps the worked-precedent reassurance, because it held, and adds the three things this row asked for: the quantification, the *packed against Objective-C's variable-length selector encoding* finding as the real sharp edge, and the generated TableGen site. **The count was re-measured and is 34 dispatch sites across 17 files, not 33 across 20** — 31 `case` arms in 15 files, one TableGen `PropertyTypeCase` generating the abstract reader/writer pair, and two non-`switch` `||` chains. The 33/20 figure was a correct snapshot at `U06`; later steps added sites. The `||` chains are a finding in their own right and are written up in [dispatch-obligation-taxonomy](../../../docs/unicode-operators.md#dispatch-obligation-taxonomy). The serialization *identity dividend* [serialization-tooling-cost](#serialization-tooling-cost) asked to be stated in this same paragraph is in it.
 
 **Found by.** U06
 
@@ -83,7 +107,7 @@ went did not happen.
 
 ### declaring-side-parse-cost
 
-**Formerly:** `DEV-U05`. **Status:** OPEN
+**Formerly:** `DEV-U05`. **Status:** **RECONCILED** — 2026-09-06, [reconcile-implementation-cost](../../completion/steps/reconcile-implementation-cost.md), into `docs/unicode-operators.md` **U§8**, the new ***Parser, declaring an operator*** bullet, which is the split this row asked for; the *using* bullet above it is the old Parser bullet, kept and marked as having held. Both findings landed: the tentative-parsing arm with the two-for-two generalisation, and the `TemplateIdAnnotation` gap. **The peer-site count was re-measured as 12 dispatch sites over `UnqualifiedIdKind` in 5 files, not 9**, and the row's *"all exhaustive, so `-Wswitch` found them"* is true of only 7 of the 12: the other five are `==` tests, which nothing checks. That correction is not cosmetic — it is one of the three instances of the *spelling, not the axis* finding in [dispatch-obligation-taxonomy](../../../docs/unicode-operators.md#dispatch-obligation-taxonomy). The row's ordering claim survives: the declaring side is smaller than the name-table cost, as the design predicts, and U§8 now says so. **U§6's contested sentence is not touched here** — it is [reconcile-remainder](../../completion/steps/reconcile-remainder.md)'s; U§8's opening paragraph carries the U§8-side evidence and the caveat.
 
 **Found by.** U07
 
@@ -111,7 +135,7 @@ went did not happen.
 
 ### flag-language-mode
 
-**Formerly:** `DEV-U07`. **Status:** OPEN
+**Formerly:** `DEV-U07`. **Status:** **RECONCILED** — 2026-09-06, [reconcile-implementation-cost](../../completion/steps/reconcile-implementation-cost.md), into `docs/unicode-operators.md` **U§8**, the paragraph beginning *"One wrinkle in the flag story"*, immediately after the *"Both implementations stay behind their flag"* paragraph at the end of the section. The code half was already paid; **verified today on all four Clang branches** that `defm backtick` and `defm unicode_operators` each carry `ShouldParseIf<cplusplus.KeyPath>` (`backtick-trunk`, `backtick-23`, `unicode-operators-experiment`, `unicode-operators-upstream`). The paragraph states the rule as a rule — *a feature whose grammar is C++-only must not have a flag that changes C tokenization* — carries both symptoms, the suppressed diagnostic and the worse one, backtick's `EXIT=0` acceptance, and keeps the transferable half: the assertion has to be a **byte-identical diff** of flag-on against flag-off, because the two features had different symptoms and only a diff catches both.
 
 **Found by.** U08 (question raised by U01)
 
@@ -189,7 +213,7 @@ The author answered [abi-production-request](../../../docs/unicode-operators.md#
 
 ### operator-candidate-assembly
 
-**Formerly:** `DEV-U12`. **Status:** OPEN
+**Formerly:** `DEV-U12`. **Status:** **RECONCILED (U§8 half)** — 2026-09-06, [reconcile-implementation-cost](../../completion/steps/reconcile-implementation-cost.md), into `docs/unicode-operators.md` **U§8**, the new ***The expression node*** bullet, which is the fourth Clang bullet this row asked for and did not get. The bullet carries part (3) in full — that the operator-ness of a use must live in the node or two-phase lookup resolves under `[over.match.call]` and loses member candidates while ADL survives — with the measured shapes. **The rest of this row is `reconcile-declaring-using`'s and is deliberately not taken here**: parts (1) and (2) are about U§7 *Using* and *Desugaring* (the one-set ranking, the softening of *"without modification"*, and the *no built-in candidates* sentence strengthened from a rule to a non-mechanism), and U§7 is that step's destination section.
 
 **Found by.** U13
 
@@ -203,7 +227,7 @@ The author answered [abi-production-request](../../../docs/unicode-operators.md#
 
 ### expression-node-cost
 
-**Formerly:** `DEV-U13`. **Status:** OPEN
+**Formerly:** `DEV-U13`. **Status:** **RECONCILED** — 2026-09-06, [reconcile-implementation-cost](../../completion/steps/reconcile-implementation-cost.md), into `docs/unicode-operators.md` **U§8**: (a) and (b) into the ***The expression node*** bullet, (c) into the same bullet's `CXXRewrittenBinaryOperator` sentences, (d) into the new [dispatch-obligation-taxonomy](../../../docs/unicode-operators.md#dispatch-obligation-taxonomy) subsection, and the three-for-three sibling pattern into [closed-table-sibling-pattern](../../../docs/unicode-operators.md#closed-table-sibling-pattern). The *"more work than backtick"* comparison is in U§8's opening paragraph. **The accounting was re-derived from scratch and the row's own arithmetic is exactly right** — 6 link / 8 unreachable / 1 `-Wswitch` / 13 silent = 28 reproduces site for site against the tree as it stood at `U16`. **What is wrong is every total recorded after it**: the `-Wswitch` category was raised to 2 without the total moving, later steps added sites that were described but never counted, and the current figure is **43 sites across 35 files**, of which 19 are silent. The taxonomy subsection states the categories so that they sum, dates the measurement and names the branch, and says why. This row's dated `Note` — the obligation created by *meeting* another obligation — is the last row of that table and has its own paragraph beneath it.
 
 **Found by.** U16
 
@@ -220,7 +244,7 @@ The author answered [abi-production-request](../../../docs/unicode-operators.md#
 
 ### serialization-tooling-cost
 
-**Formerly:** `DEV-U14`. **Status:** OPEN
+**Formerly:** `DEV-U14`. **Status:** **RECONCILED** — 2026-09-06, [reconcile-implementation-cost](../../completion/steps/reconcile-implementation-cost.md), into `docs/unicode-operators.md` **U§8**, the new ***Serialization, modules and tooling*** bullet (sixth in the Clang list), with two pieces placed elsewhere as this row asked: the *identity dividend* is in the `DeclarationName` bullet, and the `hasAnyOperatorName` refusal is the fourth row of [closed-table-sibling-pattern](../../../docs/unicode-operators.md#closed-table-sibling-pattern). The bullet gives the shape rather than a number, as recommended — the five-sites-one-decision lookup key, the *only the reader and writer are forced* asymmetry, the flat ODR answer, and ASTMatchers having no per-node requirement at all. **One claim this row could not make when it was written, and can now:** it says the two lists were complete, and the `NameKind` list has since been *compiled* in every one of its 34 sites, the last being the debugger hunk, under two host compilers. Finding (2) — code forced, correctness silent — is generalised in the bullet and cross-referenced to the taxonomy.
 
 **Found by.** U17
 
@@ -262,7 +286,7 @@ The author answered [abi-production-request](../../../docs/unicode-operators.md#
 
 ### ast-node-shape
 
-**Formerly:** `DEV-U17`. **Status:** OPEN
+**Formerly:** `DEV-U17`. **Status:** **RECONCILED (U§8 half; see the remainder below)** — 2026-09-06, [reconcile-implementation-cost](../../completion/steps/reconcile-implementation-cost.md), into `docs/unicode-operators.md` **U§8**, the ***The expression node*** bullet, the sentences beginning *"The node holds its operands and not a built call, and that is a design answer rather than a preference"*. That is recommendation (b)'s substance: a node that *is* the operator survives Sema re-wrapping its result and a node that *hides* a call does not, given as the reason rather than as a preference. **Recommendation (a) — the backtick printer bug — has landed and was verified today**, not by this step: `BacktickInfixExpr` now has a `getCallExpr()` accessor that looks through `IgnoreImplicit()`, `StmtPrinter` uses it, the header documents the three shapes Sema may wrap the call in, `clang/test/Parser/backtick-ast-print.cpp` and `clang/test/AST/backtick-template-print.cpp` both carry class-typed cases with a non-trivial destructor, and the `-DPRINTING` workaround this row asked to have deleted is gone from `clang/test/Parser/unicode-operator-precedence.cpp`. **Remainder, owed to [reconcile-remainder](../../completion/steps/reconcile-remainder.md):** the one U§12 sentence, that the two features share a precedence level and a desugaring but must **not** share an AST-representation strategy. U§8's bullet already says it in the Clang-implementation register; U§12 is that step's section and the sentence belongs there in the design register.
 
 **Found by.** U15
 
@@ -360,7 +384,7 @@ The author answered [abi-production-request](../../../docs/unicode-operators.md#
 
 ### codegen-dispatch-sites
 
-**Formerly:** `DEV-U24`. **Status:** OPEN
+**Formerly:** `DEV-U24`. **Status:** **RECONCILED** — 2026-09-06, [reconcile-implementation-cost](../../completion/steps/reconcile-implementation-cost.md), into `docs/unicode-operators.md` **U§8**: the four sites and their four distinct failure modes into the new ***The code generator*** bullet (seventh in the Clang list); category (a) into [dispatch-obligation-taxonomy](../../../docs/unicode-operators.md#dispatch-obligation-taxonomy), as the fifth table row and the paragraph beneath the table, with the generalisation stated as *a new expression node's obligations are bounded by the configuration of the tree you measure in, not by the tree*; and (c) — every shape emitting CIR instruction for instruction identical to the explicit call — as the closing sentences of the code-generator bullet. (b), the arm that recurses where its model diagnoses, is in the same bullet, as is the `emitLValue` crash-on-default noted as an upstream observation rather than a feature cost. **The count this row states is wrong and the error is inherited, not its own:** *"32 in 21 files"* is `U16`'s 28 plus these 4, and 28 was already stale when this row was written — the `-Wswitch` correction, the tooling and importer sites and the analyzer's had all been found. Re-measured, the total is **43 across 35 files**. The four ClangIR sites themselves are exactly four, as recorded. **The `use in U§7 Desugaring` half of the recommendation is [reconcile-declaring-using](../../completion/steps/reconcile-declaring-using.md)'s** — U§8 now carries the IR-identity claim and U§7 should inherit it.
 
 **Found by.** BL04
 
