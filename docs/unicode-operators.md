@@ -670,7 +670,7 @@ defaulted. That is intended, not a hole: `⊟5` *is* `operator⊟(5)`, which is
 what the desugaring promises, and filtering candidates by declared arity in
 the parser would break the very equivalence the design rests on
 ([candidate-assembly](#candidate-assembly)). Declare a genuine prefix
-overload alongside and `⊠5` is ambiguous — the ordinary ambiguity of `f(int)`
+overload alongside and `⊟5` is ambiguous — the ordinary ambiguity of `f(int)`
 against `f(int, int = 1)`, reported by overload resolution rather than by
 anything this feature adds. A reader who dislikes dual-fixity operators has a
 conservative option, and it is one diagnostic: reinstate p8 for user
