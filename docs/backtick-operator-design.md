@@ -1331,36 +1331,60 @@ carries template arguments. A qualified name, a member access, or any other
 expression in the slot gets no ADL for the same reason the equivalent call
 gets none.
 
-> **Status correction, 2026-09-06 — do not write the next paragraph into a
-> paper.** Its Clang half is false and was never measured. Clang parses the
-> slot with `ParseExpression()`, so the name is resolved before
-> `BuildCallExpr` sees it and `Sema::UseArgumentDependentLookup` refuses ADL
-> on its first line; a hidden friend in the slot is *use of undeclared
-> identifier*, and — the shape that matters — a visible ordinary candidate
-> beats a better ADL one **with no diagnostic at all**, so `` u `pick` u ``
-> and `pick(u, u)` call different functions. The rule above stays normative
-> and is unaffected. What is open is whether Clang is fixed to meet it or
-> this paragraph is reworded to admit it does not; the measurements, the
-> mechanism and the two options are in
-> [clang-slot-adl](../ops/DEVIATIONS.md#clang-slot-adl), and
-> [reconcile-remainder](../ops/completion/steps/reconcile-remainder.md) owns
-> the rewrite either way. The GCC half of the paragraph is measured and
-> stands.
-
 Implementation status, for the implementation-experience section: **both
-compilers now deliver it, and they agree.** Clang carries the slot to
-`BuildCallExpr` as an `UnresolvedLookupExpr`. GCC keeps a bare unqualified-id
-slot as an `IDENTIFIER_NODE` and a bare template-id slot as a
-`TEMPLATE_ID_EXPR` over one, and runs `perform_koenig_lookup` before
-`finish_call_expr`; anything else in the slot is parsed as an ordinary
-expression, which is the right answer for it. Getting there took two goes —
-resolving the slot name at parse time defeated pure ADL entirely
+compilers now deliver it, and they agree — but neither of them did on its
+first attempt, and the two failures were the same failure.** Clang parses a
+bare unqualified name in the slot as the callee it is, so the name reaches
+`Sema::BuildCallExpr` as an `UnresolvedLookupExpr`: in the slot, the closing
+backtick is the trailing `(` that `Sema::UseArgumentDependentLookup` insists
+on before it will consider ADL at all. GCC keeps a bare unqualified-id slot as
+an `IDENTIFIER_NODE` and a bare template-id slot as a `TEMPLATE_ID_EXPR` over
+one, and runs `perform_koenig_lookup` before `finish_call_expr`. In both, a
+qualified name, a member access or any other expression in the slot is parsed
+as an ordinary expression, which is the right answer for it — the equivalent
+call gets no ADL either.
+
+Getting there took two goes in GCC — resolving the slot name at parse time
+defeated pure ADL entirely
 ([gcc-slot-adl](../ops/gcc/DEVIATIONS.md#gcc-slot-adl)), and the fix for that
 detected only a bare name, so a template-id slot silently kept the old
 behaviour ([gcc-template-id-slot-adl](../ops/gcc/DEVIATIONS.md#gcc-template-id-slot-adl)).
-Both are the same lesson for anyone implementing this: the slot has to reach
-the call builder unresolved, and "the slot" means every unqualified form of
-it, not the easiest one to spot with a two-token peek.
+Clang started further back: its slot was parsed with the ordinary expression
+parser, which resolves the name before the call builder ever sees it, so the
+slot got **no** ADL at all ([clang-slot-adl](../ops/DEVIATIONS.md#clang-slot-adl)).
+A hidden friend in the slot was *use of undeclared identifier* — and, in the
+shape that matters, nothing was said at all: with an ordinary-lookup candidate
+visible and viable and a better ADL candidate reachable, `` u `pick` u ``
+bound the visible one while `pick(u, u)` bound the ADL one, silently. Both are
+the same lesson for anyone implementing this: the slot has to reach the call
+builder unresolved, and "the slot" means every unqualified form of it, not the
+easiest one to spot with a two-token peek.
+
+**The sharpest evidence for that lesson is inside one compiler, not between
+two.** Clang implements both features of this proposal in one build, and the
+Unicode operator was right from the beginning while the backtick operator was
+wrong. The difference is exactly the one sentence above. The Unicode slot
+never becomes an expression: `Sema::CreateOverloadedUserOp` performs its own
+`LookupOperatorName` and hands an unresolved set to candidate assembly, so ADL
+is inherited without anyone deciding to inherit it. The backtick slot was an
+expression, and an expression's name is resolved before the call builder sees
+it. Two features, one compiler, one machine, one difference — which is a
+stronger demonstration of *desugar early, inherit everything downstream* than
+the cross-compiler note above, because it needs no second implementation to
+read.
+
+**The near-miss belongs with the finding.** Clang's slot went nine
+implementation steps without anyone noticing, and the reason is instructive
+rather than embarrassing: the one test on the track that announced itself as
+the ADL case used a **qualified** name in the slot. A qualified name correctly
+gets no ADL either way, so the test passed whatever the slot did, and its
+heading was enough to stop anyone writing the test that would have failed. The
+shape that catches this is not "does it compile" but *augmentation* — an
+ordinary-lookup candidate that is visible and viable, plus a better ADL
+candidate, with the choice made observable — because that is the only shape in
+which weaker lookup on the slot produces no diagnostic at all. It is now
+`clang/test/SemaCXX/backtick-adl.cpp`, which writes every shape twice, as a
+call and as the operator, with the call as the control.
 
 ### 17.5 Source ranges of the desugared node ([source-fidelity-node](#source-fidelity-node))
 
