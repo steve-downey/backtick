@@ -1,7 +1,9 @@
 # Handoff — reconcile-implementation-cost — U§8, the implementation-cost thesis
 
 - **Status:** **DONE (docs gate passed).**
-- **Branch / commit:** no branch. `unicode-operators` in *this* repo only.
+- **Branch / commit:** no branch. `unicode-operators` in *this* repo only —
+  `5eedb6a` (`docs:` — U§8) and `5c9e109` (`ops:` — the eight rows, the ledger
+  header, the backlog row, the plan and this handoff).
   **Nothing was built and no feature branch was touched** — the four LLVM
   worktrees and the GCC one were *read*, to re-derive counts and to confirm the
   flag guards, and none of them was modified.
@@ -225,7 +227,8 @@ AST importer, plus `BL03`'s five analyzer modelling sites.
   `ASTMatchers.h:2176`'s doc comment for `userOperatorExpr` says the identity is
   the code point and that `hasAnyOperatorName()` does not apply; the matcher is
   registered in `Registry.cpp:611`.
-- **Links.** **1873** local Markdown links checked repo-wide with the GitHub
+- **Links.** **1932** local Markdown links checked repo-wide (counted with
+  this handoff tracked) with the GitHub
   slug rule (whitespace runs **not** collapsed — see
   [null-return-suppression](null-return-suppression.handoff.md)'s caveat).
   Excluding the vendored `papers/wg21/` tree, **3 broken, all three
