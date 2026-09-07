@@ -84,7 +84,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 ### wrapper-inner-shape
 
-**Formerly:** `DEV-06`. **Status:** OPEN
+**Formerly:** `DEV-06`. **Status:** **RECONCILED** — 2026-09-06, [reconcile-remainder](completion/steps/reconcile-remainder.md). Into `docs/backtick-operator-design.md` in two places. **§6, item 4 (Sema)**, the block appended to that item beginning *"What Sema hands back is not always a call, and the phase-2 wrapper must be documented as holding a semantic form"*: the three shapes that reach the wrapper, the accessor that looks through the implicit nodes and **returns null when no call remains**, and — the part this row exists for — the separation of the two claims, *sugar for `op(x, y)`* unaffected and *`-ast-print` round-trips* qualified. **§11 phase 2**, the paragraph beginning *"'Purely additive' is the word this phase got wrong"*, which cites this row alongside [analysis-layer-sites](#analysis-layer-sites) for the same reason: the wrapper is additive in the sense that nothing existing changes, and not additive in the sense the phrase invites.
 
 **Found by.** (maintenance, 2026-08-04)
 
@@ -98,7 +98,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 ### analysis-layer-sites
 
-**Formerly:** `DEV-07`. **Status:** OPEN
+**Formerly:** `DEV-07`. **Status:** **RECONCILED** — 2026-09-06, [reconcile-remainder](completion/steps/reconcile-remainder.md), **at the corrected count of seven**. §17.6 already carried the full account (six modelling sites plus the reporting site, with the rule for a reviewer); what this row asked for and did not have was the note in the *site list*, which is what an implementer reads first. Written as **§6, new item 7**, *"The analysis layer, which no site list contained"* — seven sites, one of them announced and only as a `-Wswitch` warning, pointing at §17.6 for the account — and as the second half of **§11 phase 2**'s *"'Purely additive' is the word this phase got wrong"* paragraph, whose closing sentence is the generalization: **the transparency is what costs, not the node**, and every silent site is silent for exactly that reason. §6's test item gains the diff-against-the-spelled-call-at-more-than-one-configuration line, which is what found all of it. **Count re-derived, not quoted:** `grep -rn BacktickInfixExpr clang/lib/Analysis clang/lib/StaticAnalyzer` on `backtick-trunk` @ `9504b2c1fc51` gives **seven distinct sites in five files** — `CFGBuilder::findConstructionContexts`, `CFGBuilder::Visit`, `CFGBuilder::VisitForTemporaries`, `LiveVariables::LookThroughExpr`, `Environment::ignoreTransparentExprs`, `ExprEngine::Visit`, and `peelOffOuterExpr` in the bug reporter. This row's own *"Recommended doc change"* said **five**; its body listed six; the 2026-09-06 note said seven. Seven is right.
 
 **Found by.** (maintenance, 2026-08-04)
 
@@ -114,7 +114,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 ### type-slot-cost
 
-**Formerly:** `DEV-08`. **Status:** OPEN
+**Formerly:** `DEV-08`. **Status:** **RECONCILED** — 2026-09-06, [reconcile-remainder](completion/steps/reconcile-remainder.md). Into `docs/backtick-operator-design.md` in three places. **§17.3** is rewritten around the correction: the paragraph beginning *"This was recorded as a consequence rather than a rule, and that is wrong as grammar"* (a bare type-name is not an *assignment-expression*, so the "consequence" contradicted the proposal's own grammar while a normative example depended on it, and the first implementation rejected all four shapes with three different diagnostics); the paragraph beginning *"Stated correctly, it is a deliberate second production with a disambiguation rule"*; and the paragraph beginning *"And it is not free, which is the point of recording the price"*, which carries the measured cost — two grammar productions, one ~70-line parser routine, a parsed type threaded beside the slot's expression result, one Sema overload, two printer arms, no AST change — and closes on the general lesson, that a consequence which contradicts the grammar is not a consequence. **[type-name-slot](../docs/backtick-operator-design.md#type-name-slot)**'s **Why** is reworded and its old clause **struck in place** in a new dated `Log.`, so the record of what was believed survives without being quotable as fact. **§6 gains item 9** pointing at §17.3, so the site list stops implying the slot is free. `papers/d4307r0.md` already said *"not a blessed consequence"* and needed no change — checked, not assumed.
 
 **Found by.** BL02
 
@@ -128,7 +128,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 ### cir-backtick-arms
 
-**Formerly:** `DEV-09`. **Status:** OPEN
+**Formerly:** `DEV-09`. **Status:** **RECONCILED** — 2026-09-06, [reconcile-remainder](completion/steps/reconcile-remainder.md). Both halves. The site-list half is **§6, new item 8**, *"The code generator"*: four arms, four *unlike* failure modes, the l-value default arm that asserts rather than diagnoses (so `` (b `at` 1) = 42 `` crashed the compiler), and the one arm that is not a copy-paste, with the reason — a call returning a reference is a call returning a reference. The argument half is a **new §17.7**, *"The two features diverge in the front end and converge in the back end"*, whose middle paragraph is the cross-compiler note this row calls out: the same four arms in the same four files with the same failure modes for both features, and instruction-for-instruction identical generated code, **in contrast to the AST work** where [expression-node-cost](unicode-operators/clang/DEVIATIONS.md#expression-node-cost) found the Unicode wrapper strictly more expensive. Its closing paragraph is the one the row asks the paper to make: the front end is where two sugars for a call can cost different amounts, and the back end is where they provably cannot. The upstream observation is kept separate, in that section's last paragraph, as an upstream defect rather than a feature one. **Re-derived:** four arms in four files on `backtick-trunk`, and `UserOperatorExpr` on `unicode-operators-upstream` occupies the same four files at the same four places — the symmetry is in the tree, not only in the ledger.
 
 **Found by.** BL04
 

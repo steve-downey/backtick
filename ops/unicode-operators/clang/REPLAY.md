@@ -449,19 +449,35 @@ folded into 12/13: `test/SemaCXX/unicode-operator-semantics.cpp` +
 `test/CodeGenCXX/unicode-operator-semantics.cpp` (U14), and
 `test/Parser/unicode-operator-precedence.cpp` (U15).
 
-**Two ordering traps, restated because they are silent:**
+**Two ordering traps, restated because they are silent — and both were wrong
+as written.** They are kept here with their corrections attached, because this
+table is what a replay agent reads and "What the ledger got wrong", below, is
+three hundred lines away. The stack that actually landed follows the
+corrections, not the traps.
 
-- **Replay U13 as amended by U16, never as U13 left it.**
-  `CreateOverloadedUserOp` gained `const UnresolvedSetImpl &Fns` and
-  `bool PerformADL`, and the phase-1 lookup moved into `ActOnUserOperator`.
-  The intermediate form reintroduces DEV-U12. The *cumulative* diff already
-  carries the amended version, so this trap only fires if U20
-  cherry-picks commit-by-commit; taking the cumulative diff per area, as
-  the table above does, avoids it.
-- **Commit 5 must be split.** U05 is the first step whose production diff
-  reaches `lib/Parse`; that half belongs to commit 8, after the
-  operator-function-id parse it annotates. The two `Lexer.cpp` halves and
-  the `ParseExprCXX.cpp` half are ~90 lines apart and independent.
+- ~~**Replay U13 as amended by U16, never as U13 left it.**~~ **Not
+  executable.** U16's amendment *is* the `UserOperatorExpr` wrapper — it
+  constructs the node — and the node does not exist until commit 13, so the
+  amended form does not compile one commit early. **Commit 12 carries U13's
+  own form and commit 13 carries the amendment together with the node.** The
+  warning it was trying to give is real but is about the *end* of the stack,
+  not about any intermediate state: the
+  [operator-candidate-assembly](DEVIATIONS.md#operator-candidate-assembly)
+  shape does fail at commit 12 and passes from commit 13 on, so the rule is
+  **never leave the stack ending at U13's form**.
+- ~~**Commit 5 must be split.**~~ **No such dependency exists, and splitting
+  is mildly harmful.** U05's parse half hangs off the *upstream* failure exits
+  of the conversion-function-id parse, which are there on clean `main`; the
+  hunk applies and builds at commit 5. Holding it back leaves commit 5's own
+  lit test failing at commit 5 — measured, not reasoned. **Keep U05 whole in
+  commit 5**, which is then self-testing.
+
+**A third correction belongs beside them, because it changes what to budget:**
+"will fuzz on context" understated it. `git apply -3` produced **hard
+conflicts in 18 files and 23 hunks**, all of one stereotyped shape, three of
+which needed a hand fix afterwards for a duplicated continuation line. Expect
+conflict resolution, not fuzz, and diff the result against the experiment file
+rather than trusting the merge.
 
 ### Which of these could go up as independent PRs
 

@@ -277,7 +277,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** U02, U05 handoffs; [exclusion-list-derivation](unicode-operators/clang/DEVIATIONS.md#exclusion-list-derivation)
 
-**Closed by.** —
+**Closed by.** [reconcile-remainder](completion/steps/reconcile-remainder.md), 2026-09-06. **Recorded as curated, with the principle written down — not derived.** The judgement call is real and deriving it would be *worse*, which is why the answer is a decision rather than a fix: published confusability data answers "what does this look like", the diagnostic needs "which C++ token does this look like", and three of the thirteen entries are where those two questions come apart (∙ and ⋅ mean multiplication and look like `.`; ⇔ is spelled `<=>`, a token C++ acquired in 2020). Written as [confusable-spelling-provenance](../docs/unicode-operators.md#confusable-spelling-provenance), a full decision entry at the end of U§5, whose stated principle is *the spelling names the token a reader is most likely to mistake the character for, not the operation the character denotes* — and which also carries the wording consequence (*is confusable with*, never *did you mean*, and no fix-it). `papers/dxxxxr0.md` carries the claim and the principle in public register. **Note for anyone reopening it:** this row said the table shape "already supports deriving them", and that is true of the shape and beside the point. Nothing was implemented.
 
 ### dependent-template-operator-id
 

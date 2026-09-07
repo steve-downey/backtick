@@ -14,62 +14,60 @@ cross-references link to it. `Formerly:` carries the serial number the entry
 used to have, because the completed tracks' handoffs still say it and are not
 rewritten. [`ops/SLUGS.md`](../../SLUGS.md) is the whole map.
 
-**Seventeen entries are `**RECONCILED**` and the other seven are `Status: OPEN`.**
+**All twenty-four entries are marked, and none is `OPEN`.** That is true for
+the first time since the track began, and it happened on 2026-09-06, in four
+steps of one day: [mangling-abi](../../completion/steps/mangling-abi.md) took
+two into U§9,
+[reconcile-implementation-cost](../../completion/steps/reconcile-implementation-cost.md)
+eight into U§8,
 [reconcile-declaring-using](../../completion/steps/reconcile-declaring-using.md)
-added seven on 2026-09-06 — [`ucd-version-drift`](#ucd-version-drift),
-[`disjointness-evidence`](#disjointness-evidence),
-[`over-oper-restrictions`](#over-oper-restrictions),
-[`operator-id-anywhere`](#operator-id-anywhere),
-[`infix-parse-cost`](#infix-parse-cost),
-[`prefix-arity-selection`](#prefix-arity-selection) and
-[`operand-sequencing`](#operand-sequencing) — into U§4, U§7, U§7.1 and §2,
-and completed the U§7 half of
-[`operator-candidate-assembly`](#operator-candidate-assembly). Before that,
-[`vendor-extended-mangling`](#vendor-extended-mangling) and
-[`msvc-mangling`](#msvc-mangling) were reconciled into U§9 by
-[mangling-abi](../../completion/steps/mangling-abi.md), and eight more into
-U§8 the same day by
-[reconcile-implementation-cost](../../completion/steps/reconcile-implementation-cost.md) —
-[`declaration-name-plumbing`](#declaration-name-plumbing),
-[`declaring-side-parse-cost`](#declaring-side-parse-cost),
-[`flag-language-mode`](#flag-language-mode),
-[`operator-candidate-assembly`](#operator-candidate-assembly),
-[`expression-node-cost`](#expression-node-cost),
-[`serialization-tooling-cost`](#serialization-tooling-cost),
-[`ast-node-shape`](#ast-node-shape) and
-[`codegen-dispatch-sites`](#codegen-dispatch-sites). **Three rows are *partly* closed and say so in their own `Status:` line**,
-because their recommendations name a second destination section that belongs
-to another step: [`infix-parse-cost`](#infix-parse-cost) (U§7 half closed; the
-U§6 sentence and the U§13 fold bullet are
-[reconcile-remainder](../../completion/steps/reconcile-remainder.md)'s),
-[`prefix-arity-selection`](#prefix-arity-selection) (the decision entry and
-U§7 closed; one U§6 sentence left) and
-[`ast-node-shape`](#ast-node-shape) (U§8 half closed, one U§12 sentence open)
-are `RECONCILED`, while [`postfix-operators`](#postfix-operators) stays `OPEN`
-with its mangling clause taken.
-[`operator-candidate-assembly`](#operator-candidate-assembly) was in this list
-and is now closed on both halves.
+seven into U§4/U§7/U§7.1 and §2, and
+[reconcile-remainder](../../completion/steps/reconcile-remainder.md) the last
+seven — [`exclusion-list-derivation`](#exclusion-list-derivation),
+[`ucn-operator-spellings`](#ucn-operator-spellings),
+[`exclusion-diagnostics`](#exclusion-diagnostics),
+[`clang-format-user-operators`](#clang-format-user-operators),
+[`feature-coupling`](#feature-coupling),
+[`replay-ordering`](#replay-ordering) and
+[`postfix-operators`](#postfix-operators) — into U§5, U§6, U§8, U§10, U§12,
+U§13 and U§13.1, plus the three rows that had been left partly closed
+([`infix-parse-cost`](#infix-parse-cost),
+[`prefix-arity-selection`](#prefix-arity-selection),
+[`ast-node-shape`](#ast-node-shape)). **No row is marked for a section that
+does not say the new thing**; every `Status` line names its destination
+section *and* the paragraph, and a reconciliation that cannot say where it went
+did not happen. A step that reconciles a row changes its `Status` to
+`**RECONCILED**` (or `**RESOLVED**` / `**FIXED**`, the words the backtick and
+GCC ledgers use) and does the same.
 
-**Three rows carried a stated *mechanism* that did not survive being
-re-checked**, alongside the three that carried a bad count: see
-[`over-oper-restrictions`](#over-oper-restrictions) (the static-member reason),
-[`operator-id-anywhere`](#operator-id-anywhere) (the "inherited limitation"
-reading) and [`infix-parse-cost`](#infix-parse-cost) (which function performs
-the operator-name lookup). Re-run the measurement before quoting any sentence
-in this file that says *why*, not only any sentence that says *how many*.
+**Read every quantity and every mechanism in this file as a hypothesis.** Over
+five reconciliation steps, **five rows carried a stated mechanism that did not
+survive being re-checked and three carried a bad count** — and the mechanisms
+were the more dangerous half, because a wrong number is merely wrong while a
+wrong mechanism sends the next reader to the wrong file.
 
-**Three of the eight carried a count that did not survive re-measurement**, and
-that is worth knowing before quoting any number in this file: see
-[`declaration-name-plumbing`](#declaration-name-plumbing) (33→34 sites),
-[`declaring-side-parse-cost`](#declaring-side-parse-cost) (9→12, and only 7 of
-them compiler-found) and [`expression-node-cost`](#expression-node-cost) /
-[`codegen-dispatch-sites`](#codegen-dispatch-sites) (28 and 32→43). Every
-figure in the reconciled prose is dated and carries the branch it was taken
-on. A step that
-reconciles one changes its `Status` to `**RECONCILED**` (or `**RESOLVED**` / `**FIXED**`,
-the words the backtick and GCC ledgers use) and names the section *and the
-paragraph* the finding landed in. A reconciliation that cannot say where it
-went did not happen.
+- Mechanisms: [`over-oper-restrictions`](#over-oper-restrictions) (the
+  static-member reason), [`operator-id-anywhere`](#operator-id-anywhere) (the
+  "inherited limitation" reading),
+  [`infix-parse-cost`](#infix-parse-cost) (which function performs the
+  operator-name lookup),
+  [`ucn-operator-spellings`](#ucn-operator-spellings) (its clause (c) — the
+  exclusion diagnostics *do* fire for UCN spellings, and the residual
+  asymmetry is narrower and is upstream's), and
+  [`replay-ordering`](#replay-ordering) (whose headline command is no longer
+  reproducible against a moving `upstream/main` and needs its base pinned).
+- Counts: [`declaration-name-plumbing`](#declaration-name-plumbing) (33→34
+  sites), [`declaring-side-parse-cost`](#declaring-side-parse-cost) (9→12, and
+  only 7 of them compiler-found),
+  [`expression-node-cost`](#expression-node-cost) /
+  [`codegen-dispatch-sites`](#codegen-dispatch-sites) (28 and 32→43), and
+  [`clang-format-user-operators`](#clang-format-user-operators) (+32/−9 →
+  **+40/−1** standalone, the recorded figure having been taken on the branch
+  that carries both features).
+
+Every figure in the reconciled prose is dated and carries the branch it was
+taken on. **Re-run the measurement before quoting any sentence in this file,
+including the ones that say *why*.**
 
 ### ucd-version-drift
 
@@ -101,7 +99,7 @@ went did not happen.
 
 ### exclusion-list-derivation
 
-**Formerly:** `DEV-U03`. **Status:** OPEN
+**Formerly:** `DEV-U03`. **Status:** **RECONCILED** — 2026-09-06, [reconcile-remainder](../../completion/steps/reconcile-remainder.md). Into `docs/unicode-operators.md` in three places. **U§5 predicate 5** is rewritten from prose into the enumeration it always was: **28 code points in three reason classes** — 3 identifier-profile, 13 confusable, 12 emoji — each spelled out, followed by the paragraph beginning *"Two corrections the enumeration forced on the prose this list replaces"*, which carries (a) that the middle-dot family resolves to exactly ∙ U+2219 and ⋅ U+22C5 because U+00B7 is not Pattern_Syntax, and (b) that U+2044 ⁄ is outside the blocks and already fails predicate 3. **The new slug-headed subsection [confusable-spelling-provenance](../../../docs/unicode-operators.md#confusable-spelling-provenance)** at the end of U§5 answers this row's (c) as a decision entry in the full shape: the ASCII spellings are **curated, not derived**, the principle is stated in one line, and the wording follows from it. **`papers/dxxxxr0.md`**, its exclusions section, gains the same claim and principle in public register, immediately before *"The design said to keep these in a table with reasons"*. Every count and every spelling was re-derived from `clang/lib/Lex/UnicodeOperatorCharSets.h` on `unicode-operators-upstream` @ `c0e07f78e679`, not copied from this row.
 
 **Found by.** U02
 
@@ -221,7 +219,7 @@ The author answered [abi-production-request](../../../docs/unicode-operators.md#
 
 ### infix-parse-cost
 
-**Formerly:** `DEV-U11`. **Status:** **RECONCILED (U§7 half; parts (1) and (3) remain [reconcile-remainder](../../completion/steps/reconcile-remainder.md)'s)** — 2026-09-06, [reconcile-declaring-using](../../completion/steps/reconcile-declaring-using.md). Part (2), the split of U§7 "Using"'s single sentence, is written: **U§7 "Using"** is now three bullets, of which the second says the non-member half including ADL is *inherited* — the callee is a name the compiler forms and never an expression the parser resolves, the lookup is an operator-name lookup into the non-member operator namespace, and the unresolved set reaches candidate assembly so ADL happens inside overload resolution — and names the member half as the implementation work, pointing at U§8 for its size rather than restating it. **Not taken here:** part (1)'s U§6 rewrite of *"parsing is the easy part"* and part (3)'s U§13 fold bullet, both of which are `reconcile-remainder`'s sections. **One recorded mechanism corrected:** this row and two handoffs say `CreateOverloadedUserOp` *"does its own `LookupOperatorName`"*. It does not — `Sema::ActOnUserOperator` (`clang/lib/Sema/SemaExpr.cpp:6764`) performs the lookup, because it is the one part that needs a `Scope`, and hands an `UnresolvedSet` to `CreateOverloadedUserOp`, which builds the `UnresolvedLookupExpr` with `PerformADL=true`. The conclusion is unchanged and is if anything sharper: the name is never resolved to a `FunctionDecl` on the way in. — *Previously:* **OPEN — part (3) DECIDED 2026-09-06.** [fold-over-user-infix](../../../docs/open-decisions.md#fold-over-user-infix), option (a): this row's part (3) finding — a user operator is **not** a fold operator — is now a **decision** rather than an inheritance, taken once for both features because they share the level, and it is to be *stated* rather than left as the `expected expression` diagnostic that reads like an oversight. U§13 has no fold entry and must gain one. Reopening it later would change only ill-formed programs, so nothing is foreclosed; the measured cost of reopening is an AST-node change, not a parser change (`CXXFoldExprBits.Opcode` is a `BinaryOperatorKind`, 32 files read `CXXFoldExpr`, and backtick's slot has no sub-expression slot to live in). **Parts (1) and (2) of this row are unaffected and remain unreconciled.** Owed by [reconcile-remainder](../../completion/steps/reconcile-remainder.md) (U§13) and [reconcile-declaring-using](../../completion/steps/reconcile-declaring-using.md) (U§6, U§7 "Using").
+**Formerly:** `DEV-U11`. **Status:** **RECONCILED (all three parts)** — parts (1) and (3) closed 2026-09-06 by [reconcile-remainder](../../completion/steps/reconcile-remainder.md). **Part (1)**, the *"parsing is the easy part of this feature, easier even than backtick"* sentence, is rewritten in **U§6**: the sentence is gone from the paragraph beginning *"What does not appear"*, and is replaced by the block beginning *"'Parsing is the easy part of this feature, easier even than backtick' — the first half survives measurement and the second does not"* — three bullets splitting the parse claim (kept) from the comparison (inverted, because the cost is in the name and the node, not the parse), followed by the paragraph beginning *"The correction is worth reporting as a finding in its own right"*, which says *why* a design document makes this error and in which direction. **Part (3)**, the fold bullet, is a **new bullet in U§13** beginning *"Fold expressions over the user-infix level — excluded in v1"*, and the decision's owed public sentences are written too: `papers/dxxxxr0.md`'s *Fold expressions* section is rewritten (it asserted the exclusion was *inherited* and *an open question*, both of which the author's answer discarded) and `papers/d4307r0.md` gains its owed sentence, in *The productions*. — *Previously:* **RECONCILED (U§7 half; parts (1) and (3) remain reconcile-remainder's)** — 2026-09-06, [reconcile-declaring-using](../../completion/steps/reconcile-declaring-using.md). Part (2), the split of U§7 "Using"'s single sentence, is written: **U§7 "Using"** is now three bullets, of which the second says the non-member half including ADL is *inherited* — the callee is a name the compiler forms and never an expression the parser resolves, the lookup is an operator-name lookup into the non-member operator namespace, and the unresolved set reaches candidate assembly so ADL happens inside overload resolution — and names the member half as the implementation work, pointing at U§8 for its size rather than restating it. **Not taken here:** part (1)'s U§6 rewrite of *"parsing is the easy part"* and part (3)'s U§13 fold bullet, both of which are `reconcile-remainder`'s sections. **One recorded mechanism corrected:** this row and two handoffs say `CreateOverloadedUserOp` *"does its own `LookupOperatorName`"*. It does not — `Sema::ActOnUserOperator` (`clang/lib/Sema/SemaExpr.cpp:6764`) performs the lookup, because it is the one part that needs a `Scope`, and hands an `UnresolvedSet` to `CreateOverloadedUserOp`, which builds the `UnresolvedLookupExpr` with `PerformADL=true`. The conclusion is unchanged and is if anything sharper: the name is never resolved to a `FunctionDecl` on the way in. — *Previously:* **OPEN — part (3) DECIDED 2026-09-06.** [fold-over-user-infix](../../../docs/open-decisions.md#fold-over-user-infix), option (a): this row's part (3) finding — a user operator is **not** a fold operator — is now a **decision** rather than an inheritance, taken once for both features because they share the level, and it is to be *stated* rather than left as the `expected expression` diagnostic that reads like an oversight. U§13 has no fold entry and must gain one. Reopening it later would change only ill-formed programs, so nothing is foreclosed; the measured cost of reopening is an AST-node change, not a parser change (`CXXFoldExprBits.Opcode` is a `BinaryOperatorKind`, 32 files read `CXXFoldExpr`, and backtick's slot has no sub-expression slot to live in). **Parts (1) and (2) of this row are unaffected and remain unreconciled.** Owed by [reconcile-remainder](../../completion/steps/reconcile-remainder.md) (U§13) and [reconcile-declaring-using](../../completion/steps/reconcile-declaring-using.md) (U§6, U§7 "Using").
 
 **Found by.** U11
 
@@ -280,7 +278,7 @@ The author answered [abi-production-request](../../../docs/unicode-operators.md#
 
 ### prefix-arity-selection
 
-**Formerly:** `DEV-U15`. **Status:** **RECONCILED (the [unary-forms](../../../docs/unicode-operators.md#unary-forms) and U§7 half; the U§6 one-liner remains [reconcile-remainder](../../completion/steps/reconcile-remainder.md)'s)** — 2026-09-06, [reconcile-declaring-using](../../completion/steps/reconcile-declaring-using.md). Three of the four recommended changes are written. **(a)** [unary-forms](../../../docs/unicode-operators.md#unary-forms)'s **Why** no longer runs the two claims together: it now reads *"arity selects the form at the point of declaration"* / *"grammatical position selects it at the point of use"*, with the note that the second needs no help from the first. **(b)** The same entry's **Why** ends with the plain sentence this row asked for about what a postfix attempt actually produces — `expected expression`, caret past the operator, character-identical to `a +;` and identical with or without a space — so the design no longer implies a fixity diagnostic that does not exist. **(c)** **U§7 "Declaring"** gains the default-argument paragraphs: p8 waived, the consequence stated outright (a defaulted trailing parameter makes an infix-declared operator prefix-usable), why the parser must **not** filter by declared arity, the ordinary ambiguity against a genuine prefix overload, and the conservative alternative priced at one diagnostic. **Not taken:** the U§6 structural one-liner (two parser functions, no disambiguation state), because `reconcile-remainder` is rewriting the paragraph it belongs in and two steps editing one paragraph is how a sentence gets lost. **Re-derived 2026-09-06** on the `unicode-operators-upstream` build: with `constexpr int operator⊟(int a, int b = 1)`, `⊟5` is accepted and equals `5 ⊟ 1`; adding a one-parameter `operator⊠` makes `⊠5` *ambiguous* with both candidates noted; `a⊖` is `error: expected expression`. — *Previously:* **OPEN — DECIDED 2026-09-06.** [prefix-arity-selection](../../../docs/open-decisions.md#prefix-arity-selection), option (a): [over.oper]p8 stays **waived**, and the cross-fixity use is intended rather than a hole — `⊟5` is `operator⊟(5)`, which is what the desugaring promises. The parser is *not* to filter candidates by declared arity. Still `OPEN` because the row's recommended doc change is unwritten: [unary-forms](../../../docs/unicode-operators.md#unary-forms) must split into declaration-arity and use-position, U§6 gains the structural one-liner, and U§7 "Declaring" gains the default-argument paragraph. Owed by [reconcile-declaring-using](../../completion/steps/reconcile-declaring-using.md).
+**Formerly:** `DEV-U15`. **Status:** **RECONCILED (all four recommendations)** — the [unary-forms](../../../docs/unicode-operators.md#unary-forms) and U§7 three on 2026-09-06 by [reconcile-declaring-using](../../completion/steps/reconcile-declaring-using.md). Three of the four recommended changes are written. **(a)** [unary-forms](../../../docs/unicode-operators.md#unary-forms)'s **Why** no longer runs the two claims together: it now reads *"arity selects the form at the point of declaration"* / *"grammatical position selects it at the point of use"*, with the note that the second needs no help from the first. **(b)** The same entry's **Why** ends with the plain sentence this row asked for about what a postfix attempt actually produces — `expected expression`, caret past the operator, character-identical to `a +;` and identical with or without a space — so the design no longer implies a fixity diagnostic that does not exist. **(c)** **U§7 "Declaring"** gains the default-argument paragraphs: p8 waived, the consequence stated outright (a defaulted trailing parameter makes an infix-declared operator prefix-usable), why the parser must **not** filter by declared arity, the ordinary ambiguity against a genuine prefix overload, and the conservative alternative priced at one diagnostic. **Not taken:** the U§6 structural one-liner (two parser functions, no disambiguation state), because `reconcile-remainder` is rewriting the paragraph it belongs in and two steps editing one paragraph is how a sentence gets lost. **Re-derived 2026-09-06** on the `unicode-operators-upstream` build: with `constexpr int operator⊟(int a, int b = 1)`, `⊟5` is accepted and equals `5 ⊟ 1`; adding a one-parameter `operator⊠` makes `⊠5` *ambiguous* with both candidates noted; `a⊖` is `error: expected expression`. — *Previously:* **OPEN — DECIDED 2026-09-06.** [prefix-arity-selection](../../../docs/open-decisions.md#prefix-arity-selection), option (a): [over.oper]p8 stays **waived**, and the cross-fixity use is intended rather than a hole — `⊟5` is `operator⊟(5)`, which is what the desugaring promises. The parser is *not* to filter candidates by declared arity. Still `OPEN` because the row's recommended doc change is unwritten: [unary-forms](../../../docs/unicode-operators.md#unary-forms) must split into declaration-arity and use-position, U§6 gains the structural one-liner, and U§7 "Declaring" gains the default-argument paragraph. Owed by [reconcile-declaring-using](../../completion/steps/reconcile-declaring-using.md). — **U§6 one-liner written 2026-09-06 by [reconcile-remainder](../../completion/steps/reconcile-remainder.md), completing this row.** It is in U§6, the paragraph beginning *"That is not merely a rule the parser follows; it is a rule that leaves the parser nothing to do"*, immediately after the position-disambiguation paragraph and before the worked examples: the prefix production is read in operand position by `ParseCastExpression` and the infix production in operator position by `ParseRHSOfBinaryExpression`, two functions that never see the same token, so **no disambiguation state exists** — stated against §5's same-delimiter suppression flag, which backtick needs and this feature does not. **This row is now RECONCILED on every clause.**
 
 **Found by.** U12
 
@@ -308,7 +306,7 @@ The author answered [abi-production-request](../../../docs/unicode-operators.md#
 
 ### ast-node-shape
 
-**Formerly:** `DEV-U17`. **Status:** **RECONCILED (U§8 half; see the remainder below)** — 2026-09-06, [reconcile-implementation-cost](../../completion/steps/reconcile-implementation-cost.md), into `docs/unicode-operators.md` **U§8**, the ***The expression node*** bullet, the sentences beginning *"The node holds its operands and not a built call, and that is a design answer rather than a preference"*. That is recommendation (b)'s substance: a node that *is* the operator survives Sema re-wrapping its result and a node that *hides* a call does not, given as the reason rather than as a preference. **Recommendation (a) — the backtick printer bug — has landed and was verified today**, not by this step: `BacktickInfixExpr` now has a `getCallExpr()` accessor that looks through `IgnoreImplicit()`, `StmtPrinter` uses it, the header documents the three shapes Sema may wrap the call in, `clang/test/Parser/backtick-ast-print.cpp` and `clang/test/AST/backtick-template-print.cpp` both carry class-typed cases with a non-trivial destructor, and the `-DPRINTING` workaround this row asked to have deleted is gone from `clang/test/Parser/unicode-operator-precedence.cpp`. **Remainder, owed to [reconcile-remainder](../../completion/steps/reconcile-remainder.md):** the one U§12 sentence, that the two features share a precedence level and a desugaring but must **not** share an AST-representation strategy. U§8's bullet already says it in the Clang-implementation register; U§12 is that step's section and the sentence belongs there in the design register.
+**Formerly:** `DEV-U17`. **Status:** **RECONCILED (both halves)** — the U§12 sentence written 2026-09-06 by [reconcile-remainder](../../completion/steps/reconcile-remainder.md): **U§12**, the paragraph beginning *"What the two features must *not* share is an AST representation"*, which states it as a language consequence rather than a preference — a node that holds its operands survives Sema re-wrapping its result and survives instantiation with its member candidates intact, a node that hides an already-built call does neither, and the backtick wrapper may hide a call only because a backtick slot has no member candidates to lose — closing on *"sharing the level is free; sharing the node would have been a bug in one of the two features"*. The corresponding **back-end** result, that the same two nodes cost exactly the same four arms in the code generator, is in `docs/backtick-operator-design.md` **§17.7**; the two paragraphs are the front-end and back-end halves of one comparison and each links the other. — *Previously:* **RECONCILED (U§8 half; see the remainder below)** — 2026-09-06, [reconcile-implementation-cost](../../completion/steps/reconcile-implementation-cost.md), into `docs/unicode-operators.md` **U§8**, the ***The expression node*** bullet, the sentences beginning *"The node holds its operands and not a built call, and that is a design answer rather than a preference"*. That is recommendation (b)'s substance: a node that *is* the operator survives Sema re-wrapping its result and a node that *hides* a call does not, given as the reason rather than as a preference. **Recommendation (a) — the backtick printer bug — has landed and was verified today**, not by this step: `BacktickInfixExpr` now has a `getCallExpr()` accessor that looks through `IgnoreImplicit()`, `StmtPrinter` uses it, the header documents the three shapes Sema may wrap the call in, `clang/test/Parser/backtick-ast-print.cpp` and `clang/test/AST/backtick-template-print.cpp` both carry class-typed cases with a non-trivial destructor, and the `-DPRINTING` workaround this row asked to have deleted is gone from `clang/test/Parser/unicode-operator-precedence.cpp`. **Remainder, owed to [reconcile-remainder](../../completion/steps/reconcile-remainder.md):** the one U§12 sentence, that the two features share a precedence level and a desugaring but must **not** share an AST-representation strategy. U§8's bullet already says it in the Clang-implementation register; U§12 is that step's section and the sentence belongs there in the design register.
 
 **Found by.** U15
 
@@ -322,7 +320,7 @@ The author answered [abi-production-request](../../../docs/unicode-operators.md#
 
 ### ucn-operator-spellings
 
-**Formerly:** `DEV-U18`. **Status:** OPEN
+**Formerly:** `DEV-U18`. **Status:** **RECONCILED** — 2026-09-06, [reconcile-remainder](../../completion/steps/reconcile-remainder.md). All three recommendations, and **one of them is corrected by measurement**. (1) **U§8**, the block beginning *"An earlier draft called that 'structurally free'. Classification is free. Identity is not"* — four paragraphs, immediately after the `a\u229Eb` sentence and before *"Second, no normalization runs at lex time"*: the one classification point with its four callers; the entity/token split with the silent-in-one-direction failure; and the closing paragraph making the single canonicalization an argument for the code point being the identity, generalized to GCC. (2) **A new dated `Log.` on [ucn-spellings](../../../docs/unicode-operators.md#ucn-spellings)** stating the acceptance criterion at declaration-and-use level, plus the entry's **Why** amended from *"Structurally free"* to *"Classification is free … Identity is not free"*. (3) **U§5/U§10's spelling-dependent-diagnostic question is answered rather than recorded**, in the last paragraph of the U§8 block: **this row's clause (c) is wrong for excluded code points.** Measured today, the exclusion diagnostics fire in **both** spellings with the same message text, differing only in caret width — `1 − 2` and `1 \u2212 2` alike — and both are silent with the flag off. What is asymmetric is inherited and narrower than the clause says: it applies to a code point that is neither in [token-set](../../../docs/unicode-operators.md#token-set) *nor excluded* nor XID (¬ U+00AC, ± U+00B1, ☺ U+263A were checked), which gets upstream's `unexpected character` when spelled literally and nothing when spelled as a UCN, at every `-std=` and with the flag off. So there was no asymmetry left to decide about; there was a claim to correct. The entity identity was re-derived end to end: three spellings of ⊞ across a declaration, a definition and a use emit the single symbol `_Zv28op_u229E1SS_`.
 
 **Found by.** U04
 
@@ -336,7 +334,7 @@ The author answered [abi-production-request](../../../docs/unicode-operators.md#
 
 ### exclusion-diagnostics
 
-**Formerly:** `DEV-U19`. **Status:** OPEN
+**Formerly:** `DEV-U19`. **Status:** **RECONCILED** — 2026-09-06, [reconcile-remainder](../../completion/steps/reconcile-remainder.md). All four recommendations. (1) and (2) land in **U§8 paragraph 2**, which is rewritten from the design's single "keep a table with reasons" sentence into the scope rule and its consequences: the paragraph beginning *"But the three reasons do not have the same scope"*, the rule itself in bold — *a reason is emittable at token classification if and only if its code points cannot also be identifier constituents* — the two bullets that apply it, and the paragraph after them beginning *"That asymmetry is the sharpest evidence for operator-identifier-disjointness the prototype produced"*, which is where the disjointness argument is turned around and made load-bearing. (3) is the last paragraph of that rewrite, beginning *"And a second, independent argument for keeping the sets disjoint"* — `operator∂` closed up is one ordinary identifier, and a future proposal admitting operator code points into identifiers would break that corner silently. (4) lands in **U§5**, in [confusable-spelling-provenance](../../../docs/unicode-operators.md#confusable-spelling-provenance)'s closing two paragraphs: *is confusable with*, never *did you mean*, and **no fix-it**, with the reason given rather than asserted. Re-derived rather than quoted: `int ∂(int); int u = ∂(1);` compiles with only `-Wc++2d-extensions`; `struct T { operator ∂(); };` produces the note in operator-name position; `int operator∂(S, S);` dumps as an ordinary `FunctionDecl` named `operator∂`; and a confusable in operator-name position gets the same message with no fix-it attached.
 
 **Found by.** U05
 
@@ -350,7 +348,7 @@ The author answered [abi-production-request](../../../docs/unicode-operators.md#
 
 ### clang-format-user-operators
 
-**Formerly:** `DEV-U20`. **Status:** OPEN
+**Formerly:** `DEV-U20`. **Status:** **RECONCILED** — 2026-09-06, [reconcile-remainder](../../completion/steps/reconcile-remainder.md), with **one figure corrected**. (1) **U§10's clang-format bullet**, rewritten: the bullet keeps its claim and gains the measurement and the three touch points, followed by the sub-paragraph beginning *"The third touch point is the one a reviewer will forget"*, which states the precedence-query trap and turns it into the argument for [user-declared-fixity](../../../docs/unicode-operators.md#user-declared-fixity)'s single level. (2) **U§13's `operator` + token adjacency bullet** is no longer an open question: it is rewritten as *answered, and kept here for the record*, and redirects to the one adjacency question that does have a surprising answer (`operator∂`, U§8). (3) **U§12**, the paragraph beginning *"They do not share a formatting story either, and this feature has the better one"*. **The corrected figure:** this row says *"3 production files, +32/−9"*. Measured on the pure-Unicode branch against its own base, the three files are **+40/−1**; the recorded figure came from the experiment branch's own U18 commit (**+47/−10**), where nine of the deletions are the refactor of the *backtick* track's inline post-operand test and so are not this feature's cost at all. The standalone number is the one a paper wants, and it is the larger and simpler one. Everything else in this row survived checking: no new `TokenType` (the diff adds none), one enabling block keyed on the language, four classification lines, and the precedence query passing the flag. Behaviour re-derived on `clang-format` itself: `operator ⊞` → `operator⊞`, and `BreakBeforeBinaryOperators: All` breaks before `⊞`.
 
 **Found by.** U18
 
@@ -364,7 +362,7 @@ The author answered [abi-production-request](../../../docs/unicode-operators.md#
 
 ### feature-coupling
 
-**Formerly:** `DEV-U21`. **Status:** OPEN
+**Formerly:** `DEV-U21`. **Status:** **RECONCILED** — 2026-09-06, [reconcile-remainder](../../completion/steps/reconcile-remainder.md). All four recommendations, in two documents. (1) **`ops/unicode-operators/clang-experiment-plan.md`, "Upstream Replay Assumptions"**: the single-construct assumption is struck in place and replaced by the numbered three, with the fold-operator exclusion marked as the one that fails **silently** and as an *addition* rather than a rename. (2) **U§12**, the paragraph beginning *"The coupling, measured, is three constructs and one enumerator's worth of design"* with its three bullets and the hunk figures, closing on *"one enumerator in every possible world"*. (3) **U§12**, the paragraph beginning *"The shared level surfaced twice, independently"*. (4) the soft coupling is recorded in the experiment plan's last new bullet, explicitly **as upstreaming hygiene rather than design**. Re-derived on the two branches rather than quoted: `prec::UserInfix = 16`; `isFoldOperator`'s `Level != prec::UserInfix` present on the replayed branch; and `endsOperand` naming `TT_BacktickEscapeClose` on `unicode-operators-experiment` and **not** naming it on `unicode-operators-upstream` — the standalone equivalent, in the tree.
 
 **Found by.** U19
 
@@ -378,7 +376,7 @@ The author answered [abi-production-request](../../../docs/unicode-operators.md#
 
 ### replay-ordering
 
-**Formerly:** `DEV-U22`. **Status:** OPEN
+**Formerly:** `DEV-U22`. **Status:** **RECONCILED** — 2026-09-06, [reconcile-remainder](../../completion/steps/reconcile-remainder.md), **and it turned up a reproducibility defect in its own headline claim.** (1) **`REPLAY.md` §5's "Two ordering traps"** are corrected *in place* — both struck with their corrections attached, plus the conflicts-not-fuzz warning as a third — because §5's table is what a replay agent reads and the existing correction sits three hundred lines below it in *"What the ledger got wrong"*. (2) The executed result is recorded in **the experiment plan's replay assumptions** (the bullet beginning *"The replay is executed, not assumed"*) and argued in **U§12**, the paragraph beginning *"Separable fates are now an executed result, not an audit"* and the maintenance-cost paragraph at the end of that block. **The defect:** this row's own command, `git diff upstream/main..unicode-operators-upstream | grep -i backtick`, **no longer returns nothing** — it returns six lines, every one of them upstream's own (Markdown fence guidance, an unrelated lldb variable) that arrived after the branch point. Against the branch's actual base `d28193fa1ff6` the count is **0**. The claim is true and the command was not reproducible; both documents now pin the base commit and say why, which makes the check auditable by someone who was not there.
 
 **Found by.** U20
 
@@ -392,7 +390,7 @@ The author answered [abi-production-request](../../../docs/unicode-operators.md#
 
 ### postfix-operators
 
-**Formerly:** `DEV-U23`. **Status:** **OPEN — substance DECIDED 2026-09-06; mangling clause RECONCILED 2026-09-06 into U§9's [abi-production-request](../../../docs/unicode-operators.md#abi-production-request); the remaining doc changes unwritten.** [postfix-operators](../../../docs/open-decisions.md#postfix-operators), option (a): postfix is **declined for v1 and explicitly not foreclosed**, argued in the *affordable and declined* terms rather than the *ambiguous* terms, because greedy-infix only ever reinterprets programs v1 rejects. U§13.1 keeps its full subsection: a priced negative result is the point, not an appendix. Still `OPEN` on one count: this row's recommended doc changes (1), (4) and (5) are unwritten ([reconcile-remainder](../../completion/steps/reconcile-remainder.md)'s U§13, and the U§12 routing consequence). **Clause (3), the mangling clause, is taken and closed** — [mangling-abi](../../completion/steps/mangling-abi.md) wrote it on 2026-09-06 into [`docs/unicode-operators.md`](../../../docs/unicode-operators.md) **U§9's [abi-production-request](../../../docs/unicode-operators.md#abi-production-request)**, in two places: the **third "What was measured" bullet** (*`v <digit>` keys on arity, and arity is not fixity*), which is the clause's substance — that the vendor-extended form cannot tell prefix from postfix and would foreclose v2 if it became the standardized encoding — and **point 1 of the Recommendation** (*The fixity marker is the whole point of asking*), which is what the paper would ask the ABI group for and links back to this row. The `pp_`/`pp` cross-vendor divergence is the **fourth "What was measured" bullet**, extended to `--` and to both fixities and still citing `LLVM-ISSUE-PENDING`. Nothing in that section forecloses postfix; it is written to keep it takeable.
+**Formerly:** `DEV-U23`. **Status:** **RECONCILED (all five clauses)** — clauses (1) and (2) by earlier work, (3) by [mangling-abi](../../completion/steps/mangling-abi.md), and (4) and (5) on 2026-09-06 by [reconcile-remainder](../../completion/steps/reconcile-remainder.md), which took this row although it is not in its step file's list. **(1)** [unary-forms](../../../docs/unicode-operators.md#unary-forms)'s **Why** already carried the *affordable and declined* reframing, and **(2)** U§13.1 already existed in full — both verified rather than assumed before being marked. **(4) the routing consequence** is now a fourth bullet in **U§12**'s one-paper-or-two list, beginning *"And postfix, if it were ever taken, would move the routing again"*: a compiler-known tag type makes the feature library-affects-language and adds **LEWG** to a proposal already routed to three bodies, which [library-scope](../../../docs/backtick-operator-design.md#library-scope) says on its own terms keeps it out of v1. **(5) the sibling-pattern instance** is now the **fifth row of [closed-table-sibling-pattern](../../../docs/unicode-operators.md#closed-table-sibling-pattern)'s table** — *"the fixity of a unary operator / `operator++`'s `int` dummy, re-derived at each consumer / nothing exists to extend"* — with the paragraph after the table beginning *"The fifth is different again"*, and **§13.1's own "fourth consecutive place" sentence is corrected to "fifth" and cross-linked**, which resolves a live collision: the table said *four times* and §13.1 said *the fourth*, of a different four. The count now lives in one place. — *Previously:* **OPEN — substance DECIDED 2026-09-06; mangling clause RECONCILED 2026-09-06 into U§9's [abi-production-request](../../../docs/unicode-operators.md#abi-production-request); the remaining doc changes unwritten.** [postfix-operators](../../../docs/open-decisions.md#postfix-operators), option (a): postfix is **declined for v1 and explicitly not foreclosed**, argued in the *affordable and declined* terms rather than the *ambiguous* terms, because greedy-infix only ever reinterprets programs v1 rejects. U§13.1 keeps its full subsection: a priced negative result is the point, not an appendix. Still `OPEN` on one count: this row's recommended doc changes (1), (4) and (5) are unwritten ([reconcile-remainder](../../completion/steps/reconcile-remainder.md)'s U§13, and the U§12 routing consequence). **Clause (3), the mangling clause, is taken and closed** — [mangling-abi](../../completion/steps/mangling-abi.md) wrote it on 2026-09-06 into [`docs/unicode-operators.md`](../../../docs/unicode-operators.md) **U§9's [abi-production-request](../../../docs/unicode-operators.md#abi-production-request)**, in two places: the **third "What was measured" bullet** (*`v <digit>` keys on arity, and arity is not fixity*), which is the clause's substance — that the vendor-extended form cannot tell prefix from postfix and would foreclose v2 if it became the standardized encoding — and **point 1 of the Recommendation** (*The fixity marker is the whole point of asking*), which is what the paper would ask the ABI group for and links back to this row. The `pp_`/`pp` cross-vendor divergence is the **fourth "What was measured" bullet**, extended to `--` and to both fixities and still citing `LLVM-ISSUE-PENDING`. Nothing in that section forecloses postfix; it is written to keep it takeable.
 
 **Found by.** U21
 
