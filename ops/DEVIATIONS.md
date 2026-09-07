@@ -195,3 +195,56 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 *Where it landed in the design.* [§17.4](../docs/backtick-operator-design.md#174-adl-is-normative-cross-compiler-note), the implementation-status paragraph and the three paragraphs now following it — **RECONCILED**. The status-correction block [evidence-debt](completion/steps/evidence-debt.md) put above that paragraph is **removed**; it existed only to keep the paragraph out of a paper. The rewritten paragraph names both compilers' mechanisms; the paragraph after it says both got there on a second attempt and that the two failures were the same failure; the paragraph after **that** is the within-compiler control, written for a paper to take; and the last one is the near-miss — the qualified-name test that made this invisible for nine steps, and the augmentation shape that is the only one which fails *silently* and therefore the only one worth calling an ADL test.
 
 *The test.* `clang/test/SemaCXX/backtick-adl.cpp`, on both backtick branches: eight sections, every shape written twice — once as a spelled call, once as the operator, with the call as the control — including the two augmentation sections whose pre-fix failure is a **wrong bind rather than a compile error**. `clang/test/SemaCXX/backtick-semantics.cpp`'s prolog and section-2 heading, which both claimed ADL coverage they never had, are corrected to say so and to point at the new file.
+
+### escape-name-positions
+
+**Formerly:** none — new slug, 2026-09-07. **Status:** **OPEN**
+
+**Found by.** [backtick-paper](completion/steps/backtick-paper.md), checking the paper's proposed wording against both prototypes.
+
+**Design section.** [§12 Coexistence with backtick keyword-escaped identifiers](../docs/backtick-operator-design.md#12-coexistence-with-backtick-keyword-escaped-identifiers); §3 [keyword-escape-coexistence](../docs/backtick-operator-design.md#keyword-escape-coexistence), whose Status already reads *scope open*.
+
+**What the design said.** §12 lists the escape's positions as *operand / primary-expression / declarator-id / after `.` `->` `::`*, and says nothing about the rest of the grammar. `papers/d4307r0.md`'s [lex.name] wording is broader than that list — *"An escaped-identifier may appear wherever the grammar uses identifier as a terminal"* — and its example declares `` struct `union` { }; ``.
+
+**What was true.** Measured 2026-09-07 on the built `backtick-trunk` `clang++` and on `cc1plus` from `~/bld/gcc/gcc-backtick-build`, one probe per position, flag on:
+
+| Position | Clang | GCC |
+|---|---|---|
+| variable, function, member, `typedef` declarator-id | accepts | accepts |
+| qualified name in an out-of-class member definition | accepts | accepts |
+| primary-expression, and after `.` | accepts | accepts |
+| *class-head-name* (`` struct `union` { }; ``) | **rejects** — *declaration of anonymous struct must be a definition* | **rejects** — *expected identifier before '`' token* |
+| *enum-name*, scoped or not | **rejects** | **rejects** |
+| *namespace-name* | **rejects** | **rejects** |
+| template parameter name | **rejects** | **rejects** |
+| name in an *alias-declaration* (`` using `class` = int; ``) | **accepts** | **rejects** — see [escape-alias-name-parity](gcc/DEVIATIONS.md#escape-alias-name-parity) |
+
+So the two implementations agree on the escape's coverage everywhere except the alias-declaration, and the coverage they agree on is **narrower than the wording the paper proposes**. The wording's own example is in the unimplemented set.
+
+**Recommended doc change.** Two questions, and only the first is a defect. (1) §12's position list should say that it is the *implemented* list and that the unimplemented positions are unwritten parser arms, not decisions — nothing in the disambiguation argument turns on them, since a *class-head-name* is a name position exactly as a declarator-id is. (2) The design owes an answer to *what should the escape's coverage be?* An escape hatch whose point is that a future keyword stops breaking code has to cover the positions in which the broken code names things, and `struct module { };` is one of them. Until that is answered, the paper states the implemented set, which [backtick-paper](completion/steps/backtick-paper.md) has done in its *What is implemented, and what is not* section, and keeps the broad wording as the proposal.
+
+### type-slot-aggregate-shape
+
+**Formerly:** none — new slug, 2026-09-07. **Status:** **OPEN**
+
+**Found by.** [backtick-paper](completion/steps/backtick-paper.md), checking the paper's round-trip claim.
+
+**Design section.** [§17.5](../docs/backtick-operator-design.md#175-source-ranges-of-the-desugared-node-source-fidelity-node); [§17.3](../docs/backtick-operator-design.md#173-type-name-in-the-operator-slot-type-name-slot); [type-slot-cost](#type-slot-cost)
+
+**What the design said.** §17.5: *"Three shapes have to be recognised, and they are the same three the pretty-printer already reconstructs the surface syntax from: the desugared call (including the member form), the construction a type slot desugars to, and that construction's dependent form."* §17.3 says the type slot cost *"two printer arms to keep `-ast-print` round-tripping"*.
+
+**What was true.** There is a fourth shape, and both the printer and the range recovery miss it. A type slot naming an **aggregate** initializes through parenthesized aggregate initialization (C++20), so Sema hands back a `CXXFunctionalCastExpr` rather than a `CXXTemporaryObjectExpr`. Measured on `backtick-trunk`:
+
+```
+struct Agg { int x, y; };
+int a, b;
+auto r = a `Agg` b;
+
+$ clang++ -fbacktick -Xclang -ast-print   ->  auto r = Agg(a, b);          // not the written form
+$ clang++ -fbacktick -Xclang -ast-dump    ->  BacktickInfixExpr <col:13, col:16> 'Agg'
+                                              `-CXXFunctionalCastExpr ...   // the slot alone, not <col:10, col:18>
+```
+
+A type slot naming a class with a constructor round-trips correctly (`` a `Pt` b ``), and so does a CTAD slot, which prints its deduced specialization (`` a `std::pair<int, double>` b ``) — re-parseable and equivalent, though not the written token sequence.
+
+**Recommended doc change.** §17.5's *three shapes* becomes four, and the fourth is the honest general statement of the trap the section already makes: the wrapper's range and the printer both recover the operands from **whatever Sema built**, so every new initialization form Sema can produce for `T(x, y)` is another arm, and each one fails quietly by printing the desugaring. §17.3's *"two printer arms"* is the count for the shapes it implemented, not for the shapes the type slot can produce. The paper states the exception; fixing it is a parser-adjacent one-arm change on both backtick branches and has no step.

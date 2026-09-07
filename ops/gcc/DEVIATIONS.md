@@ -150,3 +150,46 @@ rewritten. [`ops/SLUGS.md`](../SLUGS.md) is the whole map.
 **Cross-compiler note.** This is a difference **in kind, not in behaviour**, and it is the interesting kind. It is not a divergence row in the usual sense — the two implementations accept the same programs and emit the same code — it is a whole class of Clang work with no GCC counterpart, because the two front ends chose different representations for the same desugaring. The paper should say so plainly rather than leaving a reader to infer that GCC is missing something: a front end that desugars in the parser pays none of the AST-node cost, and gets none of the source fidelity that cost buys.
 
 **Recommended doc change.** State in the implementation-experience section which parts of the Clang work have no GCC counterpart *by construction* — the AST node and everything downstream of it (source-fidelity printing, the analyzer arms, the CIR arms, serialization) — and separate that from the parts GCC simply has not done ([gcc-type-slot-parity](#gcc-type-slot-parity)). The first is a design consequence and belongs in the argument; the second is a gap and belongs in the status table.
+
+### escape-alias-name-parity
+
+**Formerly:** none — new slug, 2026-09-07. **Status:** **OPEN**
+
+**Found by.** [backtick-paper](../completion/steps/backtick-paper.md), probing the escape's grammatical coverage in both compilers.
+
+**Design section.** [§12](../../docs/backtick-operator-design.md#12-coexistence-with-backtick-keyword-escaped-identifiers); Clang [escape-name-positions](../DEVIATIONS.md#escape-name-positions)
+
+**What differed.** The name in an *alias-declaration*. Measured 2026-09-07, flag on, both compilers:
+
+```
+using `class` = int;
+clang++ -fbacktick   ->  accepted
+cc1plus -fbacktick   ->  error: expected nested-name-specifier before '`' token
+```
+
+Every other position the two were probed in agrees — both accept declarator-ids (variables, functions, members, `typedef` names, out-of-class definitions), primary-expressions and names after `.`; both reject class-head, enum, namespace and template-parameter names ([escape-name-positions](../DEVIATIONS.md#escape-name-positions) has the table).
+
+**Cross-compiler note.** This is the **second** place where the two implementations accept different programs under `-fbacktick`; [gcc-type-slot-parity](#gcc-type-slot-parity) is the first. Like that one it is a gap and not a disagreement: GCC parses an alias-declaration's name through a path that never reaches the escape arm, and nothing in the design says it should not. Note that `docs/backtick-operator-design.md` §17.8 says *"the one place the two implementations genuinely disagree"* — that sentence needs a second entry, and it now has one.
+
+**Recommended doc change.** §17.8's *one place* becomes two, with both named and both marked as gaps. The paper's implementation-experience section already lists both, as the whole list of programs the compilers treat differently under the flag; keep the two in one place so the list stays checkable.
+
+### escape-diagnostic-spelling
+
+**Formerly:** none — new slug, 2026-09-07. **Status:** **OPEN**
+
+**Found by.** [backtick-paper](../completion/steps/backtick-paper.md), measuring the question [clang-paper-truth](../completion/handoffs/clang-paper-truth.handoff.md) left open under *"The GCC side has no counterpart to the escape's printing question … nobody owns it."*
+
+**Design section.** §3 [keyword-escape-printing](../../docs/backtick-operator-design.md#keyword-escape-printing), ratified by the author 2026-09-06; §12's **Printing and diagnostics** paragraph
+
+**What differed.** The decision is that the escape is part of the name's spelling, so a diagnostic names the entity `` `new` `` and not `new` — under the flag there is no other way to write it, and text copied out of a diagnostic should re-parse. Clang implements that. GCC does not. Measured 2026-09-07 on a two-declaration, one-bad-call file:
+
+```
+clang:  error: no matching function for call to '`new`'
+gcc:    note: initializing argument 1 of 'void new(int)'
+```
+
+GCC's note names the entity with a spelling no program can contain, which is the exact condition the decision exists to remove. GCC has no `-ast-print`, so the printing half of the decision has no GCC counterpart at all; the diagnostic half does, and diverges.
+
+**Cross-compiler note.** Not a difference in accepted programs — both compile the same file — so it belongs beside [gcc-wrapper-parity](#gcc-wrapper-parity) rather than beside the two acceptance gaps. It is one `%D`-formatting decision deep in GCC's diagnostic printer and nothing in the design prevents it; the reason it was not done is that nobody had measured it. Now measured.
+
+**Recommended doc change.** [keyword-escape-printing](../../docs/backtick-operator-design.md#keyword-escape-printing) should record that the ruling is delivered by one compiler, the way [§17.3](../../docs/backtick-operator-design.md#173-type-name-in-the-operator-slot-type-name-slot) records single-compiler evidence for the type slot. The paper says so in one clause and does not claim it of both.
