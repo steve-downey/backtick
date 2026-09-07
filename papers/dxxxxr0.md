@@ -372,10 +372,20 @@ class-or-enum exception the design named:
 - **not variadic**: waived, likewise.
 - **the fixed arity table**: has no entry to consult, so the prefix/infix
   rule is written out.
-- **not a static member**: kept. U§4's arity rule presupposes an implicit
-  object parameter, and a static member has none, so it can name neither form.
-  C++23 shipped `static operator()`, so this one will be asked about; it is
-  restrictive now and relaxable later.
+- **not a static member**: kept — and kept as a *choice*, which is worth
+  saying plainly, because the arity rule does not exclude it. That rule counts
+  operands, so `static S operator⊞(S, S)` has two and would be accepted; an
+  implementation must reject it deliberately. The reason is the desugaring:
+  `x ⊞ y` is defined to mean exactly one of two spellings, `operator⊞(x, y)`
+  or `x.operator⊞(y)`, and a static member names neither — `x.operator⊞(y)`
+  on a static member is legal C++ but discards the object expression and
+  passes one argument to a two-parameter function. C++23 shipped
+  `static operator()`, so this will be asked about; the answer is that a call
+  operator's meaning is given by the standard, which can say what becomes of
+  the object expression, while a user operator's meaning is *only* the
+  equivalence, and there is nowhere else to say what a static form would do.
+  Restrictive now, relaxable later by writing down a third spelling and the
+  lookup that finds it.
 
 Everything else is ordinary: templates, `constexpr`, `= delete`, member and
 non-member, explicit object parameters.
@@ -668,14 +678,20 @@ and annotation test passes.
 - **Combining-mark operator sequences, and the Latin-1 candidates** (± × ÷ ¬),
   both deliberately out of the frozen set and both coherent extensions.
 
-One limitation is inherited rather than introduced, and is reported for
-completeness: `t.template operator⊞<int>(0)` on a dependent object expression
-is rejected, because the dependent-template representation holds an identifier
-or a built-in operator kind and nothing else. The identical construct on a
-user-defined literal operator produces a character-identical diagnostic, and
-has since C++11. So the operator-function-id names the overload set anywhere
-an unqualified-id does, with that one exception, which belongs to every
-operator-function-id outside the fixed set.
+One limitation is this feature's own, and is reported rather than left to be
+found: `t.template operator⊞<int>(0)` on a dependent object expression is
+rejected, because the implementation's dependent-template representation holds
+an identifier or a built-in operator kind and nothing else, and a new operator
+name is neither. Every non-dependent spelling works, and so does a dependent
+call without the `template` disambiguator. It is the same
+closure-over-a-fixed-operator-table cost the name tables and candidate
+assembly pay, reaching a third data structure, and closing it means admitting
+a third alternative there. It is tempting to call it inherited, because the
+identical construct on a user-defined literal operator gives a
+character-identical diagnostic — but that rejection is *correct*: a literal
+operator can never be a class member, so no valid program contains the
+construct. So the operator-function-id names the overload set where an
+unqualified-id does, with that one exception, and the exception is new.
 
 # Relation to the backtick proposal
 
