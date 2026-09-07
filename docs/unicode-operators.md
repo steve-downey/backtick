@@ -608,9 +608,15 @@ proposal keeps it.
 
 ## 8. Implementation sketch
 
-The parser side is small — smaller than backtick's, since §5/§17.1 vanish
-(U§6). The real work in both compilers is the same item: **the operator-name
-tables are closed**, and this feature opens them.
+The parser side is small, and the measurement bears that out: the *using*
+side is two cases in the existing precedence machinery, and the *declaring*
+side is about ninety lines. But this section named **three** Clang work items
+and the prototype needed **eight**, and the cost is not in the parser at all.
+The real work in both compilers is the same item: **the operator-name tables
+are closed**, and this feature opens them — in the name tables, and, above
+all, in the expression node, which is the one place this feature is *more*
+work than backtick. (§5/§17.1 vanish, so U§6's "parsing is the easy part"
+survives; its *comparison* against backtick needs the node as a caveat.)
 
 **Token classification is a static range table, not a predicate.** Because
 [token-set](#token-set) is a frozen enumeration, the lexer never evaluates Unicode properties:
@@ -654,25 +660,153 @@ normalization runs at lex time** — the token is one scalar value however
 spelled; NFC questions arrive only with v2's combining-mark sequences
 (U§13).
 
-**Clang.**
+**Clang — eight work items, of which this section used to name three.**
+Every count below was re-measured on the `unicode-operators-upstream` branch
+at `c0e07f78e679` on 2026-09-06; where a figure disagrees with one recorded
+earlier in the project, the earlier one was a snapshot taken before later
+steps added sites, and the greps that produce these are recorded in
+[the Clang deviation ledger](../ops/unicode-operators/clang/DEVIATIONS.md).
 
 - *Lexer:* the [token-set](#token-set) set is a static property of a code point; lex a member as a
   new token kind (e.g. `tok::user_operator`) carrying the code point, gated on
   the [unicode-feature-gating](#unicode-feature-gating) flag. UTF-8 decoding of non-ASCII already exists on the identifier
   path; this adds a second consumer.
-- *Parser:* the `prec::Level` introduced for backtick serves as-is; a
-  `tok::user_operator` case joins `tok::backtick` in
+- *Parser, using an operator:* the `prec::Level` introduced for backtick
+  serves as-is; a `tok::user_operator` case joins `tok::backtick` in
   `ParseRHSOfBinaryExpression`, and a case in `ParseCastExpression` handles
-  the prefix form. No suppression flag, no delimiter matching.
-- *The hard part — `DeclarationName`:* overloaded operators are
-  `CXXOperatorName` over the closed `OverloadedOperatorKind` enum, which is
-  indexed into tables all over Sema. User operators need a new
-  `DeclarationName` kind carrying the code point. The precedent is
-  **`CXXLiteralOperatorName`** — `operator""_suffix` already demonstrates a
-  DeclarationName kind keyed by open-ended extra data (an `IdentifierInfo`),
-  threaded through declaration, lookup, and mangling. This is a real cost —
-  DeclarationName plumbing fans out — but it is a *worked* precedent, not
-  terra incognita.
+  the prefix form. No suppression flag, no delimiter matching. This is the
+  bullet the sketch had, and it held as written.
+- *Parser, declaring an operator:* the half the sketch left out, and the
+  larger of the two. `operator⊞` has to become a *name*: a new
+  `UnqualifiedIdKind` with its code-point payload and its setter, one arm in
+  `ParseUnqualifiedIdOperator`, one in `Sema::GetNameFromUnqualifiedId`, and
+  **12 dispatch sites over `UnqualifiedIdKind` in 5 files** — about 90 lines
+  across 8 files in all, which is *less* than the name-table cost below, the
+  ordering this design predicts. Two findings sit inside it. **Tentative
+  parsing needs an arm of its own:** `Parser::TryParseOperatorId` assumes a
+  *conversion-type-id* follows anything it does not recognise, so the
+  ambiguous `S operator⊛(S, S);` was re-parsed as an expression and rejected
+  until a four-line case was added — and the backtick prototype needed a peer
+  change in the same function for an unrelated reason, which makes *a compiler
+  that separates declarations from expressions by trial parse must be told
+  about any new declarator-id token* two-for-two rather than a coincidence.
+  And **`TemplateIdAnnotation` has no slot for a code point**, exactly as it
+  has none for a literal-operator suffix (upstream's own `// FIXME: Store name
+  for literal operator too.`); `operator⊞<T>` resolves through the
+  `TemplateName` instead, so nothing is wrong today.
+- *The name tables — `DeclarationName`:* overloaded operators are
+  `CXXOperatorName` over the closed `OverloadedOperatorKind` enum, indexed
+  into tables all over Sema; a user operator needs a new `DeclarationName`
+  kind carrying the code point. **`CXXLiteralOperatorName` is the worked
+  precedent this section promised, and it transplanted almost line for line**
+  — `operator""_suffix` is already a name kind keyed by open-ended extra data
+  and threaded through declaration, lookup and mangling. The cost is **34
+  dispatch sites over `DeclarationName::NameKind` across 17 files**, for
+  roughly 250 lines of production code: a number small enough to be an
+  argument *for* the design rather than a caveat against it. Every one of the
+  34 has now been through a compiler — the last of them, in the debugger's
+  expression parser, was the only hunk in the feature that no build had ever
+  seen, and it compiles clean under two host compilers. But the sharp
+  edge is somewhere else, and it is the sentence a committee reader wants.
+  The new kind is **not a choice**: the inline 3-bit `StoredNameKind` space is
+  completely full, all eight values taken, so any new kind is *forced* through
+  `DeclarationNameExtra` and the literal-operator route is the only route.
+  And `DeclarationNameExtra::ExtraKind` **cannot be appended to**, because its
+  single field encodes an N-argument Objective-C selector as
+  `ObjCMultiArgSelector + N` and clamps every value at or above that back to
+  it; the new kind must be *inserted before* Objective-C's, renumbering an
+  enum in a shared header. So the operator-name space is not merely closed, it
+  is **packed against a variable-length encoding belonging to another
+  language** — which says exactly how much of the difficulty is inherent to
+  open-ended operator names (little) and how much is one compiler's
+  bit-packing (most of it). One of the 34 sites is **generated**, from
+  `clang/include/clang/AST/PropertiesBase.td` into
+  `AbstractBasicReader/Writer.inc`, so it is not greppable as C++ and only a
+  `-Wswitch` warning finds it. There is also an **identity dividend** the
+  choice bought without meaning to: keying the name on the code point rather
+  than on an interned spelling makes the on-disk lookup key
+  context-independent, so no cross-module remapping table is needed — unlike
+  the identifier- and selector-keyed kinds, whose key is a module-local ID the
+  reader has to translate.
+- *The expression node:* absent from this sketch, and **the strongest single
+  result the prototype produced**, because here the closed table changes what
+  programs *mean* rather than how much code they take.
+  `CXXOperatorCallExpr` cannot be reused: it stores an
+  `OverloadedOperatorKind`, and `OO_None` is a *valid* value of that enum
+  rather than an absent one, so every consumer that switches on
+  `getOperator()` — `TreeTransform`, `StmtPrinter`, the source-range
+  accessors, CodeGen's member-call dispatch, the `isInfixBinaryOp` family, and
+  the X-macro that generates their arms — would reach an `llvm_unreachable` or
+  take a default arm silently. Nor can the node be **transparent**. Backtick's
+  wrapper can be, because a backtick slot's meaning *is* the call it desugars
+  to. This one cannot, and the reason is a language consequence rather than an
+  implementation cost: a transparent wrapper is rebuilt at instantiation as an
+  ordinary call, so resolution runs under [over.match.call] instead of
+  [over.match.oper] — **ADL survives, because ADL is a property of the call,
+  and member candidates are lost, because they are a property of the operator
+  syntax.** Measured: `template <class T> auto f(T a, T b) { return a ⊕ b; }`
+  with a member `operator⊕` fails at instantiation with *use of undeclared
+  `operator⊕`*, and `requires(T a, T b) { a ⊕ b; }` is unsatisfied for that
+  `T`. So `UserOperatorExpr` stores the code point, the arity and the
+  operator's location — the whole of the "operator-ness" a use has to carry —
+  and recovers its operands *as written* from the semantic form, the technique
+  `CXXRewrittenBinaryOperator::getDecomposedForm` uses, which keeps
+  `children()` a single edge so no operand is reachable twice. That upstream
+  node is the better model throughout: it exists for exactly this reason, to
+  record that an expression was *written* one way and *means* another so that
+  instantiation can redo the resolution rather than replay the result.
+  **The node holds its operands and not a built call, and that is a design
+  answer rather than a preference:** Sema may re-wrap the result it hands back
+  — a class-typed prvalue with a non-trivial destructor comes back inside a
+  `CXXBindTemporaryExpr` — so a node that *is* the operator survives that, and
+  a node that *hides* a call does not. The backtick prototype learned the same
+  thing from the other end, by aborting in its pretty-printer on
+  `` (1 `f` 2) `` for a class-typed `f`; the two features share a precedence
+  level and a desugaring and must **not** share a node-representation
+  strategy. Cost: **43 sites across 35 files name the node**, a fan-out on a
+  completely different axis from the name tables', sharing no site with them
+  and only four files. What the sites are is less interesting than which of
+  them the toolchain made you find, which is
+  [dispatch-obligation-taxonomy](#dispatch-obligation-taxonomy) below.
+- *Serialization, modules and tooling:* also absent from this sketch, and here
+  the shape is the finding rather than the size, which is small. A new
+  operator-name kind owes a `DeclContext` lookup-table key and a stable hash
+  that must **agree** with it — five sites that are *one* decision, not five,
+  because any disagreement makes module lookup **miss silently** rather than
+  fail. A new expression node owes a reader, a writer, an importer, two
+  profilers and a matcher-traversal pair, of which **only the reader and the
+  writer are forced by the build**. Those two were written under that force
+  and were correct on their first *execution* — which did not happen until a
+  PCH round-trip a step later: the toolchain forced the code and was silent
+  about its correctness, which is the clearest instance in the whole track of
+  the pattern [dispatch-obligation-taxonomy](#dispatch-obligation-taxonomy)
+  describes. On ODR the answer is now flat: two declarations of the same
+  `operator⊞` in two translation units of one module merge silently and two
+  different ones are diagnosed, and both fall out of hashing the code point.
+  The tooling surface is real and entirely unforced — ASTMatchers has no
+  per-node requirement at all, so a new node is simply *invisible* to it until
+  a matcher is written for it.
+- *The code generator:* four sites in ClangIR that **no site list contained**,
+  because `clang/lib/CIR/` was never built — every build directory in the
+  project was configured without it, and six consecutive steps recorded the
+  gap without closing it. Built, the four fail four different ways: two
+  `errorNYI` naming the node; one `errorUnsupported` whose message does *not*
+  name it, and which would be the hardest of the four to attribute in the
+  field; and one that diagnoses and then **asserts**, because a default arm
+  returns a default-constructed `LValue` and the type accessor then trips a
+  null check. That last one is not the new node's — the backtick wrapper
+  aborts identically at the same site, which localises it to the default arm
+  and makes it an upstream observation rather than a feature cost. Three of
+  the four arms are the predicted copy-paste; the fourth is a genuine design
+  answer, because the model arm there diagnoses NYI and copying it would have
+  been wrong: an operator returning a reference *is* a call returning a
+  reference, and the `CallExpr` classes four lines above already handle it, so
+  the wrapper arms recurse where the model refuses. **And the desugaring
+  thesis survives its last test:** every shape — scalar, aggregate, complex,
+  l-value and prefix — emits CIR *instruction for instruction identical* to
+  the explicit call written out by hand, including the store through the
+  pointer an l-value-returning operator returns. That is the furthest
+  downstream the claim has been checked on either feature.
 - *The static analyzer, which no site list contains:* `UserOperatorExpr` is a
   source-fidelity wrapper of exactly [source-fidelity-node](backtick-operator-design.md#source-fidelity-node)'s
   shape, and such a node owes the analyzer **parity with the call it desugars
@@ -685,7 +819,11 @@ spelled; NFC questions arrive only with v2's combining-mark sequences
   carried eight. The full account is backtick §17.6, and the fact that it is
   written up there rather than here is the finding: **both features had the
   identical defect in the identical place**, so the obligation belongs to
-  wrapper nodes as such and not to either feature.
+  wrapper nodes as such and not to either feature. These seven are *within*
+  the 43 above, not additional to them: five are silent, one is the single
+  `-Wswitch` site that any build log would have shown, and the seventh is the
+  one no axis reaches
+  ([dispatch-obligation-taxonomy](#dispatch-obligation-taxonomy)).
 
 **GCC.**
 
@@ -706,6 +844,138 @@ spelled; NFC questions arrive only with v2's combining-mark sequences
 Both implementations stay behind their flag ([unicode-feature-gating](#unicode-feature-gating)); a default build lexes these
 code points exactly as today (an error outside literals), byte-identical to
 upstream — the same discipline as [feature-gating](backtick-operator-design.md#feature-gating).
+
+**One wrinkle in the flag story, worth a footnote to anyone replaying the
+patch: a feature whose grammar is C++-only must not have a flag that changes C
+tokenization.** Both `-fbacktick` and `-funicode-operators` were accepted in C
+mode and were not inert there. The Unicode flag *suppressed* the accurate
+"unexpected character U+229E" diagnostic and left only the misleading recovery
+error; the backtick flag was worse, because a delimited slot lets the recovery
+**succeed**, so `` int f(int a, int b) { return a `g` b; } `` compiled as C
+exited 0 — C accepting C++ grammar. Neither flag can ever do anything useful
+outside C++: C has no `operator` keyword, so no operator can be declared and
+the token has no production to appear in. The fix is one
+`ShouldParseIf<cplusplus.KeyPath>` per flag, which upstream's `-freflection`
+already carries; both prototypes now have it on every branch. The lesson for
+the *test*, which is the transferable half: the assertion has to be that
+flag-on and flag-off output are **byte-identical**, not that some particular
+diagnostic appears, because for one of the two features the symptom was a
+worse message and for the other it was an acceptance.
+
+### dispatch-obligation-taxonomy
+
+The 43 sites are worth less than the answer to a different question: **which
+of them did the toolchain make you find?** Sorting them by what would have
+gone wrong had each been omitted is the result, and it is not a shape anybody
+predicted.
+
+| What forces the site | Sites | What omitting it costs |
+|---|---:|---|
+| A link error | 6 | The build fails. Six headers declare one visitor method per node from a generated `#define STMT(Node, Base)` block and dispatch to it from a generated switch. |
+| An exhaustive `switch` ending in `llvm_unreachable` | 8 | Compiles; aborts the first time the node reaches it. |
+| A `-Wswitch` warning, on a build whose `LLVM_ENABLE_WERROR` is `OFF` | 2 | Found only by *reading the build log*. The second of the two was not in the log at all until a link step happened to rebuild the library it lives in. |
+| Nothing at all | 19 | Silently wrong. The four scalar/complex/aggregate/constant emitters and three more in the l-value emitter, the constant evaluator, the bytecode compiler, the deserializer's allocation arm, the AST importer, two traversal hooks, the dump label — and five analyzer modelling sites, where the cost is that the analyzer stops seeing the enclosing function at all. |
+| Nothing at compile time, and only in a configuration nobody had built | 4 | Latent. Three fail loudly the first time a use is compiled; the fourth aborts. |
+| Nothing, and *absent* rather than wrong | 3 | The node is simply invisible to the matcher layer until somebody writes a matcher for it. |
+| **Nothing — and the site exists only because another obligation was met** | 1 | See below. It is off this axis entirely. |
+
+So the toolchain forces about a third of a new node's obligations, warns about
+two, is **silent about nineteen**, hides four behind a build configuration, and
+does not have an opinion about three more.
+
+**The configuration-latent row is the one a vendor prototyping a language
+change is most likely to ship without,** and it is worth stating why it exists.
+Those four are the second code generator, ClangIR. Nothing about them failed to compile;
+what made them latent was a CMake default, not a property of the language or of
+the visitor design, and every build directory in this project had that default.
+The general statement: **a new expression node's obligations are bounded by the
+configuration of the tree you measure in, not by the tree.**
+
+**Two things this axis structurally cannot see, and measurement found both
+where review had not.**
+
+First, **an obligation created by meeting another obligation** — the last row
+of the table. The axis sorts sites by how *dispatch* fails, and this one is not
+a dispatch site. Teaching the control-flow graph to look through the wrapper,
+which the analyzer requires, is what removes the wrapper's program point;
+removing its program point is what makes the bug reporter's node lookup fail;
+and that abandons the whole diagnostic tracking chain before any handler runs.
+Nothing forces it: no link error, no unreachable, no warning, no failing test.
+It sits *below* even the warned-about sites, and it exists **only because two
+earlier obligations were met correctly**. The full account is backtick §17.6,
+and that it is written up there rather than here is itself the finding: both
+features had it identically, so it belongs to source-fidelity wrapper nodes as
+such.
+
+Second, **whether the toolchain helps you is a property of how a site is
+spelled, not of what it dispatches on.** A `switch` over a closed enum is
+checked; a chain of `==` tests against the same enum is not; and the two are
+interchangeable at the moment of writing. Of the 34
+`DeclarationName::NameKind` sites, two are `||` chains rather than `switch`
+arms — one choosing which diagnostic an empty lookup gets, one assigning
+code-completion priority — and the second was walked past by six consecutive
+steps. Its cost is not a crash: it is that an editor offers `operator⊞` ahead
+of a data member, forever. Five of the 12 `UnqualifiedIdKind` sites have the
+same spelling and the same absence of help. **An implementer estimating this
+feature from the shape of the enums will under-count by exactly the sites
+somebody once wrote as an `if`.**
+
+**A note on the numbers themselves, because the paper stakes a claim on them.**
+Everything above was re-measured on one branch on one day, and the categories
+sum to the total by construction. The project's *first* accounting — 6 link, 8
+unreachable, 1 warning, 13 silent, 28 in all — reproduces exactly and was
+exactly right for the tree as it then stood; what has moved since is the tree,
+not the arithmetic. But two later figures were recorded and never added up: the
+`-Wswitch` category was correctly raised from 1 to 2 while the total was left
+at 28, and a subsequent count then took 28 as its base, so a figure of "32
+sites" circulated in this project's own notes that was short of its own inputs
+before it was written, and short of the tooling, importer and analyzer sites
+that had already been found. **The lesson is the same one the table teaches:
+a count is only as good as the last thing that was allowed to change it,** and
+a paper should quote a measurement with the date and the branch attached. The
+figures in this section were taken on 2026-09-06 from the branch carrying the
+Unicode feature alone, at commit `c0e07f78e679`, deliberately not from the
+branch that carries both features, where a grep for a *shape* rather than a
+symbol double-counts.
+
+### closed-table-sibling-pattern
+
+Four times in one prototype, opening a closed operator table produced a
+**parallel** implementation rather than a widened one:
+
+| What is closed | The existing thing | What the feature got |
+|---|---|---|
+| `OverloadedOperatorKind`, declaration checking | `CheckOverloadedOperatorDeclaration` | `CheckUserOperatorDeclaration` |
+| `OverloadedOperatorKind`, candidate assembly | `CreateOverloadedBinOp` | `CreateOverloadedUserOp` |
+| `OverloadedOperatorKind`, the AST node | `CXXOperatorCallExpr` | `UserOperatorExpr` |
+| a static spelling table, the matcher API | `hasAnyOperatorName()` | *nothing — a refusal* |
+
+The first three are siblings, and each was written by discovering that the
+existing helper is keyed end to end on the operator kind. The fourth is the
+interesting one, because it is the first where the right answer is **not** a
+sibling: `hasAnyOperatorName()` returns a `StringRef` into a *static* spelling
+table, and a user operator's spelling is a UTF-8 encoding of a code point that
+has to be computed into a buffer, so a matcher over user operators must be
+keyed on the code point and the predicate simply does not apply to it. The
+matcher that does exist says so in its own documentation, which is the honest
+form of the refusal.
+
+Little of this is Clang's in particular. GCC's `ansi_opname` is a fixed-size
+table indexed by tree code, and the move there is the same one:
+`cp_literal_operator_id` already synthesizes an identifier *outside* that table
+for `operator""_suffix`, and a `cp_user_operator_id` does it for `operator⊞`.
+Two compilers, one shape.
+
+**The consequence is the reassurance this proposal most needs to give, and it
+is structural rather than promised.** Every site is parallel and no table the
+existing operators are keyed on is ever widened, so **the relaxation provably
+cannot leak into `operator+`.** Nothing that resolves, mangles, prints,
+analyzes or generates code for a built-in or overloaded operator is touched:
+the new kind is a new arm *beside* the old one everywhere it appears, and a
+program that declares no user operator reaches none of them. That is a
+stronger claim than "it is behind a flag", and it is strongest in the two
+places where the closure has an observable *language* consequence rather than
+a plumbing cost — the name tables and the expression node.
 
 ---
 
