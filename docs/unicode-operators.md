@@ -78,6 +78,8 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Log.** 2026-09-06 — [over-oper-restrictions](open-decisions.md#over-oper-restrictions) answered (a) by the design author. The class-or-enum waiver this entry records is **not the only [over.oper] rule that does not carry over**, and U§7 "Declaring" is owed the full enumeration: of the five restrictions, class-or-enum, no-default-arguments ([over.oper]p8) and not-variadic are all waived, the arity table has no entry to consult, and only the static-member rule is kept — and kept by choice, on the two-spellings reason, not by consequence of the arity rule. The generalization to state: **[over.oper]'s restrictions protect a token whose parse, arity and fixity the grammar already fixed, so a user operator inherits only what its own declared forms need.** Writing owed by [reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md).
 
+**Log.** 2026-09-06 — written. U§7 "Declaring" now enumerates the five restrictions in a table with the generalization stated as a rule, and the kept one has its own entry, [static-member-operators](#static-member-operators). The variadic waiver was re-derived rather than taken from the row: `int operator⊞(int, int, ...)` is accepted, and the ellipsis is inert because operator syntax cannot pass a trailing argument.
+
 ### lexing-and-declarations
 
 **Formerly:** `U3`.
@@ -122,13 +124,29 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Decision.** **Unary prefix** operators are declared with one parameter; prefix vs infix is disambiguated by grammatical position; **no postfix forms**
 
-**Why.** Arity selects the form, as it does for `operator-` today (two parameters / one member parameter = binary; one / none = prefix). Position disambiguates uses: post-operand → infix, operand position → prefix — the same strategy as `-`, `*`, `&`, and [keyword-escape-coexistence](backtick-operator-design.md#keyword-escape-coexistence)'s escape-vs-operator split. Declining postfix eliminates the prefix/postfix ambiguity that forces Swift's whitespace-sensitivity rules; nothing mathematical is lost (postfix notation is rare outside `!`, and `!` is taken). **Priced by U21 (U§13.1), which reframes the decision from "postfix is ambiguous" to "postfix is a pure extension we can decline for free":** a one-token greedy-infix rule does resolve the ambiguity without whitespace sensitivity or backtracking, and a prototype of it works — but it costs the missing-right-operand diagnostic for *every* user of the feature, forces a hand-curated normative token list whose contents move with the dialect, needs a cross-vendor Itanium change (prefix and postfix unaries share an arity, and Clang already mis-mangles `++` where GCC does not), and adds LEWG to the routing via a compiler-known `std::postfix`. Since the rule only ever reinterprets programs v1 rejects, v1 declines it without foreclosing v2.
+**Why.** Two independent claims, and the entry used to run them together. **Arity selects the form at the point of declaration**, as it does for `operator-` today (two operands / one as a member = infix; one / none as a member = prefix). **Grammatical position selects it at the point of use**: post-operand → infix, operand position → prefix — the same strategy as `-`, `*`, `&`, and [keyword-escape-coexistence](backtick-operator-design.md#keyword-escape-coexistence)'s escape-vs-operator split. The second needs no help from the first, which is what makes the Swift whitespace trap avoidable — and it is why a defaulted trailing parameter can make an infix-declared operator prefix-usable without anything being wrong (U§7 "Declaring"). Declining postfix eliminates the prefix/postfix ambiguity that forces Swift's whitespace-sensitivity rules; nothing mathematical is lost (postfix notation is rare outside `!`, and `!` is taken). Since there is no postfix form, there is also no postfix *diagnostic*: `a⊖` is an infix use with its right operand missing, so it is `expected expression` with the caret past the operator, character-identical to `a +;` and the same with or without a space. That is the ordinary quality of error C++ gives for an incomplete binary expression, but it is not the fixity complaint "declining postfix" leads a reader to expect. **Priced by U21 (U§13.1), which reframes the decision from "postfix is ambiguous" to "postfix is a pure extension we can decline for free":** a one-token greedy-infix rule does resolve the ambiguity without whitespace sensitivity or backtracking, and a prototype of it works — but it costs the missing-right-operand diagnostic for *every* user of the feature, forces a hand-curated normative token list whose contents move with the dialect, needs a cross-vendor Itanium change (prefix and postfix unaries share an arity, and Clang already mis-mangles `++` where GCC does not), and adds LEWG to the routing via a compiler-known `std::postfix`. Since the rule only ever reinterprets programs v1 rejects, v1 declines it without foreclosing v2.
 
 **Decided by.** Undecided — the whole log is Proposed until the paper is polled.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
+**Log.** 2026-09-06 — the writing owed by the three answers below is done, by [reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md). The **Why** above now carries the declaration-arity / use-position split and the plain sentence about what a postfix attempt produces; U§7 "Declaring" carries the default-argument waiver and its consequence; and the static-member choice has its own entry, [static-member-operators](#static-member-operators), because it is a decision in its own right rather than a sub-point of this one. The postfix reframing (answer 3) is U§13.1's and is [reconcile-remainder](../ops/completion/steps/reconcile-remainder.md)'s.
+
 **Log.** 2026-09-06 — **three of decision-brief's five answers land here, and none of them changes the decision; they settle what it means.** (1) [prefix-arity-selection](open-decisions.md#prefix-arity-selection) answered (a): [over.oper]p8 stays **waived**, so a user operator may have default arguments and a defaulted trailing parameter makes an infix-declared operator usable in prefix position. This entry's "arity selects the form" therefore runs two claims together and must be split: **arity selects the form at the point of declaration, grammatical position selects it at the point of use**, and the second needs no help from the first — which is what makes the Swift trap avoidable. (2) [over-oper-restrictions](open-decisions.md#over-oper-restrictions) answered (a): static member user operators stay **rejected**, but *not* on this entry's "two parameters, or one as a member" reading. The arity rule as implemented counts operands, so `static S operator⊞(S, S)` has two and would have been accepted; the rejection is a choice, and its reason is that the desugaring equivalence is defined over exactly two spellings, `operator⊞(x, y)` and `x.operator⊞(y)`, and a static member names neither. That choice is owed a decision entry of its own (suggested slug `static-member-operators`). (3) [postfix-operators](open-decisions.md#postfix-operators) answered (a): the decline is **for v1 and explicitly not foreclosed**, argued in U§13.1's *affordable and declined* terms, not the *ambiguous* terms this entry's original rationale used. Also owed here: one plain sentence saying what a postfix attempt actually produces (`expected expression`, character-identical to `a +;`), since "declining postfix" currently implies a diagnostic that does not exist. Decided by the design author; the writing is [reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md)'s and [reconcile-remainder](../ops/completion/steps/reconcile-remainder.md)'s.
+
+### static-member-operators
+
+**Question.** May a user operator be declared as a **static** member function?
+
+**Status.** **Proposed**
+
+**Decision.** **No.** A user *operator function* is a non-member function or a non-static member function; a static member declaration of one is ill-formed.
+
+**Why.** Not because the arity rule excludes it — it does not. The rule counts *operands*, so `static S operator⊞(S, S)` has two of them and would be accepted; a compiler that implements this must reject it deliberately, and the prototype does, with an explicit guard ahead of the arity check reusing the existing "cannot be a static member function" diagnostic. The reason is the desugaring, which is the whole content of the feature: `x ⊞ y` is defined to mean exactly one of **two** spellings — `operator⊞(x, y)` or `x.operator⊞(y)` — and a static member names neither. `x.operator⊞(y)` on a static member is legal C++, but it discards the object expression and passes *one* argument to a two-parameter function, so it does not mean `⊞(x, y)`; and `S::operator⊞(x, y)` would be a third spelling reached by a class-directed lookup rule that nothing in [candidate-assembly](#candidate-assembly) provides. Admitting static members would therefore not extend the equivalence, it would replace it. The C++23 `static operator()` / `static operator[]` precedent does not carry: those operators' meaning is given by the standard, which says how the object expression is treated, whereas a user operator's meaning is *only* the equivalence — there is no other place to say what a static form would do. Nothing is foreclosed: this is a restriction, and a later revision could lift it by writing down the third spelling and the lookup that finds it.
+
+**Decided by.** The design author, 2026-09-06 — [over-oper-restrictions](open-decisions.md#over-oper-restrictions), option (a). The *decision* was never in doubt; what the answer settled is the reason, the previous one having failed inspection.
+
+**Log.** 2026-09-06 — created by [reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md), which owed it. Recorded here rather than as a sub-point of [unary-forms](#unary-forms) because it is a restriction on *declarations* with a rationale of its own, and because the `static operator()` question will be asked of it directly. The superseded reason — "a static member has no implicit object parameter, so it can name neither form" — is false of the implementation as built and must not be reintroduced; see [over-oper-restrictions](../ops/unicode-operators/clang/DEVIATIONS.md#over-oper-restrictions).
 
 ### candidate-assembly
 
@@ -138,13 +156,15 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Status.** **Proposed**
 
-**Decision.** Candidate assembly is that of the **existing overloaded operators**: member candidates + non-member candidates found by unqualified lookup and **ADL**; no built-in candidates
+**Decision.** Candidate assembly is that of the **existing overloaded operators**: member candidates + non-member candidates found by unqualified lookup and **ADL**, ranked as **one** set; no built-in candidates
 
 **Why.** §17.4's rule carries over verbatim and stays normative: `x ⊞ y` must find every `operator⊞` the call `operator⊞(x, y)` would, including by ADL into the operands' associated namespaces — the mechanism that makes `std::cout << x` work is the mechanism that makes a library's `⊗` work on its own types. The GCC parse-time-resolution defect ([gcc-slot-adl](../ops/gcc/DEVIATIONS.md#gcc-slot-adl)) is the cautionary tale: carry the name unresolved into the call machinery. There are no built-in candidates because there are no built-in meanings ([operator-function-id](#operator-function-id)).
 
 **Decided by.** Undecided — the whole log is Proposed until the paper is polled.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+**Log.** 2026-09-06 — three clauses of this decision are now measured rather than asserted, and U§7 "Using" carries them ([reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md)). (1) The three candidate sources are **one set ranked together**: with a member `operator⊘(long)` and a non-member `operator⊘(MN, int)` both visible, `MN{} ⊘ 0` picks the non-member and `MN{} ⊘ 0L` the member, so the wording now says "one set" — a member-first fallback is a different design and this distinguishes them. (2) **ADL is inherited by not writing code**: the callee is a name, never a parsed expression, and it reaches candidate assembly unresolved. (3) **"No built-in candidates" is a non-mechanism** — nothing assembles a built-in set, so there is nothing to suppress. A consequence this entry did not anticipate is recorded in U§7 "Desugaring": since the operands are the selected call's arguments, **which overload wins decides the sequencing**, and that is asked as a CWG question rather than settled here.
 
 ### unicode-feature-gating
 
@@ -210,7 +230,9 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
-**Log.** 2026-09-06 — [dependent-template-operator-id](open-decisions.md#dependent-template-operator-id) answered (c) by the design author, which touches this entry through the U§7.1 argument it rests on. U§7.1's fourth point — the operator-function-id "names the overload set anywhere an unqualified-id does", which is the reason a bare-identifier `⊞` would buy nothing — is **false in one position** and gets reworded rather than defended: `t.template operator⊞<int>(0)` on a dependent object expression is rejected, an inherited limitation of every operator-function-id that is not a fixed `OverloadedOperatorKind` (user-defined literal operators have had it since C++11). The argument for disjointness is unaffected — the reword costs a clause and removes the one sentence in the design an implementer can falsify. Reword owed by [reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md); the upstream report, against the literal-operator reproducer, by [upstream-triage](../ops/completion/steps/upstream-triage.md).
+**Log.** 2026-09-06 — *partly superseded the same day; the entry below corrects the struck clause. Kept, because the reword this entry asks for is the reword that was written.* [dependent-template-operator-id](open-decisions.md#dependent-template-operator-id) answered (c) by the design author, which touches this entry through the U§7.1 argument it rests on. U§7.1's fourth point — the operator-function-id "names the overload set anywhere an unqualified-id does", which is the reason a bare-identifier `⊞` would buy nothing — is **false in one position** and gets reworded rather than defended: `t.template operator⊞<int>(0)` on a dependent object expression is rejected, ~~an inherited limitation of every operator-function-id that is not a fixed `OverloadedOperatorKind` (user-defined literal operators have had it since C++11)~~ — **struck: false, see the next entry**; the limitation is this feature's own. The argument for disjointness is unaffected — the reword costs a clause and removes the one sentence in the design an implementer can falsify. Reword owed by [reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md); the upstream report, against the literal-operator reproducer, by [upstream-triage](../ops/completion/steps/upstream-triage.md).
+
+**Log.** 2026-09-06 — **the reword is written, and the reason above is corrected.** [dependent-template-operator-id](open-decisions.md#dependent-template-operator-id) was re-answered (a), *reword only, no upstream report*: the literal-operator reproducer is **correctly** rejected, because [over.literal]/1 means a literal operator can never be a class member and so no valid program contains the construct. **The gap is therefore this feature's own and is not inherited from anything** — the clause "a limitation user-defined literal operators have had since C++11", which the entry above used, is false and must not be written into U§7.1 or either paper. The accurate reason, and the one U§7.1 now gives, is that Clang's dependent-template storage holds an identifier or a built-in operator kind and nothing else: the same closure-over-a-fixed-operator-table cost as the name tables and candidate assembly (U§8), reaching a third data structure. The disjointness argument is unaffected, which was the point of rewording rather than defending. Also strengthened here: the disjointness claim itself is now verified at **two** Unicode versions — the frozen 17.0 token set against identifier tables labelled 18.0 — which is the version-skew case an implementation actually faces (U§4, U§7.1).
 
 
 ### ucn-spellings
@@ -370,6 +392,20 @@ be rebuilt from unverified bytes by accident. Re-fetched from unicode.org on
 Unicode version is only worth something if the frozen bytes can be shown to be
 the published ones; this is how.
 
+**Two Unicode versions are in play at once, and that separation is the
+design, not an oversight.** The [token-set](#token-set) list is frozen at UCD 17.0.0 **by this
+proposal**; an implementation's *identifier* tables track whatever UCD
+version that implementation has adopted, which in the prototype's host
+compiler is already Unicode 18.0. The two are deliberately not coupled: the
+operator list is normative text that a future revision moves by an explicit
+act, while identifier space rides Unicode's schedule under the grows-only XID
+guarantee. What the skew buys is a stronger check than a single-version one —
+the disjointness the whole design rests on has been verified with the frozen
+17.0 set on one side and an 18.0 identifier set on the other (U§7.1), which
+is the configuration a real implementation actually faces. Had the frozen set
+been defined by a *predicate* rather than enumerated, that check would have
+had nothing stable to run against.
+
 One more consequence of R3c worth stating: since Pattern_Syntax includes the
 ASCII operator characters (`+ < | !` …), R3c does not hand C++ a usable set
 directly. Every ASCII member is already a token, a token prefix, or blocked by
@@ -478,31 +514,156 @@ part of this feature, easier even than backtick.
 **Declaring.** *operator-function-id* grows one production: `operator`
 followed by a user-operator token. Everything downstream is the existing
 machinery: free function or member, any parameter types, templates,
-`constexpr`, `= delete`, the lot. Arity selects the form ([unary-forms](#unary-forms)): two parameters
-(or one, as a member) declare the infix form; one parameter (or none, as a
-member) declares the prefix form — the same convention as `operator-`.
-Unlike the existing operators there is **no class-or-enum parameter
-requirement** ([operator-function-id](#operator-function-id)): that rule protects built-in meanings, and user operators
-have none, so `constexpr int operator⊞(int a, int b) { return a + b; }` is
-legal and `5 ⊞ 7` is 12.
+`constexpr`, `= delete`, the lot — including the motivating case,
+`constexpr int operator⊞(int a, int b) { return a + b; }`, so that `5 ⊞ 7`
+is 12.
 
-**Using.** `x ⊞ y` assembles candidates exactly as an overloaded operator
-does: member candidates from the left operand's class, non-member candidates
-from unqualified lookup *and ADL* on both operands ([candidate-assembly](#candidate-assembly), normative per §17.4's
-rule). There are no built-in candidates. If nothing viable is found, the
-diagnostic is the ordinary no-viable-overload error, naming `operator⊞` — a
-use is never a *lexing* error in a translation unit with the feature on ([lexing-and-declarations](#lexing-and-declarations));
+*Which of [over.oper]'s restrictions carry over.* This design used to name
+one departure from [over.oper], the class-or-enum parameter requirement.
+Building the declaring side showed the departure is nearly total.
+[over.oper] imposes five restrictions on an operator function; a user
+operator inherits exactly one of them, and keeps a second by choice:
+
+| [over.oper] restriction | For a user operator |
+|---|---|
+| at least one class-or-enum parameter | **waived** — the rule protects a token's built-in meaning and a user operator has none ([operator-function-id](#operator-function-id)) |
+| no default arguments ([over.oper]p8) | **waived** — with a consequence, below, that is intended rather than tolerated |
+| not variadic | **waived** — `int operator⊞(int, int, ...)` is accepted; operator syntax cannot pass a trailing argument, so the ellipsis is inert |
+| the arity fixed for the token | **inherited**, and it is the only rule with content: counting the implicit object parameter, one operand declares the prefix form and two the infix form |
+| not a static member | **kept, by choice** — [static-member-operators](#static-member-operators) |
+
+Stated as a rule rather than as a list: **[over.oper]'s restrictions protect
+a token whose parse, arity and fixity the grammar has already fixed. A user
+operator's grammar fixes only its arity, so arity is the only restriction it
+inherits.** Default arguments and variadic parameter lists then fall out as
+*allowed by derivation* rather than by fiat. That matters more than it looks:
+the prototype reached the same place by omission — nothing rejects a default
+argument on a user operator because nothing rejects one on an ordinary
+function — and a waiver arrived at by omission is not a decision until it is
+written down.
+
+*Arity and position are independent claims, and each does its own work.*
+[unary-forms](#unary-forms) says "arity selects the form"; that runs two
+claims together and both are needed. **Arity selects the form at the point of
+declaration. Grammatical position selects it at the point of use.** The
+second needs no help from the first — a use in operand position is prefix and
+a use after a complete operand is infix, and nothing consults a declaration
+to decide, which is what keeps this design clear of the whitespace rule Swift
+needs.
+
+*The consequence of their independence, stated outright.* With [over.oper]p8
+waived, a defaulted trailing parameter makes an **infix-declared operator
+usable in prefix position**. With `constexpr int operator⊟(int a, int b = 1)`
+and nothing else in scope, `⊟5` is well-formed and calls it with `b`
+defaulted. That is intended, not a hole: `⊟5` *is* `operator⊟(5)`, which is
+what the desugaring promises, and filtering candidates by declared arity in
+the parser would break the very equivalence the design rests on
+([candidate-assembly](#candidate-assembly)). Declare a genuine prefix
+overload alongside and `⊠5` is ambiguous — the ordinary ambiguity of `f(int)`
+against `f(int, int = 1)`, reported by overload resolution rather than by
+anything this feature adds. A reader who dislikes dual-fixity operators has a
+conservative option, and it is one diagnostic: reinstate p8 for user
+operators, at the price of making the declaration rules a special case again.
+
+*The one restriction kept is kept as a choice.* A static member user operator
+is rejected — but not because the arity rule excludes it. That rule counts
+*operands*, so `static S operator⊞(S, S)` has two and would be accepted; the
+rejection is an explicit guard that runs first. Its reason is
+[static-member-operators](#static-member-operators): the desugaring
+equivalence is defined over exactly two spellings, `operator⊞(x, y)` and
+`x.operator⊞(y)`, and a static member names neither.
+
+**Using.** `x ⊞ y` assembles candidates the way an overloaded operator does:
+member candidates from the left operand's class, non-member candidates from
+unqualified lookup *and ADL* on both operands ([candidate-assembly](#candidate-assembly), normative per §17.4's
+rule). There are no built-in candidates. Building it turned three parts of
+that sentence from assertions into results, and each is something an
+implementer can check.
+
+- **The three sources are one candidate set, ranked together — not three
+  passes with a fallback.** Measured both ways round, with a member
+  `operator⊘(long) const` and a non-member `operator⊘(MN, int)` both visible:
+  `MN{} ⊘ 0` selects the **non-member** and `MN{} ⊘ 0L` selects the
+  **member**. Neither source is preferred; the better conversion sequence
+  wins, as it does for `operator+`. This is the observable that distinguishes
+  this design from a member-first-then-free-function fallback, and it is why
+  the meaning of `x ⊞ y` is settled by overload resolution rather than by the
+  grammar.
+- **ADL is inherited by *not* writing code, and that is a measured result.**
+  The callee is a name the compiler forms from the token — never an
+  expression the parser resolves. The unqualified lookup is an operator-name
+  lookup (it searches the non-member operator namespace by construction, so
+  it cannot see members), and its result is handed to candidate assembly as
+  an *unresolved* set, so argument-dependent lookup happens inside overload
+  resolution with the arguments in hand. Hidden friends reachable by nothing
+  else, ADL-only namespace members, augmentation of a non-viable
+  ordinary-lookup set, and ADL from the instantiation context in a template
+  all work, with no candidate-assembly code written for any of them. The
+  *member* half is the part that had to be implemented (U§8); the ADL half
+  is what you get by leaving the name alone.
+- **"There are no built-in candidates" is a non-mechanism, not a rule.**
+  Nothing implements it: no built-in candidate set is ever assembled for a
+  user operator, so there is nothing to suppress. `1 ⊠ 2` with nothing
+  declared is `use of undeclared 'operator⊠'`, and `p ⊞ n` on an `int *` and
+  an `int` is the same rather than pointer arithmetic. That is the
+  structural difference from `operator+`, and it is an absence rather than a
+  decision taken in code.
+
+If nothing viable is found, the diagnostic is the ordinary no-viable-overload
+error, naming `operator⊞` — a use is never a *lexing* error in a translation
+unit with the feature on ([lexing-and-declarations](#lexing-and-declarations));
 it is at worst a lookup/overload failure, the same category of error as
 `std::cout << my_type{}` without the `<<` overload.
 
-**Desugaring.** The result *is* the call `operator⊞(x, y)` (member form:
-`x.operator⊞(y)`), so [desugaring-target](backtick-operator-design.md#desugaring-target)'s inheritance list — overload resolution, ADL,
-templates, SFINAE, constexpr, conversions, value categories, codegen — and
-[evaluation-order](backtick-operator-design.md#evaluation-order)'s evaluation-order story carry over without modification.
-The `UserOperatorExpr` wrapper spans the written expression and the `CallExpr`
-inside it begins at the glyph, which is the same division of labour C++20's
-rewritten comparisons already use and is the reason the wrapper exists; see
+**Desugaring.** The result *is* the call `operator⊞(x, y)`, or
+`x.operator⊞(y)` when a member candidate wins, so [desugaring-target](backtick-operator-design.md#desugaring-target)'s inheritance
+list — overload resolution, ADL, templates, SFINAE, constexpr, conversions,
+value categories, codegen — carries over. Two qualifications, both learned by
+building it.
+
+*The desugaring is exact for a non-dependent use and needs a node to survive
+a dependent one.* "Without modification" was too strong. A non-dependent use
+really is an ordinary `CallExpr` or `CXXMemberCallExpr` and nothing else, but
+a use with a type-dependent operand is rebuilt at instantiation, and an
+ordinary call rebuilds under the rules for a *call* — which keeps ADL,
+because ADL is a property of the call, and loses the **member** candidates,
+because being written as an operator is a property of the syntax. So the
+operator-ness of the use has to be recorded in the AST: that is what the
+`UserOperatorExpr` wrapper is for, and U§8 gives the measurement. The wrapper
+spans the written expression while the call inside it begins at the glyph,
+the same division of labour C++20's rewritten comparisons already use; see
 [source-fidelity-node](backtick-operator-design.md#source-fidelity-node) and §17.5 there.
+
+*Evaluation order is the selected call's, which means it depends on which
+overload wins.* [evaluation-order](backtick-operator-design.md#evaluation-order) is inherited, but it cannot be cited wholesale
+here, because it is written for an operator whose callee is an *expression*.
+Stated for this feature, it is a two-case rule, and both cases are exactly
+what the corresponding spelled call gives:
+
+- **Non-member:** the operands are the two arguments, so they are
+  indeterminately sequenced in an unspecified order — `operator⊞(x, y)`.
+  `-Wunsequenced` fires on `arr[i++] ⊩ i++` exactly as it does on the spelled
+  call.
+- **Member:** the left operand is the object expression, which is part of the
+  postfix-expression, and [expr.call] sequences that before every argument —
+  so `x` is sequenced before `y`. Measured in constant evaluation and in the
+  emitted IR, and `-Wunsequenced` is correspondingly silent on the member
+  form and on its `x.operator⊪(y)` spelling.
+
+**So the sequencing of `x ⊞ y` is determined by overload resolution**, which
+is a property no existing C++ operator has: [over.match.oper] gives an
+overloaded built-in-spelled operator the *built-in's* sequencing however it
+was declared, and a user operator has no built-in to borrow sequencing from.
+The design takes the position that the call's rules are the right ones — they
+are what the two spellings the desugaring is defined over actually mean — but
+this is a question for CWG rather than something the design can settle by
+itself, and it is asked in those terms rather than inherited by silence.
+
+One sentence of [evaluation-order](backtick-operator-design.md#evaluation-order) does **not** carry over and must not be
+quoted here: that the callee is sequenced before both operands, so the slot
+is evaluated first. A backtick slot is an expression and can have side
+effects; a Unicode operator's callee is a name, so there is no callee
+subexpression for the rule to sequence. It is a backtick-only observation.
 
 ### 7.1 Operator characters as ordinary names ([operator-identifier-disjointness](#operator-identifier-disjointness))
 
@@ -521,7 +682,17 @@ Verified against the UCD and the historical standards (checks in
   Pattern_Syntax ∩ XID_Start = Pattern_Syntax ∩ XID_Continue = **∅** in
   UCD 17.0. TR31 partitions syntax space from identifier space by
   construction, precisely so parsers can classify a code point without
-  context; the partition holds empirically.
+  context; the partition holds empirically. **It has been checked at two
+  Unicode versions, which is the interesting part**: the audit script derives
+  the ∅ from the published UCD 17.0.0 files, and a second, per-code-point
+  sweep runs the frozen 1,381-member [token-set](#token-set) set against a compiler's *own*
+  identifier tables — which are labelled **Unicode 18.0**, because a compiler
+  updates its XID tables on Unicode's schedule while a frozen operator list
+  does not move. Zero of the 1,381 are XID_Start, zero XID_Continue, zero in
+  the math-identifier profile below, zero in the C++11–C++20 whitelist. So
+  the partition survives exactly the version skew a real implementation
+  lives with, which is a stronger result than the one the design originally
+  claimed and is checked by a unit test rather than argued.
 - **C++11 through C++20** ([charname.allowed], the Annex E whitelist): the
   allowed ranges have **zero overlap with Pattern_Syntax** — all 2,760, not
   just the [token-set](#token-set) blocks. The whitelist was generous about *future* characters
@@ -594,12 +765,30 @@ code point `⊞` were *both* an identifier and an operator:
   overload-resolution territory, for no gain).
 
 **Fourth, the payoff of a both-classes character would be nil, because the
-function-name use already exists.** `operator⊞` *is* the name of the function: `operator⊞(a, b)` calls
-it, `&operator⊞` takes its address, and the operator-function-id names the
-overload set anywhere an unqualified-id does — exactly as `operator+` works
-for existing operators. This is Haskell's `(⊞)` section, spelled the way C++
-has always spelled it. A bare-identifier `⊞` would buy use-site brevity
+function-name use already exists.** `operator⊞` *is* the name of the
+function: `operator⊞(a, b)` calls it, `&operator⊞` takes its address, and the
+operator-function-id names the overload set where an unqualified-id does —
+qualified, member and arrow calls, address-taken bare or `&`-ed, as a
+non-type template argument, target-typed out of an overload set, as a pointer
+to member, in templates, in SFINAE and in a *requires*-expression, all
+without a production change. This is Haskell's `(⊞)` section, spelled the way
+C++ has always spelled it. A bare-identifier `⊞` would buy use-site brevity
 only, at the price of the design's single genuine ambiguity.
+
+**One position is an exception, and it is worth stating rather than
+defending.** As a *dependent* template name after the `template` keyword —
+`t.template operator⊞<int>(0)`, with `t` of dependent type — the
+operator-function-id is rejected. Every non-dependent spelling of the same
+thing works, including `T{}.operator⊞<int>(0)` and a dependent call without
+the disambiguator, and `t.template operator+<int>(0)` compiles, so the gap is
+narrow and specific. **It is this feature's own gap, not an inherited one.**
+Clang's storage for a dependent template name holds an identifier or a
+built-in operator kind and nothing else, and a user operator is neither: it
+is the same closure-over-a-fixed-operator-table cost as the name tables and
+candidate assembly (U§8), reaching a third data structure. Nothing about the
+design forces it — a third alternative in that storage would close it — but
+the qualifier costs a clause and removes the one sentence here an implementer
+can falsify.
 
 Hence [operator-identifier-disjointness](#operator-identifier-disjointness): the sets stay disjoint. TR31 already made the right cut; the
 proposal keeps it.
