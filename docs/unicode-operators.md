@@ -1087,7 +1087,21 @@ steps added sites, and the greps that produce these are recorded in
   And **`TemplateIdAnnotation` has no slot for a code point**, exactly as it
   has none for a literal-operator suffix (upstream's own `// FIXME: Store name
   for literal operator too.`); `operator⊞<T>` resolves through the
-  `TemplateName` instead, so nothing is wrong today.
+  `TemplateName` instead, so nothing is wrong today. Concretely,
+  `TemplateIdAnnotation::Create` is handed `TemplateII = nullptr` and
+  `OpKind = OO_None` for a user operator; the literal operator gets the same
+  null `TemplateII`, since only a plain *identifier* supplies one. And the
+  consequence is upstream's, not this feature's:
+  measured, a resolved template-id names the operator in full
+  (*no matching function for call to `'operator⊞'`*) because the name comes
+  from the resolved `TemplateName`, and an **un**resolved one reports
+  *use of undeclared `'operator⊞'`* with the caret over `operator` only —
+  character-for-character the same shape, and the same truncated caret, as
+  `operator""_sfx` on a stock compiler. So the gap is real, shared with a
+  feature already in the language, and has **no observable cost here at all**,
+  not even the diagnostic-quality cost the FIXME beside it predicts. Filling it
+  is upstream's `FIXME` to fill, and filling it for one kind and not the other
+  would be the odd choice.
 - *The name tables — `DeclarationName`:* overloaded operators are
   `CXXOperatorName` over the closed `OverloadedOperatorKind` enum, indexed
   into tables all over Sema; a user operator needs a new `DeclarationName`

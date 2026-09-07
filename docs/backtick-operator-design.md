@@ -485,9 +485,19 @@ for `>` inside template-argument lists:
    it enables is C++-only: without the guard `-fbacktick` still changed C
    *tokenization*, and a C compilation with the flag on **accepted** the infix
    grammar ([feature-gating](#feature-gating)'s 2026-09-06 log entry).
-6. **Diagnostics.** Empty operator slot (` `` `), unterminated backtick,
-   [nesting-vs-chaining](#nesting-vs-chaining) ambiguity (bare nested backtick). Callee/arity/constexpr errors fall
-   out of `BuildCallExpr`.
+6. **Diagnostics.** Empty operator slot (` `` `) and unterminated backtick.
+   Callee/arity/constexpr errors fall out of `BuildCallExpr`. **There is no
+   third diagnostic**, although this list asked for one: a
+   [nesting-vs-chaining](#nesting-vs-chaining) error for bare nested backtick
+   was written, carried through nine steps, and **never once fired**, because
+   §17.1 settled the question the other way — bare nesting is token-identical
+   to a blessed [chaining-associativity](#chaining-associativity) chain, so
+   there is no input that reaches it. It was removed rather than made to fire;
+   making it fire would need the lookahead §17.1 rejects. That is what agreeing
+   with a design change looks like from inside the implementation, and it is
+   the shape a reviewer should expect: a diagnostic that cannot fire is a claim
+   the grammar has already withdrawn.
+   ([bare-nesting-detection](../ops/DEVIATIONS.md#bare-nesting-detection))
 7. **The analysis layer, which no site list contained.** A new `Expr` node
    owes the CFG builder, the liveness analysis, the environment and the path-
    sensitive engine a rule for looking through it — **six modelling sites** —
@@ -498,6 +508,24 @@ for `>` inside template-argument lists:
    analyzer rather than failing a build. §17.6 has the whole account and the
    rule to give a reviewer; it is repeated here because the omission was in
    *this* list, and this list is what an implementer reads first.
+
+   **The same category, one layer out, is the tooling surface**, and it is the
+   part an implementer is least likely to think of because nothing asks for
+   it. libclang's `MakeCXCursor` has an exhaustive `switch` over `StmtClass`
+   which a new node silently falls out of — mapping every backtick expression
+   to `CXCursor_NotImplemented` — and, like the analyzer's one announced site,
+   the only report is a `-Wswitch` warning in a build log that a `WERROR=OFF`
+   configuration does not stop for. It was emitted from the day the node was
+   added and was still being emitted ten weeks later, across every step of two
+   tracks, including the one that recorded it. ASTMatchers is the other half and is *not* announced at
+   all: a node with no `VariadicDynCastAllOfMatcher` and no `Registry` entry is
+   simply unmatchable by clang-tidy and clang-query, and additionally needs the
+   two `TK_IgnoreUnlessSpelledInSource` traversal sites without which a matcher
+   sees the synthesized call rather than the operands as written. The generated
+   `clang/docs/LibASTMatchersReference.html` is gated by a test and must be
+   regenerated, not hand-edited.
+   ([backtick-ast-matchers](../ops/BACKLOG.md#backtick-ast-matchers),
+   [libclang-cursor-arm](../ops/BACKLOG.md#libclang-cursor-arm))
 8. **The code generator.** `BacktickInfixExpr` needs **four** arms — scalar,
    aggregate, complex and l-value — and the four fallbacks are not alike. Two
    emit a "not yet implemented" diagnostic naming the node, one emits a
@@ -542,6 +570,21 @@ Work items (`clang/lib/Format/`):
   tokens, so a long slot (e.g. a qualified name) is treated as an ordinary
   expression the formatter slightly prefers to keep intact, not a no-break
   zone.
+
+  **Both halves are implemented, and the bump's reach is narrower than the
+  wording suggests.** It decides only *ties*: a qualified name inside the slot
+  and one outside it price identically without it, and the formatter splits
+  whichever it reaches first, which is the slot. With the bump the outer name
+  breaks and the slot survives — measured, and pinned in
+  `FormatTest.BacktickOperatorSlotSplitPenalty`. What it cannot decide is the
+  case where **no** alternative break fits inside the column limit, because
+  clang-format prices an over-long line at 1,000,000 per excess column and any
+  additive bump is three or four orders of magnitude below that. A slot in that
+  geometry is still split. That is a *known limit, pinned by the same test*,
+  and it is not fixable within this decision: a bump large enough to beat the
+  excess-character penalty would make the slot the no-break zone the decision
+  explicitly rejects. The honest statement for a reviewer is that the slot is
+  stickier than its surroundings, not that it is atomic.
 - **Optional style option** (e.g. spacing-in-backtick-operators) — defer
   unless reviewers ask.
 - **Tests** in `unittests/Format/`.
