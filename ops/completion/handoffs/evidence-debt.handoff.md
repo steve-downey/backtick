@@ -6,7 +6,7 @@
   - `backtick-23` — `99d75995e800` (`~/src/llvm/backtick`) — cherry-pick, gated independently
   - `unicode-operators-experiment` — `e88b87bef8b7` (`~/src/llvm/unicode`) — completion priority + its test
   - `unicode-operators-upstream` — `c0e07f78e679` (`~/src/llvm/unicode-upstream`) — byte-identical patch
-  - `unicode-operators` (this repo) — the `docs:` and `ops:` commits listed at the end
+  - `unicode-operators` (this repo) — `4a30bed` (`docs:` — the manifest, `--verify-manifest`, U§4, and §17.4's status-correction block) and `81b5449` (`ops:` — the four rows, the new [`clang-slot-adl`](../../DEVIATIONS.md#clang-slot-adl) row, `REPLAY.md`, the plan and this handoff)
 - **Date / agent:** 2026-09-06.
 - **Closes:** [`lldb-hunk-verification`](../../BACKLOG.md#lldb-hunk-verification),
   [`code-completion-priority`](../../BACKLOG.md#code-completion-priority),
