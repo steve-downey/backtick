@@ -66,6 +66,8 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Recommended doc change.** **RESOLVED** ([nesting-vs-chaining](../docs/backtick-operator-design.md#nesting-vs-chaining) reframed, design §17.1): not a defect. "Bare nesting" is token-identical to blessed [chaining-associativity](../docs/backtick-operator-design.md#chaining-associativity) chaining, so it cannot and should not be diagnosed; parentheses are required to nest, exactly like ordinary operator grouping. The original "parse error" wording was impossible. A heuristic, off-by-default QoI warning is noted for investigation only.
 
+**Log.** 2026-09-07 — [hygiene-parity](completion/steps/hygiene-parity.md) removed the diagnostic this row's resolution had orphaned. `err_backtick_nested_requires_parens` had been carried since `S04`, was never referenced from anywhere but its own definition in `DiagnosticParseKinds.td`, and could not fire: the input it names is the input [chaining-associativity](../docs/backtick-operator-design.md#chaining-associativity) blesses. §6 item 6 of the design doc, which had listed it as one of three diagnostics to write, now says there are two and why the third was withdrawn. Status unchanged — **RESOLVED**, and now resolved in the source as well as on paper.
+
 ### backtick-source-locations
 
 **Formerly:** `DEV-05`. **Status:** **RECONCILED**

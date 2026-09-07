@@ -81,7 +81,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** F23/F24 handoff
 
-**Closed by.** —
+**Closed by.** [hygiene-parity](completion/steps/hygiene-parity.md), 2026-09-07. **Fixed on `backtick-trunk` and `backtick-23`**, following `U17`'s shape for `UserOperatorExpr`: `backtickInfixExpr()` declared in `ASTMatchers.h`, defined in `ASTMatchersInternal.cpp`, registered in `Dynamic/Registry.cpp`, and the two `TK_IgnoreUnlessSpelledInSource` traversal sites in `ASTMatchFinder.cpp` without which a matcher sees the synthesized call instead of the operands. `clang/docs/LibASTMatchersReference.html` **regenerated** with `clang/docs/tools/dump_ast_matchers.py`, not hand-edited, so `clang/test/AST/ast_matchers_updated.test` passes. Two new gtest cases in `ASTMatchersNodeTest.cpp`; `matchesConditionally` runs the static and the dynamic matcher and fails if they disagree, so they cover the `Registry.cpp` entry that clang-query and clang-tidy use. **The `U17` sizing was right, which is worth saying in a track that keeps finding recorded numbers wrong**: 5 production/docs files at +58 and +59 of test predicted, **5 files at +59 and +56 of test** measured — `ASTMatchers.h` +14, `ASTMatchFinder.cpp` +29, `ASTMatchersInternal.cpp` +2, `Registry.cpp` +1, the generated HTML +13. `clang-tidy` itself needed nothing, as the row said. The one asymmetry with the Unicode side is that `BacktickInfixExpr` has a fixed arity, so both traversal sites loop over `getOperand(0)`/`getOperand(1)` rather than a `getNumOperands()`.
 
 ### dead-nesting-diagnostic
 
@@ -91,7 +91,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** S04–S11, R23, R24, F23/F24 handoffs (carried nine times)
 
-**Closed by.** **BL06**
+**Closed by.** [hygiene-parity](completion/steps/hygiene-parity.md), 2026-09-07. **Removed** from `DiagnosticParseKinds.td` on `backtick-trunk` and `backtick-23`. Checked before deleting, as the step required: `git grep` finds the identifier only at its own definition, and no test asserts its text — the closest thing was a stale comment in `clang/test/SemaCXX/backtick-semantics.cpp` calling bare nesting "the current mis-behavior" and promising a future step would cover it, which is exactly backwards and is rewritten. The [nesting-vs-chaining](../docs/backtick-operator-design.md#nesting-vs-chaining) lookahead was **not** implemented and must not be: `int x4 = a `g` b `f` c;` in `clang/test/Parser/backtick-diagnostics.cpp` already pins the form, and it is now annotated to say that it *is* the bare-nesting spelling. §6 item 6 of the design doc, which had listed the diagnostic as one of three to write, says there are two and why the third was withdrawn; [bare-nesting-detection](DEVIATIONS.md#bare-nesting-detection) carries a dated `Log.`
 
 ### slot-split-penalty
 
@@ -101,7 +101,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** S10 handoff, carried through R23/R24
 
-**Closed by.** —
+**Closed by.** [hygiene-parity](completion/steps/hygiene-parity.md), 2026-09-07. **Implemented on `backtick-trunk` and `backtick-23`, and the limit behind it measured and pinned** — the step file allowed either and both were possible. `TokenAnnotator::calculateFormattingInformation` tracks the infix pair and adds a flat 100 to `SplitPenalty` on every slot-interior token (the escape pair is skipped: its slot is one token, so it has no interior). **What the bump can and cannot do was measured, not assumed.** It decides *ties*: a qualified name inside the slot and one outside price identically without it and the formatter splits the slot, and with it the outer name breaks and the slot survives — 25 differing outputs across a before/after sweep of 10 shapes at every `ColumnLimit` from 20 to 90. It cannot touch the case the row worried about, where **no** alternative break fits, because `PenaltyExcessCharacter` is 1,000,000 per column and any additive bump is three or four orders below it; a bump that large would make the slot the no-break zone [format-break-policy](../docs/backtick-operator-design.md#format-break-policy) rejects. Both the fix and the residual limit are pinned in `FormatTest.BacktickOperatorSlotSplitPenalty`; §7's break-policy bullet says both.
 
 ### template-ast-print-test
 
@@ -131,7 +131,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** U17 handoff `:196-200`, `:472-476`
 
-**Closed by.** **BL06**
+**Closed by.** [hygiene-parity](completion/steps/hygiene-parity.md), 2026-09-07. **Fixed on `backtick-trunk` and `backtick-23`** — one line, `case Stmt::BacktickInfixExprClass:` beside `CXXRewrittenBinaryOperatorClass` in `MakeCXCursor`. The row's claim that the warning was live is **re-derived, not quoted**: rebuilding `CXCursor.cpp.o` alone on the pre-fix tree gives exactly one diagnostic, `warning: enumeration value 'BacktickInfixExprClass' not handled in switch [-Wswitch]` at `CXCursor.cpp:175`, and the same rebuild after the fix is silent. It had been live since `S11` added the node on 2026-06-27, was recorded at `U17` on 2026-08-04, and was still live on 2026-09-07 — **ten weeks and every step of two tracks** — which is the datum [expression-node-cost](unicode-operators/clang/DEVIATIONS.md#expression-node-cost)'s *found only by reading the build log* category wanted: on a `WERROR=OFF` build that category is not merely quiet, it is quiet **for months**. Reconciled into `docs/backtick-operator-design.md` §6 item 7's new tooling paragraph.
 
 ## 2. Backtick track — GCC (`backtick`)
 
@@ -237,7 +237,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** U07 handoff
 
-**Closed by.** —
+**Closed by.** [hygiene-parity](completion/steps/hygiene-parity.md), 2026-09-07. **Recorded, not fixed** — it matches upstream's shape, it is latent, and upstream's own `FIXME` is one line above it. Re-derived by reading `Parser::ParseUnqualifiedIdTemplateId` (`clang/lib/Parse/ParseExprCXX.cpp:2371-2394`): `TemplateII` is non-null only for `IK_Identifier`, so `IK_UserOperatorId` and `IK_LiteralOperatorId` alike get `nullptr`, and `OpKind` is explicitly `OO_None` for the user operator. **And the cost is smaller than the row and the source comment beside it both suppose:** measured on the built binary, a resolved template-id names the operator in full (`no matching function for call to 'operator⊞'`), and an unresolved one gives `use of undeclared 'operator⊞'` with the caret over `operator` only — character-for-character the same shape and the same truncated caret as `operator""_sfx` on a stock compiler. So there is not even the diagnostic-quality cost the in-tree `FIXME` predicts. Recorded in `docs/unicode-operators.md` §8's *Parser, declaring an operator* bullet. **Nothing was changed on either Unicode branch**; filling this in for user operators but not for literal operators would be the odd choice.
 
 ### matcher-operator-name
 
