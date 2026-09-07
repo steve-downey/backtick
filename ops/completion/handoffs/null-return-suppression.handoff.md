@@ -6,7 +6,7 @@
   - `unicode-operators-upstream` — `1622a37196c0` (`~/src/llvm/unicode-upstream`) — the `UserOperatorExpr` arm
   - `backtick-trunk` — `c1c6af4dd620` (`~/src/llvm/backtick-trunk`) — the `BacktickInfixExpr` arm
   - `backtick-23` — `ae8a7cf727c3` (`~/src/llvm/backtick`) — cherry-pick of `c1c6af4dd620`, gated independently
-  - `unicode-operators` (this repo) — the `docs:` and `ops:` commits below
+  - `unicode-operators` (this repo) — `6f3bd0d` (`docs:`, §17.6 and U§8) and `7ce82c5` (`ops:`, the ledgers, the backlog, `REPLAY.md`, the plan and this handoff)
 - **Date / agent:** 2026-09-06.
 - **Closes:** [`null-return-suppression`](../../BACKLOG.md#null-return-suppression).
 
