@@ -159,3 +159,35 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 - `TextNodeDumper::VisitMemberExpr` had the mirror-image problem: it prints `*getMemberDecl()`, and `operator<<(raw_ostream&, const NamedDecl&)` *does* take the context's policy, so `-ast-dump` would have escaped member names while printing every other name bare through `VisitNamedDecl`'s policy-free path.
 
 **Recommended doc change.** **RECONCILED** into `docs/backtick-operator-design.md` in three places, on the same day the defect was fixed. §3 gains the decision entry [keyword-escape-printing](../docs/backtick-operator-design.md#keyword-escape-printing) — the whole entry, whose **Why** is the argument for escaping in diagnostics too and whose **Log** lists the sites. §12 gains the **Printing and diagnostics** paragraph, immediately before **Costs.**, which states the rule in two sentences and says why `-ast-dump` goes the other way. The **Costs.** paragraph after it is left as it stands: the printing sites are a cost of the *escape*, and the sentence there already says "tooling must distinguish the two uses" — but a reader who wants the tally now has the decision entry's Log to go to.
+### clang-slot-adl
+
+**Formerly:** none — new slug, 2026-09-06. **Status:** OPEN
+
+**Found by.** [evidence-debt](completion/steps/evidence-debt.md), while writing [template-ast-print-test](BACKLOG.md#template-ast-print-test)'s template round-trip test
+
+**Design section.** [§17.4 ADL is normative](../docs/backtick-operator-design.md#174-adl-is-normative-cross-compiler-note); §6 (the Clang plan)
+
+**What the design said.** §17.4 is normative — *"`x `f` y` performs argument-dependent lookup on the slot exactly as the call `f(x, y)` would … backtick must not silently have weaker lookup than the call it desugars to"* — and its implementation-status paragraph reports the rule as delivered: *"**both compilers now deliver it, and they agree.** Clang carries the slot to `BuildCallExpr` as an `UnresolvedLookupExpr`."*
+
+**What was true.** **Clang has never done ADL on the slot, and the failure is silent in the shape that matters most.** The claim was written from the shape of the code rather than from a measurement, and no test on the backtick track has ever exercised pure ADL: `clang/test/SemaCXX/backtick-semantics.cpp` §2 is headed *"Qualified callee (also exercises the ADL-adjacent case)"* and uses `` tx `ns::g` ty `` — a **qualified** name, which correctly gets no ADL either way, so it passes whatever the slot does. Measured on `backtick-trunk`, and reproduced on `backtick-23`, always against the spelled call as the control:
+
+| Shape | `f(x, y)` | `` x `f` y `` |
+|---|---|---|
+| Hidden friend (`struct S { friend int hf(S, S); };`) | binds `hf` | **error:** *use of undeclared identifier 'hf'* |
+| ADL-only namespace member | binds it | **error**, plus a typo-correction note offering the qualified name |
+| Augmentation: `::pick(double, double)` visible, `ns::pick(U, U)` reachable by ADL | binds **`ns::pick(U, U)`** | binds **`::pick(double, double)`** — **no diagnostic** |
+| Same, with an overload *set* visible rather than one function | binds `ns::pick(U, U)` | binds `::pick(double, double)` — no diagnostic |
+| Inside a template, name visible at definition, ADL candidate declared after it | ADL at the point of instantiation, binds the ADL candidate | slot bound at *definition* time to the visible one; instantiation then fails with *no viable conversion* |
+
+**The third and fourth rows are the serious ones: the operator form calls a different function from the call it is defined to be sugar for, and says nothing.**
+
+**The cause is one line, and it is the same one GCC had.** `Parser::ParseRHSOfBinaryExpression` parses the slot with `BacktickOp = ParseExpression()` (`clang/lib/Parse/ParseExpr.cpp`), so a bare identifier reaches `Sema::ActOnIdExpression` with `HasTrailingLParen = false`. `Sema::UseArgumentDependentLookup` (`SemaExpr.cpp:3269`) opens with `if (!HasTrailingLParen) return false;` — ADL is off before any other test runs — and an empty lookup with no trailing `(` goes to `DiagnoseEmptyLookup` rather than to an ADL-enabled `UnresolvedLookupExpr`. By the time `Sema::ActOnBacktickOperator` hands `Op` to `BuildCallExpr`, the name is already resolved. This is [gcc-slot-adl](gcc/DEVIATIONS.md#gcc-slot-adl) *verbatim* — "the backtick slot was parsed as a standalone assignment-expression … the slot arrived as a resolved `FUNCTION_DECL`" — on the compiler that ledger row records as the one already getting it right.
+
+**The control that makes this a design finding and not just a bug.** The **Unicode** feature, in the same compiler and on the same machine, is correct: `s ⊞ s` finds a hidden friend, and `u ⊞ u` picks the ADL candidate over a visible `operator⊞(double, double)`. Its slot never becomes an expression — `Sema::CreateOverloadedUserOp` does its own `LookupOperatorName` and hands an unresolved set to candidate assembly ([infix-parse-cost](unicode-operators/clang/DEVIATIONS.md#infix-parse-cost) measured exactly this). **Two features, one compiler, one difference: whether the slot reaches the call builder unresolved.** That is the same sentence §17.4 already draws from GCC's two attempts, now with a within-compiler control.
+
+**Recommended doc change, and the fix it implies.** §17.4's implementation-status paragraph must not ship as it stands — it is the one paragraph in the design that an implementer can falsify in four lines. Two possibilities, and they are not equivalent:
+
+1. **Fix it** and keep the paragraph. The slot has to reach `BuildCallExpr` unresolved when it is a bare unqualified-id — GCC's `perform_koenig_lookup` shape, or Clang's own `ActOnIdExpression(..., HasTrailingLParen=true)` where the trailing-paren flag is really standing in for *"this is a callee"*. Note that this interacts with [type-name-slot](../docs/backtick-operator-design.md#type-name-slot): `TryParseBacktickTypeSlot` already special-cases the slot before `ParseExpression`, so there is a place for a bare-name arm to go, and the qualified / member-access / arbitrary-expression slots must keep getting no ADL, exactly as the equivalent calls do not.
+2. **Reword** §17.4 to say the rule is normative and Clang does not yet meet it. Cheap, but it gives up the strongest cross-compiler claim in the section, and it makes `x `f` y` mean something other than `f(x, y)` in a program a reader can write.
+
+Either way the sentence *"both compilers now deliver it, and they agree"* is false today, and both papers inherit it. A fix also needs the test the track never had: pure ADL, hidden friend, and augmentation-beats-ordinary-lookup, each diffed against the spelled call — the third is the one that fails **silently** and so is the one a regression will slip through.

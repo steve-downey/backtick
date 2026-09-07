@@ -111,7 +111,17 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** S11 handoff
 
-**Closed by.** **BL06**
+**Closed by.** [evidence-debt](completion/steps/evidence-debt.md), 2026-09-06. `clang/test/AST/backtick-template-print.cpp` on both backtick branches: five shapes, each printed as pattern *and* as instantiation, since `-ast-print` prints instantiated class-template member bodies. **The hole was real and the new file is what sees it.** With `TransformBacktickInfixExpr` altered to return the inner expression instead of rebuilding the wrapper, the new test fails and the pre-existing `clang/test/Parser/backtick-ast-print.cpp` still **passes** — the patterns keep printing `` a `add` b `` while every instantiation reverts to `add(a, b)`, `mk(a, b)`, `f(a, b)` and `Pair2(a, b)`. Explicit return types throughout, per [auto-return-round-trip](#auto-return-round-trip). The file says in a comment that it does **not** cover lookup in the slot; see [clang-slot-adl](#clang-slot-adl), which it turned up.
+
+### clang-slot-adl
+
+**Formerly:** none — new slug, 2026-09-06. **Severity:** **P1**.
+
+**Item.** **Clang does no argument-dependent lookup on the backtick slot, and in the worst shape it says nothing about it.** [§17.4](../docs/backtick-operator-design.md#174-adl-is-normative-cross-compiler-note) is normative — the slot must get the same ADL as the call it desugars to — and reports the rule as delivered by both compilers. It is not delivered by Clang. A hidden friend in the slot is *use of undeclared identifier*; worse, when an ordinary-lookup candidate is visible and a better ADL candidate exists, `` u `pick` u `` **binds the ordinary one and `pick(u, u)` binds the ADL one, with no diagnostic** — the operator form calls a different function from the call it is defined to be sugar for. Cause: the slot is parsed with `ParseExpression()`, so `Sema::UseArgumentDependentLookup` sees `HasTrailingLParen = false` and returns false on its first line. This is [gcc-slot-adl](gcc/DEVIATIONS.md#gcc-slot-adl) on the other compiler; the **Unicode** feature in the same build is correct, because its slot never becomes an expression. Full measurements, the mechanism, and the fix-or-reword options are in [clang-slot-adl](DEVIATIONS.md#clang-slot-adl).
+
+**Where.** [evidence-debt](completion/steps/evidence-debt.md), 2026-09-06 — found while writing [template-ast-print-test](#template-ast-print-test)'s test. Missed until now because no test on the track ever tried pure ADL: `clang/test/SemaCXX/backtick-semantics.cpp` §2 announces the ADL case and then uses a **qualified** name, which correctly gets no ADL whatever the slot does.
+
+**Closed by.** **— (unowned).** Not this step's to fix: the choice between fixing the slot and rewording §17.4 is the author's, and a fix is a parser change on `backtick-trunk`, `backtick-23` and `unicode-operators-experiment`. Both papers inherit the false sentence, so it gates [backtick-paper](completion/steps/backtick-paper.md).
 
 ### libclang-cursor-arm
 
@@ -205,17 +215,19 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** U06 handoff; REPLAY row
 
-**Closed by.** **BL07**
+**Closed by.** [evidence-debt](completion/steps/evidence-debt.md), 2026-09-06. **Compiled, on both Unicode branches, and the caveat is retired.** `lldbPluginExpressionParserClang` built to a linked static library on each: the experiment branch in `~/src/llvm/build-cir-scratch` (BL04's CIR tree, reconfigured with `lldb` added to `LLVM_ENABLE_PROJECTS` rather than standing up a second one), the upstream branch in a fresh `~/src/llvm/build-lldb-scratch-upstream`, because the two branches sit on different upstream bases and 367 files differ under `lldb/` alone — a compile on one is not evidence for the other. `ClangASTSource.cpp` is the same bytes on both. Both builds `EXIT=0` with **zero diagnostics of any kind**, which is the load-bearing part: the switch the hunk joins is exhaustive over `DeclarationName::NameKind`, so a missing or misplaced case is a `-Wswitch` warning and there is none.
 
 ### code-completion-priority
 
 **Formerly:** `B17`. **Severity:** P2.
 
-**Item.** **`SemaCodeComplete.cpp:1061`'s completion-priority grouping was never updated.** Left alone by U06, U07, U08, U09, U11 and U16 in turn. Completion after an infix user operator is a reachable state. The reason it kept being deferred is that priorities are not printed — but results *are* priority-sorted (`CodeCompleteConsumer.cpp:645`), so an ordering-based test is the observable.
+**Item.** **`SemaCodeComplete.cpp:1061`'s completion-priority grouping was never updated.** Left alone by U06, U07, U08, U09, U11 and U16 in turn. Completion after an infix user operator is a reachable state. The reason it kept being deferred is that priorities are not printed.
+
+**Correction, 2026-09-06.** The rest of that sentence — *"but results are priority-sorted (`CodeCompleteConsumer.cpp:645`), so an ordering-based test is the observable"* — **is wrong, and following it wastes an afternoon.** The `std::stable_sort` at that line sorts by `clang::operator<(const CodeCompletionResult &, ...)`, which compares the results' *names* with `compare_insensitive` and never reads `Priority` at all. There is no ordering to observe. The real observable is that **`c-index-test` prints the priority**, in parentheses at the end of each result line (`… (35)`, `… (80)`), so the number can be asserted directly instead of through a proxy for it; `clang/test/CodeCompletion/` already has four tests driven by `c-index-test`, so this needs no new machinery.
 
 **Where.** U08–U16 handoffs (carried six times)
 
-**Closed by.** **BL07**
+**Closed by.** [evidence-debt](completion/steps/evidence-debt.md), 2026-09-06. **Fixed on both Unicode branches** — one `||` adding `DeclarationName::CXXUserOperatorName` to the chain — with `clang/test/CodeCompletion/unicode-operator-priority.cpp` asserting the priorities directly. Verified in both directions: on the pre-fix binary the two member user operators print `(35)`, grouped with the data members, and the test fails on exactly those two `CHECK` lines; after, they print `(80)` beside `operator+`. The file also pins the data members at `(35)`, so a change that demoted every member rather than the operators would fail too.
 
 ### template-id-code-point
 
@@ -255,7 +267,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Where.** U02 handoff
 
-**Closed by.** **BL07**
+**Closed by.** [evidence-debt](completion/steps/evidence-debt.md), 2026-09-06. **[`docs/ucd-17.0.0.sha256`](../docs/ucd-17.0.0.sha256)**, in `sha256sum` check format so `sha256sum -c` reads it, carrying each input's version-pinned URL, publication date and size as comments; plus a `--verify-manifest` mode in [`docs/pattern-syntax-audit.py`](../docs/pattern-syntax-audit.py) that `--emit-header` now implies, so a header cannot be regenerated from unverified bytes without the explicit `--no-verify-manifest`. **The reproducibility claim is checked rather than asserted:** the five files were re-fetched from unicode.org on 2026-09-06, all five hashes recorded from that fetch, and the regenerated `UnicodeOperatorCharSets.h` is **byte-identical** to the one committed on both Unicode branches (`sha256 52ccbd15e26b…`). Refusal was tested too — a one-comment-line edit to `PropList.txt` aborts the run with zero bytes on stdout.
 
 ### confusable-spellings
 
@@ -495,6 +507,12 @@ here as a suspicion; it is now three measured defects including a double
 destructor. If the two ever compete for one agent, [unicode-analyzer-sites](#unicode-analyzer-sites) is the more urgent.
 [clangir-unicode-arms](#clangir-unicode-arms) goes with it — the same class of unknown, though a smaller one than this
 file first claimed.
+
+**[clang-slot-adl](#clang-slot-adl) is added 2026-09-06 and outranks everything still open on this scale.**
+It is the only row where the prototype silently computes a different answer
+from the program it claims to be sugar for, and the paper sentence it
+falsifies is a *normative* one. It was not on this list at any earlier point
+because nobody had run the measurement; it took four lines.
 
 **[increment-decrement-mangling](#increment-decrement-mangling)** is independent of everything and should go upstream on its own; it
 can run at any time.

@@ -1066,3 +1066,63 @@ so they must report at both settings.
 
 Cost: **1 production file, +13/−0; 1 test file, +49/−12.** Both branches gate
 green.
+
+## evidence-debt — the completion priority, and the hunk no compiler had seen
+
+Classification: **`upstream replay` — one line of production, one test file,
+and both landed on `unicode-operators-upstream` as they stand.**
+
+| Site | Experiment | Upstream |
+|---|---|---|
+| `Sema/SemaCodeComplete.cpp` `getDeclPriority`, the `DC->isRecord()` arm | ✔ | ✔ (byte-identical `||` line) |
+| `test/CodeCompletion/unicode-operator-priority.cpp` | ✔ | ✔ (byte-identical) |
+
+The arm adds `DeclarationName::CXXUserOperatorName` to a chain that already
+names `CXXOperatorName`, `CXXLiteralOperatorName` and
+`CXXConversionFunctionName`, all of which exist on clean `main`. It carries
+**no backtick dependency**: nothing in the hunk or the test mentions backtick,
+and the test's RUN line passes only `-funicode-operators`.
+
+**The standing `grep -i backtick` check needs restating, because as written it
+now returns hits that are not this feature's.** `git diff
+upstream/main..unicode-operators-upstream | grep -ic backtick` gives **6** as
+of 2026-09-06 — and every one is upstream's own drift, because `upstream/main`
+has moved ahead of the branch base (`72417eb739e5` when this was written) and
+a two-dot diff carries that drift in the same direction as the feature. The
+six are a shell-quoting local named `arg_has_backtick` in
+`lldb/source/Interpreter/Options.cpp` and five lines about Markdown code
+fences in `llvm/docs/SphinxQuickstartTemplate.md`. **Grep the branch's own
+commits instead:** `git log -p upstream/main..unicode-operators-upstream |
+grep -ic backtick` is **0** across all 19 of them, which is the invariant U20
+actually established. Fetching upstream will keep moving the first number and
+never the second, so a later agent who runs the two-dot form and finds hits
+has found a fetch, not a regression.
+
+**The one thing a replay must not inherit is the reason this took six steps
+to do.** The row that carried it said the observable was that completion
+results are priority-sorted, so ordering could stand in for priority. **That
+is false**: the `std::stable_sort` in `PrintingCodeCompleteConsumer` uses
+`clang::operator<(const CodeCompletionResult &, …)`, which compares *names*
+with `compare_insensitive` and never looks at `Priority`. Priority is not
+observable through `-code-completion-at` at all. It **is** observable through
+`c-index-test`, which prints it in parentheses at the end of each result line,
+and that is what the test asserts — `(80)` for the two member user operators,
+`(35)` for the data members beside them. A replay that rewrites the test
+against `-code-completion-at` will produce a file that passes with and without
+the fix.
+
+**`lldb` is not a replay row and is recorded here only to retire a caveat.**
+`lldb/source/Plugins/ExpressionParser/Clang/ClangASTSource.cpp:125`'s
+`case DeclarationName::CXXUserOperatorName:` — landed in `U06` commit
+`9e4042cc2c76`, and until now the only hunk in the feature that no compiler
+had ever seen — **now compiles on both branches**, `lldbPluginExpressionParserClang`
+linking with zero diagnostics in each. The two "compile-unverified" caveats
+in this file (`U06`'s row and the later restatement) are therefore spent; the
+hunk is ordinary `upstream replay`, and the switch it joins is exhaustive, so
+a replay that drops it is a `-Wswitch` warning rather than a silent loss.
+Each branch was built in its own tree — `~/src/llvm/build-cir-scratch` for the
+experiment branch, a fresh `~/src/llvm/build-lldb-scratch-upstream` for the
+upstream one — because the two sit on different upstream bases and 367 files
+differ under `lldb/` between them, so one compile is not evidence for the
+other even though `ClangASTSource.cpp` itself is byte-identical.
+
