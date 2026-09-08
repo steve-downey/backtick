@@ -23,12 +23,22 @@ Clang backtick S00–S12, GCC backtick G01–G10, and Clang Unicode U00–U21
 not merely planned). Treat that step machinery as a completed record unless a
 *new* step is added to a `PLAN.md`.
 
-**Live work is in `ops/completion/PLAN.md`** — 16 steps, named by slug, nothing checked.
+**Live work is in `ops/completion/PLAN.md`** — 18 steps, named by slug.
 **That is where an agent picks up work.** It supersedes `ops/backlog/PLAN.md`
 (BL01–BL04 green; BL05–BL07 absorbed) and covers *all* remaining work in one
 plan: the 31 open `BNN` rows in `ops/BACKLOG.md`, the 29 unreconciled rows
 across the three DEVIATIONS ledgers, the 7 open design decisions, and the two
 papers.
+
+**Everything in it is done except one question, and the question is the
+author's.** Both papers are written and both build. The last unchecked step is
+`settle-paper-rows`, which fixed two of the four rows the backtick paper's own
+gate opened and put the other two — one question, seen from two compilers — to
+the author as the sixth page of `docs/open-decisions.md`. Its box stays
+unchecked until that is answered, per the ground rule that a `Decide` step ends
+by asking. **An agent arriving with no other instruction should not go looking
+for work in it**: read the answer if there is one, write it up, and tick the
+box. There is nothing else outstanding in `ops/`.
 
 Steps are **named by slug, never numbered** — the checklist's ordinals are
 reading order and shift when a step is inserted; the slug is the identity and
@@ -105,9 +115,14 @@ and a Status-log row so base-commit changes are not lost.
   it. Open *design* questions are not in it; §6 indexes those.
 - `ops/SLUGS.md` — the map from every retired serial number to its slug, both
   directions, and the record of what was left numbered on purpose.
-- `ops/completion/PLAN.md` — the completion track (16 steps, named by slug), which schedules
+- `ops/completion/PLAN.md` — the completion track (18 steps, named by slug), which schedules
   and gates **everything** still outstanding: defects, reconciliation,
-  decisions and the papers. The only plan with unchecked steps.
+  decisions and the papers. The only plan with an unchecked step, and it has
+  exactly one, blocked on the author.
+- `docs/open-decisions.md` — the single record of the questions that need the
+  author and of the rulings already given. Five are answered; the sixth,
+  `escape-name-positions`, is open and is the only thing the completion plan
+  is waiting on.
 - `ops/backlog/PLAN.md` — the defect-fix track (BL01–BL07). Superseded;
   BL01–BL04's Status rows and handoffs are the record of four closed defects.
 - `ops/AGENT_PROTOCOL.md` — the one-step-per-agent execution loop. **Read it

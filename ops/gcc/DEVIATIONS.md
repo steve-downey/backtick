@@ -153,7 +153,7 @@ rewritten. [`ops/SLUGS.md`](../SLUGS.md) is the whole map.
 
 ### escape-alias-name-parity
 
-**Formerly:** none — new slug, 2026-09-07. **Status:** **OPEN**
+**Formerly:** none — new slug, 2026-09-07. **Status:** **OPEN — the author's**, folded into [escape-name-positions](../../docs/open-decisions.md#escape-name-positions)
 
 **Found by.** [backtick-paper](../completion/steps/backtick-paper.md), probing the escape's grammatical coverage in both compilers.
 
@@ -173,9 +173,13 @@ Every other position the two were probed in agrees — both accept declarator-id
 
 **Recommended doc change.** §17.8's *one place* becomes two, with both named and both marked as gaps. The paper's implementation-experience section already lists both, as the whole list of programs the compilers treat differently under the flag; keep the two in one place so the list stays checkable.
 
+**Corrected 2026-09-07** by [settle-paper-rows](../completion/steps/settle-paper-rows.md), which probed nineteen name positions in both compilers rather than the eight this row was written from. **It is three programs, not one.** Clang alone accepts an *alias-declaration* name, an *alias-template* name and a *concept* name; GCC rejects all three. One cause, and the row's diagnosis was right as far as it went: Clang parses all three through `ParseUnqualifiedId`, where the escape arm lives, and GCC parses them through `cp_parser_identifier`, which requires a bare `CPP_NAME` token. The corrected list is in [§12](../../docs/backtick-operator-design.md#12-coexistence-with-backtick-keyword-escaped-identifiers)'s table.
+
+**Reconciled where it is a fact; open where it is a question, 2026-09-07.** The fact — three programs, one cause — is **RECONCILED into [§17.8](../../docs/backtick-operator-design.md#178-which-of-this-is-clangs-alone-and-why)**, the paragraph beginning *"Keep that separate from the places where the two implementations genuinely disagree"*, which now reads *two kinds, and four programs*. **The direction of the fix is not this row's to choose and is not a parity question on its own.** §12's decided position list contains no alias-declaration name, so Clang's acceptance is as far outside the decided set as GCC's rejection is behind it, and which way the two are brought together is part of [escape-name-positions](../DEVIATIONS.md#escape-name-positions). Priced there, in both directions, as the sixth question of [`docs/open-decisions.md`](../../docs/open-decisions.md#escape-name-positions). **Do not fix this by reflex in either compiler before that is answered.**
+
 ### escape-diagnostic-spelling
 
-**Formerly:** none — new slug, 2026-09-07. **Status:** **OPEN**
+**Formerly:** none — new slug, 2026-09-07. **Status:** **FIXED and RECONCILED**
 
 **Found by.** [backtick-paper](../completion/steps/backtick-paper.md), measuring the question [clang-paper-truth](../completion/handoffs/clang-paper-truth.handoff.md) left open under *"The GCC side has no counterpart to the escape's printing question … nobody owns it."*
 
@@ -193,3 +197,9 @@ GCC's note names the entity with a spelling no program can contain, which is the
 **Cross-compiler note.** Not a difference in accepted programs — both compile the same file — so it belongs beside [gcc-wrapper-parity](#gcc-wrapper-parity) rather than beside the two acceptance gaps. It is one `%D`-formatting decision deep in GCC's diagnostic printer and nothing in the design prevents it; the reason it was not done is that nobody had measured it. Now measured.
 
 **Recommended doc change.** [keyword-escape-printing](../../docs/backtick-operator-design.md#keyword-escape-printing) should record that the ruling is delivered by one compiler, the way [§17.3](../../docs/backtick-operator-design.md#173-type-name-in-the-operator-slot-type-name-slot) records single-compiler evidence for the type slot. The paper says so in one clause and does not claim it of both.
+
+**Fixed and reconciled** by [settle-paper-rows](../completion/steps/settle-paper-rows.md), 2026-09-07, on the GCC `backtick` branch — the ruling was ratified, so what was left was an implementer's question and not the author's. The condition is one `-fbacktick` already guarantees: a *declaration* can be named by a keyword only if it was escaped, because `grokdeclarator` rejects the bare declarator-id. `dump_decl_name` (`gcc/cp/error.cc`), GCC's one funnel for the name of a declaration, prints `` `kw` `` on that condition. Verified on four surfaces that name an entity — an argument note, a member reference, *cannot be used as a function*, and *no matching function for call to*.
+
+**The fix was wrong on its first build, in exactly the way this branch's previous commit warns about, and the second one is the interesting part.** `cp_parser_error_1` hands a *keyword token* to `%qE` as though it were a name — with a comment in the source saying that is what it is doing — so the funnel escaped it too, and `void new (int, int);`, a program containing no backtick at all, began reporting its error against a backticked spelling. The parser now says, for the length of that one call, that what it has in hand is a raw token (`cp_printing_raw_token`, `gcc/cp/cp-tree.h`). **This is GCC's version of the split Clang draws by diagnostic argument kind**, and it is one guard where Clang needed six sites. `g++.dg/backtick/escape-diag.C` pins both halves: the escaped spelling, and the two backtick-free diagnostics that must not change.
+
+**Reconciled into** §3 [keyword-escape-printing](../../docs/backtick-operator-design.md#keyword-escape-printing)'s **`Log.`, the 2026-09-07 entry beginning *"GCC now delivers the diagnostic half too"***, which records the general fact the two implementations share — the escape keeps no trace of how it was written, so an implementation must decide which printing surfaces name an entity — and into [§17.8](../../docs/backtick-operator-design.md#178-which-of-this-is-clangs-alone-and-why), the closing paragraph, which is the paper-facing version and now says the divergence lasted one day.
