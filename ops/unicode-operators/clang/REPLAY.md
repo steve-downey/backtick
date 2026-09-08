@@ -1389,3 +1389,170 @@ there. `check-clang`'s self-format glob is `clang/lib/Format/**`,
 rather than quoted — and `clang/lib/AST/` is not in it, so the step at ~81/970
 was never in play; this merge touches no file in that glob at all. Same
 disposition as the three inherited hits M2 and unicode-branch-maintenance left.
+
+## escape-name-sweep-forward-port — the fifth backtick merge, also never replayed
+
+`unicode-operators-experiment` @ `5fd79178d2a7` is a **merge commit** bringing
+the one commit `backtick-trunk` had gained since
+[escape-positions-forward-port](#escape-positions-forward-port--the-fourth-backtick-merge-also-never-replayed):
+
+| Commit | What |
+|---|---|
+| `bd8790f9d0ef` | escape-name-sweep — the escape in a qualified type name and in a type keyword: five parser arms, plus `ConsumeBacktickEscape` reporting the escape's extent and dropping its unconditional `PP.EnterToken` for the `AnnotateScopeToken` idiom |
+
+Classification, as for [M1](#m1--the-backtick-merge-which-is-never-replayed),
+[M2](#m2--the-second-backtick-merge-also-never-replayed),
+[unicode-branch-maintenance](#unicode-branch-maintenance--the-third-backtick-merge-also-never-replayed)
+and
+[escape-positions-forward-port](#escape-positions-forward-port--the-fourth-backtick-merge-also-never-replayed):
+**backtick dependency — unreplayable by design.** `unicode-operators-upstream`
+did not receive it and must never receive it.
+
+**It changes no row's classification, and the arithmetic says so four times.**
+The merge delta is **7 files, +268/−14** — *exactly* the incoming commit's own
+totals — **all 14 deleted lines are backtick text**, none matching
+`user_operator`, `UserOperator`, `UserInfix`, `unicode` or `⊞`, and **five of
+the seven merged files are byte-identical to `backtick-trunk`**
+(`Parser.h`, `ParseDecl.cpp`, `Parser.cpp` and both test files). The two that
+differ, `ParseExprCXX.cpp` and `ParseTentative.cpp`, are exactly the two
+carrying Unicode arms.
+
+```
+git diff --shortstat bd8790f9d0ef..5fd79178d2a7      → 121 files, +7701/−57
+git diff -U0 bd8790f9d0ef..5fd79178d2a7 | grep -c '^@@'  → 221
+```
+
+**Identical to the last two merges' 121 / +7701−57 / 221.** **Note the `-U0`.**
+The previous handoff quotes *"221 hunks"* in running prose without it, and at
+git's default `-U3` the same diff reads **207**; the full ladder on
+`14f6373ccc7d..e09b559d631c` is **U0 221, U1 213, U2 208, U3 207, U5 204**.
+Both readings are stable and reproduce on the earlier merge's own commits, so
+nothing moved — but a replay comparing numbers must compare flags too.
+
+§1's `awk` contamination recipe over `bd8790f9d0ef..unicode-operators-experiment`
+hits the **same** six production files it always has — `OperatorPrecedence.h`,
+`OperatorPrecedence.cpp`, `ParseExpr.cpp`, `Format/Format.cpp`,
+`Format/FormatToken.h`, `Format/TokenAnnotator.cpp` — plus `SemaOverload.cpp`'s
+doc-comment cross-reference, `BugReporterVisitors.cpp`, the four comment-only
+entries (`Options.td`, `test/Lexer/backtick-c-mode.c`, `CIRGenExprScalar.cpp`,
+`Analysis/CFG.cpp`) and the test files. **No new production file.**
+
+### The predicted conflict did not happen, and "same file" was read as "same function"
+
+The merge was expected to conflict in **`isCXXDeclarationSpecifier`'s switch**,
+resolved *keep both, backtick after Unicode*. There was no conflict anywhere.
+The prediction traces to
+[escape-positions-forward-port](#escape-positions-forward-port--the-fourth-backtick-merge-also-never-replayed)'s
+note that *"`isCXXDeclarationSpecifier`'s `tok::backtick` predicate and the
+Unicode arm both in `ParseTentative.cpp`"* were verified present — which says
+the same **file**, not the same **function**:
+
+| Side | Function | Line |
+|---|---|---|
+| Unicode | `Parser::TryParseOperatorId` — `case tok::user_operator:` | 831 |
+| backtick | `Parser::isCXXDeclarationSpecifier` — the `tok::backtick` arm | 1093 |
+
+**`isCXXDeclarationSpecifier` carries no Unicode arm at all.** The Unicode
+feature's only change to `ParseTentative.cpp` is the *operator-function-id* arm
+in `TryParseOperatorId`, 260 lines and one function away, which the escape work
+never approaches. Same at smaller scale in `ParseExprCXX.cpp`: the incoming hunk
+is in `ParseOptionalCXXScopeSpecifier` at line 396, this branch's nearest at
+line 292.
+
+This is the second consecutive merge whose predicted collision was imaginary,
+and both times one command would have settled it before the sentence was
+written: `git diff --numstat <backtick-tip-at-last-merge> <unicode-head> --
+<file>`. The general form, unchanged and now twice-confirmed: *the two features
+share a token and a precedence level, not a name representation* — `prec::UserInfix`,
+`ParseExpr.cpp` and clang-format are the whole coupling, and §1 already says so.
+
+### The fold guard survived, and it was proven a fourth time rather than read
+
+`Parser::isFoldOperator` still reads
+
+```cpp
+  return Level > prec::Unknown && Level != prec::Conditional &&
+         Level != prec::Spaceship && Level != prec::UserInfix;
+```
+
+— through a merge that rewrote five parser arms and the escape's annotation
+machinery. **Verified by deleting the clause and rebuilding**, for the reason
+the standing warning at the top of this file gives: it fails silently. Without
+it, `clang/test/Parser/unicode-operator-precedence.cpp` fails **on line 322
+only**, the right fold `(N ⊞ ...)`:
+
+```
+error: 'err-error' diagnostics expected but not seen:
+  Line 322 (directive at :323): expected expression
+error: 'err-error' diagnostics seen but not expected:
+  Line 322: expected ')'
+  Line 322: expression contains unexpanded parameter pack 'N'
+error: 'err-note' diagnostics seen but not expected:
+  Line 322: to match this '('
+4 errors generated.
+```
+
+**Four stanzas, exactly as the last merge corrected the record to say**, with
+`4 errors generated.` as the tail. The left fold on line 320 errors for an
+unrelated reason and does not pin the guard. The clause was restored, `clang`
+rebuilt, the file passes, and `git status` is clean. **Fourth independent
+confirmation that only the right fold pins it.**
+
+### The hazard the last merge opened is closed by this one
+
+[escape-positions-forward-port](#escape-positions-forward-port--the-fourth-backtick-merge-also-never-replayed)
+recorded [`escape-in-qualified-type-name`](../../DEVIATIONS.md#escape-in-qualified-type-name)
+— Clang refusing an escape as the name of a qualified *type-specifier* where GCC
+accepted it. `bd8790f9d0ef` fixes it, and this merge carries the fix. Re-run on
+the merged branch, `ops/probes/escape-positions.sh` reads **79/79 clang, 79/79
+gcc**, with the qualified category at **25/25** where Clang took 13 before.
+`ops/probes/escape-errors.sh` is `EXIT=0` over 23 programs × 2 compilers, all
+diagnosing and stopping under `timeout` — including `undeclared-qual-type`,
+which **hung Clang indefinitely** before the fix's fourth arm and which no
+`-verify` test could have caught, a test that does not terminate not being a
+test that fails.
+
+Both readings are byte-for-byte `escape-name-sweep`'s "after" column on
+`backtick-trunk`, which is the control that matters for the replay story: **the
+backtick feature behaves on this branch exactly as on the branch it was gated
+on.** This is the first forward-port able to *run* the probes rather than
+rewrite them, `ops/probes/` having landed with the commit being merged.
+
+### Formatting: clean, and the inherited hits are simply out of frame
+
+`git-clang-format --diff --commit e09b559d631c` with the **in-tree**
+`clang-format` reports *"clang-format did not modify any files"* — the first
+of the five merges to report nothing. That is not a fix: the inherited region in
+`BacktickInfixExpr::getOperand` lives in `clang/lib/AST/Expr.cpp` and the
+`ASTMatchersNodeTest.cpp` one in `clang/unittests/ASTMatchers/`, and this merge
+touches neither, so both are outside the diff being checked. They are still on
+the branch and still `backtick-trunk`'s to fix. `check-clang`'s self-format glob
+— `clang/lib/Format/**`, `include/clang/Format/*.h`, `tools/clang-format/*.cpp`,
+`unittests/Format/*.{cpp,h}`, re-read out of `clang/lib/Format/CMakeLists.txt`
+rather than quoted — contains **no file this merge touches**, so the abort at
+~81/970 was never in play.
+
+### Gate: green on the fourth run, and the three before it are the machine
+
+`check-clang` **`EXIT=0`, 54190 discovered / 48302 passed / 0 failed**, XFAIL
+27, unsupported 5855, skipped 6, 213.49 s — **exactly the Baselines row, delta
+0**, because `escape-name-sweep`'s thirty-odd cases went into two lit files this
+branch already had and lit discovers files, not cases.
+
+Getting there cost three runs to
+[`inotify-watch-budget`](../../BACKLOG.md#inotify-watch-budget), which is back
+at its worst recorded level: `cloud-drive-dae` holding **523,732 of 524,288**
+watches. Runs 1–3 failed 4, 2 and 2 `DirectoryWatcherTest` cases, **a different
+subset each time**; run 4 failed none. Confirmed environmental by signature
+(`No space left on device : inotify_add_watch()` is the kernel refusing a watch,
+not a timeout), by control (the pristine `~/src/llvm/build-main` binary failed
+**all eight** standalone at that hoard level, and passed 8/8 minutes later at a
+slightly lower one) and by variance (a real defect fails the same test every
+time). **Nothing was filtered and nothing was budgeted**, and across all four
+runs the number of non-`DirectoryWatcherTest` failures is **zero**, with
+discovered pinned at 54190 throughout.
+
+This changes no classification. It is recorded because a replay on a machine
+with a watch hoard will see it, and because the cheap diagnosis — measure the
+hoard, then run the pristine binary at that moment — is what separates it from a
+diff in about a minute.
