@@ -9,6 +9,11 @@ author:
     email: <sdowney@gmail.com>
 toc: true
 toc-depth: 2
+# Latin Modern Mono carries none of the mathematical operators, and a
+# missing glyph is only a warning: the PDF builds and silently drops it.
+# This is a pandoc variable, so it reaches the LaTeX preamble without
+# replacing it the way a header-includes key would.
+monofont: "DejaVu Sans Mono"
 ---
 
 ```{=html}
