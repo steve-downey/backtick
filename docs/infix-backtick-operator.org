@@ -369,25 +369,61 @@ GCC pays none of that, because it desugars in the parser and hands the semantic
 layer an ordinary call, and it gets no round-trip either. That's the trade. The
 price belongs to the node, not to infix application.
 
-The other thing worth reporting is that both flag gates leaked. Clang's
-=-fbacktick= reached the language options in a C compilation and made an invalid
-C program compile; GCC's two backtick cases in the parser were fall-through
-targets keyed on the flag instead of the token, so a program containing no
-backtick could be diagnosed differently with the flag on. Both were one line,
-and neither showed up in a diagnostic. The check that finds them is comparing
+The round-trip has the same quiet failure mode, and I only found it by
+re-deriving the claim against a running compiler instead of reading my own
+code. The printer recovers the operands from whatever the semantic layer built,
+so every initialization form it can build for =T(x, y)= needs its own arm. A
+type slot naming an aggregate doesn't construct through a constructor, it
+initializes through parenthesized aggregate initialization, and that's a
+different node. The arm wasn't there, and a missing arm doesn't say so; it
+prints the desugaring, which is a well-formed program that looks fine. With
+deduction it printed a cast applied to a comma expression, which is not even
+the same program. A round-trip claim is a claim about every node the semantic
+layer can build, not about the ones I wrote the printer against.
+
+The other thing worth reporting is that the flag gates leaked, three times.
+Clang's =-fbacktick= reached the language options in a C compilation and made
+an invalid C program compile. GCC's two backtick cases in the parser were
+fall-through targets keyed on the flag instead of the token, so a program
+containing no backtick could be diagnosed differently with the flag on. Then I
+taught GCC to spell an escaped name with its backticks in diagnostics, which is
+the only spelling that name has, and it started spelling a bare keyword that
+way too, in a program with no backtick in it. Same leak, one layer down, and I
+walked into it immediately after fixing the one above. Each was about a line,
+and none showed up in a diagnostic. The check that finds them is comparing
 flag-on output against flag-off output on a program that never mentions the
 feature.
 
 * What isn't done yet
 
 The escape works in both compilers in declarator-ids (variables, functions,
-members, =typedef= names, the qualified name in an out-of-class definition) and
-in expression positions, including after =.=. Neither takes it yet in a
-class-head, an enum name, a namespace name, or a template parameter name, and
-Clang takes it in an alias-declaration where GCC doesn't. The type-name slot is
-Clang-only so far: GCC parses its slot as an expression, so =1 `Pt` 2= is
-rejected there. Those are unwritten parser arms rather than design positions,
-but a paper has to say which arms it has.
+members, =typedef= names, parameters, friends, the qualified name in an
+out-of-class definition), in a non-type template parameter's name and a
+using-declaration's, and in expression positions, including after =.=. Neither
+takes it yet in a class-head, an enum name, an enumerator, a namespace name, a
+type or template template parameter's name, a mem-initializer, or a label.
+Clang takes it in three places GCC doesn't: an alias-declaration, an alias
+template, and a concept.
+
+I probed nineteen positions in each compiler, and the list is less interesting
+than its shape. Nobody drew that boundary. A position works when the compiler
+happens to parse that name through the routine I wrote the escape into, and
+fails when it reads a bare identifier token somewhere else. That's why a
+concept name works in Clang and =struct `union` { };= doesn't work anywhere,
+including in the wording I'm proposing, where it is the example. The three
+positions the two compilers disagree about all come from one cause. Neither
+test suite has a negative test for any of the failing positions, so nothing was
+failing; I found all of it with nineteen one-line programs after the
+implementation was supposedly done.
+
+That matters more than it looks, because the hatch exists so that a future
+keyword doesn't break code that already used the word as a name, and such code
+names types and namespaces as well as variables. =struct module { };= is the
+case, and it's in the failing set.
+
+The type-name slot is Clang-only so far: GCC parses its slot as an expression,
+so =1 `Pt` 2= is rejected there. Those are unwritten parser arms rather than
+design positions, but a paper has to say which arms it has.
 
 * What I am proposing, and what comes next
 

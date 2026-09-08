@@ -594,9 +594,18 @@ source, and a diagnostic names the entity `` `new` `` for the same reason —
 text copied out of a diagnostic should be text the reader can paste back. The
 AST dump is the one view that keeps the bare word, which is the evidence for
 the paragraph above: the name really is an ordinary identifier, and the
-backticks are how it is written. The Clang implementation does this; GCC still
-names such an entity with the bare keyword in its diagnostics, which is a
-divergence to settle rather than a question to answer.
+backticks are how it is written. Both implementations do this, and what it
+cost them is the part worth reporting, because it is the same in both. The
+escape yields the ordinary interned identifier and keeps no record of how it
+was written, so neither compiler can ask a name whether it was escaped; each
+has to decide instead *which printing surfaces name an entity*, and put the
+backticks back only there. Clang draws that line by the kind of argument a
+diagnostic was given, across six sites. GCC draws it in the one routine that
+prints the name of a declaration, plus a guard on the parser's own error
+printer, which hands a raw keyword token to that routine as though it were a
+name. Both got the line wrong once before getting it right, and the symptom
+was the same both times: a program containing no backtick at all had its
+diagnostics change under the flag.
 
 The cost is bounded added context-sensitivity: tentative
 declaration-versus-expression parsing must recognize escapes, and tooling
@@ -834,14 +843,29 @@ reporting: a diff of this shape has very little to catch on.
 ## What is implemented, and what is not
 
 The escape works in both compilers in declarator-id positions — variables,
-functions, class members, `typedef` names, and the qualified name in an
-out-of-class member definition — and in expression positions, including after
-`.`. Neither compiler yet takes it in a *class-head-name*, an *enum-name*, a
-*namespace-name*, or a template parameter name, so the class declaration in
-the wording example below is proposed rather than prototyped. The two
-disagree on one further position, the name in an alias-declaration, which
-Clang accepts and GCC rejects. Nothing in the design turns on any of this;
-they are unwritten parser arms, and no decision is waiting on them.
+functions, class members, `typedef` names, parameters, the name in a `friend`
+declaration, and the qualified name in an out-of-class member definition — in
+a non-type template parameter's name and a using-declaration's, and in
+expression positions, including after `.`. Neither compiler yet takes it in a
+*class-head-name*, an *enum-name*, an enumerator's name, a *namespace-name*, a
+type or template template parameter's name, a *mem-initializer*'s name, or a
+label, so the class declaration in the wording example below is proposed
+rather than prototyped. Clang alone takes it in three further name positions:
+an alias-declaration's, an alias-template's, and a concept's.
+
+Nineteen positions were probed in each compiler, one program apiece, and the
+shape of the answer is worth more than the list. The boundary is not where
+anyone drew it. Every position either compiler accepts is one whose name it
+happens to parse through the routine the escape was written into, and every
+position it rejects reads a bare identifier token somewhere else — which is
+why a concept's name is in and a class-head-name is out, and why the three
+positions the two compilers disagree about have a single cause rather than
+three. Neither test suite contains a negative test for any of the rejected
+positions, so nothing was failing and nothing would have failed. Whether the
+escape should reach the name positions generally is a real question, and the
+answer bears directly on what the hatch is for: the code a future keyword
+breaks names types and namespaces as well as variables, and `struct module
+{ };` is the canonical case.
 
 The type-name slot has single-compiler evidence, said here so a reviewer does
 not have to discover it. Clang implements it: a bare name looked up
@@ -849,17 +873,30 @@ as a type with a deduction placeholder, a qualified one through a tentative
 parse, a builtin through the functional-cast path, all three routed to the
 `T(x, y)` build, which is where CTAD and temporaries come back for free. GCC
 parses its slot as an expression, so `` 1 `Pt` 2 `` is rejected there. With
-the alias-declaration name above, that is the whole list of programs the two
-compilers treat differently under the flag, and both entries are gaps and not
-disagreements: nothing in GCC's parser-level desugaring stands in the way of
-the type arm.
+the three escape positions above, that is the whole list of programs the two
+compilers treat differently under the flag — two causes, four programs — and
+every entry is a gap rather than a disagreement: nothing in GCC's
+parser-level desugaring stands in the way of the type arm.
 
-`-ast-print` round-trips the operator, with two exceptions a reviewer will
-find. A slot naming a builtin whose call Sema rewrites into a node that is no
-longer a call — `` a `__builtin_shufflevector` b `` — prints as the rewrite,
-which is not expressible in the syntax at all. And a type slot that
-constructs an aggregate through parenthesized initialization currently prints
-as `T(x, y)`; that one is an unwritten arm.
+`-ast-print` round-trips the operator, with one exception a reviewer will
+find: a slot naming a builtin whose call the semantic layer rewrites into a
+node that is no longer a call — `` a `__builtin_shufflevector` b `` — prints
+as the rewrite, which is not expressible in the syntax at all.
+
+There was a second exception until this paper's claims were re-derived against
+the compilers rather than read off the implementation, and how it was missed
+is the general point. The printer and the source range both recover the
+operands from whatever the semantic layer built, so each initialization form
+it can produce for `T(x, y)` needs its own arm. A type slot naming an
+aggregate does not construct through a constructor; it initializes through
+parenthesized aggregate initialization and comes back as a different node.
+That arm was missing, and a missing arm is silent — it prints the desugaring,
+which is well-formed and plausible. In the deduced case it was not even
+that: it printed a cast applied to a comma expression, a different program
+altogether. The arm is written now. **A round-trip claim is a claim about
+every node the semantic layer can build, not about the nodes the printer was
+written against**, and it is worth testing that way, because nothing else will
+report it.
 
 ## Argument-dependent lookup, which both implementations got wrong
 

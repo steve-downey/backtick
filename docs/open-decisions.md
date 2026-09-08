@@ -1,11 +1,20 @@
 # Open decisions — the questions that need the author
 
-Five questions that the implementation has **measured** and that no
+Six questions that the implementation has **measured** and that no
 implementer can settle. Each has a page below with the same five parts: the
 question, what was measured, the options, the cost of each, and a
-recommendation. Four of them have implementation consequences, so they gate
-[implement-decisions](../ops/completion/steps/implement-decisions.md); all
-five gate what the two papers may claim.
+recommendation. Four of the first five have implementation consequences, so
+they gate
+[implement-decisions](../ops/completion/steps/implement-decisions.md); all of
+them gate what the two papers may claim.
+
+**Five were asked and answered on 2026-09-06 and are all Unicode-side. The
+sixth, [escape-name-positions](#escape-name-positions), was added on
+2026-09-07, is backtick-side, and is open.** It came out of the paper pass
+rather than out of the implementation tracks, which is why it arrives after
+the answers: re-deriving the paper's claims against the built compilers found
+that the keyword escape's coverage had never been decided by anyone, in either
+compiler.
 
 This file is written by
 [decision-brief](../ops/completion/steps/decision-brief.md). **The answers get
@@ -26,7 +35,7 @@ is a CWG question with no implementation consequence and is written up by
 and U§6's missing sixth worked example is a two-line doc sync owned by
 [reconcile-remainder](../ops/completion/steps/reconcile-remainder.md).
 
-## Summary — answer these five
+## Summary — five answered, one open
 
 | # | Question | Recommendation | Implementation consequence |
 |---|---|---|---|
@@ -35,8 +44,11 @@ and U§6's missing sixth worked example is a two-line doc sync owned by
 | 3 | [fold-over-user-infix](#fold-over-user-infix) — may a user-introduced infix operator be a fold operator? | **No, for both features, in v1.** State it as a decision with its price, not as an omission. | **none** (already the behaviour; a one-line guard to keep) |
 | 4 | [postfix-operators](#postfix-operators) — are postfix user operators declined permanently, or declined for v1? | **Declined for v1, not foreclosed.** Carry U§13.1's four prices and the forward-compatibility result into the paper. | **none** (doc only) |
 | 5 | [dependent-template-operator-id](#dependent-template-operator-id) — `t.template operator⊞<int>(0)` on a dependent object expression is rejected; fix it or reword the word "anywhere"? | **Reword, and do not report.** Answered (c) on 2026-09-06, reopened the same day when the report half's premise turned out to be false, and **settled 2026-09-06 as (a)**: the gap is this feature's own, nothing is pending upstream, and the row closes on the reword alone. The justifying clause is the corrected one; the struck literal-operator clause must not be used. | **none** (one clause in U§7.1, and no report) |
+| 6 | [escape-name-positions](#escape-name-positions) — where may a keyword-escaped identifier appear? The paper's wording says "wherever the grammar uses identifier as a terminal"; neither prototype accepts its own example, `` struct `union` { }; ``. | **Implement the broad set in both compilers** — the boundary was never decided, it fell where two parsers happened to route their names — and until that lands, keep the broad wording but change the example. | **eight Clang call sites behind one helper, on both backtick branches; one `cp_parser_identifier` arm plus its guards in GCC** |
 
-Every recommendation above is "change no code". That is a result rather than
+**Open, 2026-09-07.** Question 6 is the only unanswered one.
+
+Every recommendation among the first five is "change no code". That is a result rather than
 a convenience, and it is worth reading as one: four of these five were logged
 as open because the design document did not *argue* for what the prototype
 does, not because the prototype does the wrong thing. The work they generate
@@ -679,6 +691,172 @@ of this project either — it is a change to upstream LLVM's `clang/AST`, outsid
 any of the five feature branches here.
 
 ---
+---
+
+## escape-name-positions
+
+Ledger entries:
+[escape-name-positions](../ops/DEVIATIONS.md#escape-name-positions) and
+[escape-alias-name-parity](../ops/gcc/DEVIATIONS.md#escape-alias-name-parity),
+opened by [backtick-paper](../ops/completion/steps/backtick-paper.md) and
+measured further by
+[settle-paper-rows](../ops/completion/steps/settle-paper-rows.md). **This is
+the only question on this page that belongs to the backtick feature**, and the
+only one added after the first five were answered. It is the scope half of
+[keyword-escape-coexistence](backtick-operator-design.md#keyword-escape-coexistence),
+whose Status has read *scope open* since it was written.
+
+### The question
+
+**Where may a keyword-escaped identifier appear?** The design's §12 lists four
+positions. The paper's proposed [lex.name] wording says something much wider —
+*"An escaped-identifier may appear wherever the grammar uses identifier as a
+terminal"* — and its example declares a class: `` struct `union` { }; ``.
+Neither prototype accepts that example.
+
+### What was measured
+
+Nineteen positions, one program each, on the built `backtick-trunk` `clang++`
+and on `cc1plus` from `~/bld/gcc/gcc-backtick-build`, flag on, 2026-09-07. The
+full table is in
+[§12](backtick-operator-design.md#12-coexistence-with-backtick-keyword-escaped-identifiers).
+In summary:
+
+- **Both accept** — declarator-ids (variable, function, member, `typedef`
+  name, parameter), the qualified name in an out-of-class member definition, a
+  `friend` declaration's name, a **non-type** template parameter name, a
+  *using-declaration* name, and expression positions including after `.`.
+- **Clang alone accepts** — an *alias-declaration* name, an *alias-template*
+  name, and a *concept* name. Three programs, one cause.
+- **Neither accepts** — a *class-head-name*, an *enum-name* scoped or not, an
+  *enumerator* name, a *namespace-name*, a **type** template parameter name, a
+  **template** template parameter name, a *mem-initializer* name, or a label.
+
+**The boundary was not drawn by anyone.** Every position either compiler
+accepts is one whose name it parses through the routine the escape arm was
+written into — Clang's `ParseUnqualifiedId`, GCC's
+`cp_parser_unqualified_id`. Every position it rejects reads a bare identifier
+token somewhere else. That is why the accepted set contains a *concept* name,
+which nobody proposed, and why it excludes the *class-head-name* the paper's
+own wording uses as its example. The three-program divergence is the same
+fact: Clang routes alias, alias-template and concept names through the
+unqualified-id parse and GCC routes them through `cp_parser_identifier`, which
+requires a bare `CPP_NAME` token.
+
+**Neither test suite has a negative test for any of the rejected positions**,
+so nothing was failing and nothing would have failed. All of this came from
+nineteen one-line programs.
+
+**One fact makes the whole question cheaper than it looks.** In every rejected
+position a backtick is *currently always an error* — there is no well-formed
+program, with or without the flag, in which a backtick appears where a
+class-head-name or a namespace-name is expected. So accepting the escape there
+can only turn ill-formed programs into well-formed ones. This is not the usual
+grammar-extension risk; it is the safest kind of change this project has had
+to price, and it is the opposite of the escape's *existing* risk surface,
+where the flag can change what a backtick-free program means.
+
+### The options
+
+**(a) Narrow the proposal to the implemented set.** The [lex.name] wording
+becomes an enumeration — declarator-ids, using-declarations, expression
+positions — and the example changes to one both prototypes accept.
+
+**(b) Keep the broad wording, ship the narrow prototype, and say which is
+which.** What the paper does today: the wording proposes the general rule,
+and the implementation-experience section names the positions that are not
+prototyped.
+
+**(c) Implement the broad set in both compilers, then say so.** The wording
+stands and the prototypes catch up with it.
+
+**(d) Implement it in Clang only.** The wording stands, and the escape's
+coverage carries *single-compiler evidence* the way the type slot does in
+[§17.3](backtick-operator-design.md#173-type-name-in-the-operator-slot-type-name-slot).
+
+### The cost of each
+
+**(a) Narrow the proposal.**
+*Implementation:* none.
+*Paper:* the wording paragraph and its example.
+*What it costs in substance:* the hatch stops covering the case that motivates
+it. The escape exists so that adopting a future keyword does not break code
+that already used that word as a name — and code that used it as a name used
+it to name **types and namespaces** as well as variables. `struct module { };`
+is the canonical breakage and it is in the rejected set. An escape hatch that
+cannot rescue `struct module { };` answers a narrower question than the one it
+was introduced for. This is the option to reject unless the answer is that the
+narrower hatch is what is wanted.
+
+**(b) Keep the wording, keep the prototype.**
+*Implementation:* none.
+*Paper:* none — it already reads this way.
+*What it costs:* a reviewer who copies the wording's own example into a branch
+finds it rejected. That is a real risk of the choice and the paper should not
+be the place a reviewer discovers it; if this option is taken, the example in
+the wording should be changed to one the prototypes accept and the class-head
+case moved into the implementation-experience section as a named gap. Cheap,
+and it removes the only sharp edge.
+
+**(c) Implement the broad set.**
+*Clang:* the escape arm in `ParseUnqualifiedId` already does the whole job —
+it consumes the three tokens, pushes the following token back with
+`PP.EnterToken` and rewrites `Tok` into an identifier. Lifting that into one
+helper and calling it where a name position tests `Tok.is(tok::identifier)` is
+**one helper plus one call site per position**: `Parser::ParseNamespace` and
+`Parser::ParseClassSpecifier` (`clang/lib/Parse/ParseDeclCXX.cpp`),
+`Parser::ParseEnumSpecifier` for the enum name and again for the enumerator
+list (`ParseDecl.cpp`), `Parser::ParseTypeParameter` and
+`Parser::ParseTemplateTemplateParameter` (`ParseTemplate.cpp`), plus the
+mem-initializer and label parses if those are wanted. Eight sites at most, on
+**both** backtick branches, and each is two lines.
+*GCC:* one arm in `cp_parser_identifier`, which is where all of these names
+are parsed — plus the guard that precedes each of them. `parser.cc` has 87
+`cp_lexer_next_token_is (parser->lexer, CPP_NAME)` guards; only the ones in
+front of the chosen positions matter, but each is a **lookahead predicate**,
+and a lookahead predicate is where this project has twice put the flag in a
+position to change what a backtick-free program means — once in the parser
+(the last commit of [gcc-resync](../ops/completion/steps/gcc-resync.md)) and
+once in the diagnostic printer
+([settle-paper-rows](../ops/completion/steps/settle-paper-rows.md)). The
+*alias-declaration* has a second one: the routing between a using-declaration
+and an alias-declaration peeks two tokens for `identifier =` and must learn to
+peek four for `` ` kw ` = ``.
+*Tests:* a positive case per position per compiler, and the flag-off parity
+check both compilers already have a test for.
+*Gate:* `check-clang` on two branches, `dg.exp=g++.dg/backtick/*.C` on one.
+
+**(d) Clang only.**
+*Implementation:* the Clang half of (c).
+*What it costs:* the divergence table grows instead of shrinking, and the
+paper's *"implemented in two independent compilers"* claim needs a second
+carve-out beside the type slot's. The type slot has a reason for being
+single-compiler — GCC desugars in the parser and never builds a node — and
+this would have none.
+
+### Recommendation
+
+**(c), and until it lands, (b) with the example changed.**
+
+The wording is the proposal and the proposal is right: the escape should reach
+name positions generally, because the code a future keyword breaks names types
+and namespaces, not only variables. What the measurement shows is not that the
+design overclaimed but that **nobody ever decided the boundary** — it fell
+where two parsers happened to route their names, differently in each. That is
+the strongest reason to answer the question rather than to write the accident
+down as a rule.
+
+The price is small and unusually safe: one helper and a handful of call sites
+per compiler, in positions where a backtick is currently always an error, so
+no well-formed program changes meaning. The three-program Clang/GCC divergence
+is not a separate question and should not be answered separately — bringing
+GCC's alias, alias-template and concept names into line falls out of the same
+`cp_parser_identifier` arm.
+
+If the papers go out before any of that is written, take (b) — but change the
+wording's example. `` struct `union` { }; `` is the one line in either paper
+that a reviewer can copy into a prototype and watch fail.
+
 
 ## Answers
 

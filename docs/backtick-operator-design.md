@@ -219,6 +219,8 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
+2026-09-07 — **the open half now has a page rather than a pointer.** "Scope open" had never been more specific than the section it names; the nineteen-position measurement in §12 says what is actually implemented, in both compilers, and shows that the boundary was drawn by which parser routine each name goes through rather than by anyone deciding it. The question, the options and what each costs in each compiler are in [`docs/open-decisions.md`](open-decisions.md#escape-name-positions) ([escape-name-positions](../ops/DEVIATIONS.md#escape-name-positions), [escape-alias-name-parity](../ops/gcc/DEVIATIONS.md#escape-alias-name-parity)). Still **open**, and still the author's.
+
 ### keyword-escape-printing
 
 **Question.** When an entity's name is spelled with a keyword, what does a printer — and what does a diagnostic — call it?
@@ -237,7 +239,9 @@ The switch is `PrintingPolicy::BacktickKeywordEscape`, initialised from `LangOpt
 
 2026-09-06 — ratified by the author. The step that made the change recorded the decision itself, because the fix could not be made without taking one; the ratification settles that the diagnostic half was chosen rather than inherited from the printing half.
 
-**Log.** 2026-09-07 — **the ruling has single-compiler evidence, and a paper must say so the way §17.3 does for the type slot.** Clang delivers both halves. GCC has no `-ast-print`, so the printing half has no counterpart there at all; the diagnostic half does have one, and it diverges — GCC names a keyword-escaped entity `new`, which is the spelling the ruling exists to keep out of diagnostics ([escape-diagnostic-spelling](../ops/gcc/DEVIATIONS.md#escape-diagnostic-spelling), measured 2026-09-07). Nothing in the decision changes; what changes is the claim a paper may make about it.
+**Log.** 2026-09-07 — **the ruling had single-compiler evidence for a day.** Clang delivers both halves. GCC has no `-ast-print`, so the printing half has no counterpart there at all; the diagnostic half did have one, and it diverged — GCC named a keyword-escaped entity `new`, which is the spelling the ruling exists to keep out of diagnostics ([escape-diagnostic-spelling](../ops/gcc/DEVIATIONS.md#escape-diagnostic-spelling), measured 2026-09-07).
+
+2026-09-07 — **GCC now delivers the diagnostic half too**, so the ruling has two-compiler evidence for the half both compilers have. The condition is one the flag already guarantees: under `-fbacktick` a *declaration* can be named by a keyword only if it was escaped, because `grokdeclarator` rejects the bare declarator-id — so `dump_decl_name`, GCC's one funnel for the name of a declaration, prints the escape. **The cost has the same shape on both compilers, and that is worth recording as a general fact about this decision**: the escape yields the ordinary interned identifier and keeps no trace of how it was written, so an implementation must decide *which printing surfaces name an entity*. Clang drew that line by diagnostic argument kind, across six sites. GCC's line is one funnel plus one guard, because its parser hands a raw keyword token to the same funnel as though it were a name — with a comment saying that is what it is doing. Without the guard, `void new (int, int);`, a program containing no backtick at all, reported its error against a backticked spelling the program does not contain. Getting the line wrong in either direction breaks flag-off parity, and both compilers got it wrong once before getting it right. §17.8 carries the paper-facing version.
 
 ### alternative-spellings
 
@@ -726,21 +730,49 @@ keyword (not a valid callee expression), the infix slot wraps an
 expression. Optionally restrict the escape to *actual keywords* for maximal
 disjointness; position alone suffices without it.
 
-**Which positions are implemented, measured 2026-09-07.** The list above is
-the *implemented* list, and it is narrower than "wherever the grammar uses an
-identifier". Both compilers take the escape in declarator-ids — variables,
-functions, class members, `typedef` names, and the qualified name in an
-out-of-class member definition — and in expression positions, including after
-`.`. Neither takes it in a *class-head-name*, an *enum-name*, a
-*namespace-name* or a template parameter name; Clang alone takes it in an
-*alias-declaration* name. Nothing in the disambiguation argument turns on the
-difference: a *class-head-name* is a name position exactly as a declarator-id
-is, and the positions that reject it do so because nobody wrote the arm.
-**But the scope question this decision's Status has always called open is
-exactly this**, and it wants an answer before the paper is polled: an escape
-hatch whose purpose is that a future keyword stops breaking code has to reach
-the positions in which the broken code names things, and `struct module { };`
-is one of them.
+**Which positions are implemented — a measurement, not a decision, and that
+is the finding.** The bullet list above is the *implemented* list and is
+narrower than "wherever the grammar uses an identifier"; it is also, in both
+compilers, wider than itself in places nobody chose. Nineteen positions were
+probed in both compilers on 2026-09-07, one program each:
+
+| Position | Clang | GCC |
+|---|---|---|
+| declarator-id — variable, function, member, `typedef`, parameter | accepts | accepts |
+| qualified name in an out-of-class member definition | accepts | accepts |
+| name in a `friend` declaration | accepts | accepts |
+| **non-type** template parameter name | accepts | accepts |
+| *using-declaration* name | accepts | accepts |
+| primary-expression, and after `.` | accepts | accepts |
+| *alias-declaration* name (`` using `class` = int; ``) | **accepts** | rejects |
+| *alias-template* name | **accepts** | rejects |
+| *concept* name | **accepts** | rejects |
+| *class-head-name* (`` struct `union` { }; ``) | rejects | rejects |
+| *enum-name*, scoped or not | rejects | rejects |
+| *enumerator* name | rejects | rejects |
+| *namespace-name* | rejects | rejects |
+| **type** template parameter name | rejects | rejects |
+| **template** template parameter name | rejects | rejects |
+| *mem-initializer* name | rejects | rejects |
+| label name | rejects | rejects |
+
+Read the table as a map of two parsers rather than of one design. Every
+position either compiler accepts is one whose name it happens to parse
+through the routine the escape arm was written into — Clang's
+`ParseUnqualifiedId`, GCC's `cp_parser_unqualified_id` — and every position
+either rejects is one that reads a bare identifier token somewhere else.
+That is why the accepted set contains a *concept* name, which nobody
+proposed, and why it does not contain a *class-head-name*, which the paper's
+own wording uses as its example. Nothing in the disambiguation argument turns
+on any of it: a *class-head-name* is a name position exactly as a
+declarator-id is.
+
+**So the scope question this decision's Status has always called open is
+exactly this, and it is the author's**: an escape hatch whose purpose is that
+a future keyword stops breaking code has to reach the positions in which the
+broken code names things, and `struct module { };` is one of them. The
+options, with what each costs in each compiler, are in
+[`docs/open-decisions.md`](open-decisions.md#escape-name-positions).
 ([escape-name-positions](../ops/DEVIATIONS.md#escape-name-positions),
 [escape-alias-name-parity](../ops/gcc/DEVIATIONS.md#escape-alias-name-parity))
 
@@ -1449,8 +1481,10 @@ template arm, a tentative parse for qualified template-names, and a
 functional-cast arm for builtins); a parsed type threaded beside the slot's
 expression result; one Sema overload routing to the existing
 construct-expression build path, which is where CTAD, temporaries and
-dependent construction come back for free; and two printer arms to keep
-`-ast-print` round-tripping. No AST change at all — the wrapper's
+dependent construction come back for free; and **three** printer arms to keep
+`-ast-print` round-tripping — two were written and were the count recorded
+here, and the third, for the aggregate shape, was found by re-deriving the
+round-trip claim rather than by any test failing (§17.5). No AST change at all — the wrapper's
 already-qualified inner-shape contract (§6.4) tolerated a non-call inner. The
 general lesson is the one to carry into any design document: **"consequences"
 of a design are not free, and a consequence that contradicts the grammar is
@@ -1582,19 +1616,33 @@ recoverable and the range falls back to the semantic form's, which is the
 operator slot alone; that is the honest answer, and the only requirement on
 it is that asking does not crash.
 
-**Three is the count of the shapes that were recognised, not of the shapes
-Sema can build, and the difference is a live gap.** A type slot naming an
-*aggregate* initializes through parenthesized aggregate initialization, so
-what comes back is a `CXXFunctionalCastExpr` and not a
-`CXXTemporaryObjectExpr`: `` a `Agg` b `` prints as `Agg(a, b)` and reports the
-operator slot as its range, exactly as everything did before the fix
+**Three was the count of the shapes that had been recognised, not of the
+shapes Sema can build, and the difference was a live gap until 2026-09-07.**
+There are **four**. A type slot naming an *aggregate* does not construct
+through a constructor: it initializes through parenthesized aggregate
+initialization, so what comes back is a `CXXFunctionalCastExpr` over a
+`CXXParenListInitExpr` and not a `CXXTemporaryObjectExpr`. Until the fourth
+arm was written, `` a `Agg` b `` printed as `Agg(a, b)` and reported the
+operator slot as its range, exactly as everything did before the range fix
 ([type-slot-aggregate-shape](../ops/DEVIATIONS.md#type-slot-aggregate-shape)).
-The general statement is the one to carry: the wrapper recovers the written
-operands from whatever Sema built, so **every initialization form Sema can
-produce for `T(x, y)` is another arm, and a missing arm is silent** — it
-prints the desugaring, which is well-formed, plausible, and not what was
-written. Same failure mode as the analyzer's seventh site in §17.6, one layer
-up.
+The arm takes the *user-written* initializers, because the full list carries
+defaulted members beyond the two operands, and prints the type from the
+semantic node as the constructor arm does, so one rule covers all four shapes
+and CTAD keeps a single stated exception rather than two adjacent arms
+answering the same question differently.
+
+**The general statement is the one to carry, and the fix does not retire it**:
+the wrapper recovers the written operands from whatever Sema built, so **every
+initialization form Sema can produce for `T(x, y)` is another arm, and a
+missing arm is silent** — it prints the desugaring, which is well-formed,
+plausible, and not what was written. Same failure mode as the analyzer's
+seventh site in §17.6, one layer up. The aggregate case sharpens it: the
+printing was not merely less faithful, it was *wrong*. An aggregate under CTAD
+printed `(aggT<int>)(3, 4)` — a cast applied to a comma expression, which is
+not the program that was written and does not mean what it meant. A round-trip
+claim that is checked only on the shapes the printer was written against is
+not checked at all; the two cases now live in the files that own those two
+claims, and the `-ast-print` test re-parses what it printed.
 
 Before that date the wrapper forwarded both locations to the node it wrapped,
 so this section described an intention rather than a behaviour: `` 1 `add` 2 ``
@@ -1733,27 +1781,44 @@ generator arms is weighing the price of that dividend, not the price of infix
 application.
 
 Keep that separate from the places where the two implementations genuinely
-disagree, which are gaps and not consequences. There are **two**, and this
-section said *one* until 2026-09-07. The first: **GCC has no type-name slot**
-(§17.3), so under the flag `` 1 `Pt` 2 `` compiles in one compiler and not the
-other. The second: the keyword escape in an *alias-declaration* name, which
-Clang accepts and GCC rejects
+disagree, which are gaps and not consequences. This section said *one* until
+2026-09-07, then two; measured position by position it is **two kinds, and
+four programs**. The first kind: **GCC has no type-name slot** (§17.3), so
+under the flag `` 1 `Pt` 2 `` compiles in one compiler and not the other. The
+second: **the keyword escape reaches three name positions in Clang that it
+does not reach in GCC** — an *alias-declaration* name, an *alias-template*
+name, and a *concept* name
 ([escape-alias-name-parity](../ops/gcc/DEVIATIONS.md#escape-alias-name-parity)).
-Both were found by probing rather than by a failing test, which is why a paper
-should carry the list explicitly and keep it short enough to re-check. The
-kind difference belongs in the argument; the two gaps belong in the status
-table.
+Those three are one cause, not three: Clang parses all three names through
+`ParseUnqualifiedId`, where the escape arm lives, and GCC parses them through
+`cp_parser_identifier`, which requires a bare identifier token. Neither
+compiler ever *decided* to accept them, which is why the list belongs beside
+§12's table and inside the open scope question rather than in a status table
+on its own. All of it was found by probing rather than by a failing test —
+neither test suite contains a negative test for any of these positions — which
+is why a paper should carry the list explicitly and keep it short enough to
+re-check. The kind difference belongs in the argument; the gaps belong in the
+status table.
 ([gcc-wrapper-parity](../ops/gcc/DEVIATIONS.md#gcc-wrapper-parity),
 [gcc-type-slot-parity](../ops/gcc/DEVIATIONS.md#gcc-type-slot-parity),
 [escape-alias-name-parity](../ops/gcc/DEVIATIONS.md#escape-alias-name-parity))
 
-**A third divergence is in diagnostics rather than in accepted programs**, and
-it is recorded here so the two kinds are not run together: Clang names a
-keyword-escaped entity `` `new` `` in its diagnostics, per
-[keyword-escape-printing](#keyword-escape-printing), and GCC names it `new` —
-a spelling no program under the flag can contain
+**A divergence in diagnostics rather than in accepted programs was recorded
+here on 2026-09-07 and closed the same day**, and the shape is worth keeping
+even though the divergence is gone: Clang named a keyword-escaped entity
+`` `new` `` in its diagnostics, per
+[keyword-escape-printing](#keyword-escape-printing), and GCC named it `new` —
+a spelling no program under the flag can contain. GCC now prints the escape
+too, from the one funnel that prints the name of a declaration
 ([escape-diagnostic-spelling](../ops/gcc/DEVIATIONS.md#escape-diagnostic-spelling)).
-Both compile the same programs; only the text differs.
+What the fix cost is the interesting part and it is the same on both
+compilers: the escape yields the ordinary interned identifier and carries no
+trace of how it was written, so both had to decide *which printing surfaces
+name an entity* — Clang by diagnostic argument kind, over six sites, and GCC
+in one funnel plus a guard on the parser's own error printer, which hands a
+raw keyword token to that funnel as though it were a name. Get that wrong in
+either direction and the flag changes what a program containing no backtick
+diagnoses; both compilers got it wrong once before getting it right.
 
 ---
 
