@@ -153,7 +153,7 @@ rewritten. [`ops/SLUGS.md`](../SLUGS.md) is the whole map.
 
 ### escape-alias-name-parity
 
-**Formerly:** none — new slug, 2026-09-07. **Status:** **OPEN — the author's**, folded into [escape-name-positions](../../docs/open-decisions.md#escape-name-positions)
+**Formerly:** none — new slug, 2026-09-07. **Status:** **FIXED and RECONCILED**
 
 **Found by.** [backtick-paper](../completion/steps/backtick-paper.md), probing the escape's grammatical coverage in both compilers.
 
@@ -176,6 +176,34 @@ Every other position the two were probed in agrees — both accept declarator-id
 **Corrected 2026-09-07** by [settle-paper-rows](../completion/steps/settle-paper-rows.md), which probed nineteen name positions in both compilers rather than the eight this row was written from. **It is three programs, not one.** Clang alone accepts an *alias-declaration* name, an *alias-template* name and a *concept* name; GCC rejects all three. One cause, and the row's diagnosis was right as far as it went: Clang parses all three through `ParseUnqualifiedId`, where the escape arm lives, and GCC parses them through `cp_parser_identifier`, which requires a bare `CPP_NAME` token. The corrected list is in [§12](../../docs/backtick-operator-design.md#12-coexistence-with-backtick-keyword-escaped-identifiers)'s table.
 
 **Reconciled where it is a fact; open where it is a question, 2026-09-07.** The fact — three programs, one cause — is **RECONCILED into [§17.8](../../docs/backtick-operator-design.md#178-which-of-this-is-clangs-alone-and-why)**, the paragraph beginning *"Keep that separate from the places where the two implementations genuinely disagree"*, which now reads *two kinds, and four programs*. **The direction of the fix is not this row's to choose and is not a parity question on its own.** §12's decided position list contains no alias-declaration name, so Clang's acceptance is as far outside the decided set as GCC's rejection is behind it, and which way the two are brought together is part of [escape-name-positions](../DEVIATIONS.md#escape-name-positions). Priced there, in both directions, as the sixth question of [`docs/open-decisions.md`](../../docs/open-decisions.md#escape-name-positions). **Do not fix this by reflex in either compiler before that is answered.**
+
+**Fixed and reconciled 2026-09-08** by [escape-name-positions](../completion/steps/escape-name-positions.md), which is the step the author's answer generated. The direction is the one the brief said it would be if the answer was (c): GCC comes up to Clang, not the other way round, and it does so out of the same `cp_parser_identifier` arm that gave the other eight positions — which is why this row could not be answered on its own. All three programs (an *alias-declaration* name, an *alias-template* name, a *concept* name) now compile in both compilers; so do the eight positions neither took. The alias half needed one thing the others did not: `cp_parser_alias_declaration` builds its own declarator with `make_id_declarator` rather than going through `cp_parser_direct_declarator`, so it has to carry `backtick_escaped_p` itself or `grokdeclarator` rejects the keyword the escape yields.
+
+**Reconciled into** [§12](../../docs/backtick-operator-design.md#12-coexistence-with-backtick-keyword-escaped-identifiers), the paragraph headed *"Which positions the escape reaches — decided 2026-09-07, and built"* and the seventeen-row table under it, in which this row's three programs are now `accepts / accepts`; and into [§17.8](../../docs/backtick-operator-design.md#178-which-of-this-is-clangs-alone-and-why), the paragraph beginning *"Keep that separate from the places where the two implementations genuinely disagree"*, which loses its second kind and its three programs and gains the one divergence that replaced them ([escape-type-keyword-binding](#escape-type-keyword-binding)).
+
+### escape-type-keyword-binding
+
+**Formerly:** none — new slug, 2026-09-08. **Status:** **OPEN**
+
+**Found by.** [escape-name-positions](../completion/steps/escape-name-positions.md), checking that the newly accepted positions were usable and not merely declarable.
+
+**Design section.** [§12](../../docs/backtick-operator-design.md#12-coexistence-with-backtick-keyword-escaped-identifiers); §3 [keyword-escape-coexistence](../../docs/backtick-operator-design.md#keyword-escape-coexistence)
+
+**What differed.** An escape whose keyword is a **type** keyword. Measured 2026-09-08, flag on, in five positions:
+
+```
+int `int` = 0;                       clang++ accepted   cc1plus  error: 'int `int`' redeclared as different kind of entity
+void `long`();                       clang++ accepted   cc1plus  rejected
+using `int` = char;                  clang++ accepted   cc1plus  rejected
+struct `int` { };                    clang++ accepted   cc1plus  error: using typedef-name 'int' after 'struct'
+template<class T> using `long` = T;  clang++ accepted   cc1plus  error: redeclared as different kind of entity
+```
+
+**This is not caused by the position work and is not new**, which is the reason it is a row rather than a note: the first line is a plain *declarator-id*, the position [§12](../../docs/backtick-operator-design.md#12-coexistence-with-backtick-keyword-escaped-identifiers)'s table has recorded as accepted by both compilers since the escape was first built. The table was measured with `new`, `class`, `union` and `try`, which are pure keywords, and the divergence hid behind that choice for two months.
+
+**Cross-compiler note.** The cause is a GCC representation choice that has nothing to do with the escape: `int` and `long` carry a **global binding to the builtin type** in GCC's name table, so the identifier the escape yields is already bound to something and `grokdeclarator` reports a redeclaration. Clang's keywords carry no binding, so the identifier the escape yields is fresh. Nothing in the design says which is right — but the escape's whole purpose says something: the keywords a future revision is most likely to take are not type keywords, so this is the least valuable corner of the hatch, and it is also the corner where "the escape yields an ordinary identifier" is least true in GCC.
+
+**Recommended doc change.** [§12](../../docs/backtick-operator-design.md#12-coexistence-with-backtick-keyword-escaped-identifiers) states it as the one surviving acceptance divergence, which it now does, and [§17.8](../../docs/backtick-operator-design.md#178-which-of-this-is-clangs-alone-and-why)'s list of programs the two compilers treat differently carries it in place of the three alias/concept programs it replaces. Whether GCC should be made to accept it — and what that costs, since it means shadowing a global binding — is an implementer's question that nobody has priced, and it should not be answered by reflex any more than the alias parity was.
 
 ### escape-diagnostic-spelling
 

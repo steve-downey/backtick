@@ -1,7 +1,17 @@
 # Handoff — settle-paper-rows — the four rows the paper pass opened
 
-- **Status:** **BLOCKED on the author**, and that is the successful outcome for
-  the part that is blocked. **Two of the four rows are fixed, gated and
+- **Status:** **UNBLOCKED and DONE, 2026-09-08.** It was **BLOCKED on the
+  author**, which was the successful outcome for the part that was blocked; the
+  author answered [escape-name-positions](../../../docs/open-decisions.md#escape-name-positions)
+  **(c)** and [escape-name-positions](escape-name-positions.handoff.md) built
+  it, so the two rows below are `FIXED and RECONCILED` and this step's box in
+  [`ops/completion/PLAN.md`](../PLAN.md) is ticked. Read the tick as *"the four
+  rows are settled"*: two by this step, two by the step the question generated.
+  Everything below is as it was written on 2026-09-07 and is not revised —
+  including the price it quotes for option (c), which turned out to cover about
+  half the job. What the other half was is in the later handoff.
+- **Status when written:** **BLOCKED on the author**, and that is the
+  successful outcome for the part that is blocked. **Two of the four rows are fixed, gated and
   reconciled**; the other two are **one question**, priced in both compilers
   and put to the author as
   [escape-name-positions](../../../docs/open-decisions.md#escape-name-positions).
@@ -18,10 +28,11 @@
 - **Closes:** [`type-slot-aggregate-shape`](../../DEVIATIONS.md#type-slot-aggregate-shape)
   and [`escape-diagnostic-spelling`](../../gcc/DEVIATIONS.md#escape-diagnostic-spelling),
   both **FIXED and RECONCILED**.
-- **Leaves open, with the author:**
+- **Left open, with the author, and closed 2026-09-08:**
   [`escape-name-positions`](../../DEVIATIONS.md#escape-name-positions) and
   [`escape-alias-name-parity`](../../gcc/DEVIATIONS.md#escape-alias-name-parity).
-  **They are not two questions.** Answering the first answers the second.
+  **They are not two questions.** Answering the first answered the second, out
+  of the one `cp_parser_identifier` arm this handoff predicted.
 - **Opens:** nothing. No new ledger row, no new backlog row.
 
 ---

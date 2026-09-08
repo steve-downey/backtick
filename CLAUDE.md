@@ -23,22 +23,24 @@ Clang backtick S00–S12, GCC backtick G01–G10, and Clang Unicode U00–U21
 not merely planned). Treat that step machinery as a completed record unless a
 *new* step is added to a `PLAN.md`.
 
-**Live work is in `ops/completion/PLAN.md`** — 18 steps, named by slug.
+**Live work is in `ops/completion/PLAN.md`** — 19 steps, named by slug.
 **That is where an agent picks up work.** It supersedes `ops/backlog/PLAN.md`
 (BL01–BL04 green; BL05–BL07 absorbed) and covers *all* remaining work in one
 plan: the 31 open `BNN` rows in `ops/BACKLOG.md`, the 29 unreconciled rows
 across the three DEVIATIONS ledgers, the 7 open design decisions, and the two
 papers.
 
-**Everything in it is done except one question, and the question is the
-author's.** Both papers are written and both build. The last unchecked step is
-`settle-paper-rows`, which fixed two of the four rows the backtick paper's own
-gate opened and put the other two — one question, seen from two compilers — to
-the author as the sixth page of `docs/open-decisions.md`. Its box stays
-unchecked until that is answered, per the ground rule that a `Decide` step ends
-by asking. **An agent arriving with no other instruction should not go looking
-for work in it**: read the answer if there is one, write it up, and tick the
-box. There is nothing else outstanding in `ops/`.
+**Everything in it is done, and nothing is waiting on the author.** Both
+papers are written and both build; all nineteen boxes are `[x]` or `[—]`, and
+`docs/open-decisions.md` has no open question. The last two steps were the
+backtick paper's own gate finding four claims the built compilers did not
+support: `settle-paper-rows` fixed two and put the other two — one question,
+seen from two compilers — to the author, and `escape-name-positions` built the
+answer, which was to let the keyword escape reach every position the grammar
+writes an identifier in. **An agent arriving with no other instruction should
+not go looking for work in `ops/`.** One deviation row is open and it is an
+implementer's question nobody has priced:
+`ops/gcc/DEVIATIONS.md#escape-type-keyword-binding`.
 
 Steps are **named by slug, never numbered** — the checklist's ordinals are
 reading order and shift when a step is inserted; the slug is the identity and

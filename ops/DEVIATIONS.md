@@ -198,7 +198,7 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 ### escape-name-positions
 
-**Formerly:** none — new slug, 2026-09-07. **Status:** **OPEN**
+**Formerly:** none — new slug, 2026-09-07. **Status:** **ANSWERED, FIXED and RECONCILED**
 
 **Found by.** [backtick-paper](completion/steps/backtick-paper.md), checking the paper's proposed wording against both prototypes.
 
@@ -226,6 +226,13 @@ So the two implementations agree on the escape's coverage everywhere except the 
 **Recommended doc change.** Two questions, and only the first is a defect. (1) §12's position list should say that it is the *implemented* list and that the unimplemented positions are unwritten parser arms, not decisions — nothing in the disambiguation argument turns on them, since a *class-head-name* is a name position exactly as a declarator-id is. (2) The design owes an answer to *what should the escape's coverage be?* An escape hatch whose point is that a future keyword stops breaking code has to cover the positions in which the broken code names things, and `struct module { };` is one of them. Until that is answered, the paper states the implemented set, which [backtick-paper](completion/steps/backtick-paper.md) has done in its *What is implemented, and what is not* section, and keeps the broad wording as the proposal.
 
 **Half reconciled, half the author's, 2026-09-07.** The defect half is **RECONCILED into [§12](../docs/backtick-operator-design.md#12-coexistence-with-backtick-keyword-escaped-identifiers)** — the paragraph headed *"Which positions are implemented — a measurement, not a decision, and that is the finding"* and the nineteen-row table under it, which replaces the eight-row one. The scope half is **the author's and stays OPEN**: the question, four options and what each costs in each compiler are written up as [escape-name-positions](../docs/open-decisions.md#escape-name-positions), the sixth question on that page and the only backtick-side one. [keyword-escape-coexistence](../docs/backtick-operator-design.md#keyword-escape-coexistence)'s Log points at it. **Do not read the §12 reconciliation as an answer** — it records what is implemented, not what should be.
+
+**Answered 2026-09-07; built and reconciled 2026-09-08.** The author answered [escape-name-positions](../docs/open-decisions.md#escape-name-positions) **(c)** — implement the broad set in both compilers — and struck the recommendation's transitional half, because there is no shipped implementation but a GitHub fork and nothing is relying on it. [escape-name-positions](completion/steps/escape-name-positions.md) built it: all nineteen positions are accepted by both compilers, `` struct `union` { }; `` compiles, and [escape-alias-name-parity](gcc/DEVIATIONS.md#escape-alias-name-parity) closed with it out of the same GCC arm, exactly as the brief said it would.
+
+**Two things the brief could not have known, both found by measuring rather than by reading, and both of them cost about as much as the priced work.** (1) **Declaring a name is half a hatch.** The nineteen positions were all *declarations*; taking `` struct `union` { }; `` without `` `union` u; `` delivers a type nothing can name. Fifteen more programs probe the *use* positions — a decl-specifier, a base-specifier, a nested-name-specifier including a *middle* component of one, a template-name being specialized, a using-directive, a type-constraint, a constructor's name — and both compilers now take all fifteen. (2) **A new name position is a new printing surface.** `-ast-print` round-tripping is a paper claim, and enum names, namespace names, template parameter names, labels and nested-name-specifiers all printed the keyword bare, because they reach an identifier without going through `DeclarationName::print` — and because `operator<<(raw_ostream &, DeclarationName)` builds a *default* printing policy, in which the escape is off.
+
+**Reconciled into** [§12](../docs/backtick-operator-design.md#12-coexistence-with-backtick-keyword-escaped-identifiers) — the paragraph headed *"Which positions the escape reaches — decided 2026-09-07, and built"*, the seventeen-row table under it, the *"Declaring a name is half a hatch"* paragraph and the *"What it cost, and where the cost is"* paragraph — and into §3 [keyword-escape-coexistence](../docs/backtick-operator-design.md#keyword-escape-coexistence)'s `Log.`, whose Status stops saying *scope open* after eleven weeks.
+
 
 ### type-slot-aggregate-shape
 
