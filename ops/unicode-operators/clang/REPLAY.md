@@ -1142,3 +1142,118 @@ upstream one — because the two sit on different upstream bases and 367 files
 differ under `lldb/` between them, so one compile is not evidence for the
 other even though `ClangASTSource.cpp` itself is byte-identical.
 
+
+## unicode-branch-maintenance — the third backtick merge, also never replayed
+
+`unicode-operators-experiment` @ `7278a2985659` is a **merge commit** bringing
+the four commits `backtick-trunk` had gained since M2:
+
+| Commit | What |
+|---|---|
+| `c1c6af4dd620` | null-return-suppression — the **backtick** half of the peel |
+| `2b7471f6bc13` | evidence-debt — `test/AST/backtick-template-print.cpp` |
+| `9504b2c1fc51` | clang-slot-adl — `Parser::TryParseBacktickCalleeSlot` |
+| `c0d69702b6d7` | hygiene-parity — the tooling surface, the dead diagnostic, the slot penalty |
+
+Classification, as for [M1](#m1--the-backtick-merge-which-is-never-replayed)
+and [M2](#m2--the-second-backtick-merge-also-never-replayed): **backtick
+dependency — unreplayable by design.** `unicode-operators-upstream` did not
+receive it and must never receive it.
+
+**It changes no row's classification, and this time that is measured rather
+than argued.** The merge is 17 files, **+484/−14**, and *every one of the 14
+deleted lines is backtick text* — the withdrawn `err_backtick_nested_requires_parens`,
+three `// D8:` comments hygiene-parity renamed, the `BacktickOp =
+ParseExpression()` line clang-slot-adl replaces, and four lines of stale test
+prose. **No Unicode line was moved, reworded or removed by any of the seven
+conflict resolutions.**
+
+```
+git diff --shortstat c0d69702b6d7..7278a2985659  → 121 files, +7701/−57
+git diff -U0 c0d69702b6d7..7278a2985659 | grep -c '^@@'  → 221
+```
+
+against M2's 119 files / 217 hunks / +7600−47. The movement is the two new
+backtick test files this branch did not have and hygiene-parity's edits; the
+Unicode side of the diff is unchanged.
+
+**The contamination scan finds nothing new.** §1's `awk` recipe over
+`c0d69702b6d7..7278a2985659` hits the same six production files it always did
+— `OperatorPrecedence.h`, `OperatorPrecedence.cpp`, `ParseExpr.cpp`,
+`Format/Format.cpp`, `Format/FormatToken.h`, `Format/TokenAnnotator.cpp` —
+plus `SemaOverload.cpp`'s doc-comment cross-reference, the test files, and the
+four comment-only entries M2 recorded (`Options.td`, `test/Lexer/backtick-c-mode.c`,
+`CIR/CodeGen/CIRGenExprScalar.cpp`, `Analysis/CFG.cpp`). The one addition,
+`StaticAnalyzer/Core/BugReporterVisitors.cpp`, arrived **before** this merge
+with the branch's own null-return-suppression commit and is already classified
+in [that section](#null-return-suppression--the-seventh-analyzer-site).
+
+### The new hazard: four anchors now carry two arms here and one upstream
+
+`U17` put the Unicode node at exactly the anchors hygiene-parity's backtick
+node wants, which is why four of the seven conflicts were there at all:
+
+| Site | Experiment | Upstream |
+|---|---|---|
+| `ASTMatchers.h` / `ASTMatchersInternal.cpp`, after `cxxRewrittenBinaryOperator` | `userOperatorExpr` **then** `backtickInfixExpr` | `userOperatorExpr` only |
+| `ASTMatchFinder.cpp` — the `Traverse…` override, and the `TK_IgnoreUnlessSpelledInSource` else-if arm | both, Unicode first | `UserOperatorExpr` only |
+| `CXCursor.cpp` `MakeCXCursor`'s case-label run | both labels | `UserOperatorExprClass` only |
+| `ASTMatchersNodeTest.cpp` | `ASTMatchersTestUnicodeOperators` **and** `ASTMatchersTestBacktick` | the Unicode pair only |
+
+**Every Unicode entry in that table is already on `unicode-operators-upstream`
+and is unchanged by this merge** — `U17`'s rows already classify them
+`upstream replay` and nothing here amends them. The note exists because the
+neighbourhood now reads differently on the two branches, exactly the shape
+[BL03](#bl03--useroperatorexpr-in-the-static-analyzer) and
+[null-return-suppression](#null-return-suppression--the-seventh-analyzer-site)
+already warn about: **same change, same semantics, different neighbours.** A
+replay that copies these regions wholesale from the experiment branch carries a
+backtick sibling with it. Copy the `UserOperatorExpr` arm, never the region.
+
+One difference from those two rows: here the shared lead comments were **not**
+rewritten to name both features. `ASTMatchFinder.cpp`'s two Unicode arms keep
+their own comments and the backtick arms keep theirs, because the two are
+separate functions and separate `else if` arms rather than two lines under one
+heading. There is nothing to strip.
+
+### The fold guard survived, and it was proven again rather than read
+
+`Parser::isFoldOperator` on this branch still reads
+
+```cpp
+  return Level > prec::Unknown && Level != prec::Conditional &&
+         Level != prec::Spaceship && Level != prec::UserInfix;
+```
+
+— unchanged through a merge that rewrote 60 lines of `ParseExpr.cpp` around it
+for `TryParseBacktickCalleeSlot`. **Verified by deleting the clause and
+rebuilding**, as M2 did and for the same reason: it fails silently.
+With `&& Level != prec::UserInfix` deleted and `clang` rebuilt,
+`clang/test/Parser/unicode-operator-precedence.cpp` fails, and **on line 322
+only** — the right fold `(N ⊞ ...)`:
+
+```
+error: 'err-error' diagnostics expected but not seen:
+  Line 322 (directive at :323): expected expression
+error: 'err-error' diagnostics seen but not expected:
+  Line 322: expected ')'
+  Line 322: expression contains unexpanded parameter pack 'N'
+```
+
+Character for character what M2 saw. The clause was restored, `clang` rebuilt,
+and the file passes again. **This is the second independent confirmation that
+only the right fold pins the guard**; section 9's left fold at line 320 and
+section 10's backtick twin at line 405 still produce `expected expression`
+without it. A replay that keeps only a left-fold negative test leaves the guard
+unpinned while appearing to cover it.
+
+### One inherited formatting hit, deliberately left
+
+`git-clang-format --diff` with the **in-tree** `clang-format` reports one
+region: the three `matchesConditionally` calls in
+`ASTMatchersTestBacktick.BacktickInfixExprTraversal`. It is **byte-identical to
+`backtick-trunk`**, so it came across unchanged from a commit that gated green
+there, and `clang/unittests/ASTMatchers/` is not in `check-clang`'s self-format
+glob (that is `clang/lib/Format/` and `clang/unittests/Format/`). Reformatting
+it here would make the two branches differ for no gain. Same disposition as
+M2's two inherited hits.
