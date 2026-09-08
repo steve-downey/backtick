@@ -209,7 +209,7 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Question.** Can one backtick token serve both the infix operator and a keyword escape, and what disambiguates them?
 
-**Status.** **Resolved (mechanism); scope open (§10)**
+**Status.** **Resolved (mechanism and scope)**
 
 **Decision.** Coexists with a backtick keyword-escape
 
@@ -220,6 +220,8 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
 2026-09-07 — **the open half now has a page rather than a pointer.** "Scope open" had never been more specific than the section it names; the nineteen-position measurement in §12 says what is actually implemented, in both compilers, and shows that the boundary was drawn by which parser routine each name goes through rather than by anyone deciding it. The question, the options and what each costs in each compiler are in [`docs/open-decisions.md`](open-decisions.md#escape-name-positions) ([escape-name-positions](../ops/DEVIATIONS.md#escape-name-positions), [escape-alias-name-parity](../ops/gcc/DEVIATIONS.md#escape-alias-name-parity)). Still **open**, and still the author's.
+
+2026-09-07 — **answered, and the Status stops saying "scope open" after eleven weeks.** The author took option **(c)**: implement the broad set in both compilers, so the prototypes reach what the [lex.name] wording already proposed — an escaped-identifier may appear wherever the grammar uses `identifier` as a terminal. The transitional half of the recommendation was struck rather than taken, with the reason: *there is no real shipped anything other than a GitHub fork, and no one is relying on anything*, so there was no window to stage the change across and no compatibility argument to make. **The scope question is now the same kind of thing as the mechanism** — a decision with a reason — rather than a boundary two parsers arrived at independently. §12 carries the table, the price, and the one divergence that survives ([escape-type-keyword-binding](../ops/gcc/DEVIATIONS.md#escape-type-keyword-binding), which predates the change and hid behind a choice of test keywords for two months).
 
 ### keyword-escape-printing
 
@@ -730,11 +732,16 @@ keyword (not a valid callee expression), the infix slot wraps an
 expression. Optionally restrict the escape to *actual keywords* for maximal
 disjointness; position alone suffices without it.
 
-**Which positions are implemented — a measurement, not a decision, and that
-is the finding.** The bullet list above is the *implemented* list and is
-narrower than "wherever the grammar uses an identifier"; it is also, in both
-compilers, wider than itself in places nobody chose. Nineteen positions were
-probed in both compilers on 2026-09-07, one program each:
+**Which positions the escape reaches — decided 2026-09-07, built 2026-09-08.** The
+bullet list above is the *disambiguation* rule and was never the coverage
+rule. Coverage was measured on 2026-09-07 and found to be an accident: every
+position either compiler took was one whose name it happened to parse through
+the routine the escape arm was written into, and every position it refused
+read a bare identifier token somewhere else. Nobody had drawn that boundary.
+The author drew it — [escape-name-positions](open-decisions.md#escape-name-positions),
+option (c) — as the [lex.name] wording already proposed: **an
+escaped-identifier may appear wherever the grammar uses `identifier` as a
+terminal**. Both prototypes now do that.
 
 | Position | Clang | GCC |
 |---|---|---|
@@ -744,35 +751,65 @@ probed in both compilers on 2026-09-07, one program each:
 | **non-type** template parameter name | accepts | accepts |
 | *using-declaration* name | accepts | accepts |
 | primary-expression, and after `.` | accepts | accepts |
-| *alias-declaration* name (`` using `class` = int; ``) | **accepts** | rejects |
-| *alias-template* name | **accepts** | rejects |
-| *concept* name | **accepts** | rejects |
-| *class-head-name* (`` struct `union` { }; ``) | rejects | rejects |
-| *enum-name*, scoped or not | rejects | rejects |
-| *enumerator* name | rejects | rejects |
-| *namespace-name* | rejects | rejects |
-| **type** template parameter name | rejects | rejects |
-| **template** template parameter name | rejects | rejects |
-| *mem-initializer* name | rejects | rejects |
-| label name | rejects | rejects |
+| *alias-declaration* name (`` using `class` = int; ``) | accepts | accepts |
+| *alias-template* name | accepts | accepts |
+| *concept* name | accepts | accepts |
+| *class-head-name* (`` struct `union` { }; ``) | accepts | accepts |
+| *enum-name*, scoped or not | accepts | accepts |
+| *enumerator* name | accepts | accepts |
+| *namespace-name* | accepts | accepts |
+| **type** template parameter name | accepts | accepts |
+| **template** template parameter name | accepts | accepts |
+| *mem-initializer* name | accepts | accepts |
+| label name | accepts | accepts |
 
-Read the table as a map of two parsers rather than of one design. Every
-position either compiler accepts is one whose name it happens to parse
-through the routine the escape arm was written into — Clang's
-`ParseUnqualifiedId`, GCC's `cp_parser_unqualified_id` — and every position
-either rejects is one that reads a bare identifier token somewhere else.
-That is why the accepted set contains a *concept* name, which nobody
-proposed, and why it does not contain a *class-head-name*, which the paper's
-own wording uses as its example. Nothing in the disambiguation argument turns
-on any of it: a *class-head-name* is a name position exactly as a
-declarator-id is.
+Seventeen rows, nineteen positions, twenty-three one-line programs; the last
+eight rows were rejected by both compilers before this change and the three
+before them by GCC alone. The change could only ever turn ill-formed programs
+into well-formed ones, because in every one of those positions a backtick was
+*already always an error*, with the flag or without it — the safest shape of
+change this proposal has had to make, and the exact opposite of the escape's
+standing risk, which is that the flag alters a program containing no backtick
+at all.
 
-**So the scope question this decision's Status has always called open is
-exactly this, and it is the author's**: an escape hatch whose purpose is that
-a future keyword stops breaking code has to reach the positions in which the
-broken code names things, and `struct module { };` is one of them. The
-options, with what each costs in each compiler, are in
-[`docs/open-decisions.md`](open-decisions.md#escape-name-positions).
+**Declaring a name is half a hatch; the other half is naming the thing
+again.** The measurement that produced the table above probed only
+declarations, and taking `` struct `union` { }; `` without taking
+`` `union` u; `` would have delivered a type nothing can name. So the *use*
+positions were probed too — fifteen more programs — and they cost about as
+much again: the escape now also stands in a decl-specifier, a base-specifier,
+a mem-initializer's base, a nested-name-specifier — a *middle* component of
+one, not only its last, which is a different parser and the one place that
+speculates — a *template-name* being specialized, a *using-directive*, a
+*type-constraint*, and a constructor's name. Both compilers take all fifteen.
+
+**One divergence survives, and it predates all of this.** GCC rejects an
+escape whose keyword is a *type* keyword — `` int `int` = 0; ``,
+`` using `int` = char; ``, `` struct `int` { }; `` — in every position,
+including the plain declarator-ids the table's first row records both
+compilers as accepting. The cause is not the escape: GCC's `int` and `long`
+carry a global binding to the builtin type, so the identifier the escape
+yields is already bound and `grokdeclarator` reports a redeclaration. Clang's
+keywords carry no such binding and it accepts all of them. The rest of the
+table was measured with keywords that are pure keywords
+([escape-type-keyword-binding](../ops/gcc/DEVIATIONS.md#escape-type-keyword-binding)).
+
+**What it cost, and where the cost is.** One helper plus a name-position call
+site in each parser, which is what the brief priced — and then twice that
+again in the places neither brief anticipated: the *lookahead predicates* that
+decide what they are looking at by the token after a name, which must now step
+over three tokens where they stepped over one, and the *printers*, because a
+new name position is a new printing surface and `-ast-print` round-tripping is
+a claim this proposal makes. `DeclarationName::print` re-escapes; a printer
+that reaches an identifier without going through it does not, and Clang's
+`operator<<(raw_ostream &, DeclarationName)` builds a **default** printing
+policy, in which the escape is off. Enum names, namespace names, template
+parameter names, labels and nested-name-specifiers all printed bare until they
+were routed through a shared helper.
+
+Nothing in the disambiguation argument turns on any of it: a *class-head-name*
+is a name position exactly as a declarator-id is, and the operator still lives
+only in post-operand position.
 ([escape-name-positions](../ops/DEVIATIONS.md#escape-name-positions),
 [escape-alias-name-parity](../ops/gcc/DEVIATIONS.md#escape-alias-name-parity))
 
@@ -1782,26 +1819,34 @@ application.
 
 Keep that separate from the places where the two implementations genuinely
 disagree, which are gaps and not consequences. This section said *one* until
-2026-09-07, then two; measured position by position it is **two kinds, and
-four programs**. The first kind: **GCC has no type-name slot** (§17.3), so
-under the flag `` 1 `Pt` 2 `` compiles in one compiler and not the other. The
-second: **the keyword escape reaches three name positions in Clang that it
-does not reach in GCC** — an *alias-declaration* name, an *alias-template*
-name, and a *concept* name
-([escape-alias-name-parity](../ops/gcc/DEVIATIONS.md#escape-alias-name-parity)).
-Those three are one cause, not three: Clang parses all three names through
-`ParseUnqualifiedId`, where the escape arm lives, and GCC parses them through
-`cp_parser_identifier`, which requires a bare identifier token. Neither
-compiler ever *decided* to accept them, which is why the list belongs beside
-§12's table and inside the open scope question rather than in a status table
-on its own. All of it was found by probing rather than by a failing test —
-neither test suite contains a negative test for any of these positions — which
-is why a paper should carry the list explicitly and keep it short enough to
-re-check. The kind difference belongs in the argument; the gaps belong in the
-status table.
+2026-09-07, then two kinds and four programs on the same day; after
+[escape-name-positions](open-decisions.md#escape-name-positions) was answered
+and built it is **two kinds again, and both are one-liners**. The first:
+**GCC has no type-name slot** (§17.3), so under the flag `` 1 `Pt` 2 ``
+compiles in one compiler and not the other. The second: **GCC rejects an
+escape whose keyword is a *type* keyword** — `` int `int` = 0; `` — because
+`int` and `long` carry a global binding to the builtin type in GCC's name
+table and the identifier the escape yields is therefore already bound, where
+Clang's keywords carry no binding
+([escape-type-keyword-binding](../ops/gcc/DEVIATIONS.md#escape-type-keyword-binding)).
+
+**Both of the entries this paragraph used to carry are gone, and how they went
+is the more useful fact.** The three-program alias/alias-template/concept
+divergence closed because it was never a disagreement: it was one cause —
+Clang parsed those three names through `ParseUnqualifiedId`, where the escape
+arm lived, and GCC through `cp_parser_identifier`, which wanted a bare
+identifier token — and answering the scope question closed all three out of
+one arm. What replaced it was found the same way, by probing rather than by a
+failing test: neither test suite had a negative test for any of these
+positions, and the surviving divergence had been sitting in the *first row* of
+§12's table, hidden behind a choice of test keywords, since the escape was
+built. **A list of divergences is only as good as the programs it was measured
+with.** The kind difference belongs in the argument; the gaps belong in the
+status table, and a paper should keep the list short enough to re-check.
 ([gcc-wrapper-parity](../ops/gcc/DEVIATIONS.md#gcc-wrapper-parity),
 [gcc-type-slot-parity](../ops/gcc/DEVIATIONS.md#gcc-type-slot-parity),
-[escape-alias-name-parity](../ops/gcc/DEVIATIONS.md#escape-alias-name-parity))
+[escape-alias-name-parity](../ops/gcc/DEVIATIONS.md#escape-alias-name-parity),
+[escape-type-keyword-binding](../ops/gcc/DEVIATIONS.md#escape-type-keyword-binding))
 
 **A divergence in diagnostics rather than in accepted programs was recorded
 here on 2026-09-07 and closed the same day**, and the shape is worth keeping

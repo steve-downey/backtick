@@ -195,12 +195,13 @@ corresponding call. The operator is
 left-associative and binds tighter than any other binary operator, looser
 than the unary and postfix operators.
 
-**The keyword escape.** In any position where the grammar expects a name — an
-operand, a primary-expression, a *declarator-id*, after `.`, `->`, or `::` — a
-backtick pair wrapping a keyword denotes an ordinary identifier whose
-spelling is that keyword. It is purely a source-level construct; the
-resulting identifier participates in lookup, mangling, and linkage exactly as
-if the word had never been a keyword.
+**The keyword escape.** In any position where the grammar expects a name — a
+*declarator-id*, a class, enumeration or namespace name, a template
+parameter's name, a label, an operand, after `.`, `->`, or `::` — a backtick
+pair wrapping a keyword denotes an ordinary identifier whose spelling is that
+keyword. It is purely a source-level construct; the resulting identifier
+participates in lookup, mangling, and linkage exactly as if the word had
+never been a keyword.
 
 Both are gated during the proposal period behind a compiler flag; a
 standardized form drops the gate. Flag off, every existing valid program is
@@ -756,9 +757,11 @@ escaped-identifier:
     ` keyword `
 ```
 
-yielding an identifier token whose spelling is the keyword. It appears where
-the grammar wants a name — *primary-expression*, *declarator-id*,
-*id-expression* after `.`, `->`, `::` — and nowhere else.
+yielding an identifier token whose spelling is the keyword. It may appear
+wherever the grammar uses *identifier* as a terminal, and nowhere else: a
+*declarator-id*, a *class-head-name*, an *enum-name*, an enumerator, a
+*namespace-name*, a template parameter's name, a *mem-initializer*, a label,
+a *primary-expression*, an *id-expression* after `.`, `->` or `::`.
 
 ## The same-delimiter problem
 
@@ -842,41 +845,63 @@ reporting: a diff of this shape has very little to catch on.
 
 ## What is implemented, and what is not
 
-The escape works in both compilers in declarator-id positions — variables,
-functions, class members, `typedef` names, parameters, the name in a `friend`
-declaration, and the qualified name in an out-of-class member definition — in
-a non-type template parameter's name and a using-declaration's, and in
-expression positions, including after `.`. Neither compiler yet takes it in a
-*class-head-name*, an *enum-name*, an enumerator's name, a *namespace-name*, a
-type or template template parameter's name, a *mem-initializer*'s name, or a
-label, so the class declaration in the wording example below is proposed
-rather than prototyped. Clang alone takes it in three further name positions:
-an alias-declaration's, an alias-template's, and a concept's.
+The escape works in both compilers in every name position the wording admits:
+declarator-ids (variables, functions, class members, `typedef` names,
+parameters, a `friend` declaration's name, the qualified name in an
+out-of-class member definition), a *class-head-name*, an *enum-name* scoped or
+unscoped, an enumerator, a *namespace-name*, a type, non-type or template
+template parameter's name, an *alias-declaration*'s name, an alias template's,
+a concept's, a *mem-initializer*, a label, and expression positions including
+after `.`. Declaring a name is only half of a hatch, so the positions that
+*use* one are prototyped too: a type-specifier, a base-specifier, a
+nested-name-specifier, a *template-name* being specialized, a using-directive,
+a type-constraint, and a constructor's name.
 
-Nineteen positions were probed in each compiler, one program apiece, and the
-shape of the answer is worth more than the list. The boundary is not where
-anyone drew it. Every position either compiler accepts is one whose name it
-happens to parse through the routine the escape was written into, and every
-position it rejects reads a bare identifier token somewhere else — which is
-why a concept's name is in and a class-head-name is out, and why the three
-positions the two compilers disagree about have a single cause rather than
-three. Neither test suite contains a negative test for any of the rejected
-positions, so nothing was failing and nothing would have failed. Whether the
-escape should reach the name positions generally is a real question, and the
-answer bears directly on what the hatch is for: the code a future keyword
-breaks names types and namespaces as well as variables, and `struct module
-{ };` is the canonical case.
+That coverage is recent, and how it was arrived at is a fair warning about
+what "implemented" means for a grammar extension. Both prototypes were
+finished, and both were then found to take the escape in whichever positions
+their parser happened to route through the routine the escape had been written
+into, and to refuse it wherever a bare identifier token was read somewhere
+else. That is why a concept's name worked and `` struct `union` { }; `` — the
+example in the wording below — did not, in either compiler. Nobody had drawn
+the boundary; it fell out of two independent parsers, differently in each.
+Neither test suite contained a negative test for any of it, so nothing was
+failing and nothing would have failed. It was found by writing one program per
+position and compiling them, which takes about ten minutes and has caught
+something every time it has been run.
+
+What it cost to fix is the useful number, and it is small but not the number
+first estimated. The escape parse becomes a helper called from each name
+position — fourteen call sites in Clang, one arm plus its guards in GCC — and
+then two things nobody had priced. A parser that decides what it is looking at
+from the token *after* a name has to step over three tokens where it stepped
+over one, so every such lookahead is a call site too; a label is told from an
+expression statement only by the `:` that follows it. And a new name position
+is a new *printing* surface: enumeration names, namespace names, template
+parameter names, labels and nested-name-specifiers all printed the bare
+keyword, which is source that does not re-parse, until they were routed
+through the one routine that puts the backticks back. About half the work was
+in those two, and neither appears in the grammar.
 
 The type-name slot has single-compiler evidence, said here so a reviewer does
 not have to discover it. Clang implements it: a bare name looked up
 as a type with a deduction placeholder, a qualified one through a tentative
 parse, a builtin through the functional-cast path, all three routed to the
 `T(x, y)` build, which is where CTAD and temporaries come back for free. GCC
-parses its slot as an expression, so `` 1 `Pt` 2 `` is rejected there. With
-the three escape positions above, that is the whole list of programs the two
-compilers treat differently under the flag — two causes, four programs — and
-every entry is a gap rather than a disagreement: nothing in GCC's
-parser-level desugaring stands in the way of the type arm.
+parses its slot as an expression, so `` 1 `Pt` 2 `` is rejected there.
+
+One further program is treated differently, and it is the older of the two.
+GCC rejects an escape whose keyword is a *type* keyword — `` int `int` = 0; ``
+— in every position, because `int` and `long` carry a global binding to the
+builtin type in its name table, so the identifier the escape yields is already
+bound to something; Clang's keywords carry no such binding. Those two are the
+whole list of programs the two compilers treat differently under the flag, and
+both are gaps rather than disagreements: nothing in GCC's parser-level
+desugaring stands in the way of the type arm, and nothing in the design says
+which of the two keyword representations is right. It is worth adding that the
+list was longer until the positions above were probed, and that this entry had
+been sitting in the first and best-tested position the whole time, hidden
+behind a choice of test keywords that happened to all be pure keywords.
 
 `-ast-print` round-trips the operator, with one exception a reviewer will
 find: a slot naming a builtin whose call the semantic layer rewrites into a

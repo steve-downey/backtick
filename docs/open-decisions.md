@@ -10,11 +10,12 @@ them gate what the two papers may claim.
 
 **Five were asked and answered on 2026-09-06 and are all Unicode-side. The
 sixth, [escape-name-positions](#escape-name-positions), was added on
-2026-09-07, is backtick-side, and is open.** It came out of the paper pass
-rather than out of the implementation tracks, which is why it arrives after
-the answers: re-deriving the paper's claims against the built compilers found
-that the keyword escape's coverage had never been decided by anyone, in either
-compiler.
+2026-09-07, is backtick-side, and was answered the same day.** It came out of
+the paper pass rather than out of the implementation tracks, which is why it
+arrives after the answers: re-deriving the paper's claims against the built
+compilers found that the keyword escape's coverage had never been decided by
+anyone, in either compiler. It is also the only one of the six whose answer
+turned into code.
 
 This file is written by
 [decision-brief](../ops/completion/steps/decision-brief.md). **The answers get
@@ -35,7 +36,7 @@ is a CWG question with no implementation consequence and is written up by
 and U§6's missing sixth worked example is a two-line doc sync owned by
 [reconcile-remainder](../ops/completion/steps/reconcile-remainder.md).
 
-## Summary — five answered, one open
+## Summary — six answered, none open
 
 | # | Question | Recommendation | Implementation consequence |
 |---|---|---|---|
@@ -44,9 +45,10 @@ and U§6's missing sixth worked example is a two-line doc sync owned by
 | 3 | [fold-over-user-infix](#fold-over-user-infix) — may a user-introduced infix operator be a fold operator? | **No, for both features, in v1.** State it as a decision with its price, not as an omission. | **none** (already the behaviour; a one-line guard to keep) |
 | 4 | [postfix-operators](#postfix-operators) — are postfix user operators declined permanently, or declined for v1? | **Declined for v1, not foreclosed.** Carry U§13.1's four prices and the forward-compatibility result into the paper. | **none** (doc only) |
 | 5 | [dependent-template-operator-id](#dependent-template-operator-id) — `t.template operator⊞<int>(0)` on a dependent object expression is rejected; fix it or reword the word "anywhere"? | **Reword, and do not report.** Answered (c) on 2026-09-06, reopened the same day when the report half's premise turned out to be false, and **settled 2026-09-06 as (a)**: the gap is this feature's own, nothing is pending upstream, and the row closes on the reword alone. The justifying clause is the corrected one; the struck literal-operator clause must not be used. | **none** (one clause in U§7.1, and no report) |
-| 6 | [escape-name-positions](#escape-name-positions) — where may a keyword-escaped identifier appear? The paper's wording says "wherever the grammar uses identifier as a terminal"; neither prototype accepts its own example, `` struct `union` { }; ``. | **Implement the broad set in both compilers** — the boundary was never decided, it fell where two parsers happened to route their names — and until that lands, keep the broad wording but change the example. | **eight Clang call sites behind one helper, on both backtick branches; one `cp_parser_identifier` arm plus its guards in GCC** |
+| 6 | [escape-name-positions](#escape-name-positions) — where may a keyword-escaped identifier appear? The paper's wording says "wherever the grammar uses identifier as a terminal"; neither prototype accepts its own example, `` struct `union` { }; ``. | **Implement the broad set in both compilers** — the boundary was never decided, it fell where two parsers happened to route their names. **Answered (c) on 2026-09-07 and built on 2026-09-08**, with the transitional hedge struck: nothing but a GitHub fork is shipped, so there was no window to stage. | **built.** The priced part was one helper plus a call site per position in each compiler; the parts nobody priced were the *lookahead predicates*, which must step over three tokens where they stepped over one, and the *printers*, because a new name position is a new printing surface |
 
-**Open, 2026-09-07.** Question 6 is the only unanswered one.
+**Answered 2026-09-07.** Question 6 was the last one open; nothing on this
+page is now waiting on the author.
 
 Every recommendation among the first five is "change no code". That is a result rather than
 a convenience, and it is worth reading as one: four of these five were logged
@@ -1152,6 +1154,52 @@ both backtick branches; `unicode-operators-experiment` inherited it through
 `unicode-operators-upstream` does not carry it, which is one of the branch
 differences M2's handoff records.
 
+### 2026-09-07 — escape-name-positions: option (c)
+
+**Implement the broad set in both compilers**, so the prototypes catch up with
+the [lex.name] wording the paper already proposes: an escaped-identifier may
+appear wherever the grammar uses `identifier` as a terminal.
+
+**The transitional half of the recommendation was struck, not taken**, and the
+author gave the reason: *there is no real shipped anything other than a GitHub
+fork, and no one is relying on anything.* The brief had hedged — *(c), and
+until it lands, (b) with the example changed* — on the assumption that the
+papers might go out before the implementation caught up, and that there was
+therefore a window in which the wording would promise more than the prototypes
+delivered. There is no such window and no compatibility argument to make,
+which is worth recording because it is the shape of every staging decision
+this project has left to make: **staging costs something and buys nothing when
+nobody is downstream.** So the paper never says a position is unprototyped;
+it says what both compilers do.
+
+**Nor is the alias parity answered separately**, per the recommendation. GCC's
+alias-declaration, alias-template and concept names came into line out of the
+same `cp_parser_identifier` arm as the eight positions neither compiler took,
+which is what "one cause, not three" meant.
+
+*Doc work owed and done:*
+[escape-name-positions](../ops/completion/steps/escape-name-positions.md), the
+step this answer generated, built it in both compilers and wrote it up. Two
+things it found are worth reading before quoting the price above.
+
+**The brief priced the declaration half and there is a use half of about the
+same size.** All nineteen measured positions were places a name is *declared*.
+Accepting `` struct `union` { }; `` without accepting `` `union` u; `` would
+have delivered a type nothing can name, which is not an escape hatch — so the
+decl-specifier, base-specifier, nested-name-specifier, template-name,
+using-directive, type-constraint and constructor-name positions are in as
+well, measured by fifteen more one-line programs.
+
+**And a new name position is a new printing surface.** `-ast-print`
+round-tripping is a claim the paper makes, so a name that prints as a bare
+keyword prints source that does not re-parse. Enum names, namespace names,
+template parameter names, labels and nested-name-specifiers all did, because
+they reach an identifier without going through `DeclarationName::print` — and
+because `operator<<(raw_ostream &, DeclarationName)` builds a *default*
+printing policy, in which the escape is off. That is the third time a printing
+surface has been found by asking what a change made printable rather than by a
+test failing.
+
 ## Where each answer was recorded
 
 Per the convention that a ruling appends to its question's own Log rather than
@@ -1166,6 +1214,7 @@ getting a document of its own:
 | dependent-template-operator-id | [operator-identifier-disjointness](unicode-operators.md#operator-identifier-disjointness) | [operator-id-anywhere](../ops/unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere), and the backlog row [dependent-template-operator-id](../ops/BACKLOG.md#dependent-template-operator-id) |
 | dependent-template-operator-id *(settled, 2026-09-06)* | same entry, second `Log.` line | [operator-id-anywhere](../ops/unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere) restated as reword-only, and the backlog row's `Closed by` and `Item` corrected |
 | abi-production-request | [operator-mangling](unicode-operators.md#operator-mangling) | none left to mark — [vendor-extended-mangling](../ops/unicode-operators/clang/DEVIATIONS.md#vendor-extended-mangling) and [msvc-mangling](../ops/unicode-operators/clang/DEVIATIONS.md#msvc-mangling) went **RECONCILED** in the same step, [postfix-operators](../ops/unicode-operators/clang/DEVIATIONS.md#postfix-operators)'s mangling clause with them |
+| escape-name-positions | [keyword-escape-coexistence](backtick-operator-design.md#keyword-escape-coexistence) | [escape-name-positions](../ops/DEVIATIONS.md#escape-name-positions) and [escape-alias-name-parity](../ops/gcc/DEVIATIONS.md#escape-alias-name-parity), both **FIXED and RECONCILED** in the same step, because the answer's destination section (§12's table) is written from the built compilers — the ABI row's shape again. One row opened: [escape-type-keyword-binding](../ops/gcc/DEVIATIONS.md#escape-type-keyword-binding) |
 | keyword-escape-printing *(ratified)* | [keyword-escape-printing](backtick-operator-design.md#keyword-escape-printing) | [keyword-escape-printing](../ops/DEVIATIONS.md#keyword-escape-printing), already **RECONCILED** by the step that made the change — the answer *is* its destination section, as with the ABI row |
 
 Every ledger row above stays **`OPEN`** with a dated **DECIDED** note naming

@@ -187,8 +187,9 @@ obj.`delete`();         // member named "delete"
 #+end_src
 
 The two uses never collide because they live in mutually exclusive grammatical
-positions. In operand, primary, or declarator position the grammar wants a name,
-so a backtick opens a keyword-escape. In post-operand position the grammar wants
+positions. Wherever the grammar wants a name (an operand, a declarator-id, a
+class or enum or namespace name, a template parameter's name, a label), a
+backtick opens a keyword-escape. In post-operand position the grammar wants
 a binary operator, so a backtick is the infix operator. This is the same
 position-based disambiguation C++ already does for =*=, =&=, and =<=. The escape
 yields an ordinary identifier, so lookup, mangling, linkage, and ABI are
@@ -396,34 +397,45 @@ feature.
 
 * What isn't done yet
 
-The escape works in both compilers in declarator-ids (variables, functions,
-members, =typedef= names, parameters, friends, the qualified name in an
-out-of-class definition), in a non-type template parameter's name and a
-using-declaration's, and in expression positions, including after =.=. Neither
-takes it yet in a class-head, an enum name, an enumerator, a namespace name, a
-type or template template parameter's name, a mem-initializer, or a label.
-Clang takes it in three places GCC doesn't: an alias-declaration, an alias
-template, and a concept.
+The escape now works in both compilers everywhere the grammar writes an
+identifier: declarator-ids, class-head names, enum names, enumerators,
+namespace names, template parameter names of all three kinds, alias and alias
+template names, concept names, mem-initializers, labels, and expression
+positions. And in the positions that *use* such a name, which is the half I
+nearly shipped without: a type-specifier, a base-specifier, a
+nested-name-specifier, a template name being specialized, a using-directive, a
+type-constraint, a constructor's name. Declaring =struct `union` { };= and
+then not being able to write =`union` u;= would have been a type nothing can
+name.
 
-I probed nineteen positions in each compiler, and the list is less interesting
-than its shape. Nobody drew that boundary. A position works when the compiler
-happens to parse that name through the routine I wrote the escape into, and
-fails when it reads a bare identifier token somewhere else. That's why a
-concept name works in Clang and =struct `union` { };= doesn't work anywhere,
-including in the wording I'm proposing, where it is the example. The three
-positions the two compilers disagree about all come from one cause. Neither
-test suite has a negative test for any of the failing positions, so nothing was
-failing; I found all of it with nineteen one-line programs after the
-implementation was supposedly done.
+That was not true a day ago, and how it wasn't is the part worth keeping. Both
+prototypes were done. Then I wrote one program per name position and compiled
+them, and found that the escape worked wherever the parser happened to route
+that name through the routine I'd written it into, and failed wherever a bare
+identifier token was read somewhere else. A concept name worked. =struct
+`union` { };=, the example in my own proposed wording, didn't work in either
+compiler. Nobody drew that boundary; it fell out of two parsers, differently in
+each. Neither test suite had a negative test for any of it, so nothing was
+failing and nothing would have failed.
 
-That matters more than it looks, because the hatch exists so that a future
-keyword doesn't break code that already used the word as a name, and such code
-names types and namespaces as well as variables. =struct module { };= is the
-case, and it's in the failing set.
+Fixing it cost about twice what I'd estimated, and the extra was in two places
+that aren't in the grammar. A parser that decides what it's looking at from the
+token *after* a name has to step over three tokens where it stepped over one,
+so every one of those lookaheads is a call site too; a label is only
+distinguishable from an expression statement by the =:= after it. And a new name
+position is a new printing surface: enum names, namespace names, template
+parameter names, labels and nested-name-specifiers all printed the bare
+keyword, which is source that doesn't re-parse, until I routed them through the
+one place that puts the backticks back.
 
-The type-name slot is Clang-only so far: GCC parses its slot as an expression,
-so =1 `Pt` 2= is rejected there. Those are unwritten parser arms rather than
-design positions, but a paper has to say which arms it has.
+The type-name slot is Clang-only: GCC parses its slot as an expression, so =1
+`Pt` 2= is rejected there. And GCC rejects an escape whose keyword is a type
+keyword, =int `int` = 0;=, in every position, because =int= and =long= carry
+a global binding to the builtin type in its name table, so the identifier the
+escape yields is already bound to something. Clang's keywords carry no such
+binding. That second one is older than everything above and had been sitting in
+the first and best-tested position the whole time; I never found it because
+every keyword I'd tested with was a pure keyword.
 
 * What I am proposing, and what comes next
 
