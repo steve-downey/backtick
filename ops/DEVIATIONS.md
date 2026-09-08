@@ -263,3 +263,82 @@ A type slot naming a class with a constructor round-trips correctly (`` a `Pt` b
 **Fixed and reconciled** by [settle-paper-rows](completion/steps/settle-paper-rows.md), 2026-09-07, on `backtick-trunk` and `backtick-23`. One arm in `BacktickInfixExpr::getOperand` (`clang/lib/AST/Expr.cpp`) and one in `StmtPrinter::VisitBacktickInfixExpr`, both matching `CXXFunctionalCastExpr` over `CXXParenListInitExpr` and taking the **user-specified** initializers, because the full list carries defaulted members beyond the two operands. The type is printed from the semantic node as the constructor arm prints it, so CTAD keeps one stated exception rather than two adjacent arms answering the same question two ways. Cases added to `clang/test/Parser/backtick-infix.cpp` (the range, as literal columns) and `clang/test/Parser/backtick-ast-print.cpp` (the printing, whose second RUN line re-parses what it printed); both files are now pinned to `-std=c++20`, since parenthesized aggregate initialization is C++20 and neither pinned a standard. **Reconciled into [§17.5](../docs/backtick-operator-design.md#175-source-ranges-of-the-desugared-node-source-fidelity-node)** — the paragraph beginning *"Three was the count of the shapes that had been recognised"*, and the general-statement paragraph after it — **and into [§17.3](../docs/backtick-operator-design.md#173-type-name-in-the-operator-slot-type-name-slot)**, the cost paragraph, whose *"two printer arms"* is now three.
 
 **One thing the row understated.** The pre-fix behaviour was not only less faithful, it was *wrong* for the CTAD aggregate: `` a `aggT` b `` printed `(aggT<int>)(3, 4)`, a cast applied to a comma expression, which is a different program. Measured on the pre-fix `backtick-23` binary before the cherry-pick.
+
+### escape-in-qualified-type-name
+
+**Formerly:** none — new slug, 2026-09-08. **Status:** **OPEN**, unowned.
+
+**Found by.** [escape-positions-forward-port](completion/handoffs/escape-positions-forward-port.handoff.md),
+probing the escape's new coverage on the merged Unicode branch. **It is not
+the merge's**: every program below behaves byte-identically on
+`backtick-trunk`'s own binary, so it is on both backtick branches and predates
+the forward-port. It was found because the merge re-ran a probe sweep, which is
+the third time that habit has caught something.
+
+**Design section.** [§12](../docs/backtick-operator-design.md#12-coexistence-with-backtick-keyword-escaped-identifiers);
+[§17.8](../docs/backtick-operator-design.md#178-which-of-this-is-clangs-alone-and-why);
+[escape-name-positions](#escape-name-positions)
+
+**What the design said.** §12, since
+[escape-name-positions](../docs/open-decisions.md#escape-name-positions) was
+answered (c) and built: *"an escaped-identifier may appear wherever the grammar
+uses `identifier` as a terminal. Both prototypes now do that."* The position
+table is all *accepts / accepts*. §17.8: the places the two implementations
+genuinely disagree are *"two kinds again, and both are one-liners"*, and both
+of those are Clang accepting what GCC refuses.
+
+**What was true.** **A qualified *type-specifier* is a third kind, and it runs
+the other way — Clang refuses what GCC takes.** Measured on the merged branch's
+`clang` and on `cc1plus` from `gcc-backtick-build`, `-std=c++20 -fbacktick
+-fsyntax-only`, one program per line:
+
+| Program | Clang | GCC |
+|---|---|---|
+| `` struct `union` { struct S { int a; }; }; `union`::S g; `` | accepts | accepts |
+| `` struct `union` { struct S { int a; }; }; int f() { `union`::S s; …} `` | accepts | accepts |
+| `` namespace `namespace` { struct S{int a;}; } `namespace`::S g; `` | accepts | accepts |
+| `` namespace `namespace` { struct S{int a;}; } int f() { `namespace`::S s{1}; …} `` | **rejects** — *expected '(' for function-style cast or type construction* | accepts |
+| `` namespace N { struct `union` { int a; }; } N::`union` g; `` | **rejects** — *expected a type* | accepts |
+| `` namespace N { struct `union` { int a; }; } using X = N::`union`; `` | **rejects** — *expected a type* | accepts |
+| `` namespace N { struct `union` { int a; }; } int f() { return sizeof(N::`union`); } `` | **rejects** — *expected a type* | accepts |
+| `` namespace N { int `new` = 1; } int f() { return N::`new`; } `` | accepts | accepts |
+
+**Two Clang sites, one shape.** The escape is reached in a qualified name only
+where the name is read as an *unqualified-id* — which is why the last row, an
+expression, works and the type-specifier rows do not.
+
+- **The final component of a qualified type-name.** After
+  `ParseOptionalCXXScopeSpecifier` has taken `N::`, the type name is read by
+  the decl-specifier path rather than by `ParseUnqualifiedId`, and that path
+  has no `tok::backtick` arm, so `` N::`union` `` is *expected a type*
+  wherever a type-specifier is wanted — a declaration, an
+  *alias-declaration*, a `sizeof`.
+- **A leading escape naming a *namespace*, at block scope.**
+  `isCXXDeclarationSpecifier`'s `tok::backtick` arm — which
+  [escape-name-positions](#escape-name-positions) wrote deliberately as a
+  predicate that asks Sema rather than consuming — answers with
+  `Actions.getTypeName` on the escaped keyword. A namespace name is not a
+  type, so it answers *not a declaration* and the statement is parsed as an
+  expression. At namespace scope, where no tentative parse runs, the same
+  declaration is accepted.
+
+**Recommended doc change.** Two things, and the first is the defect. (1) §12's
+*"wherever the grammar uses `identifier` as a terminal"* is the rule the author
+chose and the prototypes do not yet meet it: the seventeen-row table probed
+*declaration* positions and the fifteen use-position programs probed the
+*qualifier* half of a nested-name-specifier, never the qualified type-name. §12
+should either gain the two arms or say that the qualified type-specifier is the
+one position still unreached, and that it is a missing parser arm rather than a
+decision — nothing in the disambiguation rule turns on it. (2) §17.8's *"two
+kinds, and both are one-liners"* is **three**, and this one is the only
+divergence in which **GCC is the wider implementation and Clang the narrower**;
+GCC needs nothing, because `cp_parser_identifier` is where a qualified
+type-name reads its `CPP_NAME` too — the one-arm reach
+[escape-name-positions](#escape-name-positions) recorded.
+
+**Not fixed and not owned.** The forward-port measured it and stopped there:
+it is a two-site Clang change on both backtick branches plus a test in each
+suite, it is not the merge's to make, and it belongs with the author's other
+open escape question,
+[escape-type-keyword-binding](gcc/DEVIATIONS.md#escape-type-keyword-binding),
+which is the same section's other divergence.

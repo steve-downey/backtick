@@ -61,12 +61,17 @@ defects, evidence debt, reconciliation section by section, hygiene, and the
 two papers last. `ops/completion/PLAN.md`'s "Coverage" table maps every open
 row to its step; nothing in `ops/` is outside it.
 
-No maintenance merge is outstanding. M2 (`ops/unicode-operators/clang/PLAN.md`
-Phase G) ran on 2026-09-06 after clang-paper-truth and is green; see
-`ops/completion/handoffs/M2-forward-port.handoff.md`. A new one is owed only if
-a later change lands on the backtick branches alone — the two Clang tracks share
-`clang/lib/AST`, `clang/lib/Parse` and `clang/lib/Sema`, and
-`unicode-operators-experiment` is downstream of `backtick-trunk`.
+No maintenance merge is outstanding. Four have run — M1, M2,
+`unicode-branch-maintenance` and, on 2026-09-08,
+`escape-positions-forward-port`, which carried `settle-paper-rows`' aggregate
+type-slot arm and `escape-name-positions`' broad keyword escape onto
+`unicode-operators-experiment` and gated green; the latest is
+`ops/completion/handoffs/escape-positions-forward-port.handoff.md` and it
+records what conflicts to expect and where the two features actually collide.
+A new one is owed only if a later change lands on the backtick branches alone
+— the two Clang tracks share `clang/lib/AST`, `clang/lib/Parse` and
+`clang/lib/Sema`, and `unicode-operators-experiment` is downstream of
+`backtick-trunk`.
 `unicode-operators-upstream` is not, and must never receive such a merge.
 
 Maintenance rebases (R-prefixed rows in the `ops/PLAN.md` Status log) are not

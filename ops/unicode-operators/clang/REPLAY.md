@@ -1257,3 +1257,135 @@ there, and `clang/unittests/ASTMatchers/` is not in `check-clang`'s self-format
 glob (that is `clang/lib/Format/` and `clang/unittests/Format/`). Reformatting
 it here would make the two branches differ for no gain. Same disposition as
 M2's two inherited hits.
+
+## escape-positions-forward-port — the fourth backtick merge, also never replayed
+
+`unicode-operators-experiment` @ `e09b559d631c` is a **merge commit** bringing
+the two commits `backtick-trunk` had gained since
+[unicode-branch-maintenance](#unicode-branch-maintenance--the-third-backtick-merge-also-never-replayed):
+
+| Commit | What |
+|---|---|
+| `3b2103895224` | settle-paper-rows — the fourth inner shape a type slot can build, one arm each in `BacktickInfixExpr::getOperand` and `StmtPrinter::VisitBacktickInfixExpr` |
+| `14f6373ccc7d` | escape-name-positions — `Parser::ConsumeBacktickEscape` and its three predicates, the consuming call sites the broad escape needs, and the printers |
+
+Classification, as for [M1](#m1--the-backtick-merge-which-is-never-replayed),
+[M2](#m2--the-second-backtick-merge-also-never-replayed) and
+[unicode-branch-maintenance](#unicode-branch-maintenance--the-third-backtick-merge-also-never-replayed):
+**backtick dependency — unreplayable by design.** `unicode-operators-upstream`
+did not receive it and must never receive it.
+
+**It changes no row's classification, and this time the arithmetic says so
+twice.** The merge delta is **20 files, +437/−82** — *exactly* the two commits'
+own insertion and deletion totals (79/8 and 358/74), so git applied them whole
+and added nothing — and **all 82 deleted lines are backtick text**, none of
+them matching `user_operator`, `UserOperator`, `UserInfix`, `unicode` or `⊞`.
+
+```
+git diff --shortstat 14f6373ccc7d..e09b559d631c  → 121 files, +7701/−57
+git diff -U0 14f6373ccc7d..e09b559d631c | grep -c '^@@'  → 221
+```
+
+**Identical to the last merge's 121 / +7701−57 / 221**, which is the strongest
+statement available that the Unicode side of the tree did not move: the
+backtick tip advanced by two commits and the feature diff against it is
+unchanged to the line.
+
+§1's `awk` contamination recipe over `backtick-trunk..unicode-operators-experiment`
+hits the **same** six production files it always has — `OperatorPrecedence.h`,
+`OperatorPrecedence.cpp`, `ParseExpr.cpp`, `Format/Format.cpp`,
+`Format/FormatToken.h`, `Format/TokenAnnotator.cpp` — plus `SemaOverload.cpp`'s
+doc-comment cross-reference, `BugReporterVisitors.cpp` (classified in
+[null-return-suppression](#null-return-suppression--the-seventh-analyzer-site)),
+the four comment-only entries (`Options.td`, `test/Lexer/backtick-c-mode.c`,
+`CIRGenExprScalar.cpp`, `Analysis/CFG.cpp`) and the test files. **No new
+production file.**
+
+### The predicted printer conflict did not happen, and the reason is worth keeping
+
+[escape-name-positions' handoff](../../completion/handoffs/escape-name-positions.handoff.md)
+warned that this merge *"will not be clean"* because the commit touches
+`TypePrinter.cpp`, `DeclPrinter.cpp` and `StmtPrinter.cpp` and *"`unicode-operators-experiment`
+has its own arms in the last two"*. **Two of the three are wrong**, and the
+check is one command:
+
+```
+git diff --numstat c0d69702b6d7 7278a2985659 -- <file>     # the Unicode side's own change
+  clang/lib/AST/DeclPrinter.cpp          (nothing)
+  clang/lib/AST/TypePrinter.cpp          (nothing)
+  clang/lib/AST/NestedNameSpecifier.cpp  (nothing)
+  clang/lib/AST/StmtPrinter.cpp          17  0
+```
+
+The Unicode feature prints through `DeclarationName::print` — a
+`CXXUserOperatorName` is not an `IdentifierInfo`, so none of the identifier
+printers the escape had to teach is on its path. Its one printer arm is
+`StmtPrinter::VisitUserOperatorExpr`, which sits beside
+`VisitCXXRewrittenBinaryOperator`, while the escape's edits are
+`VisitLabelStmt` and `VisitGotoStmt` at the top of the file and the aggregate
+arm inside `VisitBacktickInfixExpr`. **Different functions, hundreds of lines
+apart.** The general form, and the one to carry into the next merge: *the two
+features share a token and a precedence level, not a name representation* —
+`prec::UserInfix`, `ParseExpr.cpp` and clang-format are where they collide, and
+those are precisely the three constructs §1 already names as the whole coupling.
+
+### The fold guard survived, and it was proven a third time rather than read
+
+`Parser::isFoldOperator` still reads
+
+```cpp
+  return Level > prec::Unknown && Level != prec::Conditional &&
+         Level != prec::Spaceship && Level != prec::UserInfix;
+```
+
+— through a merge that rewrote `ParseExpr.cpp`'s escape arm and, on the
+backtick side, a great deal of the surrounding parser. **Verified by deleting
+the clause and rebuilding**, for the reason the standing warning at the top of
+this file gives: it fails silently. Without it,
+`clang/test/Parser/unicode-operator-precedence.cpp` fails **on line 322 only**,
+the right fold `(N ⊞ ...)`:
+
+```
+error: 'err-error' diagnostics expected but not seen:
+  Line 322 (directive at :323): expected expression
+error: 'err-error' diagnostics seen but not expected:
+  Line 322: expected ')'
+  Line 322: expression contains unexpanded parameter pack 'N'
+error: 'err-note' diagnostics seen but not expected:
+  Line 322: to match this '('
+```
+
+M2 and unicode-branch-maintenance quoted the first three; the `err-note` line
+is in the same output and was simply not carried, so a replay comparing
+character for character should expect **four** stanzas, not three. The clause
+was restored, `clang` rebuilt, the file passes, and `git status` is clean.
+**Third independent confirmation that only the right fold pins the guard.**
+
+### The new hazard: a name position Clang does not reach, and GCC does
+
+Re-running the escape's probe sweep on the merged branch — the habit
+[escape-name-positions](../../completion/handoffs/escape-name-positions.handoff.md)
+recommends and does not check in — found
+[`escape-in-qualified-type-name`](../../DEVIATIONS.md#escape-in-qualified-type-name):
+Clang refuses an escape as the name of a **qualified type-specifier**
+(`` N::`union` g; ``, `` using X = N::`union`; ``, `` sizeof(N::`union`) ``) and
+refuses a block-scope declaration whose leading nested-name-specifier component
+is an escaped *namespace* (`` `namespace`::S s{1}; ``), while GCC accepts all
+four. It is **inherited, not this merge's** — byte-identical on
+`backtick-trunk`'s binary — and it is a *backtick* gap, so it changes no
+Unicode row's classification. It is recorded here because the replay story
+depends on `backtick-trunk` and this branch behaving identically under
+`-fbacktick`, and that was measured, program by program, rather than assumed.
+
+### Formatting: one inherited hit, deliberately left
+
+`git-clang-format --diff --commit 7278a2985659` with the **in-tree**
+`clang-format` reports one region, the `dyn_cast<CXXParenListInitExpr>`
+continuation in `BacktickInfixExpr::getOperand`. It is **byte-identical to
+`backtick-trunk`**, so it came across unchanged from a commit that gated green
+there. `check-clang`'s self-format glob is `clang/lib/Format/**`,
+`include/clang/Format/*.h`, `tools/clang-format/*.cpp` and
+`unittests/Format/*.{cpp,h}` — re-read out of `clang/lib/Format/CMakeLists.txt`
+rather than quoted — and `clang/lib/AST/` is not in it, so the step at ~81/970
+was never in play; this merge touches no file in that glob at all. Same
+disposition as the three inherited hits M2 and unicode-branch-maintenance left.
