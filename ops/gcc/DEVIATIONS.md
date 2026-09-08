@@ -183,7 +183,7 @@ Every other position the two were probed in agrees — both accept declarator-id
 
 ### escape-type-keyword-binding
 
-**Formerly:** none — new slug, 2026-09-08. **Status:** **OPEN**
+**Formerly:** none — new slug, 2026-09-08. **Status:** **FIXED and RECONCILED**
 
 **Found by.** [escape-name-positions](../completion/steps/escape-name-positions.md), checking that the newly accepted positions were usable and not merely declarable.
 
@@ -204,6 +204,18 @@ template<class T> using `long` = T;  clang++ accepted   cc1plus  error: redeclar
 **Cross-compiler note.** The cause is a GCC representation choice that has nothing to do with the escape: `int` and `long` carry a **global binding to the builtin type** in GCC's name table, so the identifier the escape yields is already bound to something and `grokdeclarator` reports a redeclaration. Clang's keywords carry no binding, so the identifier the escape yields is fresh. Nothing in the design says which is right — but the escape's whole purpose says something: the keywords a future revision is most likely to take are not type keywords, so this is the least valuable corner of the hatch, and it is also the corner where "the escape yields an ordinary identifier" is least true in GCC.
 
 **Recommended doc change.** [§12](../../docs/backtick-operator-design.md#12-coexistence-with-backtick-keyword-escaped-identifiers) states it as the one surviving acceptance divergence, which it now does, and [§17.8](../../docs/backtick-operator-design.md#178-which-of-this-is-clangs-alone-and-why)'s list of programs the two compilers treat differently carries it in place of the three alias/concept programs it replaces. Whether GCC should be made to accept it — and what that costs, since it means shadowing a global binding — is an implementer's question that nobody has priced, and it should not be answered by reflex any more than the alias parity was.
+
+**Fixed** by [escape-name-sweep](../completion/steps/escape-name-sweep.md), 2026-09-08, on the GCC `backtick` branch. **Priced first, and it came in far under the row's own estimate**, because the row had the mechanism right and the consequence wrong. Shadowing a global binding sounds expensive; it is not, once one observation is made: **in C++ a declaration can be named by a keyword only if it was escaped.** `grokdeclarator` rejects a bare reserved word as a declarator-id — that check is [escape-name-positions](../DEVIATIONS.md#escape-name-positions)' own — and `int` is a keyword token everywhere else, so no program can reach the builtin's binding by writing its name. A declaration that collides with one is therefore never a *re*-declaration, and the parser does not have to thread "this name came from an escape" down into name lookup, which is what would have made it expensive.
+
+**Three call sites and one predicate, all gated on `flag_backtick`.** `cp_builtin_reserved_type_binding_p` (`gcc/cp/decl.cc`) is true for the artificial `TYPE_DECL`s `record_builtin_type` binds at `BUILTINS_LOCATION` under a *keyword* spelling — not the non-keyword ones like `__int128_t`, which ordinary code may still redeclare. `duplicate_decls` returns *not a redeclaration* for such an `olddecl`, beside the existing arm that does the same for an undeclared builtin **function**; `update_binding` (`gcc/cp/name-lookup.cc`) treats the binding as absent, next to `anticipated_builtin_p`, which is the same idea for functions and had no type analogue; and `lookup_and_check_tag` drops it, or an elaborated-type-specifier reports `` struct `int` `` as *using typedef-name 'int' after 'struct'*.
+
+**GCC's own source asked for this.** `record_builtin_type`'s comment reads *"The calls to set_global_binding below should be eliminated. Built-in types should not be looked up by name; their names are keywords that the parser can recognize. However, there is code in c-common.cc that uses identifier_global_value to look up built-in types by name."* The fix does not eliminate the bindings — that is upstream's call and would change the C front end — it steps around them for the one kind of declaration that can collide with one.
+
+**Measured after, on fifteen programs** covering variable, function, alias, alias-template, class-head, enum-name, namespace-name, parameter, member and block scope, plus the four use positions and the coexistence case. All fifteen accepted by both compilers. **The "before" is stated as what was run and not as a total**: nine of those fifteen were measured on the pre-fix binary, seven of them rejected and two — parameter and member — accepted, and eleven type keywords were measured in a plain declarator-id and every one rejected, while `auto`, `const` and `new` were accepted. That last line is the cause in one line: the keywords that fail are exactly the ones `record_builtin_type` binds. **The keyword still names the builtin in the same translation unit** — `` struct `int` { int a; }; int x = 0; `int` v{1}; `` compiles, and `sizeof(int)` is still four — and `` int g (int p, `int` q) `` mangles as `_Z1gi3int` in **both** compilers, which is [§12](../../docs/backtick-operator-design.md#12-coexistence-with-backtick-keyword-escaped-identifiers)'s ABI paragraph demonstrated on the hardest name it has. Flag-off parity measured byte-identically over `-fsyntax-only` on a well-formed and an ill-formed program and over the generated assembly, against the same binary with the flag off and against pristine trunk `cc1plus`; the only difference anywhere is the `.ident` build-date string between the two binaries.
+
+**The row's closing judgement was wrong, and it is worth saying so.** It called this *"the least valuable corner of the hatch"*, because the keywords a future revision is likely to take are not type keywords. That is true about *likelihood* and irrelevant to the claim: the design says the escape yields an ordinary identifier, and the position it failed in was the *first row* of §12's table. A hatch that works for `module` and not for `int` is a hatch with an unstated exception, and the exception was invisible for two months because every probe used a pure keyword.
+
+**Reconciled into** [§12](../../docs/backtick-operator-design.md#12-coexistence-with-backtick-keyword-escaped-identifiers), the new paragraph headed ***"And a fourth, which is not about parsing at all"*** and the sweep table above *"What it cost, and where the cost is"*; into [§17.8](../../docs/backtick-operator-design.md#178-which-of-this-is-clangs-alone-and-why), the paragraph beginning *"Everything else this paragraph has ever carried is gone"*, where it is the second of three closed divergences and the section drops to **one** remaining, which is the type-name slot and has nothing to do with the escape; and into §3 [keyword-escape-coexistence](../../docs/backtick-operator-design.md#keyword-escape-coexistence)'s **`Log.`, the 2026-09-08 entry**. Pinned by `gcc/testsuite/g++.dg/backtick/escape-positions.C`'s type-keyword section and the matching section of `clang/test/Parser/backtick-escape-positions.cpp`.
 
 ### escape-diagnostic-spelling
 
@@ -231,3 +243,47 @@ GCC's note names the entity with a spelling no program can contain, which is the
 **The fix was wrong on its first build, in exactly the way this branch's previous commit warns about, and the second one is the interesting part.** `cp_parser_error_1` hands a *keyword token* to `%qE` as though it were a name — with a comment in the source saying that is what it is doing — so the funnel escaped it too, and `void new (int, int);`, a program containing no backtick at all, began reporting its error against a backticked spelling. The parser now says, for the length of that one call, that what it has in hand is a raw token (`cp_printing_raw_token`, `gcc/cp/cp-tree.h`). **This is GCC's version of the split Clang draws by diagnostic argument kind**, and it is one guard where Clang needed six sites. `g++.dg/backtick/escape-diag.C` pins both halves: the escaped spelling, and the two backtick-free diagnostics that must not change.
 
 **Reconciled into** §3 [keyword-escape-printing](../../docs/backtick-operator-design.md#keyword-escape-printing)'s **`Log.`, the 2026-09-07 entry beginning *"GCC now delivers the diagnostic half too"***, which records the general fact the two implementations share — the escape keeps no trace of how it was written, so an implementation must decide which printing surfaces name an entity — and into [§17.8](../../docs/backtick-operator-design.md#178-which-of-this-is-clangs-alone-and-why), the closing paragraph, which is the paper-facing version and now says the divergence lasted one day.
+
+### escape-type-name-spelling
+
+**Formerly:** none — new slug, 2026-09-08. **Status:** **OPEN**, unowned.
+
+**Found by.** [escape-name-sweep](../completion/steps/escape-name-sweep.md), running the error-path half of its sweep ([`ops/probes/escape-errors.sh`](../probes/escape-errors.sh)) and reading the diagnostics rather than only the exit codes.
+
+**Design section.** §3 [keyword-escape-printing](../../docs/backtick-operator-design.md#keyword-escape-printing); [§12](../../docs/backtick-operator-design.md#12-coexistence-with-backtick-keyword-escaped-identifiers)'s **Printing and diagnostics** paragraph; [§17.8](../../docs/backtick-operator-design.md#178-which-of-this-is-clangs-alone-and-why)
+
+**What differed.** [escape-diagnostic-spelling](#escape-diagnostic-spelling) closed on 2026-09-07 with the claim that GCC now spells an escaped name with its backticks in diagnostics. **That is true of a *declaration*'s name and false of a *type*'s.** The fix went into `dump_decl_name`, "GCC's one funnel for the name of a declaration"; a class or enum type is printed by `dump_aggr_type`, which ends at `pp_cxx_tree_identifier (pp, DECL_NAME (decl))` and never reaches that funnel. Measured 2026-09-08, flag on, one program per line:
+
+```
+struct `union` { }; int f(`union` u) { return u + 1; }
+  gcc:   no match for 'operator+' (operand types are 'union' and 'int')
+  clang: invalid operands to binary expression ('`union`' and 'int')
+
+struct `union` { }; `union` f() { return 1; }
+  gcc:   could not convert '1' from 'int' to 'union'
+  clang: no viable conversion from returned value of type 'int' ...
+
+struct `union` { }; int f() { `union` u; return u.`new`; }
+  gcc:   'struct union' has no member named '`new`'          <- both in one line
+  clang: no member named '`new`' in '`union`'
+
+enum class `enum` { A }; int f() { return `enum`::A; }
+  gcc:   cannot convert 'enum' to 'int' in return
+  clang: cannot initialize return object of type 'int' ...
+
+template <class T> struct W { }; struct `union` { }; W<`union`> w; int f() { return w; }
+  gcc:   cannot convert 'W<union>' to 'int' in return
+  clang: no viable conversion from returned value of type 'W<`union`>' to ...
+
+namespace N { struct S{}; } template <class T> struct W { typename T::`union` m; }; W<N::S> w;
+  gcc:   no type named 'union' in 'struct N::S'
+  clang: no type named '`union`' in 'N::S'
+```
+
+The third line is the sharpest: **one GCC diagnostic prints the same feature both ways**, escaping the member name and not the type it is a member of, because the two halves come from different printers.
+
+**Cross-compiler note.** Not a difference in accepted programs — both compilers accept and reject exactly the same programs under the flag, which is what [§17.8](../../docs/backtick-operator-design.md#178-which-of-this-is-clangs-alone-and-why) records — so this belongs beside [gcc-wrapper-parity](#gcc-wrapper-parity) and [escape-diagnostic-spelling](#escape-diagnostic-spelling) rather than beside an acceptance gap. `union` and `enum` are also the *worst* case for it: a bare type name in a diagnostic is not merely unre-parseable, it reads as a class-key, and `'struct union' has no member named ...` is a sentence about a program nobody wrote. The last line shows a second, separate surface: `%qE` applied to an `IDENTIFIER_NODE` for a *dependent* name does not reach `dump_decl_name` either.
+
+**Recommended doc change.** §12's **Printing and diagnostics** paragraph and §3 [keyword-escape-printing](../../docs/backtick-operator-design.md#keyword-escape-printing)'s `Log.` should say that the ruling is delivered on declaration names in both compilers and on **type** names in Clang only, which is the same shape as [§17.3](../../docs/backtick-operator-design.md#173-type-name-in-the-operator-slot-type-name-slot)'s single-compiler evidence and should be stated the same way. §17.8's closing paragraph currently says the divergence *lasted one day*; it lasted one day for one half of the surface.
+
+**Not fixed, and deliberately so.** It is not the same change as the two rows [escape-name-sweep](../completion/steps/escape-name-sweep.md) closed — those are name lookup, this is the diagnostic printer — and it is the third time this feature has touched GCC's error printer. **Both previous times the first build was wrong in the same direction**: `cp_parser_error_1` hands a raw keyword token to `%qE` as though it were a name, and a program containing *no backtick* began reporting against a backticked spelling ([escape-diagnostic-spelling](#escape-diagnostic-spelling)). A funnel one layer further out has more callers, not fewer, and the guard that makes it safe is `flag_backtick` plus a claim about *which* identifiers can only have come from an escape — a claim that is airtight for a declarator-id and has not been checked for a type name reached through `TYPE_NAME`. The measurement is done; the fix needs its own step, its own flag-off parity run, and its own negative test, and it should not be taken by reflex any more than the alias parity or the type-keyword binding was.

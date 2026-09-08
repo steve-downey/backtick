@@ -31,16 +31,20 @@ across the three DEVIATIONS ledgers, the 7 open design decisions, and the two
 papers.
 
 **Everything in it is done, and nothing is waiting on the author.** Both
-papers are written and both build; all nineteen boxes are `[x]` or `[—]`, and
-`docs/open-decisions.md` has no open question. The last two steps were the
+papers are written and both build; all twenty boxes are `[x]` or `[—]`, and
+`docs/open-decisions.md` has no open question. The last three steps were the
 backtick paper's own gate finding four claims the built compilers did not
 support: `settle-paper-rows` fixed two and put the other two — one question,
-seen from two compilers — to the author, and `escape-name-positions` built the
+seen from two compilers — to the author; `escape-name-positions` built the
 answer, which was to let the keyword escape reach every position the grammar
-writes an identifier in. **An agent arriving with no other instruction should
-not go looking for work in `ops/`.** One deviation row is open and it is an
-implementer's question nobody has priced:
-`ops/gcc/DEVIATIONS.md#escape-type-keyword-binding`.
+writes an identifier in; and `escape-name-sweep` swept all of them again, in
+four categories rather than one, and closed the two that had held out. **There
+is now no program the two compilers treat differently on account of the
+keyword escape.** **An agent arriving with no other instruction should not go
+looking for work in `ops/`.** One deviation row is open, it is a diagnostic
+rather than an acceptance divergence, and it is measured and surfaced rather
+than owned: `ops/gcc/DEVIATIONS.md#escape-type-name-spelling` — GCC escapes
+the name of a *declaration* and prints the name of a *type* bare.
 
 Steps are **named by slug, never numbered** — the checklist's ordinals are
 reading order and shift when a step is inserted; the slug is the identity and
@@ -122,7 +126,7 @@ and a Status-log row so base-commit changes are not lost.
   it. Open *design* questions are not in it; §6 indexes those.
 - `ops/SLUGS.md` — the map from every retired serial number to its slug, both
   directions, and the record of what was left numbered on purpose.
-- `ops/completion/PLAN.md` — the completion track (18 steps, named by slug), which schedules
+- `ops/completion/PLAN.md` — the completion track (20 steps, named by slug), which schedules
   and gates **everything** still outstanding: defects, reconciliation,
   decisions and the papers. The only plan with an unchecked step, and it has
   exactly one, blocked on the author.
@@ -143,6 +147,15 @@ and a Status-log row so base-commit changes are not lost.
 - `ops/DEVIATIONS.md`, `ops/gcc/DEVIATIONS.md` — ledger of every place build
   reality contradicted the design (DEV-NN / DEV-GNN), including cross-compiler
   divergences, with reconciliation status.
+- `ops/probes/` — the sweeps, in `bash` because `zsh` does not word-split.
+  `escape-positions.sh` asks where the keyword escape reaches, as seventy-nine
+  one-line programs in four categories run against both compilers;
+  `escape-errors.sh` asks whether the error paths diagnose and *stop*, under
+  `timeout`; `flag-off-parity.sh` asks whether the flag changes a program
+  containing no backtick, byte-identically and against pristine binaries.
+  **Re-run them after touching the escape.** They have found something on
+  every occasion they have been run, including a parser loop and a
+  cross-compiler divergence in the run that installed them here.
 
 ## The implementation worktrees (where the code actually is)
 

@@ -266,7 +266,7 @@ A type slot naming a class with a constructor round-trips correctly (`` a `Pt` b
 
 ### escape-in-qualified-type-name
 
-**Formerly:** none — new slug, 2026-09-08. **Status:** **OPEN**, unowned.
+**Formerly:** none — new slug, 2026-09-08. **Status:** **FIXED and RECONCILED**
 
 **Found by.** [escape-positions-forward-port](completion/handoffs/escape-positions-forward-port.handoff.md),
 probing the escape's new coverage on the merged Unicode branch. **It is not
@@ -336,9 +336,77 @@ GCC needs nothing, because `cp_parser_identifier` is where a qualified
 type-name reads its `CPP_NAME` too — the one-arm reach
 [escape-name-positions](#escape-name-positions) recorded.
 
-**Not fixed and not owned.** The forward-port measured it and stopped there:
-it is a two-site Clang change on both backtick branches plus a test in each
-suite, it is not the merge's to make, and it belongs with the author's other
-open escape question,
-[escape-type-keyword-binding](gcc/DEVIATIONS.md#escape-type-keyword-binding),
-which is the same section's other divergence.
+**Fixed** by [escape-name-sweep](completion/steps/escape-name-sweep.md),
+2026-09-08, on both backtick branches. **The row understated it by three
+times.** Re-derived from twenty-five programs rather than eight, Clang
+refused **twelve**, not four: every shape in which a qualified name ends in a
+*type* — a declaration, an *alias-declaration*, a `sizeof`, a block-scope
+declaration, a parameter, a return type, a `new` expression, a template
+argument, a `static_cast`, a dependent `typename`, and both halves escaped —
+plus the leading escaped namespace at block scope. Four qualified type shapes
+already worked and say why the others did not: an
+*elaborated-type-specifier*, a base-specifier, a mem-initializer's base and a
+*middle* nested-name-specifier component all go through parsers
+[escape-name-positions](#escape-name-positions) had already taught.
+
+**Four Clang sites, and the row's "two sites, one shape" was the right shape
+with the wrong count.** `TryAnnotateTypeOrScopeTokenAfterScopeSpec` reads the
+final component of a qualified type and had no escape arm;
+`TryAnnotateTypeOrScopeToken`'s *typename-specifier* branch reads it a second
+time for `typename T::`union``; `ParseDeclarationSpecifiers`' `annot_cxxscope`
+case reads it a third time, for the non-tentative path, where a qualified
+type-specifier is not annotated but looked up directly; and
+`isCXXDeclarationSpecifier`'s existing `tok::backtick` arm answered with
+`Actions.getTypeName` on the escaped keyword, which says *not a type* for a
+namespace, so it now annotates and asks again — which is exactly what the
+identifier arm beside it does for `N::T`. A fifth site,
+`isConstructorDeclarator`, is a **regression the fix caused and the sweep
+caught**: `` `union`::`union`() { } `` had been accepted by accident, because
+the old code bailed out of the decl-specifier on seeing a backtick and left it
+to the declarator, and looking the name up as a type first took that away.
+
+**The third of those arms shipped an infinite loop, and the *error* sweep is
+the only thing that could have caught it.** `ParseDeclarationSpecifiers`'
+recovery for a qualified name that does not resolve is *implicit-int*, which
+does not apply to an escape and consumes nothing, so
+`` namespace N { int x; } N::`union` g; `` — a well-formed escape naming
+something that is not a type — re-entered the same `case` with the token
+stream unchanged, indefinitely. The bail-out the arm replaced had been
+preventing that by accident. Nothing in either suite covered a malformed *or*
+an unresolvable escape in a qualified position, and a `-verify` test would not
+have caught it either: **a test that never terminates does not fail.** The
+probe that found it is [`ops/probes/escape-errors.sh`](probes/escape-errors.sh),
+twenty-three programs run under `timeout`, and it is a different question from
+the one a coverage sweep asks. `clang/test/Parser/backtick-escape-diagnostics.cpp`
+now pins it.
+
+**The interesting cost is not the arms; it is that an annotation token is
+matched against the cached token stream by source location.** An escape is
+three tokens where the grammar wants one, so `ConsumeBacktickEscape` now
+optionally reports the escape's extent and every annotation formed over an
+escaped name begins at the opening backtick and ends at the closing one. The
+same reasoning fixed a latent bug in the helper itself: it pushed the
+following token back with `PP.EnterToken` unconditionally, which is wrong
+under backtracking because the pushed token is then not in the cache and the
+cache is left pointing past a token the parser has not consumed. It now uses
+the `AnnotateScopeToken` idiom — `PP.RevertCachedTokens (1)` when
+backtracking, `PP.EnterToken` otherwise — which is what makes an escape
+consumable inside a tentative parse at all. `escape-name-positions`' rule
+still holds and is now sharper: **a predicate answers and a parse consumes,
+unless the predicate is one of the ones whose job is to annotate**, and those
+have to annotate over the whole escape.
+
+**Reconciled into** [§12](../docs/backtick-operator-design.md#12-coexistence-with-backtick-keyword-escaped-identifiers),
+the new paragraph headed *"A third category was found the same way, by
+sweeping rather than by a failing test"* and the third bullet of *"What it
+cost, and where the cost is"*, which is the annotation-token cost; and into
+[§17.8](../docs/backtick-operator-design.md#178-which-of-this-is-clangs-alone-and-why),
+the paragraph beginning *"Everything else this paragraph has ever carried is
+gone"* — where it is the third of three closed divergences and the only one
+that ever ran with GCC as the wider implementation — and the closing paragraph
+*"One asymmetry the escape did add to this section"*. Pinned by
+`clang/test/Parser/backtick-escape-positions.cpp`'s qualified section, whose
+third RUN line re-parses its own `-ast-print` output, and by the matching
+section of `gcc/testsuite/g++.dg/backtick/escape-positions.C`, so a
+divergence in either direction is now a test failure rather than a probe
+result.

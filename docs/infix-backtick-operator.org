@@ -395,6 +395,18 @@ and none showed up in a diagnostic. The check that finds them is comparing
 flag-on output against flag-off output on a program that never mentions the
 feature.
 
+And that GCC fix only got half the surface, which I didn't notice for a day.
+The routine I taught prints the name of a /declaration/. A class or enum
+/type/ is printed somewhere else. So if you declare =struct `union` { };= and
+then misuse it, GCC tells you that ='struct union' has no member named
+'`new`'=: one sentence, two names, one escaped and one not, from two
+printers. Clang escapes both. It accepts and rejects the same programs either
+way, so nothing fails; what fails is the only thing the decision was for,
+which is being able to paste the diagnostic back into the file. I found it by
+reading the output of the error-path probes rather than just their exit codes.
+A probe that only counts can't tell you that the answer was right and the
+sentence was wrong.
+
 * What isn't done yet
 
 The escape now works in both compilers everywhere the grammar writes an
@@ -406,7 +418,8 @@ nearly shipped without: a type-specifier, a base-specifier, a
 nested-name-specifier, a template name being specialized, a using-directive, a
 type-constraint, a constructor's name. Declaring =struct `union` { };= and
 then not being able to write =`union` u;= would have been a type nothing can
-name.
+name. And either end of a qualified name, or both: =N::`union` g;=,
+=using X = N::`union`;=, =typename T::`union`=, =`module`::inner::f()=.
 
 That was not true a day ago, and how it wasn't is the part worth keeping. Both
 prototypes were done. Then I wrote one program per name position and compiled
@@ -418,24 +431,70 @@ compiler. Nobody drew that boundary; it fell out of two parsers, differently in
 each. Neither test suite had a negative test for any of it, so nothing was
 failing and nothing would have failed.
 
-Fixing it cost about twice what I'd estimated, and the extra was in two places
-that aren't in the grammar. A parser that decides what it's looking at from the
-token *after* a name has to step over three tokens where it stepped over one,
-so every one of those lookaheads is a call site too; a label is only
-distinguishable from an expression statement by the =:= after it. And a new name
-position is a new printing surface: enum names, namespace names, template
-parameter names, labels and nested-name-specifiers all printed the bare
-keyword, which is source that doesn't re-parse, until I routed them through the
-one place that puts the backticks back.
+I have now written that sweep four times, and it has found something every
+time. First the positions that declare a name. Then the ones that use a name,
+after it occurred to me that a type nothing can name is not a hatch. Then
+qualified names, where it turned out Clang reads the last component as an
+identifier only when it names an object or a function, so =N::`new`= had been
+fine since day one and =N::`union`= had never worked. Then I changed the
+keyword. Every program I had ever written used =new=, =class=, =union= or
+=try=, all of them pure keywords. =int= is not, and GCC had been rejecting
+=int `int` = 0;= for two months, in the very first row of my own table.
+
+Seventy-nine one-line programs now, in four groups, ten seconds to run, and
+they live in the repository instead of in my shell history. Which is where
+they should have gone three sweeps ago.
+
+Fixing all that cost about twice what I'd estimated, and the extra was in
+three places that aren't in the grammar. A parser that decides what it's
+looking at from the token *after* a name has to step over three tokens where
+it stepped over one, so every one of those lookaheads is a call site too; a
+label is only distinguishable from an expression statement by the =:= after
+it. A new name position is a new printing surface: enum names, namespace
+names, template parameter names, labels and nested-name-specifiers all printed
+the bare keyword, which is source that doesn't re-parse, until I routed them
+through the one place that puts the backticks back. And Clang caches tokens so
+it can back up over them, which GCC doesn't. It folds a resolved qualified
+type into a single annotation token and finds the tokens that annotation
+replaces by source position. An escaped name is three tokens where the grammar
+wants one, so the annotation has to start on the opening backtick and stop on
+the closing one, or the cache keeps a stray =`= in front of it and the next
+backup lands on that. Two source locations, and working out that they were
+what was wrong took very much longer than passing them.
+
+The same change also shipped an infinite loop, which is the part I'd least
+like to leave out. Clang's recovery for a qualified name it can't resolve is
+to try implicit int. That doesn't apply to an escape, and it doesn't consume
+anything either, so =namespace N { int x; } N::`union` g;= re-entered the same
+case with the same tokens, forever. The old code had been avoiding it by
+accident, by giving up the moment it saw a backtick. Nothing in either test
+suite covered a malformed or unresolvable escape in a qualified position --
+nothing covered a qualified escape at all -- and a =-verify= test wouldn't
+have caught it anyway, because a test that never finishes doesn't fail, it
+hangs. What caught it was running the error cases under =timeout=, which is
+now the third script in the probe directory.
 
 The type-name slot is Clang-only: GCC parses its slot as an expression, so =1
-`Pt` 2= is rejected there. And GCC rejects an escape whose keyword is a type
-keyword, =int `int` = 0;=, in every position, because =int= and =long= carry
-a global binding to the builtin type in its name table, so the identifier the
-escape yields is already bound to something. Clang's keywords carry no such
-binding. That second one is older than everything above and had been sitting in
-the first and best-tested position the whole time; I never found it because
-every keyword I'd tested with was a pure keyword.
+`Pt` 2= is rejected there. That is now the only program the two compilers
+treat differently under the flag, and the escape isn't in it anywhere.
+
+Getting the last two off that list was more interesting than getting them on
+it. GCC binds =int= and =char= and the rest at global scope so that code
+which looks builtin types up by name can find them, and the comment above
+that code says the bindings shouldn't exist. It looked like the design would
+have to pick a side on which keyword representation is right. It doesn't: in
+C++ you can only name a declaration with a keyword if you escaped it, because
+=int= is a keyword token everywhere else, so a collision with that binding is
+never a redeclaration and GCC can just say so. Three call sites.
+=g(int, `int`)= mangles as =_Z1gi3int= in both compilers, which is the ABI
+claim on the worst name I have.
+
+And for about half a day, GCC was the wider implementation, which had not
+happened before. Its one arm reaches every name position it has; Clang reads a
+qualified type name in three other parsers, and I had put the escape in none
+of them. Four arms to fix, and a fifth to put back a constructor definition
+the other four broke: =`union`::`union`() { }= had been working by accident,
+because the old code gave up early and let the declarator sort it out.
 
 * What I am proposing, and what comes next
 

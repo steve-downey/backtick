@@ -608,6 +608,19 @@ name. Both got the line wrong once before getting it right, and the symptom
 was the same both times: a program containing no backtick at all had its
 diagnostics change under the flag.
 
+One half of that is still wrong in GCC, and it is reported here rather than
+smoothed over, because it is the clearest evidence for what the paragraph
+above claims the cost is. GCC's routine is *the name of a declaration*. A
+class or enum **type** is printed somewhere else, so a program that declares
+`` struct `union` { }; `` and then misuses it is told that *'struct union' has
+no member named '`new`'* — one sentence, two names, one of them escaped and
+the other not, because the two halves arrive from two printers. Clang escapes
+both. No program is accepted or rejected differently; what fails is the thing
+the decision exists to deliver, which is that text copied out of a diagnostic
+can be pasted back. Deciding which surfaces name an entity is the whole cost
+of the feature's printing, and a compiler can pay it in one place and not
+another without anything failing.
+
 The cost is bounded added context-sensitivity: tentative
 declaration-versus-expression parsing must recognize escapes, and tooling
 must distinguish the two uses. Both implementations do.
@@ -855,7 +868,10 @@ a concept's, a *mem-initializer*, a label, and expression positions including
 after `.`. Declaring a name is only half of a hatch, so the positions that
 *use* one are prototyped too: a type-specifier, a base-specifier, a
 nested-name-specifier, a *template-name* being specialized, a using-directive,
-a type-constraint, and a constructor's name.
+a type-constraint, and a constructor's name. And a qualified name may be
+escaped at either end or at both — `` N::`union` g; ``,
+`` using X = N::`union`; ``, `` sizeof(N::`union`) ``,
+`` typename T::`union` ``, `` `module`::inner::f() ``.
 
 That coverage is recent, and how it was arrived at is a fair warning about
 what "implemented" means for a grammar extension. Both prototypes were
@@ -866,22 +882,56 @@ else. That is why a concept's name worked and `` struct `union` { }; `` — the
 example in the wording below — did not, in either compiler. Nobody had drawn
 the boundary; it fell out of two independent parsers, differently in each.
 Neither test suite contained a negative test for any of it, so nothing was
-failing and nothing would have failed. It was found by writing one program per
-position and compiling them, which takes about ten minutes and has caught
-something every time it has been run.
+failing and nothing would have failed.
+
+It was found by writing one program per position and compiling them. That has
+now been done four times, and it has found something on all four. The first
+sweep covered the positions that *declare* a name; the second, written after
+somebody noticed that a type nothing can name is not a hatch, covered the
+positions that *use* one. The third covered qualified names, and found that
+Clang read the final component of a qualified name as an unqualified-id only
+when it named an object or a function, so `` N::`new` `` had worked from the
+first day and `` N::`union` `` had never worked at all. The fourth changed the
+keyword. Every program anyone had written used `new`, `class`, `union` or
+`try`, which are pure keywords; `int` is not, and GCC rejected
+`` int `int` = 0; `` in the first and best-tested position in the table, and
+had done for two months. Seventy-nine programs now, in four groups, and the
+whole sweep runs in about ten seconds. It is checked into the repository,
+which it should have been three sweeps ago.
 
 What it cost to fix is the useful number, and it is small but not the number
 first estimated. The escape parse becomes a helper called from each name
-position — fourteen call sites in Clang, one arm plus its guards in GCC — and
-then two things nobody had priced. A parser that decides what it is looking at
-from the token *after* a name has to step over three tokens where it stepped
-over one, so every such lookahead is a call site too; a label is told from an
-expression statement only by the `:` that follows it. And a new name position
-is a new *printing* surface: enumeration names, namespace names, template
-parameter names, labels and nested-name-specifiers all printed the bare
-keyword, which is source that does not re-parse, until they were routed
-through the one routine that puts the backticks back. About half the work was
-in those two, and neither appears in the grammar.
+position — twenty call sites in Clang, one arm plus its guards in GCC — and
+then three things nobody had priced. A parser that decides what it is looking
+at from the token *after* a name has to step over three tokens where it
+stepped over one, so every such lookahead is a call site too; a label is told
+from an expression statement only by the `:` that follows it. A new name
+position is a new *printing* surface: enumeration names, namespace names,
+template parameter names, labels and nested-name-specifiers all printed the
+bare keyword, which is source that does not re-parse, until they were routed
+through the one routine that puts the backticks back. And a parser that caches
+tokens for backtracking has a third cost the other two do not imply. Clang
+collapses a resolved qualified type name into a single annotation token and
+matches that token against the cached stream by source location; a name
+written as an escape occupies three tokens, so the annotation has to begin on
+the opening backtick and end on the closing one. Get either end wrong and the
+cache is left holding a stray `` ` `` in front of the annotation, which the
+next backtracking parse resumes on. GCC pays none of that, because it does not
+cache and re-annotate. More than half the work was in those three, and none of
+them appears in the grammar.
+
+That last change also shipped an infinite loop, which is worth reporting for
+what caught it. Clang's recovery for a qualified name it cannot resolve is to
+try implicit `int`; that does not apply to an escape and consumes nothing, so
+`` namespace N { int x; } N::`union` g; `` re-entered the same case with the
+same tokens indefinitely. The code it replaced had been avoiding that by
+accident, by giving up as soon as it saw a backtick. Neither test suite
+covered a malformed or unresolvable escape in a qualified position — neither
+covered a qualified escape at all — and a diagnostic-matching test would not
+have caught it in any case, since a test that never terminates does not fail.
+What caught it was running the error cases under a timeout, which is a
+different question from the one a coverage sweep asks and needs its own
+harness.
 
 The type-name slot has single-compiler evidence, said here so a reviewer does
 not have to discover it. Clang implements it: a bare name looked up
@@ -890,18 +940,36 @@ parse, a builtin through the functional-cast path, all three routed to the
 `T(x, y)` build, which is where CTAD and temporaries come back for free. GCC
 parses its slot as an expression, so `` 1 `Pt` 2 `` is rejected there.
 
-One further program is treated differently, and it is the older of the two.
-GCC rejects an escape whose keyword is a *type* keyword — `` int `int` = 0; ``
-— in every position, because `int` and `long` carry a global binding to the
-builtin type in its name table, so the identifier the escape yields is already
-bound to something; Clang's keywords carry no such binding. Those two are the
-whole list of programs the two compilers treat differently under the flag, and
-both are gaps rather than disagreements: nothing in GCC's parser-level
-desugaring stands in the way of the type arm, and nothing in the design says
-which of the two keyword representations is right. It is worth adding that the
-list was longer until the positions above were probed, and that this entry had
-been sitting in the first and best-tested position the whole time, hidden
-behind a choice of test keywords that happened to all be pure keywords.
+That slot is now the whole list of programs the two compilers treat
+differently under the flag. Nothing the keyword escape does is on it.
+
+Three entries have come off that list, and every one of them left the same
+way: it turned out to be a gap rather than a disagreement, with a single cause
+behind however many programs it showed up in. The last two are worth reporting
+because they ran in opposite directions. GCC rejected an escape whose keyword
+is a *type* keyword, because `int` and `char` and their siblings are bound at
+global scope to the builtin type in GCC's name table, so the name the escape
+yields was
+already taken. That looks like a representation the design would have to pick
+a side on. However, in C++ a declaration can be named by a keyword only if it
+was escaped, since `int` is a keyword token everywhere else and the declarator
+check rejects a bare reserved word; a collision with that binding is therefore
+never a redeclaration, and the fix is to say so, at the three places GCC
+consults it. `` int `int` = 0; `` compiles, `int` still names the builtin in
+the same translation unit, and `` g(int, `int`) `` mangles as `_Z1gi3int` in
+both compilers. Which is the ABI claim above, demonstrated on the hardest name
+the feature has.
+
+And once, briefly, GCC was the wider implementation: it took `` N::`union` ``
+where Clang did not. One arm in the routine that reads an identifier reaches
+every name position GCC has, a qualified type among them. Clang reads a
+qualified type name somewhere else entirely, and in three somewhere-elses: the
+declaration-specifier path, the *typename-specifier* path, and the tentative
+parse that decides whether a statement is a declaration at all. Twelve
+programs, four arms, and then a fifth to put back a constructor definition the
+first four had broken — `` `union`::`union`() { } `` had been working by
+accident, on the strength of the old code giving up early. No design question
+anywhere in it.
 
 `-ast-print` round-trips the operator, with one exception a reviewer will
 find: a slot naming a builtin whose call the semantic layer rewrites into a
