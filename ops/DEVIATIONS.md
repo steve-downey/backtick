@@ -264,6 +264,37 @@ A type slot naming a class with a constructor round-trips correctly (`` a `Pt` b
 
 **One thing the row understated.** The pre-fix behaviour was not only less faithful, it was *wrong* for the CTAD aggregate: `` a `aggT` b `` printed `(aggT<int>)(3, 4)`, a cast applied to a comma expression, which is a different program. Measured on the pre-fix `backtick-23` binary before the cherry-pick.
 
+### slot-callable-shape
+
+**Formerly:** none — new slug, 2026-09-08. **Status:** **FIXED and RECONCILED**
+
+**Found by.** The Phase J review pass of [`papers/backtick-infix-and-keyword-escape.md`](../papers/backtick-infix-and-keyword-escape.md), re-deriving the round-trip claim against the built compilers — the same route that opened [type-slot-aggregate-shape](#type-slot-aggregate-shape), one shape earlier.
+
+**Design section.** [§17.5](../docs/backtick-operator-design.md#175-source-ranges-of-the-desugared-node-source-fidelity-node); [§17.3](../docs/backtick-operator-design.md#173-type-name-in-the-operator-slot-type-name-slot)
+
+**What the design said.** §17.5 named **four** inner shapes and framed the trap as an *initialization* problem: *"every initialization form Sema can produce for `T(x, y)` is another arm."* All four are reached through `BacktickInfixExpr::getCallExpr()` or through the type slot's construction node, and the first of them — the generic call — reads `getArg(0)`, `getCallee()`, `getArg(1)`.
+
+**What was true.** There is a fifth shape, and it is not an initialization form at all: it is the ordinary call, *re-keyed*. A slot whose **value** is a class-typed callable — a lambda, a named function object, a `std::function`, `std::plus<int>{}`, a data member holding a functor — is called through the object's `operator()`, and Sema builds a `CXXOperatorCallExpr` with `getOperator() == OO_Call` whose argument 0 is the **slot object** and whose arguments 1 and 2 are the two operands. `CXXOperatorCallExpr` **is a** `CallExpr`, so the generic arm accepted it and read the slot as the left operand, the implicit `operator()` reference as the slot, and the left operand as the right one — never reading argument 2. Measured on `backtick-trunk` at `bd8790f9d0ef` and `backtick-23` at `49ca42d1fab7`, identically:
+
+```
+struct Obj { int operator()(int,int) const; };
+Obj obj;
+int b(int L,int R){ return L `obj` R; }
+
+-ast-print   ->  obj `operator()` L                     // R gone; a different program
+-ast-dump    ->  BacktickInfixExpr <col:31, col:28>     // end before begin
+```
+
+**The reach is why it mattered.** The paper's motivation helpers — `pipe`, `then`, `mbind`, `implies` — are every one of them `inline constexpr auto` lambdas, so the paper's headline examples were exactly the broken case: `` x `pipe` inc `pipe` dbl `` printed as `` pipe `operator()` pipe `operator()` x ``.
+
+**Which half was silent.** The printing half was **not** silent, and that is a correction to §17.5's own general statement: the printed text names `operator()` as a free function, which unqualified lookup does not find, so the printed program does not compile and the `-ast-print` re-parse RUN line catches it — the file simply had no case of this shape. The **range** half was silent, and inverted, because nothing re-checks a source range but the literal columns a test pins.
+
+**Fixed and reconciled** by [slot-callable-printing](completion/steps/slot-callable-printing.md), 2026-09-08, on `backtick-trunk` (`28b685c86ea2`) and `backtick-23` (`8d003dd45c52`). One arm in `BacktickInfixExpr::getOperand` (`clang/lib/AST/Expr.cpp`) and one in `StmtPrinter::VisitBacktickInfixExpr` (`clang/lib/AST/StmtPrinter.cpp`), both **ahead of** the generic `CallExpr` arm and both guarded on `getOperator() == OO_Call && getNumArgs() >= 3`: the slot is argument 0, the operands are arguments 1 and 2. Cases added to three files that already existed, so no lit count moves: `clang/test/Parser/backtick-ast-print.cpp` (six shapes, of which five printed wrong before), `clang/test/Parser/backtick-infix.cpp` (the range, as literal columns) and `clang/test/AST/backtick-template-print.cpp` (the substituted form, which only ever failed in the *instantiation*, since the pattern's inner node is an ordinary dependent `CallExpr`). **Reconciled into [§17.5](../docs/backtick-operator-design.md#175-source-ranges-of-the-desugared-node-source-fidelity-node)** — *four shapes* is now five, and the general statement now says a call can be re-keyed as well as an initialization multiplied — **and into [§17.3](../docs/backtick-operator-design.md#173-type-name-in-the-operator-slot-type-name-slot)**, whose *three printer arms* is a count of the **type slot's** arms and is unchanged by this row, which now says so explicitly rather than leaving the reader to compare it against §17.5's total.
+
+**The boundary, pinned rather than assumed.** A callable used through its *conversion to a function pointer* — a surrogate call — is **not** re-keyed: Sema builds a plain `CallExpr` whose callee is the converted object, so the generic arm already printed it correctly. That case is in the test file so that the line between the two arms is a test rather than a recollection.
+
+**No GCC change, confirmed rather than assumed.** GCC desugars in the parser and has no pretty-printer for the form, so there is nothing on that side to get wrong. All six shapes are accepted by `cc1plus -fbacktick` before and after.
+
 ### escape-in-qualified-type-name
 
 **Formerly:** none — new slug, 2026-09-08. **Status:** **FIXED and RECONCILED**

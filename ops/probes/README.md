@@ -1,10 +1,15 @@
 # Probes — the sweeps, checked in
 
-Three `bash` scripts, about ten seconds each, that ask the questions this
-feature keeps getting wrong. **Re-run them after touching the keyword escape.**
-They have found something on every occasion they have been run, which is now
-five, and three of those five were after somebody had written down that the
-coverage was complete.
+Three `bash` scripts — **1.6 s, 5.0 s and 0.4 s** on this machine, best of
+three consecutive runs each, warm — that ask the questions this feature keeps
+getting wrong. **Re-run them after touching the keyword escape.**
+They have found something on five of the six occasions they have been run, and
+three of those five were after somebody had written down that the coverage was
+complete. **The sixth found nothing, and the run is recorded anyway**: it was
+[slot-callable-printing](../completion/steps/slot-callable-printing.md), which
+changed the AST printer and not the escape, so a green sweep is the expected
+reading rather than a disappointing one. A sweep that is only run when it is
+expected to fail stops being a control.
 
 They are `bash` and they use bash arrays. **`zsh` does not word-split**, and
 that has cost this track several sweeps; run them with `bash`, not by typing

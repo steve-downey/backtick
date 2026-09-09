@@ -884,7 +884,7 @@ were found *after* somebody had written down that the coverage was complete.
 The sweep is therefore in the repository rather than in a handoff:
 [`ops/probes/escape-positions.sh`](../ops/probes/escape-positions.sh) is
 seventy-nine one-line programs in four categories, run against both compilers
-in about ten seconds, and
+in **1.6 seconds**, and
 [`ops/probes/flag-off-parity.sh`](../ops/probes/flag-off-parity.sh) is the
 other half of the claim — that a program containing no backtick compiles and
 diagnoses identically with the flag on and off.
@@ -1605,7 +1605,7 @@ template arm, a tentative parse for qualified template-names, and a
 functional-cast arm for builtins); a parsed type threaded beside the slot's
 expression result; one Sema overload routing to the existing
 construct-expression build path, which is where CTAD, temporaries and
-dependent construction come back for free; and **three** printer arms to keep
+dependent construction come back for free; and **three** type-slot printer arms to keep
 `-ast-print` round-tripping — two were written and were the count recorded
 here, and the third, for the aggregate shape, was found by re-deriving the
 round-trip claim rather than by any test failing (§17.5). No AST change at all — the wrapper's
@@ -1755,18 +1755,61 @@ semantic node as the constructor arm does, so one rule covers all four shapes
 and CTAD keeps a single stated exception rather than two adjacent arms
 answering the same question differently.
 
-**The general statement is the one to carry, and the fix does not retire it**:
+**Four was the count on 2026-09-07 and it lasted a day. There are five, and
+the fifth is not an initialization form at all — it is the ordinary call,
+re-keyed.** A slot whose *value* is a class-typed callable — a lambda, a named
+function object, a `std::function`, a data member holding a functor — is
+called through the object's `operator()`, and Sema builds a
+`CXXOperatorCallExpr` for that, whose argument 0 is the **slot object** and
+whose arguments 1 and 2 are the two operands. `CXXOperatorCallExpr` *is a*
+`CallExpr`, so the first arm accepted it and read it at the wrong indices: the
+slot as the left operand, the implicit `operator()` reference as the operator,
+the left operand as the right one, and argument 2 never read. `` L `obj` R ``
+printed as `` obj `operator()` L `` and reported `<col:31, col:28>` — a range
+that ends before it begins
+([slot-callable-shape](../ops/DEVIATIONS.md#slot-callable-shape)). The reach is
+what made it worth a step rather than a footnote: the pipeline and composition
+helpers this proposal motivates itself with are `inline constexpr auto`
+lambdas, so the headline examples were precisely the broken shape.
+
+**And the two halves of the defect failed differently, which is the part to
+carry.** The printing half was **loud**: the text it produced names
+`operator()` as a free function, which unqualified lookup does not find, so
+the printed program does not compile and the `-ast-print` test's re-parse line
+would have caught it — the file had no case of the shape, which is a coverage
+hole and not a silence. The range half was **silent**, and a range that ends
+before it begins is as silent as one that is merely wrong. Nothing re-checks a
+source range except the literal columns a test pins, which is the argument for
+pinning them.
+
+**The boundary between the two call arms is narrower than "a callable object"
+and is pinned as a test rather than as a recollection.** A callable used
+through its *conversion to a function pointer* — a surrogate call — is not
+re-keyed: Sema builds a plain `CallExpr` whose callee is the converted object,
+so the generic arm already reconstructs it. The condition the arm actually
+tests is the node kind and the operator, `OO_Call` with three or more
+arguments, and not any property of the slot's type.
+
+**The general statement is the one to carry, and neither fix retires it**:
 the wrapper recovers the written operands from whatever Sema built, so **every
-initialization form Sema can produce for `T(x, y)` is another arm, and a
-missing arm is silent** — it prints the desugaring, which is well-formed,
-plausible, and not what was written. Same failure mode as the analyzer's
-seventh site in §17.6, one layer up. The aggregate case sharpens it: the
-printing was not merely less faithful, it was *wrong*. An aggregate under CTAD
-printed `(aggT<int>)(3, 4)` — a cast applied to a comma expression, which is
-not the program that was written and does not mean what it meant. A round-trip
-claim that is checked only on the shapes the printer was written against is
-not checked at all; the two cases now live in the files that own those two
-claims, and the `-ast-print` test re-parses what it printed.
+form Sema can produce for `op(x, y)` is another arm, and a missing arm is not
+detected by anything the arm itself does**. Two ways it multiplies, not one:
+the *initialization* forms a type slot can take, and the *call* nodes Sema
+keys by the call's shape. A missing arm prints the desugaring, which is
+plausible and is not what was written — well-formed in the aggregate case,
+ill-formed in the callable one, and wrong in both. Same failure mode as the
+analyzer's seventh site in §17.6, one layer up. The aggregate case sharpens
+it: the printing was not merely less faithful, it was *wrong*. An aggregate
+under CTAD printed `(aggT<int>)(3, 4)` — a cast applied to a comma expression,
+which is not the program that was written and does not mean what it meant.
+**A round-trip claim that is checked only on the shapes the printer was
+written against is not checked at all**, and both of these arrived by
+re-deriving the claim against the built compiler rather than by any test
+failing. The cases now live in the files that own the two claims — the
+literal-column ranges in one, the printing in another whose second RUN line
+re-parses its own output, and the substituted form in a third, because a
+class-typed callable slot is an ordinary dependent call in the template
+*pattern* and only becomes the re-keyed shape on instantiation.
 
 Before that date the wrapper forwarded both locations to the node it wrapped,
 so this section described an intention rather than a behaviour: `` 1 `add` 2 ``
@@ -1939,8 +1982,8 @@ and three other parsers read it when it names a type
 with**, and a list this short is worth re-deriving rather than reading: the
 seventy-nine programs are
 [`ops/probes/escape-positions.sh`](../ops/probes/escape-positions.sh) and take
-about ten seconds. The kind difference belongs in the argument; the gaps
-belong in the status table.
+**1.6 seconds** to run against both compilers. The kind difference belongs in
+the argument; the gaps belong in the status table.
 ([gcc-wrapper-parity](../ops/gcc/DEVIATIONS.md#gcc-wrapper-parity),
 [gcc-type-slot-parity](../ops/gcc/DEVIATIONS.md#gcc-type-slot-parity),
 [escape-alias-name-parity](../ops/gcc/DEVIATIONS.md#escape-alias-name-parity),

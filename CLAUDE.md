@@ -35,11 +35,16 @@ Both papers are written and both build, and `docs/open-decisions.md` has no
 open question. **Phase J (steps 21–24) is what a fact, cite and voice review
 of the two papers found on 2026-09-08**, and it is where an agent picks up
 work: one live Clang defect — a slot whose value is a class-typed callable
-prints as a different program and carries an inverted source range, which is
+printed as a different program and carried an inverted source range, which is
 every lambda the backtick paper's motivation section uses — two sets of
 figures in the Unicode paper carried forward from a note, four citation
 defects in the backtick paper, and a prose em-dash rate at six times the
-author's published-paper rate in both. The last three steps of Phase I were the
+author's published-paper rate in both. **The compiler defect is fixed**
+(`slot-callable-printing`, on both backtick branches, 2026-09-08:
+`CXXOperatorCallExpr` is a `CallExpr`, and the generic arm read it at the
+wrong argument indices), and so are the Unicode paper's figures. What is left
+is the backtick paper itself and the sixth forward-port onto
+`unicode-operators-experiment`. The last three steps of Phase I were the
 backtick paper's own gate finding four claims the built compilers did not
 support: `settle-paper-rows` fixed two and put the other two — one question,
 seen from two compilers — to the author; `escape-name-positions` built the
