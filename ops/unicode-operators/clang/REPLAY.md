@@ -1556,3 +1556,185 @@ This changes no classification. It is recorded because a replay on a machine
 with a watch hoard will see it, and because the cheap diagnosis — measure the
 hoard, then run the pristine binary at that moment — is what separates it from a
 diff in about a minute.
+
+## slot-callable-forward-port — the sixth backtick merge, also never replayed
+
+`unicode-operators-experiment` @ `0041778f1d4e` is a **merge commit** bringing
+the one commit `backtick-trunk` had gained since
+[escape-name-sweep-forward-port](#escape-name-sweep-forward-port--the-fifth-backtick-merge-also-never-replayed):
+
+| Commit | What |
+|---|---|
+| `28b685c86ea2` | slot-callable-printing — a slot whose *value* is a class-typed callable is called through the object's `operator()`, which Sema keys as a `CXXOperatorCallExpr` with `OO_Call`; two arms, in `BacktickInfixExpr::getOperand` and `StmtPrinter::VisitBacktickInfixExpr`, ahead of the generic `CallExpr` arm |
+
+Classification, as for [M1](#m1--the-backtick-merge-which-is-never-replayed),
+[M2](#m2--the-second-backtick-merge-also-never-replayed),
+[unicode-branch-maintenance](#unicode-branch-maintenance--the-third-backtick-merge-also-never-replayed),
+[escape-positions-forward-port](#escape-positions-forward-port--the-fourth-backtick-merge-also-never-replayed)
+and
+[escape-name-sweep-forward-port](#escape-name-sweep-forward-port--the-fifth-backtick-merge-also-never-replayed):
+**backtick dependency — unreplayable by design.** `unicode-operators-upstream`
+did not receive it and must never receive it.
+
+**It changes no row's classification, and the arithmetic says so four times.**
+The merge delta is **5 files, +131/−13** — *exactly* the incoming commit's own
+totals — the 13 deleted lines are **identical as a set** to that commit's own
+deletions and **none of them is Unicode text**, and **the three test files are
+byte-identical to `backtick-trunk`**. The two production files differ from it in
+exactly twenty-two lines, every one of them Unicode work: three
+`case UserOperatorExprClass:` arms in `Expr.cpp` and `VisitUserOperatorExpr` in
+`StmtPrinter.cpp`.
+
+```
+git diff --shortstat 28b685c86ea2..0041778f1d4e         → 121 files, +7701/−57
+git diff -U0 28b685c86ea2..0041778f1d4e | grep -c '^@@'  → 221
+```
+
+**Identical to the last three merges' 121 / +7701−57 / 221 at `-U0`** (207 at
+`-U3`; quote the flag with the number).
+
+§1's `awk` contamination recipe over `28b685c86ea2..unicode-operators-experiment`
+hits the **same** six production files it always has — `OperatorPrecedence.h`,
+`OperatorPrecedence.cpp`, `ParseExpr.cpp`, `Format/Format.cpp`,
+`Format/FormatToken.h`, `Format/TokenAnnotator.cpp` — plus `SemaOverload.cpp`'s
+doc-comment cross-reference, `BugReporterVisitors.cpp`, the four comment-only
+entries (`Options.td`, `test/Lexer/backtick-c-mode.c`, `CIRGenExprScalar.cpp`,
+`Analysis/CFG.cpp`) and the test files. **No new production file** — and in
+particular neither `clang/lib/AST/Expr.cpp` nor `clang/lib/AST/StmtPrinter.cpp`
+appears, both being identical to `backtick-trunk` except for their Unicode arms.
+
+### The predicted conflict was real for the first time, and checking beat explaining
+
+The two merges before this one each predicted a conflict that could not have
+happened, and each spent a section afterwards explaining why. This one's
+prediction was the first with a genuine basis: **`StmtPrinter.cpp` carries
+`VisitUserOperatorExpr` on this branch and `VisitBacktickInfixExpr` is exactly
+the function the incoming commit edits.** Same file, both features, both
+printers.
+
+It was settled **before** the merge, with the one command those two sections
+each concluded with:
+
+```
+git diff -U0 bd8790f9d0ef 5fd79178d2a7 -- clang/lib/AST/Expr.cpp clang/lib/AST/StmtPrinter.cpp
+git diff -U0 bd8790f9d0ef 28b685c86ea2 -- clang/lib/AST/Expr.cpp clang/lib/AST/StmtPrinter.cpp
+```
+
+| File | Unicode side's hunks | Incoming hunks |
+|---|---|---|
+| `clang/lib/AST/Expr.cpp` | 2713, 3560, 3888 — `isUnusedResultAWarning`, `isConstantInitializer`, `HasSideEffects` | 1622–1651 — `BacktickInfixExpr::getOperand` |
+| `clang/lib/AST/StmtPrinter.cpp` | 2283 — `VisitUserOperatorExpr` | 1638–1665 — `VisitBacktickInfixExpr` |
+
+Different functions in both files, **640 lines apart in the printer and over a
+thousand in `Expr.cpp`**. `git merge` reported *"Automatic merge went well"* and
+there were no conflicts. The rule has now paid three times running, twice by
+retiring a prediction and once by pricing a real one in a single command:
+**check a predicted collision before writing the paragraph about it.**
+
+### `UserOperatorExpr::getOperand` needs no equivalent arm, and that is a program rather than a reading
+
+The incoming defect is that `CXXOperatorCallExpr` **is a** `CallExpr`, so a
+generic `dyn_cast<CallExpr>` arm silently gets the re-keyed shape with its
+arguments shifted by one. `UserOperatorExpr::getOperand` reaches through
+`getSemanticForm()->IgnoreImplicit()` with the same idiom, so the question is
+whether it has the same hole. It does not, and the reason is structural: **a
+user operator's semantic form is a call to a *declared* function** — either
+`operator⊞(x, y)` or `x.operator⊞(y)` — and there is **no
+`OverloadedOperatorKind` for ⊞ at all**, so the `OO_Call` re-keying cannot
+arise. `ExprCXX.cpp` already checks `CXXMemberCallExpr` before `CallExpr`, for
+the same "*X* is a `CallExpr`" reason the incoming arm exists.
+
+Measured on the merged binary, `-std=c++23 -fbacktick -funicode-operators
+-Xclang -ast-print`, six shapes, every one printing as written:
+
+```cpp
+int a() { return fn ⊞ fn; }                      // operand is a class-typed callable
+int b() { return w1 ⊞ w2; }                      // operand is a class holding one
+int c(int L, int R) { return L `fn` R; }         // the shape the merge fixes
+int d(int L, int R) { return (L `fn` R) ⊞ 0; }   // both features, one expression
+int e(int L, int R) { return L ⊞ R `fn` 1; }     // both features, precedence
+int g(int L, int R) { return fn(L, R) ⊞ fn(R, L); }  // operand is a call's result
+```
+
+and **the printed output re-parses clean**, `EXIT=0` — the round trip, not just
+the print. `-ast-dump` shows both node kinds carrying forward ranges
+(`UserOperatorExpr <col:18, col:25>`, `BacktickInfixExpr <col:30, col:37>`), so
+the *silent* half of the incoming defect is absent here too.
+
+**The defect was live on this branch and the merge is what fixed it.** The
+previous handoff measured `` L `fn` R `` printing as `` fn `operator()` L `` on
+`5fd79178d2a7`'s binary — a program that does not compile, naming `operator()`
+as a free function. `git show 5fd79178d2a7:clang/lib/AST/StmtPrinter.cpp` has no
+`OO_Call` guard; the merged file has one; and the program prints as itself now.
+
+### The fold guard survived, and it was proven a fifth time rather than read
+
+`Parser::isFoldOperator` still reads
+
+```cpp
+  return Level > prec::Unknown && Level != prec::Conditional &&
+         Level != prec::Spaceship && Level != prec::UserInfix;
+```
+
+**Verified by deleting the clause and rebuilding**, for the reason the standing
+warning at the top of this file gives: it fails silently. Without it,
+`clang/test/Parser/unicode-operator-precedence.cpp` fails **on line 322 only**,
+the right fold `(N ⊞ ...)`, in the same four stanzas the last two merges
+recorded, ending `4 errors generated.` The clause was restored with
+`git checkout --`, `clang` rebuilt (`EXIT=0`, zero warnings), the file passes,
+and `git status` is clean at `0041778f1d4e`. **Fifth independent confirmation
+that only the right fold pins it**, and the merge touches `ParseExpr.cpp` not at
+all, which is why the check is a control rather than a formality.
+
+### The separability gate's command is stale, and the base commit is the one to quote
+
+The step file's gate says
+`git diff upstream/main..unicode-operators-upstream | grep -i backtick` must
+return nothing. **It no longer does — it returns six lines, and none of them is
+this project's.** `upstream/main` has moved to `72417eb739e5`, 17,471 files past
+this branch's base `d28193fa1ff6`, and the six hits are upstream's own drift:
+LLDB's `arg_has_backtick` and four MLIR documentation lines about Markdown
+backtick fences, all appearing as `-` lines because the diff runs *from*
+upstream's newer state.
+
+The load-bearing property is about the branch's own commits, so quote the base:
+
+```
+git -C ~/src/llvm/unicode-upstream log -p d28193fa1ff6..HEAD | grep -ic backtick   → 0
+git -C ~/src/llvm/unicode-upstream diff    d28193fa1ff6..HEAD | grep -ic backtick   → 0
+```
+
+Twenty commits, zero mentions, tip unchanged at `8c2a90f56b00`, and
+`git merge-base --is-ancestor 0041778f1d4e HEAD` false — the merge is not
+present and must never be. This is the same class of correction as the
+`-U0`-versus-`-U3` one the last merge recorded: **a gate command has to name
+the reference it is measuring against, or it decays into a false alarm.**
+
+### Formatting, probes and the gate
+
+`git-clang-format --diff --commit 5fd79178d2a7` with the **in-tree**
+`clang-format` reports *"clang-format did not modify any files"* — the second
+merge running with nothing to report. The inherited region in
+`BacktickInfixExpr::getOperand` is in the rewritten function's file this time
+and still reports clean, the incoming commit having gated green on
+`backtick-trunk` with it. `check-clang`'s self-format glob contains **no file
+this merge touches**, so the abort at ~81/970 was never in play.
+
+The three probes, run with `bash` against the merged binary:
+`escape-positions.sh` **79/79 clang, 79/79 gcc**; `escape-errors.sh` `EXIT=0`
+over 23 × 2, all diagnosing and stopping under `timeout`;
+`flag-off-parity.sh` `EXIT=0`, byte-identical in every cell both against
+flag-off and against the pristine `~/src/llvm/build-main` binary — which is
+**both features off**, since the "off" column passes neither flag and the
+pristine binary has neither. GCC's one non-identical cell is the standing
+`.ident` build-date string. **They found nothing, and the run is recorded
+anyway**, as `ops/probes/README.md` now requires: this merge changed the AST
+printer and not the escape, so a green sweep is the expected reading.
+
+`check-clang` **`EXIT=0`, 54190 discovered / 48302 passed / 0 failed**, XFAIL
+27, unsupported 5855, skipped 6, 198.94 s — **exactly the Baselines row, delta
+0**, the incoming commit's cases having gone into three lit files this branch
+already had. **Green on the first run**: the machine held 101 inotify instances
+when the gate started, so [`inotify-watch-budget`](../../BACKLOG.md#inotify-watch-budget)
+cost nothing. Measured with `ulimit -c 0`, redirected, `EXIT=$?` appended to the
+log and read back out of it.

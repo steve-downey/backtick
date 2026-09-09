@@ -42,9 +42,10 @@ defects in the backtick paper, and a prose em-dash rate at six times the
 author's published-paper rate in both. **The compiler defect is fixed**
 (`slot-callable-printing`, on both backtick branches, 2026-09-08:
 `CXXOperatorCallExpr` is a `CallExpr`, and the generic arm read it at the
-wrong argument indices), and so are the Unicode paper's figures. What is left
-is the backtick paper itself and the sixth forward-port onto
-`unicode-operators-experiment`. The last three steps of Phase I were the
+wrong argument indices), and so are the Unicode paper's figures, and so is the
+sixth forward-port onto `unicode-operators-experiment`
+(`slot-callable-forward-port`, 2026-09-08). What is left is the backtick paper
+itself. The last three steps of Phase I were the
 backtick paper's own gate finding four claims the built compilers did not
 support: `settle-paper-rows` fixed two and put the other two — one question,
 seen from two compilers — to the author; `escape-name-positions` built the
@@ -78,13 +79,15 @@ defects, evidence debt, reconciliation section by section, hygiene, and the
 two papers last. `ops/completion/PLAN.md`'s "Coverage" table maps every open
 row to its step; nothing in `ops/` is outside it.
 
-No maintenance merge is outstanding. Four have run — M1, M2,
-`unicode-branch-maintenance` and, on 2026-09-08,
-`escape-positions-forward-port`, which carried `settle-paper-rows`' aggregate
-type-slot arm and `escape-name-positions`' broad keyword escape onto
-`unicode-operators-experiment` and gated green; the latest is
-`ops/completion/handoffs/escape-positions-forward-port.handoff.md` and it
-records what conflicts to expect and where the two features actually collide.
+No maintenance merge is outstanding. Six have run — M1, M2,
+`unicode-branch-maintenance`, and on 2026-09-08 `escape-positions-forward-port`,
+`escape-name-sweep-forward-port` and `slot-callable-forward-port`, which carried
+`slot-callable-printing`'s callable-slot printer arm onto
+`unicode-operators-experiment` and gated green at the Baselines row; the latest
+is `ops/completion/handoffs/slot-callable-forward-port.handoff.md`, and between
+them the six record what conflicts to expect and where the two features actually
+collide. **Check a predicted collision with one `git diff --numstat` before
+writing the paragraph about it** — three merges running have turned on that.
 A new one is owed only if a later change lands on the backtick branches alone
 — the two Clang tracks share `clang/lib/AST`, `clang/lib/Parse` and
 `clang/lib/Sema`, and `unicode-operators-experiment` is downstream of
