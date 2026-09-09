@@ -133,6 +133,17 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 
 **Closed by.** [hygiene-parity](completion/steps/hygiene-parity.md), 2026-09-07. **Fixed on `backtick-trunk` and `backtick-23`** — one line, `case Stmt::BacktickInfixExprClass:` beside `CXXRewrittenBinaryOperatorClass` in `MakeCXCursor`. The row's claim that the warning was live is **re-derived, not quoted**: rebuilding `CXCursor.cpp.o` alone on the pre-fix tree gives exactly one diagnostic, `warning: enumeration value 'BacktickInfixExprClass' not handled in switch [-Wswitch]` at `CXCursor.cpp:175`, and the same rebuild after the fix is silent. It had been live since `S11` added the node on 2026-06-27, was recorded at `U17` on 2026-08-04, and was still live on 2026-09-07 — **ten weeks and every step of two tracks** — which is the datum [expression-node-cost](unicode-operators/clang/DEVIATIONS.md#expression-node-cost)'s *found only by reading the build log* category wanted: on a `WERROR=OFF` build that category is not merely quiet, it is quiet **for months**. Reconciled into `docs/backtick-operator-design.md` §6 item 7's new tooling paragraph.
 
+### sweep-timing-figure
+
+**Severity:** P3.
+
+**Item.** **The backtick blog post still prints the escape sweep as taking "ten seconds to run".** The figure is one measurement old and was never right for the current sweep: `ops/probes/escape-positions.sh` runs **1.6 s** — 1.61 / 1.63 / 1.61 s over three consecutive warm runs, **79/79 on both compilers** each time (re-measured 2026-09-09 by [backtick-paper-truth](completion/steps/backtick-paper-truth.md), reproducing [slot-callable-printing](completion/steps/slot-callable-printing.md)'s figure exactly). Nothing about the claim the sentence makes changes; the sweep is cheap either way, and it is cheaper than the document says. [`ops/probes/README.md`](probes/README.md), [`docs/backtick-operator-design.md`](../docs/backtick-operator-design.md) and [`papers/backtick-infix-and-keyword-escape.md`](../papers/backtick-infix-and-keyword-escape.md) have all been corrected; the blog post is the last copy and was out of scope for every step that corrected one of the others.
+
+**Where.** [`docs/infix-backtick-operator.org`](../docs/infix-backtick-operator.org), the sentence containing *"ten seconds to run"*. The measured figures for all three probes — 1.6 s / 5.0 s / 0.4 s — are in [`ops/probes/README.md`](probes/README.md).
+
+**Closed by.** *(open)* — one word, no measurement owed. It wants to ride along with the next edit to that file, the same way [`hunk-count-provenance`](#hunk-count-provenance) does, and for the same reason: a reader-facing document whose figure is stale and whose owner is whichever pass next opens it. It is **not** an extension of that row — that one asks where a hunk count came from, this one asks what the sweep costs — so it gets its own slug rather than being folded in.
+
+
 ## 2. Backtick track — GCC (`backtick`)
 
 ### template-id-slot-adl

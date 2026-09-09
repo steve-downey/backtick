@@ -30,11 +30,11 @@ plan: the 31 open `BNN` rows in `ops/BACKLOG.md`, the 29 unreconciled rows
 across the three DEVIATIONS ledgers, the 7 open design decisions, and the two
 papers.
 
-**Phases A–I are done and nothing is waiting on the author; Phase J is open.**
+**Every phase is done, A–J, and nothing is waiting on the author.**
 Both papers are written and both build, and `docs/open-decisions.md` has no
 open question. **Phase J (steps 21–24) is what a fact, cite and voice review
-of the two papers found on 2026-09-08**, and it is where an agent picks up
-work: one live Clang defect — a slot whose value is a class-typed callable
+of the two papers found on 2026-09-08**, and all four steps are green: one
+live Clang defect — a slot whose value is a class-typed callable
 printed as a different program and carried an inverted source range, which is
 every lambda the backtick paper's motivation section uses — two sets of
 figures in the Unicode paper carried forward from a note, four citation
@@ -44,18 +44,21 @@ author's published-paper rate in both. **The compiler defect is fixed**
 `CXXOperatorCallExpr` is a `CallExpr`, and the generic arm read it at the
 wrong argument indices), and so are the Unicode paper's figures, and so is the
 sixth forward-port onto `unicode-operators-experiment`
-(`slot-callable-forward-port`, 2026-09-08). What is left is the backtick paper
-itself. The last three steps of Phase I were the
-backtick paper's own gate finding four claims the built compilers did not
+(`slot-callable-forward-port`, 2026-09-08), and so is the backtick paper
+(`backtick-paper-truth`, 2026-09-09: the round-trip claim rewritten from what
+the compiler step landed, the `^^` citation split between P2996R13 and
+P3381R0 — which rejected the backtick for reflection in print, and is now
+engaged by name — and one voice pass taking the em-dash rate from 126 to 17.5
+per 10k). The last three steps of Phase I were the backtick paper's own gate
+finding four claims the built compilers did not
 support: `settle-paper-rows` fixed two and put the other two — one question,
 seen from two compilers — to the author; `escape-name-positions` built the
 answer, which was to let the keyword escape reach every position the grammar
 writes an identifier in; and `escape-name-sweep` swept all of them again, in
 four categories rather than one, and closed the two that had held out. **There
 is now no program the two compilers treat differently on account of the
-keyword escape.** **An agent arriving with no other instruction takes the
-first unchecked Phase J step whose dependencies are checked**, per
-`ops/AGENT_PROTOCOL.md`. One deviation row is open, it is a diagnostic
+keyword escape.** **There is no unchecked step in any plan, and an agent arriving with no other
+instruction should not go looking for work in `ops/`.** One deviation row is open, it is a diagnostic
 rather than an acceptance divergence, and it is measured and surfaced rather
 than owned: `ops/gcc/DEVIATIONS.md#escape-type-name-spelling` — GCC escapes
 the name of a *declaration* and prints the name of a *type* bare.
@@ -144,9 +147,9 @@ and a Status-log row so base-commit changes are not lost.
   directions, and the record of what was left numbered on purpose.
 - `ops/completion/PLAN.md` — the completion track (24 steps, named by slug), which schedules
   and gates **everything** still outstanding: defects, reconciliation,
-  decisions and the papers. The only plan with unchecked steps — Phase J,
-  steps 21–24, opened by the 2026-09-08 review of the two papers. None of them
-  is blocked on the author.
+  decisions and the papers. **Every box is ticked**; Phase J, steps 21–24,
+  was opened by the 2026-09-08 review of the two papers and closed the same
+  day. Nothing in it was blocked on the author.
 - `docs/open-decisions.md` — the single record of the questions that need the
   author and of the rulings already given. All six are answered, the last
   being `escape-name-positions`; nothing in the completion plan is waiting on
