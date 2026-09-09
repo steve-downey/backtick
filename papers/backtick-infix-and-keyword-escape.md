@@ -497,6 +497,18 @@ every other binary operator won. The sole cost is that `` -x `f` y `` is
 level too, inherited from Haskell along with the construct, and has kept it
 there with no way to override it; the prior-art section has the history.
 
+There are three answers to fixity, and this proposal takes the third. Haskell
+**declares** it, one `infixl` per name, which makes the parse of an expression
+depend on which imports are visible and lets two translation units disagree
+about what the same tokens mean. A language of symbolic operators can instead
+**derive** it, as OCaml does from an operator's first character. However, that
+answer is available only to symbols. The slot here is an expression rather
+than a spelling, so `` x `get_op(k)` y `` offers nothing to derive from, and a
+rule keyed on bare names would make `` x `f` y `` and `` x `(f)` y `` group
+differently. PureScript **fixes** it, and so does this proposal. A fixed level
+makes the parse of an expression depend on nothing but the expression; only
+the meaning of the slot travels, and that is ordinary lookup.
+
 ## Left-associative
 
 ```cpp
