@@ -23,16 +23,23 @@ Clang backtick S00–S12, GCC backtick G01–G10, and Clang Unicode U00–U21
 not merely planned). Treat that step machinery as a completed record unless a
 *new* step is added to a `PLAN.md`.
 
-**Live work is in `ops/completion/PLAN.md`** — 19 steps, named by slug.
+**Live work is in `ops/completion/PLAN.md`** — 24 steps, named by slug.
 **That is where an agent picks up work.** It supersedes `ops/backlog/PLAN.md`
 (BL01–BL04 green; BL05–BL07 absorbed) and covers *all* remaining work in one
 plan: the 31 open `BNN` rows in `ops/BACKLOG.md`, the 29 unreconciled rows
 across the three DEVIATIONS ledgers, the 7 open design decisions, and the two
 papers.
 
-**Everything in it is done, and nothing is waiting on the author.** Both
-papers are written and both build; all twenty boxes are `[x]` or `[—]`, and
-`docs/open-decisions.md` has no open question. The last three steps were the
+**Phases A–I are done and nothing is waiting on the author; Phase J is open.**
+Both papers are written and both build, and `docs/open-decisions.md` has no
+open question. **Phase J (steps 21–24) is what a fact, cite and voice review
+of the two papers found on 2026-09-08**, and it is where an agent picks up
+work: one live Clang defect — a slot whose value is a class-typed callable
+prints as a different program and carries an inverted source range, which is
+every lambda the backtick paper's motivation section uses — two sets of
+figures in the Unicode paper carried forward from a note, four citation
+defects in the backtick paper, and a prose em-dash rate at six times the
+author's published-paper rate in both. The last three steps of Phase I were the
 backtick paper's own gate finding four claims the built compilers did not
 support: `settle-paper-rows` fixed two and put the other two — one question,
 seen from two compilers — to the author; `escape-name-positions` built the
@@ -40,8 +47,9 @@ answer, which was to let the keyword escape reach every position the grammar
 writes an identifier in; and `escape-name-sweep` swept all of them again, in
 four categories rather than one, and closed the two that had held out. **There
 is now no program the two compilers treat differently on account of the
-keyword escape.** **An agent arriving with no other instruction should not go
-looking for work in `ops/`.** One deviation row is open, it is a diagnostic
+keyword escape.** **An agent arriving with no other instruction takes the
+first unchecked Phase J step whose dependencies are checked**, per
+`ops/AGENT_PROTOCOL.md`. One deviation row is open, it is a diagnostic
 rather than an acceptance divergence, and it is measured and surfaced rather
 than owned: `ops/gcc/DEVIATIONS.md#escape-type-name-spelling` — GCC escapes
 the name of a *declaration* and prints the name of a *type* bare.
@@ -126,14 +134,15 @@ and a Status-log row so base-commit changes are not lost.
   it. Open *design* questions are not in it; §6 indexes those.
 - `ops/SLUGS.md` — the map from every retired serial number to its slug, both
   directions, and the record of what was left numbered on purpose.
-- `ops/completion/PLAN.md` — the completion track (20 steps, named by slug), which schedules
+- `ops/completion/PLAN.md` — the completion track (24 steps, named by slug), which schedules
   and gates **everything** still outstanding: defects, reconciliation,
-  decisions and the papers. The only plan with an unchecked step, and it has
-  exactly one, blocked on the author.
+  decisions and the papers. The only plan with unchecked steps — Phase J,
+  steps 21–24, opened by the 2026-09-08 review of the two papers. None of them
+  is blocked on the author.
 - `docs/open-decisions.md` — the single record of the questions that need the
-  author and of the rulings already given. Five are answered; the sixth,
-  `escape-name-positions`, is open and is the only thing the completion plan
-  is waiting on.
+  author and of the rulings already given. All six are answered, the last
+  being `escape-name-positions`; nothing in the completion plan is waiting on
+  the author.
 - `ops/backlog/PLAN.md` — the defect-fix track (BL01–BL07). Superseded;
   BL01–BL04's Status rows and handoffs are the record of four closed defects.
 - `ops/AGENT_PROTOCOL.md` — the one-step-per-agent execution loop. **Read it
