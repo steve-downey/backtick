@@ -553,9 +553,37 @@ Only the *meaning* of `operator⊞` travels, and that is ordinary lookup.
 
 **One level, and no table.** Every user-introduced infix operator binds at the
 same strength, left-associatively. A reader learns one rule instead of a
-lattice, and `a ⊞ b ⊗ c` groups left with no table to consult. This is the
-decision most likely to be argued, and the only alternative on offer is the
-one the paragraph above rejects.
+lattice, and `a ⊞ b ⊗ c` groups left with no table to consult.
+
+There is a second alternative, and it is the one worth answering: fix the
+precedence per code point in the standard, deriving it rather than letting
+anyone declare it. Julia does this, in many classes mirroring mathematical
+convention, and OCaml derives an operator's fixity from its first character.
+It fails here twice over. Nothing in Unicode supports the derivation:
+Pattern_Syntax partitions syntax from identifiers and asserts nothing about
+meaning, blocks record allocation order, and the two distinctions a reader
+would actually want sit on adjacent code points. `⊕` `⊖` `⊗` `⊘` `⊙` are
+U+2295 through U+2299; `∩` and `∪` are U+2229 and U+222A. Any derivation
+from ranges or shapes collapses exactly the pairs it would have to separate,
+so a table would have to be curated code point by code point. And a
+precedence is a meaning. This paper allocates notation and leaves semantics
+to the declaration, where a
+table would have the committee assert that `⊗` is multiplication-like: true
+in tensor algebra, false in a monoidal category whose product is written `⊕`,
+and backwards in a tropical semiring, where `⊞` is addition and `⊙` is
+multiplication. C++ has one precedent for a fixed precedence over a
+user-chosen meaning. `operator<<` inherited shift precedence, so
+`std::cout << a & b` is `(std::cout << a) & b`.
+
+One level is not neutral, and it should not be sold as though it were.
+`a ⊕ b ⊗ c` groups as `(a ⊕ b) ⊗ c`, and a reader coming from the tensor
+literature expects the other. Fixed fixity does not avoid surprising that
+reader. It makes the surprise uniform and learnable, and it leaves
+disambiguation in parentheses, which is where mathematics leaves it. Whether
+a chain mixing distinct operators deserves comment is then a question for a
+lint rather than for the language, and clang-tidy already occupies that
+ground for the built-in operators with a check that is off by default and
+that excludes `&&` and `||` by name.
 
 **Arity is declared and selects the form; it does not filter uses.** Two
 parameters is infix, one is prefix, counting the implicit object parameter.
