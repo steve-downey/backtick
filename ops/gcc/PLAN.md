@@ -21,6 +21,31 @@ Use S12's handoff values: the `gcc-backtick` worktree, the out-of-tree dev
 build (`--disable-bootstrap --enable-languages=c,c++`), and the `g++.dg` gate
 (`make -C gcc check-c++ RUNTESTFLAGS="dg.exp=..."`).
 
+### Gate facts
+- **Use `cc1plus` directly for a syntax check**, not `xg++` — the dev build
+  has no `liblto_plugin.so` and no `cc1`, so the driver fails:
+  `~/bld/gcc/gcc-backtick-build/gcc/cc1plus -fbacktick -std=c++23 -fsyntax-only file.cc`
+- **libstdc++ is not built** in `gcc-backtick-build`, so **no G-test can link
+  and run** — every `g++.dg` result is compile-only, and the ~6170 linker
+  failures in S12's baseline are that, not regressions. If a step ever needs
+  a test that executes (`dg-do run`), build it first:
+  ```bash
+  cd ~/bld/gcc/gcc-backtick-build && make -j18 all-target-libstdc++-v3
+  ```
+  Recorded by BL01 (`ops/BACKLOG.md` B34); nothing needs it today.
+- **The branch is based on GCC trunk `4df5e1e9b152` (2026-09-06)**, re-synced
+  from `c9ee2c5ab6c` (2026-06-24) by
+  [gcc-resync](../completion/steps/gcc-resync.md); see
+  [gcc-trunk-pin](../BACKLOG.md#gcc-trunk-pin) for the arithmetic. Re-sync
+  again before any fresh cross-compiler divergence testing.
+- **The libstdc++ header farm in the build dir goes stale across a re-sync.**
+  `x86_64-pc-linux-gnu/libstdc++-v3/include` is a symlink tree built at
+  configure time; after 2158 upstream commits it was missing headers the new
+  sources reference, and `g++.dg/parse/parse5.C` failed with
+  `bits/inplace_tags.h: No such file or directory` — nothing to do with the
+  feature. `make -C x86_64-pc-linux-gnu/libstdc++-v3/include` refreshes it in
+  a couple of minutes and is worth doing straight after any rebase.
+
 ## Checklist
 ### GCC infix operator (mirrors Clang Phase A)
 - [x] **G01** Flag in `c.opt` — `ops/gcc/steps/G01-flag.md` (dep: S12)

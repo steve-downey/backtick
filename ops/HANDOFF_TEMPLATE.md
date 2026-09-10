@@ -13,8 +13,10 @@ relevant FileCheck/`-verify` output. `check-clang` result if run.>
 
 ## Deviations from the plan / design
 <what differed from the step file or from docs/backtick-operator-design.md,
-and why. If a design decision is affected, you also added a row to
-ops/DEVIATIONS.md — reference it here.>
+and why. If a design decision is affected, you also added an entry to
+ops/DEVIATIONS.md — headed by its slug, and referenced here as a *link* to
+that anchor, never as a bare mention. See ops/AGENT_PROTOCOL.md, "Naming,
+for anything you add".>
 
 ## Discoveries affecting later steps
 <facts the next agents need: real symbol names, the exact flag string,

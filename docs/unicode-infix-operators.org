@@ -32,14 +32,14 @@
 
 
 #+begin_abstract
-A design sketch, following on from the infix backtick operator. Backtick lets
-any /name/ sit in infix position. The obvious next question is whether C++
-could have user-declared /symbolic/ operators: declare =operator⊞= like any
-other function, and =5 ⊞ 7= calls it. Unicode has recently done the standards
-work that makes the character-set question answerable, and the backtick
-project already settled the precedence, associativity, and desugaring
-questions. This is a sketch; nothing here is implemented, and there is no
-paper yet.
+Following on from the infix backtick operator. Backtick lets any /name/ sit in
+infix position. The obvious next question is whether C++ could have
+user-declared /symbolic/ operators: declare =operator⊞= like any other
+function, and =5 ⊞ 7= calls it. Unicode has recently done the standards work
+that makes the character-set question answerable, and the backtick project
+already settled the precedence, associativity, and desugaring questions. This
+started as a sketch. It is now built, in Clang, behind a flag, and the parts
+of the sketch the build contradicted are the interesting half of the post.
 #+end_abstract
 
 {{{TEASER_END}}}
@@ -74,6 +74,13 @@ the backtick work already litigated it.
 These characters can never collide with the language. C++ has never assigned
 =⊞= a meaning; today it isn't even a valid token, and a source file
 containing one fails to lex. The space is empty, and it's large.
+
+All of that was true when I wrote the sketch. What's new is that I built it.
+Clang, on a branch off trunk, behind =-funicode-operators=, default off: the
+token set, the operator name, mangling, infix and prefix uses, the AST node,
+modules, an AST matcher, clang-format. Two thousand lines of compiler. Where
+the rest of this post says something confident, it's because a compiler said
+it, and where it says I was wrong, that's a compiler too.
 
 * Unicode already did the standards work
 
@@ -114,19 +121,39 @@ they name things; they don't combine things.
 
 R3c's raw set won't do as-is, since =Pattern_Syntax= includes all the ASCII
 punctuation C++ already spent. The usable pool is Pattern_Syntax minus ASCII,
-and I'd restrict further: single code points from the mathematical and arrow
+restricted further: single code points from the mathematical and arrow
 blocks, general category Sm or So, excluding the paired brackets (=⟨=, =⟦=,
 =⌈=; worth keeping unspent for some future bracketing idea) and excluding
 anything confusable with an existing token. That last list matters most:
-U+2212 (the real minus sign), the division slash, the asterisk operator, the
-middle dots, =≤= and =≥=. Those are rejected outright, never aliased. A
-character that renders like =-= but isn't should fail to compile, not quietly
-mean something else. What's left, with every exclusion applied, is 1,381
-code points in 32 contiguous ranges: =⊞ ⊠ ⊕ ⊖ ⊗ ⊘ ∘ ⋄ ⋈ ∪ ∩ ⊓ ⊔ ↦ ⊢ ⊨= and
-on and on. (Those 32 ranges are also the entire lexer story: a 256-byte
-sorted table, one binary search, on the slow path that only non-ASCII
+U+2212 (the real minus sign), the division and fraction slashes, the asterisk
+operator, the two dot operators, =≤= and =≥=. Those are rejected outright,
+never aliased. A character that renders like =-= but isn't should fail to
+compile, not quietly mean something else. What's left, with every exclusion
+applied, is 1,381 code points in 32 contiguous ranges: =⊞ ⊠ ⊕ ⊖ ⊗ ⊘ ∘ ⋄ ⋈ ∪ ∩
+⊓ ⊔ ↦ ⊢ ⊨= and on and on. (Those 32 ranges are also the entire lexer story: a
+256-byte sorted table, one binary search, on the slow path that only non-ASCII
 source reaches. Both compilers already classify extended identifiers with
 exactly this machinery.) Actual notation, where ASCII offered scraps.
+
+The exclusion list came out at 28 code points: three identifier characters,
+thirteen confusables, and twelve with emoji presentation. Two things about it
+I'd have got wrong on paper. Enumerating it forced me to notice that "the
+middle-dot family" is not a thing the UCD has: inside these blocks it's
+just U+2219 and U+22C5, because U+00B7 MIDDLE DOT isn't =Pattern_Syntax= at
+all, since Unicode withheld it precisely because Catalan uses it /in/
+identifiers. And the ASCII token named beside each confusable is curated,
+not derived, deliberately, because the published confusability tables answer
+"what does this look like" while a diagnostic needs "which C++ token does this
+look like", and those come apart. U+2219 and U+22C5 both /mean/
+multiplication and both /look like/ =.=, and it's the look that endangers a
+reader. =⇔= is spelled =<=>=, a token this language acquired in 2020, which no
+general-purpose confusability table is obliged to know about.
+
+That also settles the wording. The message says the character /is confusable
+with/ the token, never "did you mean", and carries no fix-it. Nobody writing
+=a ∙ b= meant =a . b=. A confusability claim is an assertion about reading and
+an intent guess is an assertion about writing, and only the first is one a
+compiler has any business making.
 
 * Parsing is the easy part this time
 
@@ -159,26 +186,82 @@ Julia's model (the parser has a fixed table of operator characters; users
 just define methods for them), and it's the only model that can work in
 C++.
 
-* The hard parts are elsewhere
+All of that held. The infix production is one =case= in the precedence table
+and a fourteen-line arm in the binary-expression loop. The prefix production
+is one =case= in the cast-expression parse, about forty lines. And the reason
+position alone can decide prefix versus infix, with no lookahead and no
+whitespace rule, turns out to be sharper than "the grammar alternates": the
+two productions are read by two /different functions/, one only ever in
+operand position and one only ever after a complete operand, so they never
+examine the same token. There is no disambiguation state to get wrong,
+because there is none at all. Compare backtick, where the open and close
+delimiter are the same token and a suppression flag has to be threaded
+through the slot in both compilers.
 
-However, the feature isn't free; the costs just live below the parser.
+* The hard parts are elsewhere, and I under-priced them
 
-The declaration side is the real work in both compilers. Clang represents
+I wrote that parsing is the easy part of this feature, easier even than
+backtick. The first half is right and the second half isn't, and I think the
+way it went wrong is worth more than the correction.
+
+The parse really is small, on both sides. But the parse isn't where the cost
+lives. Backtick's cost is in the parse and stops there. This feature's cost is
+in what a parsed operator has to /become/: a name, in tables that are closed,
+and an expression node that can't be transparent. So the comparison inverts
+the moment you leave the parser, and the sketch claimed credit it didn't have.
+
+Why it went wrong is the general lesson. It wasn't a bad guess about the
+parser; the parser estimate was right and stayed right. It was a design
+document measuring the part of a feature a design document can see. The parse
+is visible from the grammar, so it gets estimated. The name tables and the
+node are invisible until something is built, so they get left out, and leaving
+them out reads like a claim that they're small. I'd expect that error
+in any implementation sketch, and in that direction.
+
+The declaration side was the part I did see coming. Clang represents
 =operator+= as a =DeclarationName= over a closed enum of operator kinds, and
 GCC keeps operator identifiers in a fixed-size table; =operator⊞= fits
-neither. Both compilers already solved this shape once, though, for
-user-defined literals: =operator""_km= is an operator name carrying
-open-ended extra data, threaded through declaration, lookup, and mangling.
-The same move, a name kind keyed by code point, is the implementation road.
-Real plumbing, but a worked precedent.
+neither. Both compilers already solved this shape once, for user-defined
+literals: =operator""_km= is an operator name carrying open-ended extra data,
+threaded through declaration, lookup, and mangling. That transplanted almost
+line for line, 250 lines over 19 files, which is a number I'd cite as an
+argument /for/ the design.
 
-Mangling is the one place the feature touches ABI. The Itanium ABI has a
-vendor-extended operator production for just this situation, so a
-prototype can mangle =⊞= as a derived name today; a standardized feature
-would want a first-class code, which means cross-vendor agreement. =co_await=
-got its own code when it standardized, and literal suffixes mangle by name,
-so there's precedent on both ends. That's an open question; it doesn't block
-a prototype.
+The sharp edge was somewhere else, and it's a good story about closed tables.
+The new name kind isn't a choice. Clang's inline three-bit space for name
+kinds is completely full, so any new kind is forced out into the overflow
+struct, and the overflow struct's tag can't be appended to either, because it
+encodes an N-argument Objective-C selector as =base + N= and clamps everything
+at or above that back down. The new kind has to be /inserted before/
+Objective-C's, renumbering an enum in a shared header. The operator-name space
+isn't merely closed. It's packed against another language's variable-length
+encoding. That tells you how much of the difficulty is inherent to open-ended
+operator names (very little) and how much is one compiler's bit-packing
+(nearly all of it).
+
+Mangling is the one place the feature touches ABI, and it's smaller than I
+feared. The Itanium ABI has a vendor-extended operator production for this
+very situation, so the prototype mangles =⊞= as a derived ASCII name today,
+=op_u229E=, and both =llvm-cxxfilt= and GNU binutils =c++filt= (a different
+vendor's demangler, unmodified) render every form I tested: free function,
+const member, explicit-object member, template instantiation. Nothing in the
+toolchain needs a change to inspect these symbols, which is the first thing an
+ABI reviewer asks about.
+
+The paper still asks for a first-class production, for one reason worth
+stating: the vendor production keys on /arity/, and arity isn't fixity. Prefix
+and postfix unary operators both have arity one. I'm not proposing postfix, but
+I am careful not to foreclose it, and adopting an arity-keyed encoding as the
+standard answer would foreclose it quietly. The ABI already spends four codes
+keeping unary =+ - & *= apart from their binary selves, so distinguishing
+forms of one symbol is a principle it holds already. The vendor production is
+just the one place it has no room to.
+
+Windows is the honest gap. The Microsoft ABI has no such production, and the
+prototype declined to invent one: a Windows target accepts every declaration,
+because the name is representable, and rejects the first definition with a
+"can't mangle this yet" diagnostic. Inventing a scheme would have been binding
+on Windows the day it shipped.
 
 And there's the objection everyone raises first: how do you type =⊞=? The
 honest answer is Julia's answer — editor input methods. =\boxplus= and hit
@@ -209,6 +292,79 @@ character) and mathematicians who want =⊗= tighter than =⊕= can write the
 parentheses. Left to right is the least surprising reading; everything else
 is what parentheses are for.
 
+* Two things the build told me that no amount of writing would have
+
+The first is a bug that never shipped, because it was caught, but which shows
+what "structurally free" can hide. I'd written that admitting the escaped
+spelling =operator\u229E= alongside the glyph =operator⊞= was structurally
+free: the lexer already decodes universal-character-names, and the resulting
+code point takes the same classification either way. Classification /is/ free. Identity isn't. The first
+cut derived the operator's identity by decoding the token's spelling as one
+UTF-8 scalar, which answers zero for a UCN. That value is the =DeclarationName=,
+the mangled symbol, the printed form, and the on-disk lookup key. So
+=operator\U0000229E= would have been a /different entity/ from =operator⊞=,
+with a different symbol, while the token kind, the token stream, and
+=-dump-tokens= all looked perfectly correct.
+
+The thing I want to keep from that: no token-level test can see it. The only
+test that catches it declares with one spelling, defines with another, uses
+with a third, and asserts one entity and one mangled symbol. "Equivalent
+spellings" is a claim about /entities/, and a test written at the level of
+the claim you meant to make is a different test from the one written at the
+level of the mechanism.
+
+The second is a present rather than a bug. The desugaring says =x ⊞ y= is the
+call =operator⊞(x, y)=, so it ought to get the call's lookup. It does, and I
+wrote no code for it. Because the callee is a name the compiler forms from the
+token and never an expression the parser resolves, the unresolved set reaches
+overload resolution with the arguments in hand, and ADL just happens: hidden
+friends, ADL-only namespace members, augmentation of a visible-but-worse
+candidate, ADL at instantiation. About a dozen lines.
+
+That's worth reporting because the backtick project got the same thing wrong
+in both of its compilers, in the same way: each resolved the slot's name in
+the parser, and each silently lost ADL. Same author, same week, same idea.
+Desugar early and everything downstream is inherited; /resolve/ early and
+it isn't.
+
+* What the node costs
+
+The desugaring is exact for a non-dependent use, and that's not the whole
+story. When an operand is type-dependent the expression is rebuilt at
+instantiation, and an ordinary call rebuilds under the rules for a call.
+ADL survives, because ADL is a property of the call. Member candidates don't,
+because being written as an operator is a property of the /syntax/. So a
+template over =a ⊕ b= failed for a member =operator⊕=, and the obvious concept
+was unsatisfied for a type whose only =⊕= is a member. The desugaring was
+exact and the compiler still gave the wrong answer, which is a shape of
+finding a design document can't produce.
+
+The fix is a node that records the operator-ness and re-runs the resolution at
+instantiation rather than replaying the result, on the model of the rewritten
+comparison operators C++20 already has. It's a strict cost of the feature and
+it's the one place this is /more/ work than backtick, because a backtick slot
+has no member candidates to lose.
+
+What that node then obliges is the part I'd put in front of anyone estimating
+a language feature. Adding a name kind, a declarator-id kind, and an expression
+node came to 89 dispatch sites on three axes that share no site. For the
+node's 43, the interesting question isn't how many. It's which ones the
+toolchain made me find: six by a link error, eight by an =llvm_unreachable=,
+two by a warning on a build with warnings-as-errors off, three that are simply
+/absent/ rather than wrong, four that were latent behind a CMake default
+nobody had turned on, one that exists only because two other obligations were
+met correctly, and nineteen that nothing at all announces. The toolchain finds
+about a third and is quiet about the rest.
+
+Two of those sites are =||= chains instead of =switch= arms, and five more on
+another axis are chains of equality tests against the same enum. A =switch=
+over a closed enum is checked and a chain of comparisons isn't, and the two
+are interchangeable at the moment somebody writes them. Whether the compiler
+helps you is a property of how a site was /spelled/, not of what it dispatches
+on. Estimating this
+feature from the shape of the enums under-counts by exactly the sites somebody
+once wrote as an =if=.
+
 * Where this leaves backtick
 
 The two features are complementary, and deliberately so. Backtick lifts any
@@ -227,17 +383,61 @@ declaration, in a header, with a comment, found by go-to-definition. The
 notation is only as opaque as the library that declares it, which is exactly
 as true of =operator<<= today.
 
-This would be a separate paper from the backtick one, citing its decisions
-without reopening them, and sequenced so that a committee allergic to
-Unicode can't take the backtick down with it. SG16 gets it before EWG does.
+This is a separate paper from the backtick one, citing its decisions without
+reopening them, and sequenced so that a committee allergic to Unicode can't
+take the backtick down with it. SG16 gets it before EWG does.
+
+That separability isn't a promise any more. The work was prototyped on top of
+the backtick branch and then replayed onto pristine trunk, and 201 of 204
+hunks came across unchanged (169 of 171 in the compiler proper). The replayed
+branch mentions backtick nowhere: not in the code, in a test, or in a commit
+message. The whole coupling between the two features is three constructs, and
+only one of them is a design decision: the shared precedence level. The other
+two are the fold-operator exclusion of that level, and one predicate in
+clang-format that has to agree about where an operand ends.
+
+The shared level surfaced twice, independently: once in the parser as a
+precedence value, once in the formatter as an end-of-operand predicate, in two
+subsystems that don't know about each other, each of which had to ask "is this
+a user-introduced infix operator?". That's a real design primitive rather than
+a convenience of my prototype, and whichever of the two papers goes first
+should bank it for both.
+
+* What isn't done yet
+
+One compiler. Backtick's strongest asset is two independent implementations
+that agree, and this has Clang only, which is the asymmetry that keeps
+the two papers apart: a single-implementation half shouldn't get to spend the
+two-implementation half's credibility. GCC's move is the same one — its
+operator identifiers live in a fixed-size table indexed by tree code, and
+=cp_literal_operator_id= already synthesizes an identifier outside that table
+for =operator""_suffix= — but nobody has written it.
+
+Windows mangling is open and needs the vendor. The evaluation-order question
+is open and needs CWG: for a member operator the left operand is the object
+expression, so it's sequenced before the right one, and for a non-member it
+isn't, which makes the sequencing of =x ⊞ y= depend on overload resolution. No
+existing C++ operator behaves that way, because every overloadable operator
+today borrows its sequencing from a built-in and this one has no built-in to
+borrow from. I don't propose an answer; I think the room should pick one.
+
+Combining marks (=⊕̸= and friends) and the Latin-1 stragglers (=±=, =×=, =÷=,
+=¬=) are deliberately outside the frozen set and are coherent extensions for a
+later revision. Postfix is declined and carefully not foreclosed: I built the
+one lookahead rule that works, measured what it costs, and threw it away. It
+turns every missing right operand into a valid postfix parse, which is a
+diagnostic every user of the feature pays for whether or not anyone declares a
+postfix operator.
 
 * Status, and an invitation
 
-There is a design sketch with the full decisions table, the character-set
-predicate, the grammar, and the implementation notes for both compilers;
-nothing is implemented, and given the state of the backtick work, nothing
-will be for a while. This post is the trial balloon. If you work in a domain
-where =a ⊗ b= is the established notation and =tensor(a, b)= has always
-grated, I'd like the example. If you think the input-method story is
-disqualifying no matter what Julia's experience shows, I'd like to hear that
-too — reach me at [[mailto:sdowney@gmail.com][sdowney@gmail.com]]. What have I missed?
+There's a paper now, headed for SG16 and then EWG, and the branch is behind
+it. The design document that this post came from has the full decisions table,
+the character-set predicate with its audit script, the grammar, and the
+implementation notes.
+
+If you work in a domain where =a ⊗ b= is the established notation and
+=tensor(a, b)= has always grated, I'd like the example; the motivation section
+is the part that a prototype can't write for me. If you think the input-method
+story is disqualifying no matter what Julia's experience shows, I'd like to
+hear that too. Reach me at [[mailto:sdowney@gmail.com][sdowney@gmail.com]]. What have I missed?

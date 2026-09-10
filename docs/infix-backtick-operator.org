@@ -86,29 +86,38 @@ That one choice means the feature inherits, for free and correctly:
 None of it is re-implemented. If =f(x, y)= compiles and does a thing, then
 =x `f` y= compiles and does the same thing. If =f(x, y)= is ambiguous or
 ill-formed, so is the backtick form, with the same diagnostic. The feature has
-essentially no semantics of its own to get wrong, which is exactly what you want
+essentially no semantics of its own to get wrong, which is what you want
 from sugar.
 
-A few consequences fall straight out of "it is just the call":
+A couple of things follow from "it is just the call". One of them looks like it
+follows and doesn't:
 
 #+begin_src c++
 x `T` y                 // == T(x, y) : functional-style construction; CTAD applies
 a `std::pair` b         // == std::pair(a, b)
 #+end_src
 
-A type name is callable, so a type in the slot constructs. Evaluation order is
-the call's evaluation order: operand order is unspecified, and since C++17 the
-callee — here, the thing between the backticks — is sequenced before both
-operands, even though it is written between them. Nothing new to learn; if you
-know how a call behaves, you know how this behaves.
+I wrote that down as a consequence: the slot is any callable expression, a type
+name is callable, so construction falls out for free. It doesn't. A bare type
+name is not an assignment-expression, which is all the slot grammar admits, so
+the "consequence" contradicted my own grammar, and the first implementation
+duly rejected every type-slot shape I tried, with three different diagnostics.
+It is a second production with a disambiguation rule: the slot admits a
+type-specifier too, and the type reading wins when lookup finds a type or a
+class template. The behaviour I wanted was right. Calling it free was wrong.
+
+Evaluation order really is the call's: operand order is unspecified, and since
+C++17 the callee (here, the thing between the backticks) is sequenced before
+both operands, even though it is written between them. Nothing new to learn; if
+you know how a call behaves, you know how this behaves.
 
 * How it parses
 
 Two questions decide how an infix operator feels: how tightly it binds, and how
 a chain groups.
 
-*Precedence.* Backtick is the highest-precedence *binary* operator — tighter
-than =*=, looser than the unary/prefix operators. Both operands are
+*Precedence.* Backtick is the highest-precedence *binary* operator, tighter
+than =*= and looser than the unary/prefix operators. Both operands are
 cast-expressions, so prefix operators attach symmetrically:
 
 #+begin_src c++
@@ -129,7 +138,7 @@ a `f` b `g` c           // g(f(a, b), c)
 #+end_src
 
 *The slot.* The thing between the backticks is parsed as an
-assignment-expression — anything you could write as the callee of a call,
+assignment-expression: anything you could write as the callee of a call,
 excluding a top-level comma. Qualified names, member-access expressions, even a
 lambda, are all fine.
 
@@ -138,7 +147,7 @@ lambda, are all fine.
 The open and close delimiter are the same token. A naive parser, having read
 =x `f=, would see the closing backtick and think a *second* backtick operator
 was starting. C++ already has exactly this problem with =>= inside template
-argument lists — =vector<vector<int>>= — and solves it with a parser flag that
+argument lists (=vector<vector<int>>=), and solves it with a parser flag that
 says "right now, =>= is not an operator." I do the same thing: a
 =BacktickIsOperator= flag in Clang (modelled on =GreaterThanIsOperator=), a
 =backtick_is_operator_p= in GCC (modelled on =greater_than_is_operator_p=),
@@ -147,7 +156,7 @@ false while parsing the slot and restored inside nested parentheses.
 A side effect of the same-token delimiter is that there is no such thing as a
 bare nested backtick. The first interior backtick always closes the slot, so
 what looks like "nesting" is *token-identical* to an ordinary left-associative
-chain — and a chain is exactly what it parses as. To actually nest, you
+chain, and a chain is what it parses as. To actually nest, you
 parenthesise:
 
 #+begin_src c++
@@ -168,7 +177,7 @@ Because the proposal claims the backtick as a punctuator, it is worth asking
 what *else* the token could do, and there is one obvious companion use: escaping
 a keyword so it can name an entity. This is the escape hatch that lets a
 *future* keyword avoid breaking existing code that already used that word as an
-identifier — Swift's =`class`=, Kotlin's backtick identifiers, F#'s
+identifier; Swift's =`class`=, Kotlin's backtick identifiers, F#'s
 double-backtick names, Rust's =r#= raw identifiers all do a version of it.
 
 #+begin_src c++
@@ -178,12 +187,13 @@ obj.`delete`();         // member named "delete"
 #+end_src
 
 The two uses never collide because they live in mutually exclusive grammatical
-positions. In operand, primary, or declarator position the grammar wants a name,
-so a backtick opens a keyword-escape. In post-operand position the grammar wants
+positions. Wherever the grammar wants a name (an operand, a declarator-id, a
+class or enum or namespace name, a template parameter's name, a label), a
+backtick opens a keyword-escape. In post-operand position the grammar wants
 a binary operator, so a backtick is the infix operator. This is the same
 position-based disambiguation C++ already does for =*=, =&=, and =<=. The escape
 yields an ordinary identifier, so lookup, mangling, linkage, and ABI are
-unchanged — =void `new`();= links as a function named =new=.
+unchanged; =void `new`();= links as a function named =new=.
 
 The two uses share one lexical token and one committee, so I am proposing them
 together, in one paper, rather than letting two independent designs drift into
@@ -211,7 +221,7 @@ x `pipe` f `pipe` g `pipe` h        // h(g(f(x))) — data-flow order
 
 The decisive case is that this drives the *existing* range adaptor closures
 unchanged. =views::filter(pred)= and =views::transform(fn)= are already unary
-callables — =c | a= is defined as =a(c)= — so =pipe= feeds them directly, same
+callables (=c | a= is defined as =a(c)=), so =pipe= feeds them directly, same
 result and same laziness as the =|= pipe, with no bespoke =operator|= overloads
 involved:
 
@@ -221,7 +231,7 @@ r `pipe` views::filter(pred) `pipe` views::transform(fn)
 
 And it reopens something the language otherwise reserves to a fixed set of
 built-ins. You cannot get short-circuit evaluation back by overloading =&&= or
-=||= — an overloaded one evaluates both sides. But a helper whose right operand
+=||=; an overloaded one evaluates both sides. But a helper whose right operand
 is a *callable* controls whether and when that side runs:
 
 #+begin_src c++
@@ -239,15 +249,15 @@ where the stages are already functions:
 parse(s) `mbind` validate `mbind` store;   // stops at the first error
 #+end_src
 
-None of these helpers are part of the proposal — the paper is language-only, and
+None of these helpers are part of the proposal; the paper is language-only, and
 each helper is a few lines of ordinary user code. They are here as *motivation*,
 to show the operator's reach. Field experience can later decide which, if any,
-earn a place in a library.
+belong in a library.
 
 * It is not the pipeline operator, and does not want to be
 
 The obvious neighbour is Barry Revzin's =|>= (P2011, the "pizza" operator). Both
-bottom out in a call and their two-argument cases coincide — =a `plus` b=,
+bottom out in a call and their two-argument cases coincide: =a `plus` b=,
 =a |> plus(b)=, and =plus(a, b)= are the same call. But they are different
 shapes and they compose rather than compete:
 
@@ -273,24 +283,218 @@ in one program.
 
 This is not a paper design with a hand-wave at implementability. The operator
 and the keyword-escape are both prototyped, gated behind an opt-in =-fbacktick=
-flag, in *two* independent compilers. Both forks are public, on a =backtick=
-branch:
+flag, in *two* independent compilers. Both forks are public:
 
-- *Clang* ([[https://github.com/steve-downey/llvm-project/tree/backtick][steve-downey/llvm-project @ backtick]]) — lexer token, precedence
-  level, parser hook, Sema desugar to a =CallExpr=, driver flag, a transparent
-  AST wrapper so =-ast-print= round-trips the surface syntax, and clang-format
-  support for both uses. Full ADL. Tests live under
-  [[https://github.com/steve-downey/llvm-project/tree/backtick/clang/test][=clang/test/=]] (the =backtick-*= files in =Parser/=, =Lexer/=, and
-  =SemaCXX/=).
-- *GCC* ([[https://github.com/steve-downey/gcc/tree/backtick][steve-downey/gcc @ backtick]]) — =libcpp= token, parser precedence
-  and slot handling, desugar via =finish_call_expr=, the same flag, and full ADL
-  on the slot. Tests live under
-  [[https://github.com/steve-downey/gcc/tree/backtick/gcc/testsuite/g%2B%2B.dg/backtick][=gcc/testsuite/g++.dg/backtick/=]].
+- *Clang*: two branches carrying the same feature diff, one on the LLVM 23
+  release branch
+  ([[https://github.com/steve-downey/llvm-project/tree/backtick-23][steve-downey/llvm-project @ backtick-23]])
+  and one on trunk
+  ([[https://github.com/steve-downey/llvm-project/tree/backtick-trunk][@ backtick-trunk]]).
+  Lexer token, precedence level, parser hook, Sema desugar to a =CallExpr=,
+  driver flag, a transparent AST wrapper so =-ast-print= round-trips the surface
+  syntax, and clang-format support for both uses. Tests live under
+  [[https://github.com/steve-downey/llvm-project/tree/backtick-trunk/clang/test][=clang/test/=]]
+  (the =backtick-*= files in =Parser/=, =Lexer/=, =SemaCXX/=, =AST/=,
+  =Analysis/= and =CIR/CodeGen/=).
+- *GCC* ([[https://github.com/steve-downey/gcc/tree/backtick][steve-downey/gcc @ backtick]]): =libcpp= token, parser precedence
+  and slot handling, desugar via =finish_call_expr=, the same flag, and ADL on
+  the slot for both unqualified forms, a plain name and a template-id. Tests
+  live under
+  [[https://github.com/steve-downey/gcc/tree/backtick/gcc/testsuite/g%2B%2B.dg/backtick][=gcc/testsuite/g++.dg/backtick/=]],
+  plus a module pair that checks an escaped name streams through a compiled
+  module interface and mangles as the ordinary name it is.
 
-Two independent implementations that agree is the strongest evidence of
-implementability I can bring to EWG/CWG. Every pipeline pattern above was
-compiled and run against the built =-fbacktick= Clang, so the §"what it is good
-for" claims are implementation experience, not assertion.
+The GCC branch has since been rebased over three months of upstream trunk, 2158
+commits, and every line the feature adds or removes came across unchanged, with
+no conflicts. Nothing it touches had moved under it. If I were reviewing this,
+that's the maintenance number I'd want.
+
+Every pipeline pattern above was compiled and run against the built
+=-fbacktick= Clang, so the "what it is good for" claims are implementation
+experience and not assertion.
+
+* What I got wrong
+
+Two implementations that agree is evidence. The places they disagreed are more
+interesting, and the most interesting one is a place where they agreed and were
+both wrong.
+
+ADL on the slot is the whole design in miniature. =x `f` y= must not have weaker
+lookup than =f(x, y)=, or the sugar isn't sugar. Both compilers got it wrong the
+same way. The name in the slot was resolved before the call builder ever saw
+it, and GCC took two goes at it, because the first fix recognised a bare name
+and left a slot with template arguments on the old path.
+
+Clang was worse: its slot went through the ordinary expression parser, so it had
+no ADL at all. A hidden friend in the slot was "use of undeclared identifier",
+which is loud and easy to find. But the shape that matters is quiet. With an
+ordinary candidate visible and viable, and a better one reachable by ADL,
+=u `pick` u= bound the visible one while =pick(u, u)= bound the ADL one, and
+nothing was diagnosed. The operator called a different function from the call it
+is defined to be, which is the one thing the design promises can't happen.
+
+It survived the whole implementation because the one test that announced itself
+as the ADL case used a *qualified* name in the slot, which correctly gets no ADL
+either way, so it passed whatever the slot did. If you are ever tempted to write
+"also exercises the ADL case" in a test heading, write the test. The shape that
+catches it is augmentation: a visible viable candidate, a better one by ADL, and
+the choice made observable in the result type. It's the only shape where weaker
+lookup says nothing at all.
+
+And here is the part I think is worth more than the fix. That same Clang build
+carries a second experiment of mine (user-defined operators spelled with
+Unicode symbols, a separate paper) whose slot never becomes an expression: Sema
+does its own operator lookup and hands an unresolved set to overload resolution.
+One build, one machine, one author, one difference between the two features. The
+one that reached the call builder unresolved inherited ADL from its first commit
+and nobody decided to. The one that resolved its slot first had to be repaired.
+Desugar early and everything downstream comes for free; resolve anything early
+and it doesn't. I wasn't running that as an experiment, and it's better evidence
+than the second compiler is.
+
+* What the AST wrapper costs
+
+The wrapper that makes =-ast-print= round-trip isn't free either, and the cost
+isn't the node. It's the transparency. A wrapper the rest of the compiler is
+meant not to notice is a wrapper that nothing reminds you to teach anything
+about, and the sites are quiet when they're wrong: six in the static analyzer's
+modelling layers, then a seventh in the bug reporter created by meeting the
+other six. Teach the CFG to look through the node and the node has no program
+point of its own, so the tracker gives up before it starts, and the default
+suppression for nulls returned out of inlined callees goes with it.
+=p `identity` 0= reported a false positive that =identity(p, 0)= was spared, and
+the report it did emit carried two path notes where the call's carried eight.
+Noisier than the call it desugars to, and less explained.
+
+GCC pays none of that, because it desugars in the parser and hands the semantic
+layer an ordinary call, and it gets no round-trip either. That's the trade. The
+price belongs to the node, not to infix application.
+
+The round-trip has the same quiet failure mode, and I only found it by
+re-deriving the claim against a running compiler instead of reading my own
+code. The printer recovers the operands from whatever the semantic layer built,
+so every initialization form it can build for =T(x, y)= needs its own arm. A
+type slot naming an aggregate doesn't construct through a constructor, it
+initializes through parenthesized aggregate initialization, and that's a
+different node. The arm wasn't there, and a missing arm doesn't say so; it
+prints the desugaring, which is a well-formed program that looks fine. With
+deduction it printed a cast applied to a comma expression, which is not even
+the same program. A round-trip claim is a claim about every node the semantic
+layer can build, not about the ones I wrote the printer against.
+
+The other thing worth reporting is that the flag gates leaked, three times.
+Clang's =-fbacktick= reached the language options in a C compilation and made
+an invalid C program compile. GCC's two backtick cases in the parser were
+fall-through targets keyed on the flag instead of the token, so a program
+containing no backtick could be diagnosed differently with the flag on. Then I
+taught GCC to spell an escaped name with its backticks in diagnostics, which is
+the only spelling that name has, and it started spelling a bare keyword that
+way too, in a program with no backtick in it. Same leak, one layer down, and I
+walked into it immediately after fixing the one above. Each was about a line,
+and none showed up in a diagnostic. The check that finds them is comparing
+flag-on output against flag-off output on a program that never mentions the
+feature.
+
+And that GCC fix only got half the surface, which I didn't notice for a day.
+The routine I taught prints the name of a /declaration/. A class or enum
+/type/ is printed somewhere else. So if you declare =struct `union` { };= and
+then misuse it, GCC tells you that ='struct union' has no member named
+'`new`'=: one sentence, two names, one escaped and one not, from two
+printers. Clang escapes both. It accepts and rejects the same programs either
+way, so nothing fails; what fails is the only thing the decision was for,
+which is being able to paste the diagnostic back into the file. I found it by
+reading the output of the error-path probes rather than just their exit codes.
+A probe that only counts can't tell you that the answer was right and the
+sentence was wrong.
+
+* What isn't done yet
+
+The escape now works in both compilers everywhere the grammar writes an
+identifier: declarator-ids, class-head names, enum names, enumerators,
+namespace names, template parameter names of all three kinds, alias and alias
+template names, concept names, mem-initializers, labels, and expression
+positions. And in the positions that *use* such a name, which is the half I
+nearly shipped without: a type-specifier, a base-specifier, a
+nested-name-specifier, a template name being specialized, a using-directive, a
+type-constraint, a constructor's name. Declaring =struct `union` { };= and
+then not being able to write =`union` u;= would have been a type nothing can
+name. And either end of a qualified name, or both: =N::`union` g;=,
+=using X = N::`union`;=, =typename T::`union`=, =`module`::inner::f()=.
+
+That was not true a day ago, and how it wasn't is the part worth keeping. Both
+prototypes were done. Then I wrote one program per name position and compiled
+them, and found that the escape worked wherever the parser happened to route
+that name through the routine I'd written it into, and failed wherever a bare
+identifier token was read somewhere else. A concept name worked. =struct
+`union` { };=, the example in my own proposed wording, didn't work in either
+compiler. Nobody drew that boundary; it fell out of two parsers, differently in
+each. Neither test suite had a negative test for any of it, so nothing was
+failing and nothing would have failed.
+
+I have now written that sweep four times, and it has found something every
+time. First the positions that declare a name. Then the ones that use a name,
+after it occurred to me that a type nothing can name is not a hatch. Then
+qualified names, where it turned out Clang reads the last component as an
+identifier only when it names an object or a function, so =N::`new`= had been
+fine since day one and =N::`union`= had never worked. Then I changed the
+keyword. Every program I had ever written used =new=, =class=, =union= or
+=try=, all of them pure keywords. =int= is not, and GCC had been rejecting
+=int `int` = 0;= for two months, in the very first row of my own table.
+
+Seventy-nine one-line programs now, in four groups, ten seconds to run, and
+they live in the repository instead of in my shell history. Which is where
+they should have gone three sweeps ago.
+
+Fixing all that cost about twice what I'd estimated, and the extra was in
+three places that aren't in the grammar. A parser that decides what it's
+looking at from the token *after* a name has to step over three tokens where
+it stepped over one, so every one of those lookaheads is a call site too; a
+label is only distinguishable from an expression statement by the =:= after
+it. A new name position is a new printing surface: enum names, namespace
+names, template parameter names, labels and nested-name-specifiers all printed
+the bare keyword, which is source that doesn't re-parse, until I routed them
+through the one place that puts the backticks back. And Clang caches tokens so
+it can back up over them, which GCC doesn't. It folds a resolved qualified
+type into a single annotation token and finds the tokens that annotation
+replaces by source position. An escaped name is three tokens where the grammar
+wants one, so the annotation has to start on the opening backtick and stop on
+the closing one, or the cache keeps a stray =`= in front of it and the next
+backup lands on that. Two source locations, and working out that they were
+what was wrong took very much longer than passing them.
+
+The same change also shipped an infinite loop, which is the part I'd least
+like to leave out. Clang's recovery for a qualified name it can't resolve is
+to try implicit int. That doesn't apply to an escape, and it doesn't consume
+anything either, so =namespace N { int x; } N::`union` g;= re-entered the same
+case with the same tokens, forever. The old code had been avoiding it by
+accident, by giving up the moment it saw a backtick. Nothing in either test
+suite covered a malformed or unresolvable escape in a qualified position --
+nothing covered a qualified escape at all -- and a =-verify= test wouldn't
+have caught it anyway, because a test that never finishes doesn't fail, it
+hangs. What caught it was running the error cases under =timeout=, which is
+now the third script in the probe directory.
+
+The type-name slot is Clang-only: GCC parses its slot as an expression, so =1
+`Pt` 2= is rejected there. That is now the only program the two compilers
+treat differently under the flag, and the escape isn't in it anywhere.
+
+Getting the last two off that list was more interesting than getting them on
+it. GCC binds =int= and =char= and the rest at global scope so that code
+which looks builtin types up by name can find them, and the comment above
+that code says the bindings shouldn't exist. It looked like the design would
+have to pick a side on which keyword representation is right. It doesn't: in
+C++ you can only name a declaration with a keyword if you escaped it, because
+=int= is a keyword token everywhere else, so a collision with that binding is
+never a redeclaration and GCC can just say so. Three call sites.
+=g(int, `int`)= mangles as =_Z1gi3int= in both compilers, which is the ABI
+claim on the worst name I have.
+
+And for about half a day, GCC was the wider implementation, which had not
+happened before. Its one arm reaches every name position it has; Clang reads a
+qualified type name in three other parsers, and I had put the escape in none
+of them. Four arms to fix, and a fifth to put back a constructor definition
+the other four broke: =`union`::`union`() { }= had been working by accident,
+because the old code gave up early and let the declarator sort it out.
 
 * What I am proposing, and what comes next
 
@@ -302,6 +506,6 @@ Compiler Explorer deployment strengthen the story but do not block it.
 If you have a binary operation that has always read worse as =f(x, y)= than it
 would as =x `f` y= — a domain predicate, a metric, a combinator — that is the
 use case, and I would like to hear about it. The two compiler forks linked above
-are public if you want to build the branch and try it; comments, objections, and
-motivating examples are all welcome — reach me at [[mailto:sdowney@gmail.com][sdowney@gmail.com]] — before this
+are public if you want to build one and try it; comments, objections, and
+motivating examples are all welcome (reach me at [[mailto:sdowney@gmail.com][sdowney@gmail.com]]) before this
 goes in front of the committee.

@@ -14,20 +14,106 @@ Also derives the final U1 operator set (§5 predicates + exclusions) and its
 range-table shape — the static table a lexer would actually search (§8).
 
 Needs five UCD files in the directory given as argv[1] (default: cwd), from
-https://www.unicode.org/Public/UCD/latest/ucd/ (emoji-data.txt is under
+https://www.unicode.org/Public/17.0.0/ucd/ (emoji-data.txt is under
 ucd/emoji/):
     PropList.txt  DerivedAge.txt  UnicodeData.txt  DerivedCoreProperties.txt
     emoji-data.txt
 
+Fetch the **version-pinned** 17.0.0 path, never `latest/`: U1 is a frozen
+enumeration, and re-deriving it against a drifting UCD is the exact failure
+mode U1 exists to prevent.
+
 Numbers quoted in the design doc were produced against UCD 17.0.0
 (DerivedAge.txt dated 2025-07-30).
+
+With `--emit-header`, writes the derived tables to stdout as a C++ header in
+the shape of clang/lib/Lex/UnicodeCharSets.h (the audit narrative then goes
+to stderr):
+
+    python3 docs/pattern-syntax-audit.py <ucd-dir> --emit-header \\
+        > ~/src/llvm/unicode/clang/lib/Lex/UnicodeOperatorCharSets.h
+
+The five inputs are not in this repo. `docs/ucd-17.0.0.sha256` records their
+version-pinned URLs and SHA-256 hashes, and `--verify-manifest` refuses to
+derive anything from an input that does not match one. `--emit-header`
+implies it, because a generated header whose inputs were not the published
+17.0.0 bytes is not reproducible and should not be committed; pass
+`--no-verify-manifest` to override, which is what auditing a *different* UCD
+version deliberately looks like.
 """
 
+import hashlib
 import sys
 from collections import defaultdict
 from pathlib import Path
 
-D = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(".")
+EMIT_HEADER = "--emit-header" in sys.argv[1:]
+NO_VERIFY = "--no-verify-manifest" in sys.argv[1:]
+VERIFY = not NO_VERIFY and ("--verify-manifest" in sys.argv[1:] or EMIT_HEADER)
+_args = [a for a in sys.argv[1:] if not a.startswith("--")]
+D = Path(_args[0]) if _args else Path(".")
+
+MANIFEST = Path(__file__).resolve().parent / "ucd-17.0.0.sha256"
+
+if EMIT_HEADER:
+    # In header mode stdout carries the generated C++ and nothing else; the
+    # audit narrative still runs, on stderr, so a generator run documents
+    # itself.
+    _stdout_print = print
+
+    def print(*a, **kw):  # noqa: A001 - deliberate shadow
+        kw.setdefault("file", sys.stderr)
+        _stdout_print(*a, **kw)
+
+
+def read_manifest(path):
+    """`sha256sum` check format: `<hex>  <name>`, `#` comments, blank lines."""
+    want = {}
+    for line in open(path, encoding="utf-8"):
+        line = line.split("#")[0].strip()
+        if not line:
+            continue
+        digest, name = line.split(None, 1)
+        want[name.strip()] = digest
+    return want
+
+
+def verify_manifest(d, path):
+    """Refuse to derive from inputs that are not the published 17.0.0 bytes.
+
+    Exits non-zero on any mismatch rather than returning, because every number
+    downstream of here is a claim about a specific frozen set and a mismatched
+    input makes all of them wrong at once, silently.
+    """
+    if not path.exists():
+        sys.exit(f"error: manifest not found: {path}")
+    bad = []
+    for name, digest in read_manifest(path).items():
+        f = d / name
+        if not f.exists():
+            bad.append(f"{name}: missing from {d}")
+            continue
+        got = hashlib.sha256(f.read_bytes()).hexdigest()
+        if got != digest:
+            bad.append(f"{name}: sha256 {got}, manifest says {digest}")
+        else:
+            print(f"manifest ok: {name}")
+    if bad:
+        sys.exit(
+            "error: UCD inputs do not match "
+            + str(path)
+            + "\n  "
+            + "\n  ".join(bad)
+            + "\n\nThe operator set is frozen at UCD 17.0.0. Re-fetch the "
+            "version-pinned\nURLs the manifest records — not `latest/` — or "
+            "pass --no-verify-manifest\nif you mean to audit a different "
+            "version."
+        )
+    print(f"manifest ok: 5/5 inputs match {path}")
+
+
+if VERIFY:
+    verify_manifest(D, MANIFEST)
 
 
 def ranges(path, want=None):
@@ -146,12 +232,34 @@ epres = set()
 for a, b, _ in ranges(D / "emoji-data.txt", "Emoji_Presentation"):
     epres.update(range(a, b + 1))
 
-EXCLUDE = (
-    {0x2202, 0x2207, 0x221E}                             # ∂ ∇ ∞ — identifier side (U10)
-    | {0x2212, 0x2215, 0x2044, 0x2217, 0x2223,           # confusables of - / * / |
-       0x2236, 0x2219, 0x22C5}                           # ∶ ∙ ⋅
-    | {0x2264, 0x2265, 0x21D0, 0x21D2, 0x21D4}           # ≤ ≥ ⇐ ⇒ ⇔ — <= >= => space
-)
+# §5 predicate 5, the named exclusions, each with the reason a lexer should
+# report (U§8 keeps them as a table *with reasons*, not as absent entries) and,
+# for a confusable, the existing token it apes.
+IDENTIFIER_PROFILE = "IdentifierProfile"
+CONFUSABLE_WITH = "ConfusableWith"
+EMOJI_PRESENTATION = "EmojiPresentation"
+
+NAMED_EXCLUSIONS = {
+    # ∂ ∇ ∞ — TR31 §7.1 earmarks these for the identifier side (U10).
+    0x2202: (IDENTIFIER_PROFILE, None),
+    0x2207: (IDENTIFIER_PROFILE, None),
+    0x221E: (IDENTIFIER_PROFILE, None),
+    # UTS #39 confusables of tokens C++ already has.
+    0x2212: (CONFUSABLE_WITH, "-"),      # − MINUS SIGN
+    0x2215: (CONFUSABLE_WITH, "/"),      # ∕ DIVISION SLASH
+    0x2044: (CONFUSABLE_WITH, "/"),      # ⁄ FRACTION SLASH
+    0x2217: (CONFUSABLE_WITH, "*"),      # ∗ ASTERISK OPERATOR
+    0x2223: (CONFUSABLE_WITH, "|"),      # ∣ DIVIDES
+    0x2236: (CONFUSABLE_WITH, ":"),      # ∶ RATIO
+    0x2219: (CONFUSABLE_WITH, "."),      # ∙ BULLET OPERATOR  — middle-dot family
+    0x22C5: (CONFUSABLE_WITH, "."),      # ⋅ DOT OPERATOR     — middle-dot family
+    0x2264: (CONFUSABLE_WITH, "<="),     # ≤
+    0x2265: (CONFUSABLE_WITH, ">="),     # ≥
+    0x21D0: (CONFUSABLE_WITH, "<="),     # ⇐
+    0x21D2: (CONFUSABLE_WITH, "=>"),     # ⇒
+    0x21D4: (CONFUSABLE_WITH, "<=>"),    # ⇔
+}
+EXCLUDE = set(NAMED_EXCLUSIONS)
 
 u1_final = sorted(
     cp for cp in ps
@@ -169,5 +277,166 @@ print(f"\nFinal U1 operator set (§5 predicates, all exclusions applied):")
 print(f"  code points : {len(u1_final)}")
 print(f"  contiguous ranges : {len(rgs)}  "
       f"(static table: {len(rgs) * 8} bytes at 2×uint32 per range)")
-print(f"  emoji-presentation excluded inside the blocks : "
-      f"{len([c for c in ps if inb(c) and c in epres])}")
+emoji_in_blocks = sorted(c for c in ps if inb(c) and c in epres)
+print(f"  emoji-presentation excluded inside the blocks : {len(emoji_in_blocks)}")
+
+# --- --emit-header: the tables as Clang-shaped C++ -------------------------
+
+
+def ucd_version_and_date():
+    """(version, date) as the UCD files themselves report them."""
+    version, date = "unknown", "unknown"
+    with open(D / "DerivedAge.txt", encoding="utf-8") as f:
+        for line in f:
+            if line.startswith("# DerivedAge-") and version == "unknown":
+                version = line.strip().removeprefix("# DerivedAge-").removesuffix(".txt")
+            elif line.startswith("# Date:"):
+                date = line.split(":", 1)[1].split(",")[0].strip()
+                break
+    return version, date
+
+
+def emit_header(w):
+    version, date = ucd_version_and_date()
+    excl = sorted(NAMED_EXCLUSIONS) + [c for c in emoji_in_blocks
+                                       if c not in NAMED_EXCLUSIONS]
+    excl.sort()
+    # Every named exclusion must be absent from the emitted set, or the
+    # generated exclusion table would be lying about the range table.
+    u1 = set(u1_final)
+    assert not (u1 & set(excl)), "exclusion listed but present in U1 set"
+
+    def reason_of(cp):
+        return NAMED_EXCLUSIONS.get(cp, (EMOJI_PRESENTATION, None))
+
+    w(f"""\
+//===--- UnicodeOperatorCharSets.h - U1 user-operator code points ---------===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+///
+/// \\file
+/// GENERATED FILE - DO NOT EDIT.
+///
+/// The frozen U1 set of Unicode user-defined operator code points, plus the
+/// table of named exclusions and the reason each was kept out.
+///
+/// Generated by, from a directory holding the five UCD {version} data files
+/// (PropList.txt, DerivedAge.txt, UnicodeData.txt, DerivedCoreProperties.txt,
+/// emoji/emoji-data.txt) fetched from
+/// https://www.unicode.org/Public/{version}/ucd/ :
+///
+///   python3 docs/pattern-syntax-audit.py <ucd-dir> --emit-header \\
+///       > clang/lib/Lex/UnicodeOperatorCharSets.h
+///
+/// The generator lives in the plan repo, not in LLVM. UCD version {version},
+/// DerivedAge.txt dated {date}.
+///
+/// Derivation (unicode-operators.md U#5, predicates 1-5): Pattern_Syntax, and
+/// non-ASCII, and inside the mathematical/arrow blocks (U+2190-21FF,
+/// U+2200-22FF, U+2300-23FF, U+27C0-27EF, U+27F0-27FF, U+2900-297F,
+/// U+2980-29FF, U+2A00-2AFF, U+2B00-2BFF), and General_Category Sm or So,
+/// minus the named exclusions below. The predicates are *derivation inputs*
+/// applied once, offline: U1 freezes the resulting enumeration at UCD
+/// {version} by fiat, so this table does not track later UCD versions.
+///
+/// Result: {len(u1_final)} code points in {len(rgs)} contiguous ranges, {len(rgs) * 8} bytes.
+///
+//===----------------------------------------------------------------------===//
+
+#ifndef LLVM_CLANG_LIB_LEX_UNICODEOPERATORCHARSETS_H
+#define LLVM_CLANG_LIB_LEX_UNICODEOPERATORCHARSETS_H
+
+#include "llvm/Support/UnicodeCharRanges.h"
+#include <cstdint>
+
+namespace clang {{
+
+/// The frozen U1 user-operator set, UCD {version}: {len(u1_final)} code points in
+/// {len(rgs)} ranges, sorted and non-overlapping as llvm::sys::UnicodeCharSet
+/// requires.
+static const llvm::sys::UnicodeCharRange UserOperatorRanges[] = {{""")
+
+    for i in range(0, len(rgs), 3):
+        row = "".join(f"{{0x{a:04X}, 0x{b:04X}}}," .ljust(20)
+                      for a, b in rgs[i:i + 3])
+        w("    " + row.rstrip())
+    w("};")
+    w("")
+    w("/// Why a code point that a reader might expect to be a user operator is")
+    w("/// not one. U05 turns these into diagnostics; the exclusions exist for the")
+    w("/// reader's protection, so the diagnostics should say so.")
+    w("enum class UserOperatorExclusionReason {")
+    w("  /// Not a named exclusion (it simply fails one of predicates 1-4, or is")
+    w("  /// a member of the set).")
+    w("  None,")
+    w("  /// TR31 7.1's mathematical notation profile earmarks it as an")
+    w("  /// *identifier* character: it names things, it does not combine them.")
+    w("  /// Clang already admits these as identifiers; see")
+    w("  /// MathematicalNotationProfileIDStartRanges in UnicodeCharSets.h.")
+    w("  IdentifierProfile,")
+    w("  /// UTS #39 confusable with an existing C++ token. Rejected outright,")
+    w("  /// never aliased: something that looks like `-` but is not must fail to")
+    w("  /// lex rather than quietly mean something else.")
+    w("  ConfusableWith,")
+    w("  /// TR31 7.2's emoji profile carve-out.")
+    w("  EmojiPresentation,")
+    w("};")
+    w("")
+    w("struct UserOperatorExclusion {")
+    w("  uint32_t CodePoint;")
+    w("  UserOperatorExclusionReason Reason;")
+    w("  /// For ConfusableWith, the existing token this code point apes;")
+    w("  /// nullptr otherwise.")
+    w("  const char *Confusable;")
+    w("};")
+    w("")
+    w(f"/// The named exclusions of U#5 predicate 5 ({len(NAMED_EXCLUSIONS)} of them) plus the")
+    w(f"/// {len(emoji_in_blocks)} emoji-presentation code points inside the U1 blocks. Sorted by")
+    w("/// code point.")
+    w("static const UserOperatorExclusion ExcludedOperatorChars[] = {")
+    for cp in excl:
+        reason, conf = reason_of(cp)
+        c = f'"{conf}"' if conf else "nullptr"
+        w(f"    // {chr(cp)} U+{cp:04X} {name.get(cp, '?')}")
+        w(f"    {{0x{cp:04X}, UserOperatorExclusionReason::{reason}, {c}}},")
+    w("};")
+    w("")
+    w("""\
+/// True if \\p C is a member of the frozen U1 user-operator set.
+static inline bool isUserOperatorChar(uint32_t C) {
+  static const llvm::sys::UnicodeCharSet UserOperatorChars(UserOperatorRanges);
+  return UserOperatorChars.contains(C);
+}
+
+/// The exclusion table entry for \\p C, or nullptr if \\p C is not a named
+/// exclusion. Table is tiny (a linear scan beats a binary search here) and
+/// sorted, so the scan can stop early.
+static inline const UserOperatorExclusion *
+getUserOperatorExclusion(uint32_t C) {
+  for (const UserOperatorExclusion &E : ExcludedOperatorChars) {
+    if (E.CodePoint == C)
+      return &E;
+    if (E.CodePoint > C)
+      break;
+  }
+  return nullptr;
+}
+
+/// Why \\p C is not a user operator, when there is a named reason to give.
+static inline UserOperatorExclusionReason getExclusionReason(uint32_t C) {
+  if (const UserOperatorExclusion *E = getUserOperatorExclusion(C))
+    return E->Reason;
+  return UserOperatorExclusionReason::None;
+}
+
+} // namespace clang
+
+#endif // LLVM_CLANG_LIB_LEX_UNICODEOPERATORCHARSETS_H""")
+
+
+if EMIT_HEADER:
+    emit_header(lambda s="": _stdout_print(s))
