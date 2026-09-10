@@ -112,6 +112,18 @@ Home: `ops/DEVIATIONS.md`
 | `DEV-04` | `bare-nesting-detection` | [deviation](DEVIATIONS.md#bare-nesting-detection) |
 | `DEV-05` | `backtick-source-locations` | [deviation](DEVIATIONS.md#backtick-source-locations) |
 | `DEV-06` | `wrapper-inner-shape` | [deviation](DEVIATIONS.md#wrapper-inner-shape) |
+
+> **`DEV-06` was assigned twice, on two branches.** This map's `DEV-06` is
+> `wrapper-inner-shape`. The `main` branch independently used `DEV-06` for a
+> *different* defect, a type name in the operator slot, in a row added after
+> this branch had already re-slugged the ledger. That row's substance now
+> lives in [`type-slot-cost`](DEVIATIONS.md#type-slot-cost) (Clang, which
+> implements it) and [`gcc-type-slot-parity`](gcc/DEVIATIONS.md#gcc-type-slot-parity)
+> (GCC, which does not), so nothing is lost — but a reader following `DEV-06`
+> out of `main`'s history lands on the wrong entry. **This is the failure the
+> slug convention exists to prevent**, caught in a merge rather than by
+> inspection, and it is the strongest argument in this file for the rename.
+
 | `DEV-07` | `analysis-layer-sites` | [deviation](DEVIATIONS.md#analysis-layer-sites) |
 | `DEV-08` | `type-slot-cost` | [deviation](DEVIATIONS.md#type-slot-cost) |
 | `DEV-09` | `cir-backtick-arms` | [deviation](DEVIATIONS.md#cir-backtick-arms) |
@@ -129,6 +141,8 @@ Home: `ops/gcc/DEVIATIONS.md`
 | `DEV-G06c` | `gcc-ternary-normalisation` | [deviation](gcc/DEVIATIONS.md#gcc-ternary-normalisation) |
 | `DEV-G07a` | `gcc-keyword-declarator` | [deviation](gcc/DEVIATIONS.md#gcc-keyword-declarator) |
 | `DEV-G08` | `gcc-type-slot-parity` | [deviation](gcc/DEVIATIONS.md#gcc-type-slot-parity) |
+| `DEV-G11` | `gcc-dependent-slot-lookup` | [deviation](gcc/DEVIATIONS.md#gcc-dependent-slot-lookup) — from `main`, never slugged there |
+| `DEV-G12` | `gcc-type-slot-parity` | folded in; `main`'s row recorded GCC's diagnostic, which that entry now carries |
 
 ## Unicode deviations (Clang)
 
@@ -256,7 +270,8 @@ Home: `ops/BACKLOG.md`
 | [`gcc-ternary-normalisation`](gcc/DEVIATIONS.md#gcc-ternary-normalisation) | `DEV-G06c` | `ops/gcc/DEVIATIONS.md` |
 | [`gcc-tree-canonicalisation`](gcc/DEVIATIONS.md#gcc-tree-canonicalisation) | `DEV-G06b` | `ops/gcc/DEVIATIONS.md` |
 | [`gcc-trunk-pin`](BACKLOG.md#gcc-trunk-pin) | `B13` | `ops/BACKLOG.md` |
-| [`gcc-type-slot-parity`](gcc/DEVIATIONS.md#gcc-type-slot-parity) | `DEV-G08` | `ops/gcc/DEVIATIONS.md` |
+| [`gcc-dependent-slot-lookup`](gcc/DEVIATIONS.md#gcc-dependent-slot-lookup) | `DEV-G11` | `ops/gcc/DEVIATIONS.md` |
+| [`gcc-type-slot-parity`](gcc/DEVIATIONS.md#gcc-type-slot-parity) | `DEV-G08`, `DEV-G12` | `ops/gcc/DEVIATIONS.md` |
 | [`gcc-wrapper-parity`](BACKLOG.md#gcc-wrapper-parity) | `B12` | `ops/BACKLOG.md` |
 | [`grokdeclarator-guard-scope`](BACKLOG.md#grokdeclarator-guard-scope) | `B11` | `ops/BACKLOG.md` |
 | [`increment-decrement-mangling`](BACKLOG.md#increment-decrement-mangling) | `B25` | `ops/BACKLOG.md` |

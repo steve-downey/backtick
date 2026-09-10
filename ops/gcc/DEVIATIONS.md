@@ -103,7 +103,7 @@ rewritten. [`ops/SLUGS.md`](../SLUGS.md) is the whole map.
 
 **Design section.** §17.3 [type-name-slot](../../docs/backtick-operator-design.md#type-name-slot); Clang [type-slot-cost](../DEVIATIONS.md#type-slot-cost)
 
-**What differed.** Clang now implements [type-name-slot](../../docs/backtick-operator-design.md#type-name-slot) (type-name in the slot yields construction, CTAD applying); **GCC does not** — `` 1 `P` 2 `` still fails on the GCC branch, since its slot parse (`cp_parser_assignment_expression` under `backtick_is_operator_p` suppression, plus the G10 bare-name ADL path) has no type arm.
+**What differed.** Clang now implements [type-name-slot](../../docs/backtick-operator-design.md#type-name-slot) (type-name in the slot yields construction, CTAD applying); **GCC does not** — `` 1 `P` 2 `` still fails on the GCC branch, since its slot parse (`cp_parser_assignment_expression` under `backtick_is_operator_p` suppression, plus the G10 bare-name ADL path) has no type arm. Re-measured 2026-09-09: Clang now accepts `` 1 `Point` 2 `` and GCC rejects it with *"no match for call to '(Point) (int, int)'"*, which shows the two front ends fail at different points — GCC resolves the name and then looks for an `operator()` on an object of that type, where Clang refuses a slot naming a type before it gets that far. The fix is therefore not the same edit in the two compilers.
 
 **Cross-compiler note.** Cross-compiler divergence, open: the two compilers now accept different programs under `-fbacktick`. The Clang shape to mirror: intercept a type-name slot before expression parsing (bare name via type lookup with CTAD placeholder, qualified via tentative scope parse, builtin via the functional-cast machinery) and route to the `T(x, y)` build path (`finish_compound_literal` / functional-cast equivalent). Implementing it in GCC is **not** part of BL02.
 
@@ -243,6 +243,38 @@ GCC's note names the entity with a spelling no program can contain, which is the
 **The fix was wrong on its first build, in exactly the way this branch's previous commit warns about, and the second one is the interesting part.** `cp_parser_error_1` hands a *keyword token* to `%qE` as though it were a name — with a comment in the source saying that is what it is doing — so the funnel escaped it too, and `void new (int, int);`, a program containing no backtick at all, began reporting its error against a backticked spelling. The parser now says, for the length of that one call, that what it has in hand is a raw token (`cp_printing_raw_token`, `gcc/cp/cp-tree.h`). **This is GCC's version of the split Clang draws by diagnostic argument kind**, and it is one guard where Clang needed six sites. `g++.dg/backtick/escape-diag.C` pins both halves: the escaped spelling, and the two backtick-free diagnostics that must not change.
 
 **Reconciled into** §3 [keyword-escape-printing](../../docs/backtick-operator-design.md#keyword-escape-printing)'s **`Log.`, the 2026-09-07 entry beginning *"GCC now delivers the diagnostic half too"***, which records the general fact the two implementations share — the escape keeps no trace of how it was written, so an implementation must decide which printing surfaces name an entity — and into [§17.8](../../docs/backtick-operator-design.md#178-which-of-this-is-clangs-alone-and-why), the closing paragraph, which is the paper-facing version and now says the divergence lasted one day.
+
+### gcc-dependent-slot-lookup
+
+**Formerly:** `DEV-G11`, on `main` only — the row was written after this branch had already re-slugged the ledger, so it never had a slug and would have been lost in the merge. Carried forward here, re-measured rather than copied.
+
+**Status.** **OPEN**, unowned. Cross-compiler divergence, and the conforming side is Clang.
+
+**Found by.** (post-G10, in `backtick-examples`); re-confirmed 2026-09-09 against `backtick-trunk` and the GCC prototype.
+
+**Design section.** §8 point 3 / §17.4 [ADL is normative](../../docs/backtick-operator-design.md#adl-normative); [gcc-slot-adl](#gcc-slot-adl) and [gcc-template-id-slot-adl](#gcc-template-id-slot-adl) are the same claim in two narrower cases, both of them closed.
+
+**What differed.** An **unqualified slot name in a dependent context** is rejected by GCC and accepted by Clang. The slot names a namespace-scope *variable* made visible by a using-declaration, and the use is inside a function template:
+
+```cpp
+namespace smd::infix {
+  inline constexpr auto pipe = [](auto&& x, auto&& f) { return f(x); };
+}
+using smd::infix::pipe;
+inline constexpr auto inc = [](int x){ return x + 1; };
+template<class T> auto g(T t) { return t `pipe` inc; }
+int main() { return g(1); }
+```
+
+Clang exits 0 with no diagnostic. GCC exits 1 with
+
+> error: 'pipe' was not declared in this scope, and no declarations were found by argument-dependent lookup at the point of instantiation
+
+G10 made a bare-name slot run `perform_koenig_lookup`, but for a *dependent* call GCC re-runs the lookup at instantiation and keeps only the ADL result, discarding the ordinary lookup from the definition context. ADL finds nothing here, because `pipe` is a variable rather than a function and no argument's associated namespace is `smd::infix`. A qualified slot works, and so does the same expression outside a template.
+
+**Cross-compiler note.** Clang carries the slot as an `UnresolvedLookupExpr`, which retains the definition-context lookup result, so both Clang tracks accept. [temp.dep.candidate] makes the candidate set for a dependent call ordinary lookup at the point of *definition* plus ADL at the point of *instantiation*; GCC is dropping the first half. Since the slot is defined to desugar to a call, **Clang's behaviour is the conforming one and GCC's is a bug**, which is the opposite polarity from most rows here.
+
+**Recommended doc change.** Until it is fixed, §17.4's claim must be qualified for GCC: the prototype requires a qualified slot name inside a template when the callee is not ADL-reachable. **This bears on what a paper may claim about two-compiler evidence for ADL in dependent contexts**, so it is surfaced rather than owned.
 
 ### escape-type-name-spelling
 

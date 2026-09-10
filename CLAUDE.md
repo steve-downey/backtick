@@ -176,6 +176,12 @@ and a Status-log row so base-commit changes are not lost.
   **Re-run them after touching the escape.** They have found something on
   every occasion they have been run, including a parser loop and a
   cross-compiler divergence in the run that installed them here.
+- `examples/` — a self-contained CMake project (vendored in via `git subtree`,
+  own history) that *uses* the prototype compilers rather than building them.
+  `make TOOLCHAIN=gcc-backticks`, `TOOLCHAIN=clang-23-backticks`, and
+  `TOOLCHAIN=clang-trunk-backticks` select the three `~/install/` prefixes and
+  add `-fbacktick`; see `examples/etc/*-backticks-toolchain.cmake`. This is
+  where sample code for the paper gets compiled and run for real.
 
 ## The implementation worktrees (where the code actually is)
 
@@ -264,6 +270,53 @@ cd ~/bld/gcc/gcc-backtick-build && make -j18 all-gcc      # build cc1plus
 # regression gate (dejagnu), one dir or one file:
 make -C gcc check-c++ RUNTESTFLAGS="dg.exp=g++.dg/backtick/*.C"
 ```
+
+### Installing a track's compiler
+
+Each track can be installed into its own version-suffixed prefix under
+`~/install/`, so all three (and any vanilla toolchain already there, e.g.
+`~/install/llvm-23`) can coexist on `PATH` without colliding:
+
+| Track | Prefix | Real binary | Symlinks |
+|-------|--------|-------------|----------|
+| Clang 23 | `~/install/clang-23-backtick` | `clang-23-backtick` | `clang`, `clang++` → it |
+| Clang trunk | `~/install/clang-trunk-backtick` | `clang-24-backtick` (trunk's current major) | `clang`, `clang++` → it |
+| GCC trunk | `~/install/gcc-trunk-backtick` | `gcc-17-backtick`, `g++-17-backtick`, ... (trunk's current major) | none needed — GCC names every installed program |
+
+`ops/build/configure-{clang23,clang-trunk,gcc-trunk}-backtick.sh` hold the
+reproducible configure invocations (this is the fix for "LLVM CMake
+reproducibility is difficult without a stored command somewhere, and GCC
+`config.status` is fragile" — the invocation lives here, not only in a build
+directory's cache). Each script is safe to re-run in an existing build
+directory (Clang: only the install prefix and the `clang` target's `VERSION`
+property change, so it's a cheap relink, not a rebuild) or to seed a fresh
+one:
+
+```bash
+# Clang: from a fresh or existing build dir
+cd ~/src/llvm/build-backtick && ~/src/backtick/ops/build/configure-clang23-backtick.sh
+ninja install
+
+# GCC: from a fresh build dir (re-running configure in an existing one is
+# fine for a prefix/suffix-only change, but prefer a fresh dir if unsure)
+cd ~/bld/gcc/gcc-backtick-build && ~/src/backtick/ops/build/configure-gcc-trunk-backtick.sh
+make -j18 all && make -j18 install
+```
+
+`all-gcc` / `install-gcc` are enough for `cc1plus -fsyntax-only` checks, but
+they install a compiler with no runtime: no libstdc++ headers, no libasan.
+Use the full `all` / `install` above for a prefix that can actually build and
+link a project. The Clang side is the same story — both configure scripts put
+`compiler-rt` in `LLVM_ENABLE_RUNTIMES` so `-fsanitize=` links; `ninja
+runtimes && ninja install-runtimes` adds it to an already-installed prefix.
+
+The Clang mechanism is CMake's native `CLANG_EXECUTABLE_VERSION` (normally
+just the LLVM major, e.g. `23`; the scripts append `-backtick`) — the same
+mechanism that produces the real `clang-23` binary in a vanilla
+`~/install/llvm-23`. The GCC mechanism is `./configure --program-suffix=...`,
+which is what `~/install/gcc-17` already uses. Neither script invents a new
+renaming convention; both extend the one already in use for the vanilla
+installs.
 
 ## Working conventions
 
