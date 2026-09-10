@@ -1013,10 +1013,11 @@ are written now, and the exception above is the whole of what is left.
 ## Argument-dependent lookup, which both implementations got wrong
 
 ADL fidelity is normative in this design: `` x `f` y `` must not have quietly
-weaker lookup than `f(x, y)`. Both compilers now deliver it and agree.
-However, neither did on its first attempt, and the two failures were the same
-failure: the name in the slot was resolved before the call builder ever saw
-it.
+weaker lookup than `f(x, y)`. Neither compiler delivered it on its first
+attempt, and the two failures were the same failure: the name in the slot was
+resolved before the call builder ever saw it. Both deliver it now outside a
+template. Inside one they still disagree, and the disagreement is this
+section's own rule: see the end of the section.
 
 GCC took two goes. Its first cut resolved a bare-name slot at parse time, so a
 call depending on pure ADL — the callee visible in no enclosing scope, only in
@@ -1055,6 +1056,21 @@ candidate that is visible and viable, a better ADL candidate, and the choice
 made observable in the result type. That is the only shape in which weaker
 lookup on the slot produces no diagnostic at all, and it is the test to ask an
 implementation for.
+
+One case is still open, and it is this section's own rule failing on the
+other side. Inside a template, an unqualified slot naming something
+argument-dependent lookup cannot reach, a variable brought in by a
+using-declaration for instance, is rejected by GCC and accepted by Clang.
+GCC re-runs the lookup at instantiation and keeps only the ADL result,
+discarding the ordinary lookup from the definition context that
+[temp.dep.candidate]{.sref} requires it to keep. What makes the reading
+unambiguous is that the plain call still compiles: in one translation unit,
+`pipe(t, inc)` is accepted where `` t `pipe` inc `` is not. That is the slot
+carrying weaker lookup than the call it desugars to, which is what
+this section opened by ruling out. Clang is the conforming implementation and
+the GCC prototype has a bug to fix. However, the boundary belongs in a paper
+claiming two implementations, so it is printed here rather than smoothed
+over.
 
 ## What the AST node costs, and which compiler pays it
 

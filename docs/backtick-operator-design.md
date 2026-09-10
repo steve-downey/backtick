@@ -1646,8 +1646,18 @@ expression in the slot gets no ADL for the same reason the equivalent call
 gets none.
 
 Implementation status, for the implementation-experience section: **both
-compilers now deliver it, and they agree — but neither of them did on its
-first attempt, and the two failures were the same failure.** Clang parses a
+compilers now deliver it in a non-dependent context, and neither of them did
+on its first attempt, with the same failure twice. They do not yet agree
+inside a template.** GCC drops the definition-context ordinary lookup for a
+dependent slot and keeps only the ADL result, so an unqualified slot naming
+something ADL cannot reach is rejected there and accepted by Clang
+([gcc-dependent-slot-lookup](../ops/gcc/DEVIATIONS.md#gcc-dependent-slot-lookup)).
+That is this section's own normative rule broken, and broken on the GCC side:
+in the same translation unit `pipe(t, inc)` compiles where `` t `pipe` inc ``
+does not, which is the slot having *strictly weaker lookup than the call it
+desugars to*. Clang is the conforming one. Until GCC is fixed, the paragraph
+above holds as the design and as Clang's behaviour, and the sentence a paper
+may write about two-compiler agreement stops at the template boundary. Clang parses a
 bare unqualified name in the slot as the callee it is, so the name reaches
 `Sema::BuildCallExpr` as an `UnresolvedLookupExpr`: in the slot, the closing
 backtick is the trailing `(` that `Sema::UseArgumentDependentLookup` insists
