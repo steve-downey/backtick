@@ -250,6 +250,8 @@ GCC's note names the entity with a spelling no program can contain, which is the
 
 **Status.** **OPEN**, unowned. Cross-compiler divergence, and the conforming side is Clang.
 
+**Closed by.** [gcc-dependent-slot-lookup](../completion/steps/gcc-dependent-slot-lookup.md), which carries the measured diagnosis, the two parser sites, and the parity gate.
+
 **Found by.** (post-G10, in `backtick-examples`); re-confirmed 2026-09-09 against `backtick-trunk` and the GCC prototype.
 
 **Design section.** §8 point 3 / §17.4 [ADL is normative](../../docs/backtick-operator-design.md#adl-normative); [gcc-slot-adl](#gcc-slot-adl) and [gcc-template-id-slot-adl](#gcc-template-id-slot-adl) are the same claim in two narrower cases, both of them closed.

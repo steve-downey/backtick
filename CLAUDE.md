@@ -23,7 +23,7 @@ Clang backtick S00–S12, GCC backtick G01–G10, and Clang Unicode U00–U21
 not merely planned). Treat that step machinery as a completed record unless a
 *new* step is added to a `PLAN.md`.
 
-**Live work is in `ops/completion/PLAN.md`** — 24 steps, named by slug.
+**Live work is in `ops/completion/PLAN.md`** — 25 steps, named by slug.
 **That is where an agent picks up work.** It supersedes `ops/backlog/PLAN.md`
 (BL01–BL04 green; BL05–BL07 absorbed) and covers *all* remaining work in one
 plan: the 31 open `BNN` rows in `ops/BACKLOG.md`, the 29 unreconciled rows
@@ -57,8 +57,22 @@ answer, which was to let the keyword escape reach every position the grammar
 writes an identifier in; and `escape-name-sweep` swept all of them again, in
 four categories rather than one, and closed the two that had held out. **There
 is now no program the two compilers treat differently on account of the
-keyword escape.** **There is no unchecked step in any plan, and an agent arriving with no other
-instruction should not go looking for work in `ops/`.** One deviation row is open, it is a diagnostic
+keyword escape.** **Phase K is open, and it is the only unchecked box in the live plan** —
+`ops/backlog/PLAN.md`'s BL05–BL07 are superseded and absorbed, as noted above,
+and are not work.
+[`gcc-dependent-slot-lookup`](ops/completion/steps/gcc-dependent-slot-lookup.md)
+is a GCC front-end defect the merge of `main` surfaced on 2026-09-09: the
+prototype drops the definition-context ordinary lookup for **every** dependent
+slot and keeps only ADL, so `` t `pipe` inc `` is rejected inside a template
+where `pipe(t, inc)` compiles in the same translation unit. That is the slot
+having weaker lookup than the call it desugars to, which §17.4 calls
+normative, and **Clang is the conforming side** — the opposite polarity from
+every other row in the GCC ledger. It is **unowned and nothing is blocked on
+it**; §17.4 and D4307 currently print the divergence rather than claiming
+agreement, and closing the step un-qualifies those two passages. The Unicode
+paper is not implicated. An agent
+arriving with no other instruction may pick it up; there is no other work in
+`ops/`. One deviation row is open, it is a diagnostic
 rather than an acceptance divergence, and it is measured and surfaced rather
 than owned: `ops/gcc/DEVIATIONS.md#escape-type-name-spelling` — GCC escapes
 the name of a *declaration* and prints the name of a *type* bare.
@@ -145,7 +159,7 @@ and a Status-log row so base-commit changes are not lost.
   it. Open *design* questions are not in it; §6 indexes those.
 - `ops/SLUGS.md` — the map from every retired serial number to its slug, both
   directions, and the record of what was left numbered on purpose.
-- `ops/completion/PLAN.md` — the completion track (24 steps, named by slug), which schedules
+- `ops/completion/PLAN.md` — the completion track (25 steps, named by slug), which schedules
   and gates **everything** still outstanding: defects, reconciliation,
   decisions and the papers. **Every box is ticked**; Phase J, steps 21–24,
   was opened by the 2026-09-08 review of the two papers and closed the same
