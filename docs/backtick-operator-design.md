@@ -1652,6 +1652,9 @@ inside a template.** GCC drops the definition-context ordinary lookup for a
 dependent slot and keeps only the ADL result, so an unqualified slot naming
 something ADL cannot reach is rejected there and accepted by Clang
 ([gcc-dependent-slot-lookup](../ops/gcc/DEVIATIONS.md#gcc-dependent-slot-lookup)).
+A function visible only through a using-declaration is rejected exactly as a
+variable is, and an ADL-reachable name is accepted, so what is lost is
+ordinary lookup itself rather than any narrower rule about what ADL may find.
 That is this section's own normative rule broken, and broken on the GCC side:
 in the same translation unit `pipe(t, inc)` compiles where `` t `pipe` inc ``
 does not, which is the slot having *strictly weaker lookup than the call it

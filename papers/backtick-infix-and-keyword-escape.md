@@ -1057,12 +1057,15 @@ be believed without it.
 
 One case is still open, and it is this section's own rule failing on the
 other side. Inside a template, an unqualified slot naming something
-argument-dependent lookup cannot reach, a variable brought in by a
+argument-dependent lookup cannot reach, a function brought in by a
 using-declaration for instance, is rejected by GCC and accepted by Clang.
 GCC re-runs the lookup at instantiation and keeps only the ADL result,
 discarding the ordinary lookup from the definition context that
-[temp.dep.candidate]{.sref} requires it to keep. What makes the reading
-unambiguous is that the plain call still compiles: in one translation unit,
+[temp.dep.candidate]{.sref} requires it to keep. A variable fails the same
+way, and an ADL-reachable name is accepted, so what is lost is ordinary
+lookup itself rather than some narrower rule about what ADL may find. What
+makes the reading unambiguous is that the plain call still compiles: in one
+translation unit,
 `pipe(t, inc)` is accepted where `` t `pipe` inc `` is not. That is the slot
 carrying weaker lookup than the call it desugars to, which is what
 this section opened by ruling out. Clang is the conforming implementation and
