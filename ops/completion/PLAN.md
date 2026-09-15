@@ -486,6 +486,24 @@ it un-qualifies two passages rather than adding any.
 
 - [ ] 25. [gcc-dependent-slot-lookup](steps/gcc-dependent-slot-lookup.md) — the GCC prototype drops the definition-context ordinary lookup for every dependent slot and keeps only ADL, so `` t `pipe` inc `` is rejected where `pipe(t, inc)` compiles, in the same translation unit (dep: none; **unowned**, and nothing is blocked on it)
 
+### Phase L — A decision taken and never built (2026-09-15)
+
+Opened by the review of PR #3, which merged the two paper restructures back to
+`main`. Unlike every other phase here, its item is not a defect anybody
+found in a compiler or a claim a paper got wrong. It is an action this project
+**decided** — twice, in two documents, one of them making it the condition the
+papers were split under — and then did not carry out, because it was written
+into `docs/` and nothing in `ops/` tracks `docs/`.
+
+It surfaced now because [unicode-paper](steps/unicode-paper.md)'s restructure
+on 2026-09-09 built the other half. D4345R0 cites D4307 six times, has a
+"Relation to D4307" note and a "Separability from D4307, in evidence" section;
+D4307R0 does not name D4345 once, and does not name the precedence level the
+two share. The obligation is older than that restructure and the asymmetry is
+not.
+
+- [ ] 26. [backtick-paper-companion](steps/backtick-paper-companion.md) — D4307R0 names its precedence level the **user-infix level** and carries the informative future-directions appendix [`paper-separation`](../../docs/unicode-operators.md#paper-separation) conditioned the split on, and cites D4345 where it already leans on it (dep: none; **unowned**. Nothing is blocked on it, but it should land before the two papers are submitted together)
+
 ### Maintenance (not plan steps)
 - **M2 — done, 2026-09-06.** Forward-ported `BL02` + clang-paper-truth's
   backtick fixes to `unicode-operators-experiment`; gate green against the
@@ -567,6 +585,7 @@ everything** and are the right work for a spare agent.
 | [settle-paper-rows](steps/settle-paper-rows.md) **(step inserted 2026-09-07)** | [`escape-name-positions`](../DEVIATIONS.md#escape-name-positions) [`type-slot-aggregate-shape`](../DEVIATIONS.md#type-slot-aggregate-shape) [`escape-alias-name-parity`](../gcc/DEVIATIONS.md#escape-alias-name-parity) [`escape-diagnostic-spelling`](../gcc/DEVIATIONS.md#escape-diagnostic-spelling) — four claims the paper made that the built compilers did not support. None of them is a `BNN` row; they are deviation rows and are listed again in the table below. **Two fixed, two with the author** — see the checklist entry |
 | [escape-name-positions](steps/escape-name-positions.md) **(step inserted 2026-09-08)** | the two rows settle-paper-rows put to the author, once answered: [`escape-name-positions`](../DEVIATIONS.md#escape-name-positions) and [`escape-alias-name-parity`](../gcc/DEVIATIONS.md#escape-alias-name-parity), both now `FIXED and RECONCILED`. Opens one: [`escape-type-keyword-binding`](../gcc/DEVIATIONS.md#escape-type-keyword-binding) |
 | [escape-name-sweep](steps/escape-name-sweep.md) **(step inserted 2026-09-08)** | no `BNN` row — its rows are deviation rows and are in the table below. It closes the one [escape-name-positions](steps/escape-name-positions.md) opened and the one the [forward-port](handoffs/escape-positions-forward-port.handoff.md) opened, and opens [`escape-type-name-spelling`](../gcc/DEVIATIONS.md#escape-type-name-spelling) |
+| [backtick-paper-companion](steps/backtick-paper-companion.md) **(step inserted 2026-09-15)** | no row in any ledger, and **that is the finding rather than an oversight in the tables above**. Its scope is an obligation recorded in `docs/backtick-operator-design.md` §9's list of what the paper must carry and conditioned on by [`paper-separation`](../../docs/unicode-operators.md#paper-separation): D4307 names the **user-infix level** and carries an informative future-directions appendix. This table covers what originates in `ops/` — backlog rows, deviation rows, design decisions — and a paper-requirements list in a design doc has the same force and none of the tracking. Found by a PR review on 2026-09-15, not by this plan. **When auditing whether work is outstanding, read the design docs' paper-requirements lists too**; this section's heading was true of `ops/` and only of `ops/` |
 
 29 open deviation rows when this plan was written, written out in full so a grep for one finds its step. **Four more were opened on 2026-09-07, after the plan, and have no step** — the last row of this table.
 

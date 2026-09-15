@@ -650,7 +650,11 @@ and port.
   desugar-to-call) once, and the follow-on paper inherits them as adopted
   precedent instead of reopening them. The appendix is informative and the
   papers' fates stay separate — Unicode-allergy must not be able to sink
-  backtick.
+  backtick. **Not built as of 2026-09-15, and D4307R0 does not name D4345 at
+  all**; tracked at last as
+  [backtick-paper-companion](../ops/completion/steps/backtick-paper-companion.md).
+  Until that lands, this list is the only record of the obligation, which is
+  how it went missing.
 
 ---
 
