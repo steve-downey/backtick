@@ -125,8 +125,8 @@ Report the pre-fix failure count the way
 `gcc-slot-adl`'s test file has no *augmentation* case in a dependent context:
 an ordinary-lookup candidate that is visible and viable, a better ADL
 candidate reachable at instantiation, and the choice made observable in the
-return type. That is the shape D4307 says is "the test to ask an
-implementation for", and it is the shape in which a wrong answer produces no
+return type. D4307's ADL section says no implementation should be believed
+without that shape, and it is the shape in which a wrong answer produces no
 diagnostic at all. Both halves of the candidate set have to be present for it
 to mean anything, which is exactly what this step restores.
 
