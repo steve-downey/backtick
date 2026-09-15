@@ -255,8 +255,8 @@ evaluate their arguments. The thunk is the price of generality. A dedicated
 implication operator pays that price differently, by building the laziness
 into the operator; Walter Brown has proposed `operator=>`, with short-circuit
 evaluation like `&&` and `||` [@P2971R3]. However, what it buys over the
-backtick spelling is the ergonomics of omitting the thunk in the common
-boolean case, and not a capability user code otherwise lacks.
+backtick spelling is ergonomic: omitting the thunk in the common boolean case.
+The capability is already there.
 
 ## One helper makes it a pipeline, and the ranges closures already fit
 
@@ -366,16 +366,15 @@ What each one is:
 +-----------------+-----------------------------+-----------------------------------+
 
 The overlap stops at two arguments. Beyond that, each can do what the other
-cannot:
+can not:
 
-- Backtick cannot thread. `x |> f(a, b, c)` prepends `x` to an
+- Backtick can not thread. `x |> f(a, b, c)` prepends `x` to an
   arbitrary-arity call; backtick's right-hand side is a single operand, not
   an argument list, so there is no backtick spelling of `f(x, a, b, c)`.
   Beyond two operands, only `|>` threads.
-- `|>` cannot write an operation *between* its operands. `` a `min` b ``
-  becomes `a |> min(b)`, which reads as a pipeline stage and not an operation.
-  For `x op y` notation (predicates, arithmetic, metrics), backtick is the
-  spelling.
+- `|>` can not write an operation *between* its operands. `` a `min` b ``
+  becomes `a |> min(b)`, which reads as a pipeline stage. For `x op y`
+  notation (predicates, arithmetic, metrics), backtick is the spelling.
 
 And they compose: backtick supplies infix detail inside a stage, `|>`
 threads the value between stages:
@@ -393,8 +392,7 @@ Different sentences.
 # Prior art
 
 Both uses have shipped elsewhere, repeatedly. Neither is invented here; the
-design work in this paper is fitting them into C++'s grammar and not
-discovering them.
+design work in this paper is fitting them into C++'s grammar.
 
 ## Infix application of named callables
 
@@ -426,7 +424,7 @@ it](https://github.com/unisonweb/unison/pull/2570). However, both are
 pipeline-first functional languages, where the dominant backtick use was
 monadic chaining, exactly the use `|>` covers directly, so the feature was
 carrying one use that already had a spelling. The motivating set here (`gcd`,
-`dot`, `mul_sat`, `approx_equal`) is binary operations and not chains, and the
+`dot`, `mul_sat`, `approx_equal`) is binary operations, not chains, and the
 P2011 section of this paper keeps the pipeline and the infix operator as
 different constructs so that neither has to absorb the other's uses. Elm
 folding backtick *into* its pipe is evidence for that separation and not
@@ -449,7 +447,7 @@ identifiers](https://doc.rust-lang.org/edition-guide/rust-2018/module-system/raw
 The last was introduced specifically so the 2018 edition could take `try`,
 `async`, and `await` as keywords while 2015-edition code kept compiling and
 kept calling functions with those names. Editions plus raw identifiers are how
-Rust made keyword adoption routine rather than traumatic. C++ is the outlier:
+Rust made keyword adoption routine. C++ is the outlier:
 no escape, so every new keyword breaks real code, and the committee's coping
 strategies are `co_`-circumlocution and context-sensitive grammar. The hatch
 is standard equipment. C++ never installed it.
@@ -539,7 +537,7 @@ x `f `g` h` y           // a chain:  h(f(x, g), y)
 x `(f `g` h)` y         // nested:   (g(f, h))(x, y)
 ```
 
-This cannot be diagnosed without contradicting left-associativity, and it
+This can not be diagnosed without contradicting left-associativity, and it
 does not need to be. It is the same regrouping-changes-the-answer situation
 as `a - b - c` versus `a - (b - c)`, which no compiler diagnoses either: the
 grammar groups, parentheses override. The language defends against honest
@@ -568,7 +566,7 @@ The grammar says so explicitly: the *backtick-operator* production accepts a
 *assignment-expression*, and a slot that names a type takes the type
 interpretation. (A bare type-name is not an *assignment-expression*, so
 without those productions `` a `std::pair` b `` would be a grammar
-contradiction and not a blessed consequence.) The result is always an
+contradiction.) The result is always an
 expression, whichever production the slot takes, so no most-vexing-parse
 declaration reading can arise.
 
@@ -588,7 +586,7 @@ One question is deliberately left open for EWG: whether the escape is
 restricted to words that actually are keywords, so that `` `foo` `` is
 ill-formed rather than a noisy spelling of `foo`. The restriction buys maximal
 disjointness between the two uses and forecloses nothing. However, the
-disambiguation works without it, since it is by position and not by content.
+disambiguation works without it, since it is positional.
 We call EWG's attention to the choice; the implementations would support
 either answer.
 
@@ -648,7 +646,7 @@ new one.
 
 The analysis of candidate alternative spellings is carried in an appendix,
 with the rebuttals stated, so the question can be settled against the record
-in this paper rather than reopened in a future one. It includes the one pair,
+in this paper. It includes the one pair,
 `\< … \>`, that would actually be better-engineered, and why adopting it would
 be choosing a different operator rather than aliasing this one.
 
@@ -675,16 +673,16 @@ multiplication does not need `` a `mul_sat` b ``; it needs a
 `Saturating<double>` whose `operator*` saturates.
 
 Note first that the lift is not optional. Overloaded operators require a class
-or enumeration operand, so `double * double` cannot be given new meaning at
+or enumeration operand, so `double * double` can not be given new meaning at
 all; to change what `*` does to two doubles, inventing a type is the *only*
 move the language offers. The objection is not "there is a lighter
 alternative"; it is "the heavyweight alternative already exists." And the
 committee has already decided this exact example, in the library: C++26's
 saturation arithmetic ([@P0543R3]) is `std::add_sat`, `std::sub_sat`,
-`std::mul_sat`, `std::div_sat`, named free functions in `<numeric>` and not a
-saturating wrapper type. So are `std::gcd`, `std::midpoint`, and `std::lerp`
-before it. The library keeps choosing names because the type encodes the wrong
-thing.
+`std::mul_sat`, `std::div_sat`, named free functions in `<numeric>`. No
+saturating wrapper type was shipped. So with `std::gcd`, `std::midpoint`, and
+`std::lerp` before it: the library keeps choosing names, because the type
+encodes the wrong thing.
 
 Types are not free in C++. Haskell writes `newtype Sat = Sat Double` — one
 line, guaranteed zero representation cost — and even there the wrapping and
@@ -700,7 +698,7 @@ lacking an infix spelling.
 And the type is the wrong scope. Wrapping a value makes *every* operation
 saturating for as long as the wrapper is on, when the intent was one
 multiplication in one expression. Saturating versus wrapping versus trapping
-is a property of an operation and not of an object. The wrapper cannot compose
+is a property of an operation and not of an object. The wrapper can not compose
 for the same reason: `operator*` can mean only one thing per type, so an
 expression that needs a saturating multiply and a wrapping add has nowhere to
 stand. `` a `mul_sat` b `add_wrap` c `` says it directly, at the site where
@@ -762,7 +760,7 @@ that says nothing about why, which is the reason for stating the exclusion
 here: nothing else would say it was chosen. Excluding costs one clause in the
 predicate that already decides which operators may be folded over; admitting
 would require a fold-expression node that can hold an arbitrary slot
-expression, which today's cannot. Nothing is foreclosed; every program a later
+expression, which today's can not. Nothing is foreclosed; every program a later
 revision would newly accept is one this proposal rejects.
 
 The keyword escape is a new *identifier* alternative in name positions:
@@ -856,8 +854,7 @@ commits, 177 of them touching the C++ front end, the front-end infrastructure
 it shares with C, or the preprocessor. Every line the feature adds or removes
 came across unchanged, with no conflict. Nothing the feature touches had moved
 under it. For a design whose whole claim is *desugar and inherit*, that is the
-maintenance number to report: a diff of this shape has very little to catch
-on.
+number that matters: a diff of this shape has very little to catch on.
 
 ## What is implemented, and what is not
 
@@ -924,7 +921,7 @@ cache and re-annotate. More than half the work was in those three, and none of
 them appears in the grammar.
 
 That last change also shipped an infinite loop, and what caught it is the
-instructive part. Clang's recovery for a qualified name it cannot resolve is
+instructive part. Clang's recovery for a qualified name it can not resolve is
 to try implicit `int`; that does not apply to an escape and consumes nothing,
 so `` namespace N { int x; } N::`union` g; `` re-entered the same case with
 the same tokens indefinitely. The code it replaced had been avoiding that by
@@ -992,7 +989,7 @@ called through the object's own `operator()`, which the semantic layer keys as
 an operator call: the slot lands at argument zero and the operands shift one
 place along. Both arms were missing.
 
-The two failed in opposite ways, and that is the half to keep. The aggregate
+The two failed in opposite ways. The aggregate
 arm failed *silently*. It printed the desugaring, which was well-formed,
 plausible, and not what was written; in the deduced case it printed a cast
 applied to a comma expression, a different program altogether. The callable
@@ -1035,8 +1032,9 @@ reachable by ADL, `` u `pick` u `` bound the visible one while `pick(u, u)`
 bound the ADL one, no diagnostic anywhere. The operator called a different
 function from the call it is defined to be.
 
-The sharpest evidence for the desugaring thesis fell out of that defect, and
-it is inside one compiler rather than between two. The Clang build carrying
+That defect produced the strongest evidence in this paper for the desugaring
+thesis, and it is inside one compiler rather than between two. The Clang build
+carrying
 the backtick operator also carried a second infix experiment (user-defined
 operators spelled with Unicode symbols, a companion design not proposed here)
 whose slot never becomes an expression: Sema performs its own operator lookup
@@ -1054,17 +1052,20 @@ stop anyone writing the test that would have failed. The shape that catches
 this is *augmentation* rather than "does it compile": an ordinary-lookup
 candidate that is visible and viable, a better ADL candidate, and the choice
 made observable in the result type. That is the only shape in which weaker
-lookup on the slot produces no diagnostic at all, and it is the test to ask an
-implementation for.
+lookup on the slot produces no diagnostic at all, and no implementation should
+be believed without it.
 
 One case is still open, and it is this section's own rule failing on the
 other side. Inside a template, an unqualified slot naming something
-argument-dependent lookup cannot reach, a variable brought in by a
+argument-dependent lookup cannot reach, a function brought in by a
 using-declaration for instance, is rejected by GCC and accepted by Clang.
 GCC re-runs the lookup at instantiation and keeps only the ADL result,
 discarding the ordinary lookup from the definition context that
-[temp.dep.candidate]{.sref} requires it to keep. What makes the reading
-unambiguous is that the plain call still compiles: in one translation unit,
+[temp.dep.candidate]{.sref} requires it to keep. A variable fails the same
+way, and an ADL-reachable name is accepted, so what is lost is ordinary
+lookup itself rather than some narrower rule about what ADL may find. What
+makes the reading unambiguous is that the plain call still compiles: in one
+translation unit,
 `pipe(t, inc)` is accepted where `` t `pipe` inc `` is not. That is the slot
 carrying weaker lookup than the call it desugars to, which is what
 this section opened by ruling out. Clang is the conforming implementation and
@@ -1078,7 +1079,7 @@ Clang builds a source-fidelity node, a transparent wrapper around the
 desugared call, and that node is what makes `-ast-print` reproduce the
 written syntax. GCC desugars in the parser and hands its semantic layer an
 ordinary call. The two accept the same programs and generate the same code,
-so this is a difference in kind and not in behavior. However, it has a price,
+so they differ in kind and behave identically. However, it has a price,
 and a reviewer should attribute the price correctly.
 
 The price is not the node. It is the transparency. A wrapper the rest of the
@@ -1106,7 +1107,7 @@ None of that is the cost of infix application. It is the cost of source
 fidelity, and round-tripping the written syntax is what it buys. A front end
 that desugars in the parser pays none of it, and gets none of it.
 
-## The gate is the part that fails quietly
+## The gate fails quietly
 
 A prototype behind a flag has one obligation ahead of the feature itself:
 with the flag off, nothing changes. Both implementations broke it in the same
@@ -1135,11 +1136,11 @@ parser architectures reproduced. Nesting-is-chaining is a consequence of the
 grammar and not an implementation accident. Clang carried a diagnostic for the
 bare form through most of the implementation and it never once fired; it was
 deleted rather than made to fire, since making it fire needs the lookahead
-that would have to reject legal chaining too. A diagnostic that cannot fire is
+that would have to reject legal chaining too. A diagnostic that can not fire is
 a claim the grammar has already withdrawn.
 
-The motivation section is implementation experience as well, and not
-assertion. Every pattern in it (`pipe` threading, the range-adaptor closures,
+The motivation section is implementation experience as well. Every pattern in
+it (`pipe` threading, the range-adaptor closures,
 the `bind_back` stages, `then` composition, the short-circuiting `implies` and
 the `mbind` chain) was compiled and run against the built `-fbacktick` Clang,
 C++23, `-Wall -Wextra` clean. The ranges comparison was verified to produce
@@ -1322,7 +1323,8 @@ Backtick is the sole proposed spelling. This appendix carries the analysis
 behind that decision: why alternatives get raised, the lexical filter any
 candidate must pass, the candidates themselves, and the wider inventory of
 what ASCII actually remains, so that if the spelling question is raised it can
-be settled against this record in this paper and not reopened in a future one.
+be settled against this record in this paper instead of reopened in a future
+one.
 
 ## A.1 Why alternatives get raised
 
@@ -1386,7 +1388,7 @@ a real token before:
 
 | Spelling | Lexically clean? | Verdict |
 |---|---|---|
-| `\< … \>` | yes — `\` is no token today, and `\<` cannot start a UCN | front-runner, if ever forced (A.4) |
+| `\< … \>` | yes — `\` is no token today, and `\<` can not start a UCN | front-runner, if ever forced (A.4) |
 | `<\| … \|>` | yes | blocked socially: `\|>` is P2011's operator, and it reads as "pipe" |
 | `<\ … \>` | no — UCN munch (trap 3) | inferior twin of `\< … \>`; reject |
 | `(\| … \|)` | yes | heavy; Haskell "banana bracket" connotation; reads worse than backtick |
@@ -1436,7 +1438,7 @@ purpose.
 
 The same availability analysis generalizes, and it is what gets asked in the
 room, so it is recorded. A sequence `XY` is mintable only if `XY` is not a
-token or token-prefix today *and* `Y` cannot validly follow `X` in a current
+token or token-prefix today *and* `Y` can not validly follow `X` in a current
 program. The second clause is the surprising one: after any binary operator or
 `<`, the unary-capable characters `- + * & ~ !` are already legal, so `<-`,
 `<+`, `<*`, `**`, `!!`, `~~` are all blocked; `a * *p` and `!!x` are the
@@ -1470,11 +1472,11 @@ scarce lexical real estate, largely evaporates. `` x `implies` y ``, `` x
 A.6 can stay unspent.
 
 The residual cases where a dedicated punctuator is still worth minting are the
-ones a desugar-to-call cannot express: non-strict evaluation with a
+ones a desugar-to-call can not express: non-strict evaluation with a
 bare-expression right operand (Walter Brown's short-circuiting `=>`
 implication [@P2971R3]; though the motivation section shows a thunk recovers
-the capability, leaving the dedicated operator an ergonomic win rather than a
-necessary one), custom precedence or associativity outside the single backtick
+the capability, so the dedicated operator is an ergonomic win), custom
+precedence or associativity outside the single backtick
 level, and operations frequent enough that even `` `op` `` is too much
 ceremony, a high bar. Everything else is a backtick call. The inventory above
 is what remains technically possible; this proposal removes most of the

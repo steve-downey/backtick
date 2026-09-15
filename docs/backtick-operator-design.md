@@ -650,7 +650,11 @@ and port.
   desugar-to-call) once, and the follow-on paper inherits them as adopted
   precedent instead of reopening them. The appendix is informative and the
   papers' fates stay separate — Unicode-allergy must not be able to sink
-  backtick.
+  backtick. **Not built as of 2026-09-15, and D4307R0 does not name D4345 at
+  all**; tracked at last as
+  [backtick-paper-companion](../ops/completion/steps/backtick-paper-companion.md).
+  Until that lands, this list is the only record of the obligation, which is
+  how it went missing.
 
 ---
 
@@ -1652,6 +1656,9 @@ inside a template.** GCC drops the definition-context ordinary lookup for a
 dependent slot and keeps only the ADL result, so an unqualified slot naming
 something ADL cannot reach is rejected there and accepted by Clang
 ([gcc-dependent-slot-lookup](../ops/gcc/DEVIATIONS.md#gcc-dependent-slot-lookup)).
+A function visible only through a using-declaration is rejected exactly as a
+variable is, and an ADL-reachable name is accepted, so what is lost is
+ordinary lookup itself rather than any narrower rule about what ADL may find.
 That is this section's own normative rule broken, and broken on the GCC side:
 in the same translation unit `pipe(t, inc)` compiles where `` t `pipe` inc ``
 does not, which is the slot having *strictly weaker lookup than the call it

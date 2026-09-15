@@ -269,6 +269,8 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
+2026-09-15 — **the condition in the Decision above is not built, and had never been tracked.** D4307R0 does not name the *user-infix level* and carries no future-directions appendix; it does not name D4345 at all, while D4345R0 cites D4307 six times and carries the mirror-image "Relation to D4307" note. So the split happened and the recovery the **Why** promises did not. Recorded as [backtick-paper-companion](../ops/completion/steps/backtick-paper-companion.md), Phase L — the first entry in that plan whose scope came from a design doc rather than from `ops/`, which is why nothing caught it sooner. See its Notes.
+
 ---
 
 ## 3. What transfers from backtick

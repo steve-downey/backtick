@@ -250,11 +250,13 @@ GCC's note names the entity with a spelling no program can contain, which is the
 
 **Status.** **OPEN**, unowned. Cross-compiler divergence, and the conforming side is Clang.
 
+**Closed by.** [gcc-dependent-slot-lookup](../completion/steps/gcc-dependent-slot-lookup.md), which carries the measured diagnosis, the two parser sites, and the parity gate.
+
 **Found by.** (post-G10, in `backtick-examples`); re-confirmed 2026-09-09 against `backtick-trunk` and the GCC prototype.
 
 **Design section.** §8 point 3 / §17.4 [ADL is normative](../../docs/backtick-operator-design.md#adl-normative); [gcc-slot-adl](#gcc-slot-adl) and [gcc-template-id-slot-adl](#gcc-template-id-slot-adl) are the same claim in two narrower cases, both of them closed.
 
-**What differed.** An **unqualified slot name in a dependent context** is rejected by GCC and accepted by Clang. The slot names a namespace-scope *variable* made visible by a using-declaration, and the use is inside a function template:
+**What differed.** An **unqualified slot name in a dependent context** is rejected by GCC and accepted by Clang, whenever ordinary lookup is the only thing that would have found it. GCC drops the definition-context ordinary lookup for **every** dependent slot and keeps only ADL; the rejections are the subset where ADL alone finds nothing. The reproducer names a namespace-scope *variable* made visible by a using-declaration, inside a function template:
 
 ```cpp
 namespace smd::infix {
@@ -270,7 +272,9 @@ Clang exits 0 with no diagnostic. GCC exits 1 with
 
 > error: 'pipe' was not declared in this scope, and no declarations were found by argument-dependent lookup at the point of instantiation
 
-G10 made a bare-name slot run `perform_koenig_lookup`, but for a *dependent* call GCC re-runs the lookup at instantiation and keeps only the ADL result, discarding the ordinary lookup from the definition context. ADL finds nothing here, because `pipe` is a variable rather than a function and no argument's associated namespace is `smd::infix`. A qualified slot works, and so does the same expression outside a template.
+G10 made a bare-name slot run `perform_koenig_lookup`, but for a *dependent* call GCC re-runs the lookup at instantiation and keeps only the ADL result, discarding the ordinary lookup from the definition context. ADL finds nothing in this particular program because `pipe` is a variable rather than a function and no argument's associated namespace is `smd::infix`. A qualified slot works, and so does the same expression outside a template.
+
+**It is not about non-functions.** Measured 2026-09-09 by [gcc-dependent-slot-lookup](../completion/steps/gcc-dependent-slot-lookup.md), which widened this row: a namespace-scope *function* visible only through a using-declaration is rejected identically, and an ADL-reachable name (a hidden friend) is accepted. So the ADL half works and the ordinary half is gone, which is a plain loss of definition-context lookup and not a mishandling of DR 218's overload-set filter. The variable above is the reproducer, not the boundary — anything ordinary lookup alone would have found fails the same way.
 
 **Cross-compiler note.** Clang carries the slot as an `UnresolvedLookupExpr`, which retains the definition-context lookup result, so both Clang tracks accept. [temp.dep.candidate] makes the candidate set for a dependent call ordinary lookup at the point of *definition* plus ADL at the point of *instantiation*; GCC is dropping the first half. Since the slot is defined to desugar to a call, **Clang's behaviour is the conforming one and GCC's is a bug**, which is the opposite polarity from most rows here.
 

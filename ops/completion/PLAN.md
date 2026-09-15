@@ -475,6 +475,35 @@ depends on first, the papers after it.
 - [x] 23. [backtick-paper-truth](steps/backtick-paper-truth.md) — the round-trip claim, four citations, and a dash rate (dep: [slot-callable-printing](steps/slot-callable-printing.md), whose handoff says what the round-trip paragraph may claim) — **green 2026-09-09.** The round-trip paragraph is rewritten from what step 21 landed and **the bold general statement is kept as it stood**: `-ast-print` now round-trips every shape with **one** exception, the builtin whose call the semantic layer rewrites out of being a call, and the paper says that the sentence was written for the first of two instances and caught the second afterwards. The review's *"a different, well-formed program"* is corrected to what was measured — the callable arm failed **loudly** and did not compile, the aggregate arm failed **silently** and did — and that contrast is now the paragraph's point. Sweep timing re-measured (**1.6 s**, 79/79 both compilers, best of three) and the paper's *"about ten seconds"* replaced. The resync count now names all three trees it covers. `^^` is re-cited: the operator to **P2996R13**, the move from `^` to `^^` to **P3381R0**, which also rejected the backtick for reflection **in print** — that quotation is now engaged by name in A.1, conceded, and answered on the difference between a reflection operator and an operation name. The Elm sentence is trimmed to what its link carries. Both PureScript passages drop *"independently"* for the stronger true fact: the level is Haskell's inherited default, and PureScript has twice declined to make it overridable. One voice pass: em-dashes **117 → 16 = 17.5/10k** (his papers 20.1), "However" **3 → 15 = 16.4/10k** (his formal 17.6), appositive tails **15 → 2**, and both survivors are out of scope: the protected bold statement, and one inside the Wording drafting notes this step did not touch. `lexcheck` no longer warns. The blog post's copy of the stale figure is [`sweep-timing-figure`](../BACKLOG.md#sweep-timing-figure), opened rather than fixed.
 - [x] 24. [slot-callable-forward-port](steps/slot-callable-forward-port.md) — the sixth backtick merge, onto `unicode-operators-experiment` only (dep: [slot-callable-printing](steps/slot-callable-printing.md)) — **green 2026-09-08.** `git merge --no-ff 28b685c86ea2`, the explicit commit; **no conflict**, and this time the prediction was checked before it was written rather than after. The collision worth naming was real in a way the last two were not — `StmtPrinter.cpp` carries `VisitUserOperatorExpr` here and `VisitBacktickInfixExpr` is the function the incoming commit edits — and **one `git diff --numstat` settled it in advance**: 640 lines and one function apart in `StmtPrinter.cpp`, and over a thousand apart in `Expr.cpp`, whose Unicode side is three `case UserOperatorExprClass:` arms in `isUnusedResultAWarning`, `isConstantInitializer` and `HasSideEffects`. **`UserOperatorExpr::getOperand` needs no equivalent arm, proven with a program and not by reading**: a Unicode operator whose operand is a class-typed callable, one on a class holding one, one on the *result* of calling one, and both features in a single expression all print as written and the printed output re-parses clean. The reason is structural — a user operator's semantic form is a call to a **declared** `operator⊞`, and there is no `OverloadedOperatorKind` for ⊞ to be re-keyed to, so the `OO_Call` shape that broke the backtick arm cannot arise. **The defect was live on this branch and the merge is what fixed it**: `` L `fn` R `` printed as `` fn `operator()` L `` before and prints as itself now.
 
+### Phase K — A defect that is GCC's, not the design's (2026-09-09)
+
+Opened by the merge of `main`, which carried a deviation row this branch had
+never slugged and which reproduces today. It is the first entry in this plan
+whose defect belongs to a compiler rather than to the design or to a paper,
+and the first where **Clang is the reference implementation**. It is also the
+one row here that a published claim is currently qualified around, so closing
+it un-qualifies two passages rather than adding any.
+
+- [ ] 25. [gcc-dependent-slot-lookup](steps/gcc-dependent-slot-lookup.md) — the GCC prototype drops the definition-context ordinary lookup for every dependent slot and keeps only ADL, so `` t `pipe` inc `` is rejected where `pipe(t, inc)` compiles, in the same translation unit (dep: none; **unowned**, and nothing is blocked on it)
+
+### Phase L — A decision taken and never built (2026-09-15)
+
+Opened by the review of PR #3, which merged the two paper restructures back to
+`main`. Unlike every other phase here, its item is not a defect anybody
+found in a compiler or a claim a paper got wrong. It is an action this project
+**decided** — twice, in two documents, one of them making it the condition the
+papers were split under — and then did not carry out, because it was written
+into `docs/` and nothing in `ops/` tracks `docs/`.
+
+It surfaced now because [unicode-paper](steps/unicode-paper.md)'s restructure
+on 2026-09-09 built the other half. D4345R0 cites D4307 six times, has a
+"Relation to D4307" note and a "Separability from D4307, in evidence" section;
+D4307R0 does not name D4345 once, and does not name the precedence level the
+two share. The obligation is older than that restructure and the asymmetry is
+not.
+
+- [ ] 26. [backtick-paper-companion](steps/backtick-paper-companion.md) — D4307R0 names its precedence level the **user-infix level** and carries the informative future-directions appendix [`paper-separation`](../../docs/unicode-operators.md#paper-separation) conditioned the split on, and cites D4345 where it already leans on it (dep: none; **unowned**. Nothing is blocked on it, but it should land before the two papers are submitted together)
+
 ### Maintenance (not plan steps)
 - **M2 — done, 2026-09-06.** Forward-ported `BL02` + clang-paper-truth's
   backtick fixes to `unicode-operators-experiment`; gate green against the
@@ -556,6 +585,7 @@ everything** and are the right work for a spare agent.
 | [settle-paper-rows](steps/settle-paper-rows.md) **(step inserted 2026-09-07)** | [`escape-name-positions`](../DEVIATIONS.md#escape-name-positions) [`type-slot-aggregate-shape`](../DEVIATIONS.md#type-slot-aggregate-shape) [`escape-alias-name-parity`](../gcc/DEVIATIONS.md#escape-alias-name-parity) [`escape-diagnostic-spelling`](../gcc/DEVIATIONS.md#escape-diagnostic-spelling) — four claims the paper made that the built compilers did not support. None of them is a `BNN` row; they are deviation rows and are listed again in the table below. **Two fixed, two with the author** — see the checklist entry |
 | [escape-name-positions](steps/escape-name-positions.md) **(step inserted 2026-09-08)** | the two rows settle-paper-rows put to the author, once answered: [`escape-name-positions`](../DEVIATIONS.md#escape-name-positions) and [`escape-alias-name-parity`](../gcc/DEVIATIONS.md#escape-alias-name-parity), both now `FIXED and RECONCILED`. Opens one: [`escape-type-keyword-binding`](../gcc/DEVIATIONS.md#escape-type-keyword-binding) |
 | [escape-name-sweep](steps/escape-name-sweep.md) **(step inserted 2026-09-08)** | no `BNN` row — its rows are deviation rows and are in the table below. It closes the one [escape-name-positions](steps/escape-name-positions.md) opened and the one the [forward-port](handoffs/escape-positions-forward-port.handoff.md) opened, and opens [`escape-type-name-spelling`](../gcc/DEVIATIONS.md#escape-type-name-spelling) |
+| [backtick-paper-companion](steps/backtick-paper-companion.md) **(step inserted 2026-09-15)** | no row in any ledger, and **that is the finding rather than an oversight in the tables above**. Its scope is an obligation recorded in `docs/backtick-operator-design.md` §9's list of what the paper must carry and conditioned on by [`paper-separation`](../../docs/unicode-operators.md#paper-separation): D4307 names the **user-infix level** and carries an informative future-directions appendix. This table covers what originates in `ops/` — backlog rows, deviation rows, design decisions — and a paper-requirements list in a design doc has the same force and none of the tracking. Found by a PR review on 2026-09-15, not by this plan. **When auditing whether work is outstanding, read the design docs' paper-requirements lists too**; this section's heading was true of `ops/` and only of `ops/` |
 
 29 open deviation rows when this plan was written, written out in full so a grep for one finds its step. **Four more were opened on 2026-09-07, after the plan, and have no step** — the last row of this table.
 
