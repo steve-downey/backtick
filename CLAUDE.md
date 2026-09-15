@@ -161,9 +161,10 @@ and a Status-log row so base-commit changes are not lost.
   directions, and the record of what was left numbered on purpose.
 - `ops/completion/PLAN.md` — the completion track (25 steps, named by slug), which schedules
   and gates **everything** still outstanding: defects, reconciliation,
-  decisions and the papers. **Every box is ticked**; Phase J, steps 21–24,
-  was opened by the 2026-09-08 review of the two papers and closed the same
-  day. Nothing in it was blocked on the author.
+  decisions and the papers. Twenty-three boxes are green, one is `[—]`, and
+  **one is open: Phase K's `gcc-dependent-slot-lookup`**, described above.
+  Phase J, steps 21–24, was opened by the 2026-09-08 review of the two papers
+  and closed the same day. Nothing in the plan is blocked on the author.
 - `docs/open-decisions.md` — the single record of the questions that need the
   author and of the rulings already given. All six are answered, the last
   being `escape-name-positions`; nothing in the completion plan is waiting on
