@@ -1249,6 +1249,16 @@ runs it.
 subsection, and the paper, which now proposes the rule and keeps the
 restricted form as the alternative with the argument against it.
 
+*Ratified the same day, on the one part of the ruling that had been recorded
+as separately pollable:* the **alternative representations** are escapable.
+The author's reason is shorter than the one the brief gave and is the one to
+quote — *they are not macros, and there is no particular reason they should be
+exceptional*. In C++ `and` and its ten siblings are tokens ([lex.digraph]);
+the macro spelling is C's `<iso646.h>` and is a different mechanism, which the
+rule already handles by not interfering with phase 4. So the decision has no
+part left that is anybody else's to settle, and the wording says
+[lex.digraph] as well as [lex.key].
+
 *Implementation owed and not done:* **both prototypes implement the restricted
 form**, so this is the first answer on this page since
 [escape-name-positions](#escape-name-positions) that turns into code, and the

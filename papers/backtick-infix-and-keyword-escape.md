@@ -641,10 +641,15 @@ name", which is true whatever the word is, and the question never has to be
 asked.
 
 The alternative representations, `and`, `bitor` and their nine siblings, are
-escapable under the same rule and are meant to be. They are identifier-shaped
-words that the language has given a token meaning, and suppressing exactly
-that is what an escape is for. Excluding them would put a list back where the
-value of the rule is that there is no list.
+escapable under the same rule and are meant to be. In C++ they are tokens and
+not macros: identifier-shaped words the language has claimed, which is the
+category the escape exists to release, and suppressing exactly that is what an
+escape is for. Nothing makes them exceptional, so nothing should except them,
+and excluding them would put a list back where the value of the rule is that
+there is no list. They also show the printing rule doing its job unaided: an
+entity named `and` prints as `` `and` ``, because a bare `and` lexes as `&&`
+and would not re-parse, while `` `foobar` `` prints bare because `foobar`
+does. One predicate answers both.
 
 Rust's raw identifiers, cited below as prior art for the hatch, are prior art
 for this rule as well: the production is `r#` followed by an identifier or a
@@ -1273,8 +1278,10 @@ on choices the wording takes:
   nothing in this proposal turns on which one. If EWG prefers the restricted
   rule, replace *identifier* with *keyword* in the grammar and strike that
   paragraph. Alternative representations ([lex.digraph]{.sref}: `and`, `or`,
-  …) are escapable and are meant to be: they are identifier-shaped words the
-  language has given a token meaning, which is the thing an escape suppresses.
+  …) are escapable and are meant to be: in C++ they are tokens rather than
+  macros, identifier-shaped words the language has claimed, which is the thing
+  an escape suppresses. [lex.digraph]{.sref} is named in the paragraph below
+  for that reason.
 - The escape is a phase-7 grammar construct composed of three preprocessing
   tokens, so no *escaped-identifier* arises in phases 3 through 6 and the
   preprocessor needs no change. The identifier between the backticks is an

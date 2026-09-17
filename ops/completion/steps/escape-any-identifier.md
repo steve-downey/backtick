@@ -118,7 +118,14 @@ equivalent under `gcc/testsuite/g++.dg/backtick/`:
   not a keyword emits it **bare**, and the output re-parses. This is the
   assertion that pins the identity rule at the printer, and it passes today
   only because nothing can produce such a name today.
-- **Alternative tokens.** `` int `and` = 0; ``, and it is still `int`.
+- **Alternative tokens.** `` int `and` = 0; ``, and it is still `int`. Pin
+  the printing asymmetry with it, because it is one predicate serving two
+  answers: `-ast-print` emits `` int `and` = 0; `` **escaped** (a bare `and`
+  lexes as `&&` and would not re-parse) and `` int `foobar` = 0; `` **bare**.
+  Neither compiler is taught this; `and`'s `IdentifierInfo` carries `TokenID`
+  `tok::ampamp`, so the existing `II->getTokenID() != tok::identifier` test
+  already separates them. If it does not, that is a finding, not a test to
+  adjust.
 - **The error path.** A non-identifier between the backticks diagnoses and
   *stops*, in every one of `escape-errors.sh`'s positions.
 
