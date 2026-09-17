@@ -674,10 +674,16 @@ compilation's language options puts the backticks back: a pretty-printed
 declaration comes out as `` void `new`(); ``, since `void new();` is not a
 program and a printer that emitted it would have lost the source, and a
 diagnostic names the entity `` `new` `` for the same reason, that text copied
-out of a diagnostic should be text the reader can paste back. The AST dump is
-the one view that keeps the bare word, which is the evidence for the paragraph
-above: the name really is an ordinary identifier, and the backticks are how it
-is written. Both implementations do this, and it cost them the same thing. The
+out of a diagnostic should be text the reader can paste back. The AST dump
+keeps the bare word where it names the declaration, which is the evidence for
+the paragraph above: the name really is an ordinary identifier, and the
+backticks are how it is written. That view is not of one mind, and it is worth
+saying so rather than rounding it off, because the two implementations diverge
+from opposite ends: Clang dumps a declaration's name bare and the same name
+inside a *type* escaped, while GCC escapes the name of a declaration and
+prints the name of a type bare. Neither split is visible to a program and
+neither touches acceptance. Both implementations put the escape back where it
+matters, and it cost them the same thing. The
 escape yields the ordinary interned identifier and keeps no record of how it
 was written, so neither compiler can ask a name whether it was escaped; each
 has to decide instead *which printing surfaces name an entity*, and put the

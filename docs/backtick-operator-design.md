@@ -796,16 +796,23 @@ the escape to alter:
 - **Reserved names stay reserved.** `` `__foo` `` is a reserved identifier
   exactly as `__foo` is. The escape does not launder a name; it only lets one
   be written.
-- **Macro replacement still happens.** The inner word is an ordinary
-  identifier preprocessing token and phase 4 does not know it stands inside an
-  escape, so a name that is a macro is replaced there as it is anywhere else.
-  The escape neither shields a name from the preprocessor nor exposes one to
-  it. (This corrects the drafting note the paper carried, which said macro
-  names cannot be escaped; that was a property of the keyword-only content
-  rule and not of the escape.) **This one is derived, not measured** — it is
-  what the phase ordering requires, and neither compiler has been asked.
-  [escape-any-identifier](../ops/completion/steps/escape-any-identifier.md)
-  asks both.
+- **Macro replacement still happens — and for a *function-like* macro it does
+  not, for a reason that is the preprocessor's and not the escape's.**
+  Measured on a build of `backtick-trunk` at `28b685c86e`, 2026-09-17. The
+  inner word is an ordinary identifier preprocessing token and phase 4 does
+  not know it stands inside an escape, so `#define OBJECT 3` makes
+  `` int `OBJECT` = 0; `` ill-formed: what stands between the backticks by the
+  time the parser sees it is `3`, and the diagnostic carries the *expanded
+  from macro* note. But `#define FUNC(x) ((x) + 1)` leaves
+  `` int `FUNC` = 7; `` **well-formed**, because a function-like macro is
+  replaced only when its name is followed by `(`, and here the next
+  preprocessing token is the closing backtick. So an escape can name an entity
+  whose spelling is a function-like macro, and `FUNC(1)` still expands in the
+  same translation unit. Neither half is the escape shielding anything; both
+  are the ordinary rules applied to a word that happens to sit between two
+  backticks. (This also corrects the drafting note the paper carried, which
+  said macro names cannot be escaped: half of them can, and the half that can
+  is the half whose invocation syntax the backtick interrupts.)
 
 **The printers need nothing**, which is where the identity claim stops being a
 design statement and becomes a fact about the built compiler.
@@ -991,9 +998,23 @@ halves of that show up in tooling. `-ast-print` re-emits `` void `new`(); ``,
 because `void new();` is not a program and a printer that emitted it would
 have lost the source; a diagnostic names the entity `` `new` `` for the same
 reason, since under the flag there is no other way to write it. `-ast-dump`
-keeps showing the bare identifier `new` — which is the evidence for the ABI
-paragraph above: the name really is ordinary, and the backticks are how you
-say it.
+shows the bare identifier `new` **in the column that names the declaration**,
+which is the evidence for the ABI paragraph above: the name really is
+ordinary, and the backticks are how you say it.
+
+That sentence used to end at *"`-ast-dump` keeps showing the bare
+identifier"*, and measurement on 2026-09-17 says the dump is not of one mind.
+A declaration's own name is dumped bare; the same name **inside a type
+string** is dumped escaped, because a type goes through `TypePrinter` under
+the compilation's policy rather than through the node dumper's, so
+`` void takes_union(int, `union`); `` dumps as
+`` FunctionDecl … takes_union 'void (int, `union`)' ``. It is older than the
+content rule, it is the exact mirror of GCC's
+[escape-type-name-spelling](../ops/gcc/DEVIATIONS.md#escape-type-name-spelling)
+— that compiler escapes the declaration and prints the type bare — and it is
+[ast-dump-type-name-spelling](../ops/DEVIATIONS.md#ast-dump-type-name-spelling),
+measured and unowned. The ABI evidence survives it: the bare name is still in
+the column the paragraph points at.
 
 **The ruling is delivered on declaration names by both compilers and on
 *type* names by Clang alone**, which is the same shape as §17.3's
