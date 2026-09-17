@@ -103,6 +103,15 @@ equivalent under `gcc/testsuite/g++.dg/backtick/`:
   the reverse order. One redeclaration pair, one spelled each way, is the
   sharpest form: `` int foo; int `foo`; `` is a redefinition and must
   diagnose as one.
+- **The two-dialect pair, which is the decision's own argument run as a
+  test.** `` bool `requires`(int); `` compiles under **both** `-std=c++17` and
+  `-std=c++20`, in one file, with `-fbacktick`. Before the change it should
+  fail under `-std=c++17` and pass under `-std=c++20`, because Clang's
+  predicate is `IdentifierInfo::isKeyword(LangOpts)` and a `CXX20_KEYWORD` is
+  `KS_Future` there; **run it before the fix and record what it actually
+  says**, because that reading is derived from the source and has never been
+  run. Two `RUN:` lines, one per standard. This is the regression that would
+  catch a future predicate creeping back to a dialect-sensitive question.
 - **Mangling.** `` void g(int, `foobar`); `` beside `void g(int, foobar);`
   in the ABI test, which already pins `` g(int, `int`) `` as `_Z1gi3int`.
 - **Printing.** `-ast-print` of a declaration whose name was escaped and is

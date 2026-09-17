@@ -188,14 +188,23 @@ affordable.
 
 Collecting that prospective payoff needs one more thing, and it is why the
 escape wraps any identifier rather than only the words that are keywords
-today. The After column has to compile in both dialects: the one where
-`requires` is a keyword, and the one where it is still an ordinary name. If
-only a keyword could be escaped, the After column would be ill-formed in
-exactly the dialect where the Before column still works, and a header that
-must build as both would need two spellings and a macro to choose between
-them. A precaution that cannot be taken until after the damage is a repair.
-Written once, before the word is taken, `` `requires` `` names the same
-function on both sides of the change.
+today. Suppose the escape is standardized in one revision and the committee
+takes `requires` in the next. If only a keyword could be escaped, the After
+column would be ill-formed in the first revision, where `requires` is still an
+ordinary name, and mandatory in the second. A header that must compile as both
+would need two spellings and a macro to choose between them, and no name could
+be escaped until after it had broken. A precaution that cannot be taken until
+after the damage is a repair. Because any identifier may be escaped, the After
+column declares the same function in both revisions, and code can be escaped
+in advance, on purpose, before the committee has chosen anything.
+
+This is the rule regular expressions already use. A backslash before a
+metacharacter means that character, and a backslash before a character that
+was never a metacharacter is just that character, which is why a generator can
+escape unconditionally instead of consulting a table and why a person can
+future-proof a pattern by escaping on sight. The backtick escape is the same
+construct one level up. It suppresses syntax when the word is syntax, and when
+the word is not syntax it is the word.
 
 # The proposal
 

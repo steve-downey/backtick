@@ -1222,10 +1222,27 @@ the choice was *deliberately left open for EWG*. The reason it closes is the
 hatch's own purpose: an escape restricted to words that are already keywords
 cannot be written until the standard that breaks the code has shipped, so it
 can repair a break and can never prevent one, and no single spelling of a name
-compiles both before and after the word is taken. The paper's own motivating
-example is the proof — `` bool `requires`(const License&); `` is ill-formed
-under the restricted rule in exactly the dialect where the unescaped
-declaration still compiles.
+compiles both before and after the word is taken. Standardize the escape in
+version *N*, take the word `W` in *N+1*, and under the restricted rule
+`` `W` `` is ill-formed in *N* and required in *N+1*.
+
+**The author's framing, which is the one to keep**: the backticks always
+contain an identifier, they are only usable where an identifier is allowed,
+and they escape keywords and identifiers alike. It is the regex rule — a
+backslash before a metacharacter means that character, a backslash before
+anything else is just that character — and it is what makes *always escape* a
+strategy rather than a guess.
+
+**The prototypes can be asked the question directly**, because `-fbacktick` is
+orthogonal to `-std`: `requires` is a C++20 keyword and an ordinary identifier
+in C++17, and Clang's restriction predicate is LangOpts-sensitive
+(`CXX20_KEYWORD` is `KS_Future`, not `KS_Enabled`, under `-std=c++17`). So the
+restricted rule should accept `` bool `requires`(const License&); `` as C++20
+and reject it as C++17, which is the revision that still compiles the
+unescaped declaration and the one that would need the escape. **Derived from
+the source, not run** — there is no compiler in the container this was written
+in, and [escape-any-identifier](../ops/completion/steps/escape-any-identifier.md)
+runs it.
 
 *Doc work owed and done in the same sitting:* the decision entry
 [escape-content](backtick-operator-design.md#escape-content), §12's content
