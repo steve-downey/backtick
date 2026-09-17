@@ -438,8 +438,8 @@ installs.
   lookup/mangling/ABI unchanged. **The word inside need not be a keyword**
   ([escape-content](docs/backtick-operator-design.md#escape-content), decided
   2026-09-17): `` `foobar` `` *is* `foobar`, one name under two spellings.
-  That half is written and not yet built — see Phase M above before believing
-  a compiler agrees.
+  **Built on `backtick-trunk` only** — not on `backtick-23`, not in GCC — so
+  read Phase M above before believing a particular compiler agrees.
 - **ADL is normative (§17.4):** the slot must get the same ADL as the plain call.
   Clang carries it as an `UnresolvedLookupExpr`; GCC resolves a bare-name slot
   via explicit `perform_koenig_lookup` (the
