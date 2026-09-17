@@ -1234,6 +1234,66 @@ identical results and identical laziness through `|` and through `` `pipe` ``,
 on the same closure objects.
 
 
+# The design, in one place
+
+Everything argued above reduces to the following, and the wording that
+follows says no more than this. Every item is decided, and every item is
+implemented in both compilers except where noted.
+
+**The infix operator.**
+
+- `` x `f` y `` is `f(x, y)`. It is desugared in the front end, before
+  overload resolution, to the call node the compiler would have built for
+  the call; overload resolution, ADL, templates, `constexpr`, conversions,
+  value categories and code generation are the call's. ADL fidelity is
+  normative: the slot reaches the call builder unresolved.
+- The slot is an *assignment-expression*, or a *simple-type-specifier* or
+  *typename-specifier*, in which case `` x `T` y `` is `T(x, y)` and CTAD
+  applies. The type reading wins when lookup finds a type or a class
+  template. (Clang implements the type slot; GCC does not yet.)
+- Precedence is the highest binary level: tighter than `*`, looser than the
+  unary and postfix operators. Operands are *cast-expressions*, so a prefix
+  operator binds to its own operand and `` -a `f` -b `` is `f(-a, -b)`.
+- Left-associative: `` a `f` b `g` c `` is `g(f(a, b), c)`. Fixity is fixed,
+  not declared per name and not derived from a spelling.
+- Bare nesting is chaining, because the token stream is the same. To nest,
+  parenthesize the slot. Neither compiler diagnoses the bare form, and
+  neither can without rejecting legal chains.
+- Evaluation order is the call's: the slot is sequenced before both operands,
+  the operands are unsequenced with respect to each other.
+- Operands exclude braced-init-lists. The operator is not a *fold-operator*.
+- One spelling. No digraph, no alternative token.
+
+**The keyword escape.**
+
+- `` `kw` ``, wherever the grammar uses *identifier* as a terminal, is an
+  ordinary identifier spelled `kw`. Lookup, overload resolution, mangling,
+  linkage and ABI are untouched; `` void `new`(); `` links as a function
+  named `new`.
+- The escape is spelling and not identity. A printer that names the entity
+  restores the backticks; the AST dump keeps the bare word.
+- The positions are enumerated in the grammar section and swept in both
+  compilers: every declaring position, every using position, and either or
+  both ends of a qualified name.
+
+**Shared.**
+
+- One token, two grammatical positions, no lookahead: operand and name
+  position is the escape, post-operand position is the operator. They never
+  meet, and neither use depends on the other for its disambiguation.
+- Both are gated behind an opt-in flag for the proposal period. Flag off,
+  every existing program is untouched, byte for byte.
+- No library. `pipe`, `then`, `mbind` and `implies` are motivation, each a
+  few lines of user code, and any that deserve standardizing arrive in a
+  later paper with usage behind them.
+- Two uses, one paper, because they share the token and the committee.
+
+**Left to EWG.** One question, on which the author is indifferent and both
+implementations support either answer: whether the escape is restricted to
+words that are keywords, so that `` `foo` `` is ill-formed rather than a
+noisy spelling of `foo`.
+
+
 # Wording
 
 Wording is relative to the current working draft. Drafting notes, for CWG,
