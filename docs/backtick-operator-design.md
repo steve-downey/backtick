@@ -209,7 +209,7 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Question.** Can one backtick token serve both the infix operator and a keyword escape, and what disambiguates them?
 
-**Status.** **Resolved (mechanism and scope)**
+**Status.** **Resolved (mechanism, scope and content)**
 
 **Decision.** Coexists with a backtick keyword-escape
 
@@ -224,6 +224,38 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 2026-09-07 — **answered, and the Status stops saying "scope open" after eleven weeks.** The author took option **(c)**: implement the broad set in both compilers, so the prototypes reach what the [lex.name] wording already proposed — an escaped-identifier may appear wherever the grammar uses `identifier` as a terminal. The transitional half of the recommendation was struck rather than taken, with the reason: *there is no real shipped anything other than a GitHub fork, and no one is relying on anything*, so there was no window to stage the change across and no compatibility argument to make. **The scope question is now the same kind of thing as the mechanism** — a decision with a reason — rather than a boundary two parsers arrived at independently. §12 carries the table, the price, and the one divergence that survives ([escape-type-keyword-binding](../ops/gcc/DEVIATIONS.md#escape-type-keyword-binding), which predates the change and hid behind a choice of test keywords for two months).
 
 2026-09-08 — **the answer holds, and two more categories of position had to be built before it was true.** The nineteen-position measurement, and the fifteen use positions added a day later, were all *unqualified* names. Sweeping the qualified ones found that Clang read the final component of a qualified **type** name in three parsers that had never seen the escape, so `` N::`new` `` worked and `` N::`union` `` did not — briefly making GCC the wider implementation, which had not happened before ([escape-in-qualified-type-name](../ops/DEVIATIONS.md#escape-in-qualified-type-name)). And the one surviving acceptance divergence, GCC's rejection of an escape whose keyword is a **type** keyword, turned out not to be a parser question at all but a name-table one, and to be fixable at three call sites ([escape-type-keyword-binding](../ops/gcc/DEVIATIONS.md#escape-type-keyword-binding)). **Both compilers now take all seventy-nine programs in all four categories, and there is no acceptance divergence left in the escape.** The rule is unchanged; what changed each time is that somebody wrote programs for a category nobody had written programs for, which is why the sweep is now a script in the repository rather than a paragraph in a handoff.
+
+### escape-content
+
+**Question.** What may stand between the backticks of an escape: a keyword, or any identifier?
+
+**Status.** **Resolved**
+
+**Decision.** Any identifier. The escape takes the lexical *identifier* production, which a keyword matches — [lex.key] is what turns some of those matches into keywords, and the escape is what suppresses it. What comes out is an identifier and nothing more specific: `` `foobar` `` **is** `foobar`. Same entity, same lookup, same overload set, same linkage, same mangling; the two spellings may be mixed in one program and no rule anywhere can tell them apart. Every other rule about identifiers then applies to it unchanged — a reserved name is still reserved when it is escaped, and a macro name is still replaced, because replacement happens in phase 4 and the escape is a phase-7 construct that phase 4 has never heard of.
+
+**Why.**
+
+- **The hatch has to be writable *before* the word is a keyword.** The escape exists so that a future keyword does not break code that used the word as a name. Say the escape is standardized in version *N* and the committee takes the word `W` in *N+1*. Under the restricted rule `` `W` `` is **ill-formed in N**, where `W` is not a keyword, and **required in N+1** — so a header that must compile as both has no single spelling, and a name can only be escaped *after* it has broken. Under this decision `` `W` `` is the same declaration in both, so code can be escaped in advance, deliberately, before the committee has chosen anything. That is the difference between a hatch and a patch, and it is the one property the hatch is for.
+
+  **The prototypes can already be asked this question**, because `-fbacktick` is orthogonal to `-std`. `requires` is a C++20 keyword and an ordinary identifier in C++17, and Clang's restriction is `IdentifierInfo::isKeyword(LangOpts)`, which for a `CXX20_KEYWORD` returns `KS_Future` rather than `KS_Enabled` under `-std=c++17`. So `` bool `requires`(const License&); `` is accepted under `-fbacktick -std=c++20` and rejected under `-fbacktick -std=c++17`, in which the unescaped `bool requires(const License&);` still compiles: one source file, two `-std` values, the restricted rule taking the escape in exactly the dialect that does not need it and refusing it in the one that does. That pair is the sharpest test this decision has, and [escape-any-identifier](../ops/completion/steps/escape-any-identifier.md) carries it. (Read from `backtick-trunk` at `28b685c86e`; **not yet run**, and the step runs it.)
+- **Nobody should have to know the keyword list.** A generator emitting C++ from another language's names, or a macro that pastes a name it was handed, can escape unconditionally under this rule and never enumerate keywords, never track which release added one, and never get a different answer under `-std=c++17` than under `-std=c++26`. Under the restricted rule every such tool needs the table, per dialect, and is wrong the day the table changes — which is the same day the hatch was supposed to help.
+- **The backticks then carry no meaning of their own, which is the point.** The restricted rule makes the reader ask *is this word a keyword in this dialect*, and makes the answer load-bearing. The unrestricted rule makes the backticks say only "this is a name", which is true whatever the word is.
+- **What the restriction was buying was never load-bearing.** It was proposed as reinforcement for the disambiguation ([keyword-escape-coexistence](#keyword-escape-coexistence)), and the disambiguation is positional and always said so: *position alone suffices without it*. Withdrawing the reinforcement subtracts nothing from the argument, because nothing was resting on it.
+- **The prior art takes this answer.** Rust's raw identifiers are `RAW_IDENTIFIER → r# IDENTIFIER_OR_KEYWORD`, not `r#` plus a keyword list, and the reference says in as many words that the prefix "is not included as part of the actual identifier" ([doc.rust-lang.org/reference/identifiers.html](https://doc.rust-lang.org/reference/identifiers.html)). That is this decision, both halves of it, in the language that installed its hatch most recently and for exactly this reason.
+
+**The model is the regex escape.** In the regex flavours that work this way, a backslash before a metacharacter means that character, and a backslash before a character that was never a metacharacter is just that character. That is what lets a generator escape unconditionally instead of consulting a table of metacharacters, and what lets a person future-proof a pattern by escaping on sight. The backtick escape is the same construct one level up: it suppresses syntax when the word is syntax, and when the word is not syntax it is the word. "Always escape" then becomes a rule a person and a program can both follow, and that is the whole of the prospective half of the hatch.
+
+**Alternative tokens are included, and the reason is that nothing makes them exceptional.** `` `and` ``, `` `bitor` `` and their nine siblings are identifiers spelled as identifiers, so the rule reaches them for the same reason it reaches `` `new` ``: what the escape suppresses is the token-ness of an identifier-shaped word, and [lex.digraph] is a second way for a word to acquire token-ness rather than a different kind of thing. **In C++ they are tokens and not macros** — that is the whole of it. (The C spelling is `<iso646.h>`'s eleven macros, which is a different mechanism entirely and one this rule does not have to say anything about: a macro is replaced in phase 4, escaped or not, which is the same answer §12 gives for every other macro name.) Excluding them would put a list back exactly where the value of the rule is that there is no list, and the list would be the odd one: eleven words that the language claimed, claimed in the way the escape exists to release, singled out because of how they are spelled.
+
+**And the printers already have them right**, by the same predicate that gets keywords right and for a sharper reason. `and`'s `IdentifierInfo` carries `TokenID` `tok::ampamp`, so `II->getTokenID() != tok::identifier` holds, so an entity named `and` prints as `` `and` `` — which is not a nicety here but the only spelling that re-parses, since a bare `and` lexes as `&&`. `` `foobar` `` prints bare and `` `and` `` prints escaped, out of one rule neither compiler has to be taught.
+
+**Cost.** One predicate per compiler, and nothing downstream. In Clang it is `IdentifierInfo::isKeyword` in `Parser::isBacktickEscapeAt` and `Parser::ConsumeBacktickEscape` (`clang/lib/Parse/Parser.cpp`), plus `err_backtick_escape_not_keyword`, which becomes a diagnostic about identifiers. **The printers need no change at all, and that is the evidence that the identity half of this decision is already true of the built compiler**: `printIdentifierSpelling` and `DeclarationName::print` escape a name when its spelling is a keyword (`II->getTokenID() != tok::identifier`), not when it was written escaped, because the AST keeps no record of how a name was written ([keyword-escape-printing](#keyword-escape-printing)). So `` `foobar` `` prints as `foobar`, which is correct, round-trips, and is what the decision says it is.
+
+**Decided by.** The design author, 2026-09-17.
+
+**Log.** 2026-09-17 — recorded. Until this entry, this was the one question the paper deliberately carried to EWG *unanswered* ("whether the escape is restricted to words that actually are keywords, so that `` `foo` `` is ill-formed rather than a noisy spelling of `foo`"), and both prototypes implement the restricted form. The paper now proposes the unrestricted rule and states the restricted variant as the alternative with the argument against it. **The prototypes do not implement this yet** — `` `foobar` `` is rejected by both, by the predicate named under Cost — so no paper may say the rule is built until [escape-any-identifier](../ops/completion/steps/escape-any-identifier.md) is green. §12 carries the reader-facing form.
+
+2026-09-17 — **the content half is decided too, and it is the last of the three.** Mechanism was decided when the entry was written, scope on 2026-09-07, and what may stand *between* the backticks had never been asked as a question at all: the prototypes restrict it to keywords because that is what the first one did, and the paper carried the restriction to EWG as an open choice. [escape-content](#escape-content) answers it — any identifier, and the escaped and unescaped spellings are one name — for the reason the hatch exists: an escape that only accepts words that are already keywords cannot be written *before* the word becomes one, so it can repair a break but never prevent one. Unlike the scope answer, this one has not been built yet; [escape-any-identifier](../ops/completion/steps/escape-any-identifier.md) is the step, and §12 says what each compiler has to change.
 
 ### keyword-escape-printing
 
@@ -733,10 +765,72 @@ x `f` y;             // post-operand   -> infix: f(x, y)
 x `(`new`)` y;       // escaped callee -> new(x, y)   (uses nesting-vs-chaining parens)
 ```
 
-**Reinforcement.** Inner content also differs — the escape wraps a single
-keyword (not a valid callee expression), the infix slot wraps an
-expression. Optionally restrict the escape to *actual keywords* for maximal
-disjointness; position alone suffices without it.
+**Reinforcement, withdrawn 2026-09-17.** This paragraph used to offer a
+second, independent signal: the escape wraps a single keyword, which is not a
+valid callee expression, and the slot wraps an expression, which is not a bare
+keyword. [escape-content](#escape-content) makes the inner content of an
+escape an ordinary identifier, so a bare name is now a well-formed escape
+*and* a well-formed slot, and the reinforcement is gone. Nothing rests on it:
+the rule was always positional, and this paragraph always said position alone
+suffices. Note what the collapsed case actually is — when `` `f` `` could be
+read either way, the two readings never disagree about *which name is
+written*, only about whether the name is an operand or a callee, and that is
+precisely what the position states.
+
+**What may stand between the backticks — decided 2026-09-17, not yet built**
+([escape-content](#escape-content)). Any identifier, keywords included. The
+escape yields an identifier, not a kind of identifier: `` `foobar` `` **is**
+`foobar`, the same entity under the same lookup with the same linkage and the
+same mangling, and a program may write the name either way, in either order.
+
+```cpp
+int `foobar` = 1;   // declares foobar
+int y = foobar;     // reads the same variable
+int `int` = 2;      // declares int, which has no other spelling
+```
+
+Everything else about identifiers then applies to the result unchanged, and
+two consequences are worth stating because they are the ones a reader expects
+the escape to alter:
+
+- **Reserved names stay reserved.** `` `__foo` `` is a reserved identifier
+  exactly as `__foo` is. The escape does not launder a name; it only lets one
+  be written.
+- **Macro replacement still happens — and for a *function-like* macro it does
+  not, for a reason that is the preprocessor's and not the escape's.**
+  Measured on a build of `backtick-trunk` at `28b685c86e`, 2026-09-17. The
+  inner word is an ordinary identifier preprocessing token and phase 4 does
+  not know it stands inside an escape, so `#define OBJECT 3` makes
+  `` int `OBJECT` = 0; `` ill-formed: what stands between the backticks by the
+  time the parser sees it is `3`, and the diagnostic carries the *expanded
+  from macro* note. But `#define FUNC(x) ((x) + 1)` leaves
+  `` int `FUNC` = 7; `` **well-formed**, because a function-like macro is
+  replaced only when its name is followed by `(`, and here the next
+  preprocessing token is the closing backtick. So an escape can name an entity
+  whose spelling is a function-like macro, and `FUNC(1)` still expands in the
+  same translation unit. Neither half is the escape shielding anything; both
+  are the ordinary rules applied to a word that happens to sit between two
+  backticks. (This also corrects the drafting note the paper carried, which
+  said macro names cannot be escaped: half of them can, and the half that can
+  is the half whose invocation syntax the backtick interrupts.)
+
+**The printers need nothing**, which is where the identity claim stops being a
+design statement and becomes a fact about the built compiler.
+`DeclarationName::print` and `printIdentifierSpelling` put the backticks back
+when a name's *spelling is a keyword* (`II->getTokenID() != tok::identifier`),
+never because the name was written escaped, because the AST keeps no record of
+that ([keyword-escape-printing](#keyword-escape-printing)). So `` `foobar` ``
+already prints as `foobar` under the rule Clang has today, which is what
+[escape-content](#escape-content) says it should print.
+
+**What is not built.** Both prototypes require the inner token to be a keyword
+— Clang in `Parser::isBacktickEscapeAt` and `Parser::ConsumeBacktickEscape`,
+diagnosing `err_backtick_escape_not_keyword`, and GCC in the arm its escape
+helper shares with `cp_parser_identifier` — so `` `foobar` `` is rejected by
+both today. The change is one predicate on each side;
+[escape-any-identifier](../ops/completion/steps/escape-any-identifier.md) is
+the step, and until it is green **no paper may claim the rule is
+implemented**.
 
 **Which positions the escape reaches — decided 2026-09-07, built 2026-09-08.** The
 bullet list above is the *disambiguation* rule and was never the coverage
@@ -894,8 +988,8 @@ other half of the claim — that a program containing no backtick compiles and
 diagnoses identically with the flag on and off.
 
 **ABI.** The escape yields an ordinary identifier token whose spelling is
-the keyword, so lookup, mangling, and linkage treat it as a normal
-identifier — `void `new`();` links as a function named `new`. Purely
+the word between the backticks, so lookup, mangling, and linkage treat it as a
+normal identifier — `void `new`();` links as a function named `new`. Purely
 source-level; external names and ABI unchanged.
 
 **Printing and diagnostics** ([keyword-escape-printing](#keyword-escape-printing)).
@@ -904,9 +998,23 @@ halves of that show up in tooling. `-ast-print` re-emits `` void `new`(); ``,
 because `void new();` is not a program and a printer that emitted it would
 have lost the source; a diagnostic names the entity `` `new` `` for the same
 reason, since under the flag there is no other way to write it. `-ast-dump`
-keeps showing the bare identifier `new` — which is the evidence for the ABI
-paragraph above: the name really is ordinary, and the backticks are how you
-say it.
+shows the bare identifier `new` **in the column that names the declaration**,
+which is the evidence for the ABI paragraph above: the name really is
+ordinary, and the backticks are how you say it.
+
+That sentence used to end at *"`-ast-dump` keeps showing the bare
+identifier"*, and measurement on 2026-09-17 says the dump is not of one mind.
+A declaration's own name is dumped bare; the same name **inside a type
+string** is dumped escaped, because a type goes through `TypePrinter` under
+the compilation's policy rather than through the node dumper's, so
+`` void takes_union(int, `union`); `` dumps as
+`` FunctionDecl … takes_union 'void (int, `union`)' ``. It is older than the
+content rule, it is the exact mirror of GCC's
+[escape-type-name-spelling](../ops/gcc/DEVIATIONS.md#escape-type-name-spelling)
+— that compiler escapes the declaration and prints the type bare — and it is
+[ast-dump-type-name-spelling](../ops/DEVIATIONS.md#ast-dump-type-name-spelling),
+measured and unowned. The ABI evidence survives it: the bare name is still in
+the column the paragraph points at.
 
 **The ruling is delivered on declaration names by both compilers and on
 *type* names by Clang alone**, which is the same shape as §17.3's

@@ -23,7 +23,7 @@ Clang backtick S00–S12, GCC backtick G01–G10, and Clang Unicode U00–U21
 not merely planned). Treat that step machinery as a completed record unless a
 *new* step is added to a `PLAN.md`.
 
-**Live work is in `ops/completion/PLAN.md`** — 26 steps, named by slug.
+**Live work is in `ops/completion/PLAN.md`** — 27 steps, named by slug.
 **That is where an agent picks up work.** It supersedes `ops/backlog/PLAN.md`
 (BL01–BL04 green; BL05–BL07 absorbed) and covers *all* remaining work in one
 plan: the 31 open `BNN` rows in `ops/BACKLOG.md`, the 29 unreconciled rows
@@ -57,9 +57,9 @@ answer, which was to let the keyword escape reach every position the grammar
 writes an identifier in; and `escape-name-sweep` swept all of them again, in
 four categories rather than one, and closed the two that had held out. **There
 is now no program the two compilers treat differently on account of the
-keyword escape.** **Two boxes are open, Phase K and Phase L, and they are the
-only two** — `ops/backlog/PLAN.md`'s BL05–BL07 are superseded and absorbed, as
-noted above, and are not work.
+keyword escape.** **Three boxes are open, Phase K, Phase L and Phase M, and
+they are the only three** — `ops/backlog/PLAN.md`'s BL05–BL07 are superseded
+and absorbed, as noted above, and are not work.
 [`gcc-dependent-slot-lookup`](ops/completion/steps/gcc-dependent-slot-lookup.md)
 is a GCC front-end defect the merge of `main` surfaced on 2026-09-09: the
 prototype drops the definition-context ordinary lookup for **every** dependent
@@ -88,11 +88,43 @@ for outstanding work, read the design docs' paper-requirements lists too.**
 Unowned, nothing is blocked on it, and it should land before the two papers
 are submitted together.
 
-Either is available to an agent arriving with no other instruction, and there
-is no other work in `ops/`. One deviation row is open, it is a diagnostic
-rather than an acceptance divergence, and it is measured and surfaced rather
+**Phase M** is
+[`escape-any-identifier`](ops/completion/steps/escape-any-identifier.md),
+opened on 2026-09-17 by a ruling from the author. It is not a defect either:
+the backtick paper carried one question to EWG *unanswered* — whether the word
+inside an escape has to be a keyword — and the author closed it. It does not.
+[escape-content](docs/backtick-operator-design.md#escape-content) is the
+decision: anything spelled as an identifier may stand between the backticks,
+and `` `foobar` `` **is** `foobar`, one name under two spellings, with every
+other identifier rule applying to the result unchanged. The reason is what the
+hatch is for — an escape that only takes words which are *already* keywords
+cannot be written until the standard that takes the word has shipped, so it
+repairs a break and can never prevent one. **This is the one place in the repo
+where the design and the papers are ahead of the code**: the docs, both papers
+and the blog post landed with the ruling; both prototypes still reject
+`` `foobar` ``, and D4307R0 says so in three places until they do not. The
+change is one predicate per compiler (`isKeyword`, asked twice in Clang's
+`Parser.cpp`), no printer and no Sema, plus a fifth category for
+`ops/probes/escape-positions.sh` and the seventh forward-port. **A third of it
+is done as of 2026-09-17 and the box is unticked on purpose**: `backtick-trunk`
+carries the change and `check-clang` is green on it
+([PR #1](https://github.com/steve-downey/llvm-project/pull/1)), while
+`backtick-23`, GCC, the forward-port and the paper's three sentences are owed —
+[the handoff](ops/completion/handoffs/escape-any-identifier.handoff.md) has the
+order. Nothing is blocked on it, but **the two papers may not be submitted
+while it is open.** One deviation row came out of building it,
+`ops/DEVIATIONS.md#ast-dump-type-name-spelling`, and it is older than the
+change.
+
+Any of the three is available to an agent arriving with no other instruction,
+and there is no other work in `ops/`. One deviation row is open, it is a
+diagnostic rather than an acceptance divergence, and it is measured and surfaced rather
 than owned: `ops/gcc/DEVIATIONS.md#escape-type-name-spelling` — GCC escapes
-the name of a *declaration* and prints the name of a *type* bare.
+the name of a *declaration* and prints the name of a *type* bare. **Its mirror
+opened on 2026-09-17**, `ops/DEVIATIONS.md#ast-dump-type-name-spelling`: in
+Clang's `-ast-dump` a declaration's name is bare and the same name inside a
+*type* is escaped. Both are printers, neither is acceptance, and the two
+compilers get it wrong from opposite ends.
 
 Steps are **named by slug, never numbered** — the checklist's ordinals are
 reading order and shift when a step is inserted; the slug is the identity and
@@ -176,18 +208,19 @@ and a Status-log row so base-commit changes are not lost.
   it. Open *design* questions are not in it; §6 indexes those.
 - `ops/SLUGS.md` — the map from every retired serial number to its slug, both
   directions, and the record of what was left numbered on purpose.
-- `ops/completion/PLAN.md` — the completion track (26 steps, named by slug), which schedules
+- `ops/completion/PLAN.md` — the completion track (27 steps, named by slug), which schedules
   and gates **everything** still outstanding: defects, reconciliation,
   decisions and the papers. Twenty-three boxes are green, one is `[—]`, and
-  **two are open: Phase K's `gcc-dependent-slot-lookup` and Phase L's
-  `backtick-paper-companion`**, both described above. Phase J, steps 21–24,
-  was opened by the 2026-09-08 review of the two papers and closed the same
-  day. Nothing in the plan is blocked on the author. Its Coverage table covers
+  **three are open: Phase K's `gcc-dependent-slot-lookup`, Phase L's
+  `backtick-paper-companion` and Phase M's `escape-any-identifier`**, all
+  three described above. Phase J, steps 21–24, was opened by the 2026-09-08
+  review of the two papers and closed the same day. Nothing in the plan is blocked on the author. Its Coverage table covers
   what originates in `ops/`; Phase L is there because that is not everything.
 - `docs/open-decisions.md` — the single record of the questions that need the
-  author and of the rulings already given. All six are answered, the last
-  being `escape-name-positions`; nothing in the completion plan is waiting on
-  the author.
+  author and of the rulings already given. All six pages are answered, and a
+  seventh ruling, `escape-content`, arrived on 2026-09-17 with no page because
+  the question was the paper's rather than a brief's; nothing in the
+  completion plan is waiting on the author.
 - `ops/backlog/PLAN.md` — the defect-fix track (BL01–BL07). Superseded;
   BL01–BL04's Status rows and handoffs are the record of four closed defects.
 - `ops/AGENT_PROTOCOL.md` — the one-step-per-agent execution loop. **Read it
@@ -402,7 +435,11 @@ installs.
   the same backtick token, disambiguated purely by
   grammatical position (operand/declarator position → escaped identifier;
   post-operand position → infix operator). Yields an ordinary identifier;
-  lookup/mangling/ABI unchanged.
+  lookup/mangling/ABI unchanged. **The word inside need not be a keyword**
+  ([escape-content](docs/backtick-operator-design.md#escape-content), decided
+  2026-09-17): `` `foobar` `` *is* `foobar`, one name under two spellings.
+  **Built on `backtick-trunk` only** — not on `backtick-23`, not in GCC — so
+  read Phase M above before believing a particular compiler agrees.
 - **ADL is normative (§17.4):** the slot must get the same ADL as the plain call.
   Clang carries it as an `UnresolvedLookupExpr`; GCC resolves a bare-name slot
   via explicit `perform_koenig_lookup` (the

@@ -70,16 +70,22 @@ implementation cost — because breaking existing code was not acceptable. Every
 language that kept evolving past 1.0 grew an escape hatch instead: Swift's ``
 `class` ``, Kotlin's backtick identifiers, F#'s double-backtick names, Rust's
 `r#` raw identifiers. We propose the same hatch. A backtick pair in name
-position escapes a keyword and yields a plain identifier, so lookup, mangling,
+position escapes a word and yields a plain identifier, so lookup, mangling,
 linkage, and ABI are untouched; `` void `new`(); `` declares an ordinary
-function named `new`. Future keywords stop being breaking changes, and stop
-needing `co_`-style circumlocution to avoid becoming one.
+function named `new`. The word need not be a keyword, and that is what makes
+the hatch prospective rather than merely remedial: `` `foobar` `` is the same
+identifier as `foobar`, so a name can be escaped before the committee takes
+it, in code that still has to compile today. Future keywords stop being
+breaking changes, and stop needing `co_`-style circumlocution to avoid
+becoming one.
 
 The two uses never collide: they occupy mutually exclusive grammatical
 positions, the same position-based disambiguation the language already applies
 to `*`, `&`, and `<`. Both are implemented, gated behind an opt-in
 `-fbacktick` flag, in two independent compilers, public forks of Clang and
-GCC, with tests. This is a pure core-language proposal targeting C++29. No
+GCC, with tests. One rule in this revision is ahead of the forks and is
+flagged where it is stated: they still require the escaped word to be a
+keyword. This is a pure core-language proposal targeting C++29. No
 library additions are proposed.
 
 # Before / After
@@ -180,6 +186,26 @@ use of a good name against mangling the keyword into `co_`-style
 circumlocution or context-sensitivity. The escape hatch makes clean keywords
 affordable.
 
+Collecting that prospective payoff needs one more thing, and it is why the
+escape wraps any identifier rather than only the words that are keywords
+today. Suppose the escape is standardized in one revision and the committee
+takes `requires` in the next. If only a keyword could be escaped, the After
+column would be ill-formed in the first revision, where `requires` is still an
+ordinary name, and mandatory in the second. A header that must compile as both
+would need two spellings and a macro to choose between them, and no name could
+be escaped until after it had broken. A precaution that cannot be taken until
+after the damage is a repair. Because any identifier may be escaped, the After
+column declares the same function in both revisions, and code can be escaped
+in advance, on purpose, before the committee has chosen anything.
+
+This is the rule regular expressions already use. A backslash before a
+metacharacter means that character, and a backslash before a character that
+was never a metacharacter is just that character, which is why a generator can
+escape unconditionally instead of consulting a table and why a person can
+future-proof a pattern by escaping on sight. The backtick escape is the same
+construct one level up. It suppresses syntax when the word is syntax, and when
+the word is not syntax it is the word.
+
 # The proposal
 
 Two features, one token, one paper.
@@ -194,10 +220,13 @@ any other binary operator, looser than the unary and postfix operators.
 **The keyword escape.** In any position where the grammar expects a name (a
 *declarator-id*, a class, enumeration or namespace name, a template
 parameter's name, a label, an operand, after `.`, `->`, or `::`), a backtick
-pair wrapping a keyword denotes an ordinary identifier whose spelling is that
-keyword. It is purely a source-level construct; the resulting identifier
-participates in lookup, mangling, and linkage exactly as if the word had never
-been a keyword.
+pair wrapping a word spelled as an identifier denotes an ordinary identifier
+whose spelling is that word. Keywords are the case the feature is named for,
+and the rule is not restricted to them: `` `foobar` `` and `foobar` are the
+same identifier, so a declaration may use one spelling and its uses the other.
+It is purely a source-level construct; the resulting identifier participates
+in lookup, mangling, and linkage exactly as if the word had never been a
+keyword.
 
 Both are gated during the proposal period behind a compiler flag; a
 standardized form drops the gate. Flag off, every existing valid program is
@@ -447,7 +476,10 @@ identifiers](https://doc.rust-lang.org/edition-guide/rust-2018/module-system/raw
 The last was introduced specifically so the 2018 edition could take `try`,
 `async`, and `await` as keywords while 2015-edition code kept compiling and
 kept calling functions with those names. Editions plus raw identifiers are how
-Rust made keyword adoption routine. C++ is the outlier:
+Rust made keyword adoption routine. Rust's rule is also the shape of the one
+proposed here: the grammar is `r#` followed by an identifier or a keyword
+rather than `r#` followed by a keyword list, and the reference says the prefix
+"is not included as part of the actual identifier". C++ is the outlier:
 no escape, so every new keyword breaks real code, and the committee's coping
 strategies are `co_`-circumlocution and context-sensitive grammar. The hatch
 is standard equipment. C++ never installed it.
@@ -582,13 +614,59 @@ committee can claim a good word as a keyword without breaking the programs
 that already use it, and a program that must interoperate with one of those
 languages, or with its own past, can name the entity it needs to name.
 
-One question is deliberately left open for EWG: whether the escape is
-restricted to words that actually are keywords, so that `` `foo` `` is
-ill-formed rather than a noisy spelling of `foo`. The restriction buys maximal
-disjointness between the two uses and forecloses nothing. However, the
-disambiguation works without it, since it is positional.
-We call EWG's attention to the choice; the implementations would support
-either answer.
+The word between the backticks does not have to be a keyword. Anything
+spelled as an identifier may stand there, and what comes out is that
+identifier and nothing more specific. `` `foobar` `` **is** `foobar`: the same
+entity, found by the same lookup, with the same linkage and the same mangling,
+and a program may write the name either way in either place. Every other rule
+about identifiers then applies to the result unchanged. A reserved name stays
+reserved, so `` `__foo` `` buys nothing that `__foo` does not already cost. A
+macro name is still replaced, because the escape is a phase 7 construct and
+phase 4 has never heard of it: the backticks neither shield a name from the
+preprocessor nor expose one to it.
+
+An earlier draft of this paper restricted the content to words that actually
+are keywords, so that `` `foo` `` was ill-formed rather than a noisy spelling
+of `foo`, and left the choice to EWG. The restriction is withdrawn, for the
+reason the motivating example gives: an escape that only accepts words that
+are already keywords cannot be written until the standard that takes the word
+has shipped, so it can repair a break and can never prevent one. Two more
+consequences of the restricted rule are worth naming. A tool that generates
+C++ would have to carry the keyword list, per dialect, and would be wrong on
+the day the list changes, which is the day it was supposed to help. And the
+backticks would acquire a meaning of their own: a reader would have to know
+whether the word is a keyword in this dialect before knowing whether the line
+is well-formed. Under the rule proposed here the backticks say only "this is a
+name", which is true whatever the word is, and the question never has to be
+asked.
+
+The alternative representations, `and`, `bitor` and their nine siblings, are
+escapable under the same rule and are meant to be. In C++ they are tokens and
+not macros: identifier-shaped words the language has claimed, which is the
+category the escape exists to release, and suppressing exactly that is what an
+escape is for. Nothing makes them exceptional, so nothing should except them,
+and excluding them would put a list back where the value of the rule is that
+there is no list. They also show the printing rule doing its job unaided: an
+entity named `and` prints as `` `and` ``, because a bare `and` lexes as `&&`
+and would not re-parse, while `` `foobar` `` prints bare because `foobar`
+does. One predicate answers both.
+
+Rust's raw identifiers, cited below as prior art for the hatch, are prior art
+for this rule as well: the production is `r#` followed by an identifier or a
+keyword rather than by a keyword list, and the reference is explicit that the
+prefix "is not included as part of the actual
+identifier" ([the Rust
+reference](https://doc.rust-lang.org/reference/identifiers.html)). That is
+both halves of what is proposed here, in the language that installed its hatch
+most recently and for this reason.
+
+EWG can take the restricted rule instead. It is one clause in a parser
+predicate and one word in the grammar, and the wording below says which word.
+What it costs is stated here rather than left for the room to find: the escape
+becomes unwritable in the dialect where it does the most good, which is the
+one before the keyword lands. **This rule is the one thing in this paper the
+two forks do not yet implement**; both still require a keyword, and the
+implementation section below says what changing that costs.
 
 One consequence is user-visible, and it is settled here. The escape is part of
 the name's *spelling* and not of its identity, so a printer holding the
@@ -596,10 +674,16 @@ compilation's language options puts the backticks back: a pretty-printed
 declaration comes out as `` void `new`(); ``, since `void new();` is not a
 program and a printer that emitted it would have lost the source, and a
 diagnostic names the entity `` `new` `` for the same reason, that text copied
-out of a diagnostic should be text the reader can paste back. The AST dump is
-the one view that keeps the bare word, which is the evidence for the paragraph
-above: the name really is an ordinary identifier, and the backticks are how it
-is written. Both implementations do this, and it cost them the same thing. The
+out of a diagnostic should be text the reader can paste back. The AST dump
+keeps the bare word where it names the declaration, which is the evidence for
+the paragraph above: the name really is an ordinary identifier, and the
+backticks are how it is written. That view is not of one mind, and it is worth
+saying so rather than rounding it off, because the two implementations diverge
+from opposite ends: Clang dumps a declaration's name bare and the same name
+inside a *type* escaped, while GCC escapes the name of a declaration and
+prints the name of a type bare. Neither split is visible to a program and
+neither touches acceptance. Both implementations put the escape back where it
+matters, and it cost them the same thing. The
 escape yields the ordinary interned identifier and keeps no record of how it
 was written, so neither compiler can ask a name whether it was escaped; each
 has to decide instead *which printing surfaces name an entity*, and put the
@@ -767,11 +851,16 @@ The keyword escape is a new *identifier* alternative in name positions:
 
 ```bnf
 escaped-identifier:
-    ` keyword `
+    ` identifier `
 ```
 
-yielding an identifier token whose spelling is the keyword. It may appear
-wherever the grammar uses *identifier* as a terminal, and nowhere else: a
+yielding an identifier token whose spelling is the word between the backticks.
+The *identifier* in that production is the lexical one, the production in
+[lex.name], which every keyword matches; [lex.key] is what makes a keyword out
+of one of those matches, and inside an escape it does not apply. So the escape
+admits any word spelled as an identifier, and what it yields is an ordinary
+identifier. It may appear wherever the grammar uses *identifier* as a
+terminal, and nowhere else: a
 *declarator-id*, a *class-head-name*, an *enum-name*, an enumerator, a
 *namespace-name*, a template parameter's name, a *mem-initializer*, a label,
 a *primary-expression*, an *id-expression* after `.`, `->` or `::`.
@@ -809,10 +898,15 @@ x `f` y;             // post-operand   -> infix: f(x, y)
 x `(`new`)` y;       // escaped callee -> new(x, y), parenthesized slot
 ```
 
-The inner content reinforces the split: an escape wraps a single keyword,
-which is never a valid callee expression, and a slot wraps an expression,
-which is never a bare keyword. However, the design does not depend on the
-reinforcement. Position alone suffices.
+An earlier draft claimed a second and independent signal here: that an escape
+wraps a keyword, which is never a valid callee expression, and a slot wraps an
+expression, which is never a bare keyword. Since the escape wraps any
+identifier, that signal is gone. The design is unaffected, because it never
+rested on the signal, and the case where the two token sequences now coincide
+shows why. Read as an escape and read as a slot, `` `f` `` names the same
+thing, `f`; the two readings differ only over whether `f` is an operand or a
+callee, and that is precisely what the position states. Position alone
+suffices, as it does for `*`, `&`, and `<`.
 
 Because the escape yields an ordinary identifier, nothing downstream of the
 parser changes: no new lookup rules, no mangling scheme, no ABI surface.
@@ -898,6 +992,21 @@ keyword. Every program anyone had written used `new`, `class`, `union` or
 months. Seventy-nine programs now, in four groups, and the whole sweep runs in
 under two seconds. It is checked into the repository, which it should have
 been three sweeps ago.
+
+There is a fifth thing those seventy-nine programs never vary, and it is not a
+position. Every one of them escapes a keyword, because until this revision the
+rule required one, and **both prototypes therefore still reject
+`` `foobar` ``**. This is the one claim in this section that the built
+compilers do not support, and it is reported rather than smoothed over,
+because everything else here is measured. The change is a single predicate on
+each side: Clang asks `IdentifierInfo::isKeyword` in the two routines that
+recognise and consume an escape, and GCC asks the same question in its escape
+arm. Nothing downstream of either predicate has to move, and the reason is the
+identity rule itself. Neither compiler records that a name was escaped, so
+neither can print one differently; a name whose spelling is not a keyword
+already prints bare, which is exactly what the new rule says it should do. The
+restricted rule needed a parser check to *reject* programs. The unrestricted
+rule needs nothing to accept them but the removal of that check.
 
 What it cost to fix is the useful number, and it is small but not the number
 first estimated. The escape parse becomes a helper called from each name
@@ -1166,15 +1275,25 @@ on choices the wording takes:
   with no restatement.
 - The same-delimiter parsing rule is modeled on [temp.names]{.sref}'s
   "first non-nested `>`".
-- *escaped-identifier* is presented in [lex.name]{.sref} and restricted to
-  keywords, the proposed default; if EWG prefers the unrestricted form,
-  replace *keyword* with "*identifier* or *keyword*" in the grammar and
-  strike nothing else. Alternative representations ([lex.digraph]{.sref}:
-  `and`, `or`, …) are deliberately not escapable; they are operator
-  spellings, not names.
+- *escaped-identifier* is presented in [lex.name]{.sref} and takes an
+  *identifier*: the lexical production, which every keyword matches, since
+  [lex.key]{.sref} is what makes a keyword out of such a match. The paragraph
+  that follows the grammar says so, because the grammar term alone would be
+  read as excluding the keywords the escape exists for; CWG may prefer a
+  different device for "the production before [lex.key]{.sref} applies", and
+  nothing in this proposal turns on which one. If EWG prefers the restricted
+  rule, replace *identifier* with *keyword* in the grammar and strike that
+  paragraph. Alternative representations ([lex.digraph]{.sref}: `and`, `or`,
+  …) are escapable and are meant to be: in C++ they are tokens rather than
+  macros, identifier-shaped words the language has claimed, which is the thing
+  an escape suppresses. [lex.digraph]{.sref} is named in the paragraph below
+  for that reason.
 - The escape is a phase-7 grammar construct composed of three preprocessing
-  tokens. The preprocessor is unaffected: macro names cannot be escaped,
-  and an escaped-identifier never arises in phases 3 through 6.
+  tokens, so no *escaped-identifier* arises in phases 3 through 6 and the
+  preprocessor needs no change. The identifier between the backticks is an
+  ordinary identifier preprocessing token throughout those phases and is
+  macro-replaced there if it names a macro, exactly as it would be anywhere
+  else; the backticks neither suppress replacement nor cause any.
 - One feature-test macro is proposed for the paper's two features, because
   they are one design. If they are ever polled separately, it splits
   into `__cpp_backtick_operator` and `__cpp_escaped_identifiers`. The value
@@ -1204,19 +1323,23 @@ Add to [lex.name]{.sref}, after the paragraphs defining *identifier*:
 ::: add
 > ```
 > escaped-identifier:
->     ` keyword `
+>     ` identifier `
 > ```
 >
-> [x]{.pnum} An *escaped-identifier* may appear wherever the grammar uses
-> *identifier* as a terminal. It behaves in all respects as an *identifier*
-> whose value is the spelling of its *keyword*; the `` ` `` tokens are not
-> part of that value.
+> [x]{.pnum} The *identifier* in an *escaped-identifier* is the production
+> in [lex.name]{.sref} as written, whether or not the token formed from it
+> would otherwise be a keyword or an alternative token; neither
+> [lex.key]{.sref} nor [lex.digraph]{.sref} applies to it.
 >
-> [x+1]{.pnum} The identifier so denoted is not interpreted as a keyword,
-> and [lex.key]{.sref} does not apply to it.
-> [Note: Two entities named by an *escaped-identifier* and by a
-> lexically identical *identifier* are the same entity. The construct is
-> purely a source-level spelling; name lookup and linkage are unaffected.
+> [x+1]{.pnum} An *escaped-identifier* may appear wherever the grammar uses
+> *identifier* as a terminal. It is an *identifier* whose value is that of
+> the *identifier* between the `` ` `` tokens; the `` ` `` tokens are not
+> part of that value. The rules that apply to identifiers apply to it in
+> every other respect, including the reservations in [lex.name]{.sref}.
+> [Note: An *escaped-identifier* and a lexically identical *identifier*
+> written without the `` ` `` tokens are the same identifier, and two
+> entities so named are the same entity. The construct is purely a
+> source-level spelling; name lookup, linkage, and mangling are unaffected.
 > — end note]
 >
 > [x+2]{.pnum} [Example:
@@ -1225,6 +1348,8 @@ Add to [lex.name]{.sref}, after the paragraphs defining *identifier*:
 > `new`();               // and calls it
 > struct `union` { };    // a class named union
 > obj.`delete`();        // member access
+> int `count` = 0;       // declares count; the ` tokens are not part of the name
+> ++count;               // increments the same variable
 > ```
 > — end example]
 :::
