@@ -105,15 +105,26 @@ and the blog post landed with the ruling; both prototypes still reject
 `` `foobar` ``, and D4307R0 says so in three places until they do not. The
 change is one predicate per compiler (`isKeyword`, asked twice in Clang's
 `Parser.cpp`), no printer and no Sema, plus a fifth category for
-`ops/probes/escape-positions.sh` and the seventh forward-port. Unowned;
-nothing is blocked on it, but **the two papers may not be submitted while it
-is open.**
+`ops/probes/escape-positions.sh` and the seventh forward-port. **A third of it
+is done as of 2026-09-17 and the box is unticked on purpose**: `backtick-trunk`
+carries the change and `check-clang` is green on it
+([PR #1](https://github.com/steve-downey/llvm-project/pull/1)), while
+`backtick-23`, GCC, the forward-port and the paper's three sentences are owed —
+[the handoff](ops/completion/handoffs/escape-any-identifier.handoff.md) has the
+order. Nothing is blocked on it, but **the two papers may not be submitted
+while it is open.** One deviation row came out of building it,
+`ops/DEVIATIONS.md#ast-dump-type-name-spelling`, and it is older than the
+change.
 
 Any of the three is available to an agent arriving with no other instruction,
 and there is no other work in `ops/`. One deviation row is open, it is a
 diagnostic rather than an acceptance divergence, and it is measured and surfaced rather
 than owned: `ops/gcc/DEVIATIONS.md#escape-type-name-spelling` — GCC escapes
-the name of a *declaration* and prints the name of a *type* bare.
+the name of a *declaration* and prints the name of a *type* bare. **Its mirror
+opened on 2026-09-17**, `ops/DEVIATIONS.md#ast-dump-type-name-spelling`: in
+Clang's `-ast-dump` a declaration's name is bare and the same name inside a
+*type* is escaped. Both are printers, neither is acceptance, and the two
+compilers get it wrong from opposite ends.
 
 Steps are **named by slug, never numbered** — the checklist's ordinals are
 reading order and shift when a step is inserted; the slug is the identity and
