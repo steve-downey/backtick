@@ -580,7 +580,11 @@ identifier-synthesis, no new name category, no ABI surface. What the escape
 buys is exactly what Swift, Kotlin, F#, and Rust bought with theirs: the
 committee can claim a good word as a keyword without breaking the programs
 that already use it, and a program that must interoperate with one of those
-languages, or with its own past, can name the entity it needs to name.
+languages, or with its own past, can name the entity it needs to name. The
+one consequence users see is printing: because the escape is spelling and
+not identity, a diagnostic and a pretty-printer put the backticks back, and
+both compilers do, GCC with one surface, the name of a type, still printed
+bare.
 
 One question is deliberately left open for EWG: whether the escape is
 restricted to words that actually are keywords, so that `` `foo` `` is
@@ -820,9 +824,76 @@ parser changes: no new lookup rules, no mangling scheme, no ABI surface.
 
 # Implementation experience
 
-This is not a paper design with a hand-wave at implementability. The infix
-operator and the keyword escape are both implemented, gated behind an opt-in
-`-fbacktick` flag, in two independent compilers. Both forks are public:
+Both features are implemented, gated behind an opt-in `-fbacktick` flag, in
+two independent compilers, with tests, and each compiler's full regression
+gate stays green with the flag off and on. This section is what building them
+changed in the design and what building them got wrong. Both are summarized
+here and expanded in the subsections that follow; a reader who writes
+compilers for a living can take the summary and skip the rest.
+
+**What the implementation changed.** Four things in this paper are there
+because the compilers demanded them.
+
+- *The slot reaches the call builder unresolved.* `` x `f` y `` must not have
+  weaker lookup than `f(x, y)`. Neither compiler delivered that on its first
+  attempt, both for the same reason, and ADL fidelity is now a normative rule
+  of the design rather than an expected consequence of it.
+- *The escape reaches every position the grammar writes an identifier in.*
+  The first prototypes took it wherever their parsers happened to route the
+  token and refused it everywhere else. The position list in the wording is
+  what four sweeps of one program per position found, and the sweep,
+  seventy-nine programs, is in the repository.
+- *The escape is spelling and not identity, and printers put it back.* A
+  pretty-printed declaration and a diagnostic name the entity `` `new` ``; the
+  AST dump keeps the bare word. Each compiler had to decide which of its
+  printing surfaces name an entity, and each got the line wrong once.
+- *The type-name slot is its own production.* A bare type-name is not an
+  *assignment-expression*, so the grammar carries the two type productions
+  rather than implying them. It is also where the two compilers still differ.
+
+**What went wrong.** Six defects, all found after the prototypes were
+finished, none of them a design question, and all fixed except where the next
+paragraph marks them open:
+
+1. *ADL.* Clang's slot had no ADL at all; GCC's had it for a bare name but not
+   for a template-id. The shape that catches this, a visible and viable
+   candidate beaten by one reachable only through ADL, was in neither test
+   suite.
+2. *Escape coverage.* Four sweeps found four sets of gaps: declaration
+   positions, use positions, qualified names, and keywords that are also type
+   names (GCC rejected `` int `int` = 0; `` for two months).
+3. *Printing.* Each new escape position printed the bare keyword until it was
+   routed through the routine that restores the backticks. The operator
+   printer lacked two arms: aggregate initialization, which failed silently by
+   printing a different program, and class-typed callables, every lambda in
+   the motivation section, which failed loudly with an inverted source range.
+4. *A parser loop.* Clang's implicit-`int` recovery re-entered on an
+   unresolvable qualified escape and consumed nothing. A coverage sweep can
+   not find that; running the error cases under a timeout did.
+5. *The flag leaked.* Clang's flag reached C compilations; GCC's parser tested
+   the flag without testing the token. One line each, found by comparing
+   flag-on against flag-off output on a program that never mentions the
+   feature.
+6. *The transparent node.* Clang's source-fidelity wrapper had to be taught to
+   the static analyzer and its bug reporter, the code generator, libclang, and
+   the AST matchers, and every one of those sites is quiet when it is wrong.
+   GCC desugars in the parser and pays none of it.
+
+**Still open.** Two sets of programs are treated differently by the two
+compilers under the flag, and both are printed here rather than smoothed
+over. GCC does not implement the type-name slot, so `` 1 `Pt` 2 `` is
+rejected there and accepted by Clang. And inside a template, GCC keeps only
+the ADL half of an unqualified slot's lookup at instantiation, discarding the
+definition-context lookup that [temp.dep.candidate]{.sref} requires, so
+`` t `pipe` inc `` is rejected where `pipe(t, inc)` compiles in the same
+translation unit. Clang has it right; the GCC prototype has a bug to fix.
+Nothing the keyword escape does is on either list. One GCC
+diagnostic does still print an escaped declaration name beside a bare type
+name, which is a printing gap and not an acceptance one.
+
+## The forks
+
+Both forks are public:
 
 - **Clang**, two branches carrying the same feature diff, one on the LLVM 23
   release branch ([steve-downey/llvm-project @
@@ -839,7 +910,8 @@ operator and the keyword escape are both implemented, gated behind an opt-in
   Tests live under `clang/test/` (the `backtick-*` files in `Parser/`,
   `Lexer/`, `SemaCXX/`, `AST/`, `Analysis/` and `CIR/CodeGen/`, plus `Driver/`
   and the Format unit tests), and the full `check-clang` regression gate stays
-  green with the flag off and on. - **GCC** ([steve-downey/gcc @
+  green with the flag off and on.
+- **GCC** ([steve-downey/gcc @
   backtick](https://github.com/steve-downey/gcc/tree/backtick)): `libcpp`
   token (replacing today's `` stray '`' in program `` diagnostic), parser
   precedence level and slot handling, desugaring via `finish_call_expr`, the
@@ -856,22 +928,27 @@ came across unchanged, with no conflict. Nothing the feature touches had moved
 under it. For a design whose whole claim is *desugar and inherit*, that is the
 number that matters: a diff of this shape has very little to catch on.
 
-## What is implemented, and what is not
+## Escape coverage: four sweeps
 
-The escape works in both compilers in every name position the wording admits:
-declarator-ids (variables, functions, class members, `typedef` names,
-parameters, a `friend` declaration's name, the qualified name in an
-out-of-class member definition), a *class-head-name*, an *enum-name* scoped or
-unscoped, an enumerator, a *namespace-name*, a type, non-type or template
-template parameter's name, an *alias-declaration*'s name, an alias template's,
-a concept's, a *mem-initializer*, a label, and expression positions including
-after `.`. Declaring a name is only half of a hatch, so the positions that
-*use* one are prototyped too: a type-specifier, a base-specifier, a
-nested-name-specifier, a *template-name* being specialized, a using-directive,
-a type-constraint, and a constructor's name. And a qualified name may be
-escaped at either end or at both: `` N::`union` g; ``, `` using X =
-N::`union`; ``, `` sizeof(N::`union`) ``, `` typename T::`union` ``, ``
-`module`::inner::f() ``.
+The escape works in both compilers in every name position the wording admits,
+and the wording's position list is the product of that work rather than its
+source. The positions that *declare* a name: declarator-ids (variables,
+functions, class members, `typedef` names, parameters, a `friend`
+declaration's name, the qualified name in an out-of-class member definition),
+a *class-head-name*, an *enum-name* scoped or unscoped, an enumerator, a
+*namespace-name*, a type, non-type or template template parameter's name, an
+*alias-declaration*'s name, an alias template's, a concept's, a
+*mem-initializer*, a label, and expression positions including after `.`.
+Declaring a name is only half of a hatch, so the positions that *use* one are
+prototyped too: a type-specifier, a base-specifier, a nested-name-specifier, a
+*template-name* being specialized, a using-directive, a type-constraint, and a
+constructor's name. And a qualified name may be escaped at either end or at
+both: `` N::`union` g; ``, `` using X = N::`union`; ``, `` sizeof(N::`union`)
+``, `` typename T::`union` ``, `` `module`::inner::f() ``. The rest of this
+subsection is how that list was reached: four sweeps, what fixing what they
+found cost, the parser loop the fix shipped, and the three cross-compiler
+divergences met on the way, each of which closed as a gap and not a
+disagreement.
 
 That coverage is recent, and how it was arrived at is a fair warning about
 what "implemented" means for a grammar extension. Both prototypes were
@@ -933,31 +1010,21 @@ What caught it was running the error cases under a timeout, which is a
 different question from the one a coverage sweep asks and needs its own
 harness.
 
-The type-name slot has single-compiler evidence, said here so a reviewer does
-not have to discover it. Clang implements it: a bare name looked up as a type
-with a deduction placeholder, a qualified one through a tentative parse, a
-builtin through the functional-cast path, all three routed to the `T(x, y)`
-build, which is where CTAD and temporaries come back for free. However, GCC
-parses its slot as an expression, so `` 1 `Pt` 2 `` is rejected there.
-
-That slot is now the whole list of programs the two compilers treat
-differently under the flag. Nothing the keyword escape does is on it.
-
-Three entries have come off that list, and every one of them left the same
-way: it turned out to be a gap rather than a disagreement, with a single cause
-behind however many programs it showed up in. The last two are the instructive
-pair, because they ran in opposite directions. GCC rejected an escape whose
-keyword is a *type* keyword, because `int` and `char` and their siblings are
-bound at global scope to the builtin type in GCC's name table, so the name the
-escape yields was already taken. That looks like a representation the design
-would have to pick a side on. However, in C++ a declaration can be named by a
-keyword only if it was escaped, since `int` is a keyword token everywhere else
-and the declarator check rejects a bare reserved word; a collision with that
-binding is therefore never a redeclaration, and the fix is to say so, at the
-three places GCC consults it. `` int `int` = 0; `` compiles, `int` still names
-the builtin in the same translation unit, and `` g(int, `int`) `` mangles as
-`_Z1gi3int` in both compilers. Which is the ABI claim above, demonstrated on
-the hardest name the feature has.
+Three cross-compiler divergences were found on the way, and every one of them
+left the same way: it turned out to be a gap rather than a disagreement, with
+a single cause behind however many programs it showed up in. The last two are
+the instructive pair, because they ran in opposite directions. GCC rejected an
+escape whose keyword is a *type* keyword, because `int` and `char` and their
+siblings are bound at global scope to the builtin type in GCC's name table, so
+the name the escape yields was already taken. That looks like a representation
+the design would have to pick a side on. However, in C++ a declaration can be
+named by a keyword only if it was escaped, since `int` is a keyword token
+everywhere else and the declarator check rejects a bare reserved word; a
+collision with that binding is therefore never a redeclaration, and the fix is
+to say so, at the three places GCC consults it. `` int `int` = 0; `` compiles,
+`int` still names the builtin in the same translation unit, and `` g(int,
+`int`) `` mangles as `_Z1gi3int` in both compilers. Which is the ABI claim
+above, demonstrated on the hardest name the feature has.
 
 And once, briefly, GCC was the wider implementation: it took `` N::`union` ``
 where Clang did not. One arm in the routine that reads an identifier reaches
@@ -970,34 +1037,56 @@ first four had broken: `` `union`::`union`() { } `` had been working by
 accident, on the strength of the old code giving up early. No design question
 anywhere in it.
 
-`-ast-print` round-trips every shape the operator can take, with one exception
-a reviewer will find: a slot naming a builtin whose call the semantic layer
-rewrites into a node that is no longer a call (`` a `__builtin_shufflevector`
-b ``) prints as the rewrite, because the rewrite is not expressible in the
-syntax at all.
+## The type-name slot, in one compiler
 
-There were two more, and both were found the same way, by re-deriving this
-paper's claims against the compilers rather than reading them off the
-implementation. How they were missed is the general point. The printer and the
-source range both recover the operands from whatever the semantic layer built,
-so every node that layer can hand back needs its own arm. A type slot naming
-an aggregate does not construct through a constructor; it initializes through
-parenthesized aggregate initialization and comes back as a different node. A
-slot whose *value* is a class-typed callable (every lambda, every function
-object, which is to say every helper the motivation section is written on) is
-called through the object's own `operator()`, which the semantic layer keys as
-an operator call: the slot lands at argument zero and the operands shift one
-place along. Both arms were missing.
+The type-name slot has single-compiler evidence, said here so a reviewer does
+not have to discover it. Clang implements it: a bare name looked up as a type
+with a deduction placeholder, a qualified one through a tentative parse, a
+builtin through the functional-cast path, all three routed to the `T(x, y)`
+build, which is where CTAD and temporaries come back for free. However, GCC
+parses its slot as an expression, so `` 1 `Pt` 2 `` is rejected there.
 
-The two failed in opposite ways. The aggregate
-arm failed *silently*. It printed the desugaring, which was well-formed,
-plausible, and not what was written; in the deduced case it printed a cast
-applied to a comma expression, a different program altogether. The callable
-arm failed *loudly*. It printed text naming `operator()` as a free function,
-which does not compile, dropped an operand, and reported a source range whose
-end preceded its beginning. Neither was caught, because the round-trip test
-had no case of either shape, and a claim tested only where the printer already
-works is untested whichever way it fails.
+## Printing: which surfaces name an entity
+
+Both compilers restore the backticks wherever an entity is *named*, in a
+pretty-printed declaration and in a diagnostic, and keep the bare word in the
+AST dump; the design section argues why. The cost of that decision is deciding
+which printing surfaces name an entity, and both compilers paid it twice, once
+for the escape and once for the operator. Clang's `-ast-print` now round-trips
+every shape the operator can take, with one exception a reviewer will find: a
+slot naming a builtin whose call the semantic layer rewrites into a node that
+is no longer a call (`` a `__builtin_shufflevector` b ``) prints as the
+rewrite, because the rewrite is not expressible in the syntax at all.
+
+The escape's printing cost is in the sweep account above: every new name
+position was a new printing surface, and each printed the bare keyword, which
+is source that does not re-parse, until it was routed through the one routine
+that puts the backticks back. The one gap left is GCC's, described in the
+design section: it escapes the name of a declaration and prints the name of a
+type bare, so a single diagnostic can carry both spellings.
+
+The operator's printer failed twice more, and both were found the same way, by
+re-deriving this paper's claims against the compilers rather than reading them
+off the implementation. How they were missed is the general point. The printer
+and the source range both recover the operands from whatever the semantic
+layer built, so every node that layer can hand back needs its own arm. A type
+slot naming an aggregate does not construct through a constructor; it
+initializes through parenthesized aggregate initialization and comes back as a
+different node. A slot whose *value* is a class-typed callable (every lambda,
+every function object, which is to say every helper the motivation section is
+written on) is called through the object's own `operator()`, which the
+semantic layer keys as an operator call: the slot lands at argument zero and
+the operands shift one place along. Both arms were missing.
+
+The two failed in opposite ways. The aggregate arm failed *silently*. It
+printed the desugaring, which was well-formed, plausible, and not what was
+written; in the deduced case it printed a cast applied to a comma expression,
+a different program altogether. The callable arm failed *loudly*. It printed
+text naming `operator()` as a free function, which does not compile, dropped
+an operand, and reported a source range whose end preceded its beginning.
+Neither was caught, because the round-trip test had no case of either shape,
+and a claim tested only where the printer already works is untested whichever
+way it fails.
 
 **A round-trip claim is a claim about every node the semantic layer can build,
 not about the nodes the printer was written against.** That sentence was
@@ -1013,8 +1102,9 @@ ADL fidelity is normative in this design: `` x `f` y `` must not have quietly
 weaker lookup than `f(x, y)`. Neither compiler delivered it on its first
 attempt, and the two failures were the same failure: the name in the slot was
 resolved before the call builder ever saw it. Both deliver it now outside a
-template. Inside one they still disagree, and the disagreement is this
-section's own rule: see the end of the section.
+template. Inside one, GCC still does not: it discards the definition-context
+half of a dependent slot's lookup at instantiation, which is the open case in
+the summary above, and the last paragraph of this section describes it.
 
 GCC took two goes. Its first cut resolved a bare-name slot at parse time, so a
 call depending on pure ADL — the callee visible in no enclosing scope, only in
@@ -1034,15 +1124,15 @@ function from the call it is defined to be.
 
 That defect produced the strongest evidence in this paper for the desugaring
 thesis, and it is inside one compiler rather than between two. The Clang build
-carrying
-the backtick operator also carried a second infix experiment (user-defined
-operators spelled with Unicode symbols, a companion design not proposed here)
-whose slot never becomes an expression: Sema performs its own operator lookup
-and hands an unresolved set to candidate assembly. One build, one machine, one
-author, one difference. The feature that reached the call builder unresolved
-inherited ADL from its first commit, without anyone deciding to inherit it;
-the feature that resolved its slot first had to be repaired. That is the whole
-thesis, with the compiler and the author held constant.
+carrying the backtick operator also carried a second infix experiment
+(user-defined operators spelled with Unicode symbols, a companion design not
+proposed here) whose slot never becomes an expression: Sema performs its own
+operator lookup and hands an unresolved set to candidate assembly. One build,
+one machine, one author, one difference. The feature that reached the call
+builder unresolved inherited ADL from its first commit, without anyone
+deciding to inherit it; the feature that resolved its slot first had to be
+repaired. That is the whole thesis, with the compiler and the author held
+constant.
 
 The near-miss tells a reviewer as much as the fix does. The defect survived
 the entire implementation because the one test that announced itself as the
@@ -1055,23 +1145,21 @@ made observable in the result type. That is the only shape in which weaker
 lookup on the slot produces no diagnostic at all, and no implementation should
 be believed without it.
 
-One case is still open, and it is this section's own rule failing on the
-other side. Inside a template, an unqualified slot naming something
-argument-dependent lookup cannot reach, a function brought in by a
-using-declaration for instance, is rejected by GCC and accepted by Clang.
-GCC re-runs the lookup at instantiation and keeps only the ADL result,
-discarding the ordinary lookup from the definition context that
-[temp.dep.candidate]{.sref} requires it to keep. A variable fails the same
-way, and an ADL-reachable name is accepted, so what is lost is ordinary
-lookup itself rather than some narrower rule about what ADL may find. What
-makes the reading unambiguous is that the plain call still compiles: in one
-translation unit,
-`pipe(t, inc)` is accepted where `` t `pipe` inc `` is not. That is the slot
-carrying weaker lookup than the call it desugars to, which is what
-this section opened by ruling out. Clang is the conforming implementation and
-the GCC prototype has a bug to fix. However, the boundary belongs in a paper
-claiming two implementations, so it is printed here rather than smoothed
-over.
+The open case is this section's own rule failing on the other side. Inside a
+template, an unqualified slot naming something argument-dependent lookup
+cannot reach, a function brought in by a using-declaration for instance, is
+rejected by GCC and accepted by Clang. GCC re-runs the lookup at instantiation
+and keeps only the ADL result, discarding the ordinary lookup from the
+definition context that [temp.dep.candidate]{.sref} requires it to keep. A
+variable fails the same way, and an ADL-reachable name is accepted, so what is
+lost is ordinary lookup itself rather than some narrower rule about what ADL
+may find. What makes the reading unambiguous is that the plain call still
+compiles: in one translation unit, `pipe(t, inc)` is accepted where `` t
+`pipe` inc `` is not. That is the slot carrying weaker lookup than the call it
+desugars to, which is what this section opened by ruling out. Clang is the
+conforming implementation and the GCC prototype has a bug to fix. However, the
+boundary belongs in a paper claiming two implementations, so it is printed
+here rather than smoothed over.
 
 ## What the AST node costs, and which compiler pays it
 
@@ -1079,17 +1167,15 @@ Clang builds a source-fidelity node, a transparent wrapper around the
 desugared call, and that node is what makes `-ast-print` reproduce the
 written syntax. GCC desugars in the parser and hands its semantic layer an
 ordinary call. The two accept the same programs and generate the same code,
-so they differ in kind and behave identically. However, it has a price,
-and a reviewer should attribute the price correctly.
-
-The price is not the node. It is the transparency. A wrapper the rest of the
-compiler is meant not to notice is a wrapper nothing will remind you to teach
-anything about, and the sites that need teaching are quiet when they are
-wrong: six in the static analyzer's modelling layers, a seventh in the bug
-reporter created by meeting the other six, four arms in the code generator,
-the exhaustive statement-class switches, the libclang cursor map, the AST
-matchers. Exactly one of the analyzer's seven announces itself, and only as a
-warning in a build log.
+so they differ in kind and behave identically. The node has a price, and a
+reviewer should attribute the price correctly: it is not the node, it is the
+transparency. A wrapper the rest of the compiler is meant not to notice is a
+wrapper nothing will remind you to teach anything about, and the sites that
+need teaching are quiet when they are wrong: six in the static analyzer's
+modelling layers, a seventh in the bug reporter created by meeting the other
+six, four arms in the code generator, the exhaustive statement-class
+switches, the libclang cursor map, the AST matchers. Exactly one of the
+analyzer's seven announces itself, and only as a warning in a build log.
 
 The seventh is the instructive one. Teaching the control-flow graph to look
 through the wrapper leaves the wrapper with no program point of its own, so
