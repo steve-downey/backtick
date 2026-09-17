@@ -299,7 +299,7 @@ r `pipe` std::bind_back(filter, pred) `pipe` std::bind_back(transform, fn)
 
 However, this is the case P2011's `|>` writes more directly, with the
 arguments inline. Same outcome, more ceremony, and it is why backtick does not
-make `|>` redundant. The boundary is drawn exactly in the next section.
+make `|>` redundant. The boundary is drawn in the next section.
 
 ## Reusable, point-free composition
 
@@ -384,7 +384,7 @@ r |> filter([](auto e){ return e `mod` 2 `eq` 0; }) |> sum()
 //                             \____ eq(mod(e, 2), 0) ____/
 ```
 
-This proposal deliberately declines the `|>` spelling for itself (see the
+This proposal declines the `|>` spelling for itself (see the
 appendix) so that both can coexist in one program. Backtick says "this is a
 binary operation"; `|>` says "thread this value through these stages."
 Different sentences.
@@ -422,7 +422,7 @@ citing a single function, `andThen`, as pretty much the only one that used the
 feature. [Unison likewise removed
 it](https://github.com/unisonweb/unison/pull/2570). However, both are
 pipeline-first functional languages, where the dominant backtick use was
-monadic chaining, exactly the use `|>` covers directly, so the feature was
+monadic chaining, the use `|>` covers directly, so the feature was
 carrying one use that already had a spelling. The motivating set here (`gcd`,
 `dot`, `mul_sat`, `approx_equal`) is binary operations, not chains, and the
 P2011 section of this paper keeps the pipeline and the infix operator as
@@ -529,8 +529,8 @@ restriction.
 
 The open and close delimiter are the same token, so the slot can never contain
 a bare backtick; the first interior backtick closes the slot. What looks like
-nesting is therefore *token-identical* to a left-associative chain, and a
-chain is what it parses as.
+nesting is therefore *token-identical* to a left-associative chain, and that
+is how it parses.
 
 ```cpp
 x `f `g` h` y           // a chain:  h(f(x, g), y)
@@ -577,12 +577,12 @@ else. `` `new` `` in a name position produces an ordinary identifier whose
 spelling is `new`; lookup, overload resolution, mangling, and linkage
 proceed as if the word had never been a keyword. There is no lexer
 identifier-synthesis, no new name category, no ABI surface. What the escape
-buys is exactly what Swift, Kotlin, F#, and Rust bought with theirs: the
+buys is what Swift, Kotlin, F#, and Rust bought with theirs: the
 committee can claim a good word as a keyword without breaking the programs
 that already use it, and a program that must interoperate with one of those
 languages, or with its own past, can name the entity it needs to name.
 
-One question is deliberately left open for EWG: whether the escape is
+One question is left open for EWG: whether the escape is
 restricted to words that actually are keywords, so that `` `foo` `` is
 ill-formed rather than a noisy spelling of `foo`. The restriction buys maximal
 disjointness between the two uses and forecloses nothing. However, the
@@ -611,9 +611,9 @@ name. Both got the line wrong once before getting it right, and the symptom
 was the same both times: a program containing no backtick at all had its
 diagnostics change under the flag.
 
-One half of that is still wrong in GCC, and it is reported here rather than
-smoothed over, because it is the clearest evidence for what the paragraph
-above claims the cost is. GCC's routine is *the name of a declaration*. A
+One half of that is still wrong in GCC, and it is the clearest evidence for
+what the paragraph above claims the cost is. GCC's routine is *the name of a
+declaration*. A
 class or enum **type** is printed somewhere else, so a program that declares
 `` struct `union` { }; `` and then misuses it is told that *'struct union' has
 no member named '`new`'*: one sentence, two names, one of them escaped and the
@@ -704,7 +704,7 @@ expression that needs a saturating multiply and a wrapping add has nowhere to
 stand. `` a `mul_sat` b `add_wrap` c `` says it directly, at the site where
 each choice applies.
 
-Last, the lift is noise in exactly the place the objection claims to remove
+Last, the lift is noise in the place the objection claims to remove
 it. `Saturating{a} * b` reads worse than `` a `std::mul_sat` b ``, and it
 misdirects: it marks the *data* as special when the *operation* is. The
 reader must go find out what `Saturating` does to `*`; the named function
@@ -742,8 +742,8 @@ backtick-operator:
 ```
 
 The second and third alternatives are the type slot, and the type reading
-wins exactly when lookup finds a type or a class template. That is a rule
-and not a consequence: a bare type-name is not an *assignment-expression*,
+wins exactly when lookup finds a type or a class template. That is a rule:
+a bare type-name is not an *assignment-expression*,
 so a grammar with only the first alternative would contradict the section
 above rather than imply it.
 
@@ -754,7 +754,7 @@ implementation terms this is one new top level in each compiler's binary
 operator precedence table. The left recursion gives left associativity; the
 *cast-expression* operands give the symmetric prefix binding argued for above.
 
-The new level is deliberately **not** a *fold-operator*: `` (... `f` N) `` is
+The new level is **not** a *fold-operator*: `` (... `f` N) `` is
 ill-formed. Both implementations reject it, each with an ordinary parse error
 that says nothing about why, which is the reason for stating the exclusion
 here: nothing else would say it was chosen. Excluding costs one clause in the
@@ -784,7 +784,7 @@ of a second, nested backtick operator. C++ has, of course, been here before:
 `>` inside a template-argument list is a closer, not an operator, and
 `vector<vector<int>>` is handled by a parser flag — Clang's
 `GreaterThanIsOperator`, GCC's `greater_than_is_operator_p` — that turns the
-operator meaning off in that context. We do exactly the same thing: a
+operator meaning off in that context. We do the same thing: a
 `BacktickIsOperator` flag, false while parsing the slot, restored inside any
 nested parentheses or brackets so that parenthesized nesting works. Both
 implementations are modeled line-for-line on their compiler's existing `>`
@@ -865,7 +865,7 @@ out-of-class member definition), a *class-head-name*, an *enum-name* scoped or
 unscoped, an enumerator, a *namespace-name*, a type, non-type or template
 template parameter's name, an *alias-declaration*'s name, an alias template's,
 a concept's, a *mem-initializer*, a label, and expression positions including
-after `.`. Declaring a name is only half of a hatch, so the positions that
+after `.`. Declaring a name is only half of it, so the positions that
 *use* one are prototyped too: a type-specifier, a base-specifier, a
 nested-name-specifier, a *template-name* being specialized, a using-directive,
 a type-constraint, and a constructor's name. And a qualified name may be
@@ -887,7 +887,7 @@ failing and nothing would have failed.
 It was found by writing one program per position and compiling them. That has
 now been done four times, and it has found something on all four. The first
 sweep covered the positions that *declare* a name; the second, written after
-somebody noticed that a type nothing can name is not a hatch, covered the
+somebody noticed that a type nothing can name is no use, covered the
 positions that *use* one. The third covered qualified names, and found that
 Clang read the final component of a qualified name as an unqualified-id only
 when it named an object or a function, so `` N::`new` `` had worked from the
@@ -899,8 +899,8 @@ months. Seventy-nine programs now, in four groups, and the whole sweep runs in
 under two seconds. It is checked into the repository, which it should have
 been three sweeps ago.
 
-What it cost to fix is the useful number, and it is small but not the number
-first estimated. The escape parse becomes a helper called from each name
+What it cost to fix is small, though not the number first estimated. The
+escape parse becomes a helper called from each name
 position — twenty call sites in Clang, one arm plus its guards in GCC — and
 then three things nobody had priced. A parser that decides what it is looking
 at from the token *after* a name has to step over three tokens where it
@@ -920,8 +920,8 @@ next backtracking parse resumes on. GCC pays none of that, because it does not
 cache and re-annotate. More than half the work was in those three, and none of
 them appears in the grammar.
 
-That last change also shipped an infinite loop, and what caught it is the
-instructive part. Clang's recovery for a qualified name it can not resolve is
+That last change also shipped an infinite loop. Clang's recovery for a
+qualified name it can not resolve is
 to try implicit `int`; that does not apply to an escape and consumes nothing,
 so `` namespace N { int x; } N::`union` g; `` re-entered the same case with
 the same tokens indefinitely. The code it replaced had been avoiding that by
@@ -933,8 +933,8 @@ What caught it was running the error cases under a timeout, which is a
 different question from the one a coverage sweep asks and needs its own
 harness.
 
-The type-name slot has single-compiler evidence, said here so a reviewer does
-not have to discover it. Clang implements it: a bare name looked up as a type
+The type-name slot has single-compiler evidence. Clang implements it: a bare
+name looked up as a type
 with a deduction placeholder, a qualified one through a tentative parse, a
 builtin through the functional-cast path, all three routed to the `T(x, y)`
 build, which is where CTAD and temporaries come back for free. However, GCC
@@ -945,8 +945,8 @@ differently under the flag. Nothing the keyword escape does is on it.
 
 Three entries have come off that list, and every one of them left the same
 way: it turned out to be a gap rather than a disagreement, with a single cause
-behind however many programs it showed up in. The last two are the instructive
-pair, because they ran in opposite directions. GCC rejected an escape whose
+behind however many programs it showed up in. The last two ran in opposite
+directions. GCC rejected an escape whose
 keyword is a *type* keyword, because `int` and `char` and their siblings are
 bound at global scope to the builtin type in GCC's name table, so the name the
 escape yields was already taken. That looks like a representation the design
@@ -1005,7 +1005,7 @@ written for the first of the two, before anyone knew there was a second. The
 second was found afterwards, by asking the question the sentence asks, which
 makes it the better evidence: a general statement that catches a further
 instance of itself, in the same paper, after it was written down. Both arms
-are written now, and the exception above is the whole of what is left.
+are written now, and the exception above is all that is left.
 
 ## Argument-dependent lookup, which both implementations got wrong
 
@@ -1076,7 +1076,7 @@ over.
 ## What the AST node costs, and which compiler pays it
 
 Clang builds a source-fidelity node, a transparent wrapper around the
-desugared call, and that node is what makes `-ast-print` reproduce the
+desugared call, and that node is why `-ast-print` reproduces the
 written syntax. GCC desugars in the parser and hands its semantic layer an
 ordinary call. The two accept the same programs and generate the same code,
 so they differ in kind and behave identically. However, it has a price,
@@ -1103,8 +1103,8 @@ and explained less. One arm in the reporter's peeling routine fixes both
 symptoms at once, because peeled early the two forms are one expression for
 everything downstream; the two reports now agree note for note.
 
-None of that is the cost of infix application. It is the cost of source
-fidelity, and round-tripping the written syntax is what it buys. A front end
+That is the cost of source fidelity, and round-tripping the written syntax is
+the payoff. A front end
 that desugars in the parser pays none of it, and gets none of it.
 
 ## The gate fails quietly
@@ -1133,7 +1133,7 @@ Both implementations, built separately from the same design, accept the bare
 "nested" form as a left-associative chain, because the token stream for the
 two readings is identical. What the design predicted on paper, two unrelated
 parser architectures reproduced. Nesting-is-chaining is a consequence of the
-grammar and not an implementation accident. Clang carried a diagnostic for the
+grammar. Clang carried a diagnostic for the
 bare form through most of the implementation and it never once fired; it was
 deleted rather than made to fire, since making it fire needs the lookahead
 that would have to reject legal chaining too. A diagnostic that can not fire is
@@ -1436,8 +1436,8 @@ purpose.
 
 ## A.6 The wider inventory: what ASCII actually remains
 
-The same availability analysis generalizes, and it is what gets asked in the
-room, so it is recorded. A sequence `XY` is mintable only if `XY` is not a
+The same availability analysis generalizes, and it gets asked in the room. A
+sequence `XY` is mintable only if `XY` is not a
 token or token-prefix today *and* `Y` can not validly follow `X` in a current
 program. The second clause is the surprising one: after any binary operator or
 `<`, the unary-capable characters `- + * & ~ !` are already legal, so `<-`,
@@ -1455,7 +1455,7 @@ Clean two-or-more-character sequences of note: `==>`, `<==`, `<==>`, `<|`,
 spoken for, by P2971's implication operator and P2011's pipeline respectively;
 `<=>` is spaceship; and `^^` — available by the same analysis until recently —
 was claimed by reflection [@P2996R13]. Reflection moved from a single `^` to
-`^^` in P3381R0 [@P3381R0], after running exactly this exercise, and that
+`^^` in P3381R0 [@P3381R0], after running this exercise, and that
 paper's candidate table reaches this section's count independently: it calls
 the backtick the third character recently added to the basic character set,
 after `$` and `@`. The lesson from that precedent: doubling an operator with
