@@ -504,6 +504,30 @@ not.
 
 - [ ] 26. [backtick-paper-companion](steps/backtick-paper-companion.md) — D4307R0 names its precedence level the **user-infix level** and carries the informative future-directions appendix [`paper-separation`](../../docs/unicode-operators.md#paper-separation) conditioned the split on, and cites D4345 where it already leans on it (dep: none; **unowned**. Nothing is blocked on it, but it should land before the two papers are submitted together)
 
+### Phase M — A ruling that arrived after the papers (2026-09-17)
+
+The author read what the backtick paper says about the keyword escape and
+closed the one question it deliberately carried to EWG *unanswered*: whether
+the word between the backticks has to be a keyword. It does not.
+[escape-content](../../docs/backtick-operator-design.md#escape-content) is the
+decision — anything spelled as an identifier may stand there, and `` `foobar` ``
+**is** `foobar`, one name under two spellings — and the reason is the hatch's
+own purpose, that an escape restricted to words which are *already* keywords
+cannot be written until the standard that takes the word has shipped, so it
+can repair a break and never prevent one.
+
+Unlike every other decision on this page, **this one is ahead of the code**.
+The docs and the paper landed with the ruling on 2026-09-17; both prototypes
+still reject `` `foobar` ``, and the paper says so in three places until they
+do not. It is the first item here since
+[escape-name-positions](steps/escape-name-positions.md) that turns an answer
+into a compiler change, and it is smaller than that one: a single predicate on
+each side, asked twice in Clang, with no printer, Sema or AST consequence —
+because the AST never recorded that a name was escaped, which is exactly what
+makes the identity half of the ruling already true of the built compiler.
+
+- [ ] 27. [escape-any-identifier](steps/escape-any-identifier.md) — the escape takes any identifier, on both Clang branches and GCC, with the fifth probe category the sweep has never had and the seventh forward-port onto `unicode-operators-experiment` (dep: none; **unowned**. Nothing is blocked on it, but **the two papers may not be submitted while it is open** — D4307R0 proposes the rule and carries a sentence saying the forks do not implement it yet)
+
 ### Maintenance (not plan steps)
 - **M2 — done, 2026-09-06.** Forward-ported `BL02` + clang-paper-truth's
   backtick fixes to `unicode-operators-experiment`; gate green against the
@@ -585,6 +609,7 @@ everything** and are the right work for a spare agent.
 | [settle-paper-rows](steps/settle-paper-rows.md) **(step inserted 2026-09-07)** | [`escape-name-positions`](../DEVIATIONS.md#escape-name-positions) [`type-slot-aggregate-shape`](../DEVIATIONS.md#type-slot-aggregate-shape) [`escape-alias-name-parity`](../gcc/DEVIATIONS.md#escape-alias-name-parity) [`escape-diagnostic-spelling`](../gcc/DEVIATIONS.md#escape-diagnostic-spelling) — four claims the paper made that the built compilers did not support. None of them is a `BNN` row; they are deviation rows and are listed again in the table below. **Two fixed, two with the author** — see the checklist entry |
 | [escape-name-positions](steps/escape-name-positions.md) **(step inserted 2026-09-08)** | the two rows settle-paper-rows put to the author, once answered: [`escape-name-positions`](../DEVIATIONS.md#escape-name-positions) and [`escape-alias-name-parity`](../gcc/DEVIATIONS.md#escape-alias-name-parity), both now `FIXED and RECONCILED`. Opens one: [`escape-type-keyword-binding`](../gcc/DEVIATIONS.md#escape-type-keyword-binding) |
 | [escape-name-sweep](steps/escape-name-sweep.md) **(step inserted 2026-09-08)** | no `BNN` row — its rows are deviation rows and are in the table below. It closes the one [escape-name-positions](steps/escape-name-positions.md) opened and the one the [forward-port](handoffs/escape-positions-forward-port.handoff.md) opened, and opens [`escape-type-name-spelling`](../gcc/DEVIATIONS.md#escape-type-name-spelling) |
+| [escape-any-identifier](steps/escape-any-identifier.md) **(step inserted 2026-09-17)** | no row in any ledger, and unlike the row below that is neither an oversight nor a finding: **nothing diverged and nothing was measured wrong**. The prototypes restrict the escape to keywords because that is what the design said until 2026-09-17, so the restriction is not a deviation from the design, it *was* the design. What the step implements is [escape-content](../../docs/backtick-operator-design.md#escape-content), recorded as a ruling in [`docs/open-decisions.md`](../../docs/open-decisions.md#2026-09-17--escape-content-the-escape-takes-any-identifier). Opening a deviation row for it would report a defect where there is a decision |
 | [backtick-paper-companion](steps/backtick-paper-companion.md) **(step inserted 2026-09-15)** | no row in any ledger, and **that is the finding rather than an oversight in the tables above**. Its scope is an obligation recorded in `docs/backtick-operator-design.md` §9's list of what the paper must carry and conditioned on by [`paper-separation`](../../docs/unicode-operators.md#paper-separation): D4307 names the **user-infix level** and carries an informative future-directions appendix. This table covers what originates in `ops/` — backlog rows, deviation rows, design decisions — and a paper-requirements list in a design doc has the same force and none of the tracking. Found by a PR review on 2026-09-15, not by this plan. **When auditing whether work is outstanding, read the design docs' paper-requirements lists too**; this section's heading was true of `ops/` and only of `ops/` |
 
 29 open deviation rows when this plan was written, written out in full so a grep for one finds its step. **Four more were opened on 2026-09-07, after the plan, and have no step** — the last row of this table.
