@@ -249,7 +249,7 @@ inline constexpr auto mbind =
 parse(s) `mbind` validate `mbind` store;   // stops at the first error
 ```
 
-The concession, stated plainly: a bare-*expression* right operand still
+The concession: a bare-*expression* right operand still
 evaluates eagerly, because backtick desugars to a call and calls, of course,
 evaluate their arguments. The thunk is the price of generality. A dedicated
 implication operator pays that price differently, by building the laziness
@@ -334,8 +334,8 @@ Direction without commitment.
 The obvious neighbor is the pipeline-rewrite operator, `|>` [@P2011R1]. Both
 constructs bottom out in a call expression, and their two-argument cases
 coincide (`` a `plus` b ``, `a |> plus(b)`, and `plus(a, b)` are the same
-call), so the relationship has to be stated explicitly: they are orthogonal,
-complementary, and neither subsumes the other.
+call). They are orthogonal and complementary, and neither subsumes the
+other.
 
 What each one is:
 
@@ -742,8 +742,8 @@ backtick-operator:
 ```
 
 The second and third alternatives are the type slot, and the type reading
-wins exactly when lookup finds a type or a class template. That is a rule
-and not a consequence: a bare type-name is not an *assignment-expression*,
+wins exactly when lookup finds a type or a class template. The rule does not
+follow from the expression slot: a bare type-name is not an *assignment-expression*,
 so a grammar with only the first alternative would contradict the section
 above rather than imply it.
 

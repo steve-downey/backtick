@@ -337,7 +337,7 @@ The switch is `PrintingPolicy::BacktickKeywordEscape`, initialised from `LangOpt
 
 **Decision.** A type-name in the slot yields construction
 
-**Why.** `x `T` y` == `T(x, y)`: functional-style construction, CTAD applies. Whichever production the slot takes the result is an *expression*, so no most-vexing-parse declaration reading can arise, and there is no collision with the §12 escape (different grammatical position). **This is a second slot production with a disambiguation rule — the type interpretation wins exactly when lookup finds a type or class template — and not a consequence of the expression slot**; see the Log below and §17.3.
+**Why.** `x `T` y` == `T(x, y)`: functional-style construction, CTAD applies. Whichever production the slot takes the result is an *expression*, so no most-vexing-parse declaration reading can arise, and there is no collision with the §12 escape (different grammatical position). **The type slot is a second production with its own disambiguation rule — the type interpretation wins exactly when lookup finds a type or class template — and does not follow from the expression slot**; see the Log below and §17.3.
 
 **Decided by.** The design author.
 
@@ -1198,9 +1198,8 @@ available), whereas doubling one that *has* a unary form is blocked
 ## 15. Relationship to the pipeline-rewrite operator (P2011, `|>`)
 
 Barry Revzin's `|>` (the "pizza" operator, P2011) and backtick both ultimately
-produce a call expression, and their degenerate 2-argument cases look alike,
-so the relationship must be stated explicitly: **they are orthogonal,
-complementary, and neither replaces the other.** Backtick deliberately leaves
+produce a call expression, and their degenerate 2-argument cases look alike.
+**They are orthogonal, complementary, and neither replaces the other.** Backtick deliberately leaves
 `|>` unspelled (§13.3 / §14.3) precisely so the two can coexist in one
 program.
 
