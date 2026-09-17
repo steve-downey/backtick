@@ -66,8 +66,8 @@ keyword the committee adds breaks every program that used the word as one. The
 committee knows this, and pays for it every time: C++20 shipped `co_await`,
 `co_yield`, and `co_return` because `await` and `yield` were taken, and made
 `module` and `import` context-sensitive — at real specification and
-implementation cost — because breaking existing code was not acceptable. Every
-language that kept evolving past 1.0 grew an escape hatch instead: Swift's ``
+implementation cost — because breaking existing code was not acceptable. The
+languages designed since have built in an escape for this case: Swift's ``
 `class` ``, Kotlin's backtick identifiers, F#'s double-backtick names, Rust's
 `r#` raw identifiers. We propose the same hatch. A backtick pair in name
 position escapes a keyword and yields a plain identifier, so lookup, mangling,
@@ -440,17 +440,39 @@ spelling with the deepest working precedent.
 
 ## Escaping keywords as identifiers
 
-Every language that kept evolving past 1.0 installed an escape hatch: Swift's
-`` `class` ``, Kotlin's backtick identifiers, F#'s double-backtick names, C#'s
-`@`-verbatim identifiers, Nim's backtick stropping, and Rust's [`r#` raw
-identifiers](https://doc.rust-lang.org/edition-guide/rust-2018/module-system/raw-identifiers.html).
-The last was introduced specifically so the 2018 edition could take `try`,
-`async`, and `await` as keywords while 2015-edition code kept compiling and
-kept calling functions with those names. Editions plus raw identifiers are how
-Rust made keyword adoption routine. C++ is the outlier:
-no escape, so every new keyword breaks real code, and the committee's coping
-strategies are `co_`-circumlocution and context-sensitive grammar. The hatch
-is standard equipment. C++ never installed it.
+The escape is standard equipment in the languages designed since: C#'s
+`@`-verbatim identifiers (2000), F#'s double-backtick names (2005), Nim's
+backtick stropping (2008), Kotlin's backtick identifiers (2011), Swift's ``
+`class` `` (2014), and Rust's [`r#` raw
+identifiers](https://doc.rust-lang.org/edition-guide/rust-2018/module-system/raw-identifiers.html)
+(2015). Every one of them is younger than C++'s first standard. Rust's
+motivation is on the record: `r#` was introduced so the 2018 edition could
+take `try`, `async`, and `await` as keywords while 2015-edition code kept
+compiling and kept calling functions with those names. Editions plus raw
+identifiers are how Rust made keyword adoption routine.
+
+The comparison that bears on C++ is C. Same problem, same era, a different
+answer: the reserved spelling. `_Bool` in C99, then `_Alignas`,
+`_Static_assert` and `_Thread_local` in C11, each shipped with a header macro
+supplying the name anyone would actually write, and each promoted to a plain
+keyword in C23 once the macro had carried the migration. Choose a spelling no
+program could have used, and let a macro hold the good name until the good
+name is safe. `co_await` is that move without the macro.
+
+Python is nearer still, is taking keywords now, and has no escape either. It
+has 35 reserved words and no way to spell one as a name, so when the language
+wanted `match` it did what C++ did with `module`: `match`, `case` and `_` are
+*soft keywords* in 3.10, reserved only inside the `match` statement, as `type`
+is in 3.12. Context-sensitive grammar, arrived at independently. Everywhere
+else the workaround is institutional, and PEP 8 writes it down: "it is
+generally better to append a single trailing underscore rather than use an
+abbreviation or spelling corruption. Thus `class_` is better than `clss`."
+
+Three answers to a keyword collision are in use: break the code, mangle the
+keyword, or make the grammar context-sensitive. C++ has used the second and
+the third, and so has C. The fourth needs a spare token, which is why the
+languages that have one are the ones designed with a token to spend. C++ has
+one left.
 
 # Design choices and decisions
 
