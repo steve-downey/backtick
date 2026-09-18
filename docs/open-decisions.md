@@ -1259,6 +1259,20 @@ rule already handles by not interfering with phase 4. So the decision has no
 part left that is anybody else's to settle, and the wording says
 [lex.digraph] as well as [lex.key].
 
+*Measured 2026-09-17, by
+[escape-any-identifier](../ops/completion/steps/escape-any-identifier.md).*
+The prediction above was run before the change, on three compilers that
+predate it — the installed `clang-trunk-backtick` and `clang-23-backtick`
+prefixes and the GCC `backtick` build — and all three agree with it:
+`` bool `requires`(int); `` is **rejected under `-std=c++17`** ("backtick
+keyword-escape requires a C++ keyword") **and accepted under `-std=c++20`**.
+GCC gets there by a different route, since it lexes a C++20 keyword as a
+plain `CPP_NAME` below C++20, but the answer is the same. After the change all
+three compilers' successors accept it in both dialects, and each test suite
+pins that with the declaration compiled under both. The rule is built on
+`backtick-trunk`, `backtick-23`, GCC `backtick` and, by the seventh
+forward-port, `unicode-operators-experiment`.
+
 *Implementation owed and not done:* **both prototypes implement the restricted
 form**, so this is the first answer on this page since
 [escape-name-positions](#escape-name-positions) that turns into code, and the
