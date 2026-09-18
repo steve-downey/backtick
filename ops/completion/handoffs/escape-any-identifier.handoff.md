@@ -1,25 +1,130 @@
-# Handoff — escape-any-identifier — Clang trunk is built and gated; GCC and the 23.x branch are not
+# Handoff — escape-any-identifier — the escape takes any identifier, in both compilers and on all four branches
 
-- **Status:** **PARTIAL — one of three implementations done, gate green on it.
-  The box stays unticked.**
+- **Status:** **DONE (gate passed).** Finished on 2026-09-17 on the
+  maintainer's machine, from where the first session (below, *The first
+  third*) stopped.
 - **Branch / commits:**
-  - `llvm-project` `claude/backticks-identifier-proposal-gyjab5`, off
-    `backtick-trunk` (`28b685c86e`) — **`43508c7c1e`** (the predicate, the
-    diagnostic, the tests as written from the source) and **`ccc352392d`**
-    (what the built compiler corrected). Opened as
-    [steve-downey/llvm-project#1](https://github.com/steve-downey/llvm-project/pull/1)
-    against `backtick-trunk`.
-  - `backtick-23` — **not touched.** Owed.
-  - GCC `backtick` — **not touched.** Owed.
-  - `unicode-operators-experiment` — **not touched.** The seventh forward-port
-    is owed once both Clang branches carry this.
-  - this repo — the decision and its documents, the fifth probe category, and
-    the two corrections measurement forced.
-- **Date:** 2026-09-17.
-- **Opens one row**, [`ast-dump-type-name-spelling`](../../DEVIATIONS.md#ast-dump-type-name-spelling),
-  which is older than this change. Closes none. The ledgers read **1 / 1 / 0**.
+  - `backtick-trunk` (`~/src/llvm/backtick-trunk`) — **fast-forwarded** to
+    [PR #1](https://github.com/steve-downey/llvm-project/pull/1)'s head,
+    `43508c7c1e96` + **`ccc352392df4`**. Nothing added on top.
+  - `backtick-23` (`~/src/llvm/backtick`) — cherry-picks **`029e7192d565`**,
+    **`cb2fe74759c2`**. Clean.
+  - GCC `backtick` (`~/bld/gcc/gcc-backtick`) — **`0ebcbb73213`**.
+  - `unicode-operators-experiment` (`~/src/llvm/unicode`) — **`9b1a1b6c58d8`**,
+    the seventh forward-port, `git merge --no-ff ccc352392df4`.
+  - `unicode-operators-upstream` — **untouched**, `8c2a90f56b00`.
+  - this repo — this file, the plan's box and Status rows, §12 and
+    [escape-content](../../../docs/backtick-operator-design.md#escape-content),
+    the ruling's `Log` in `docs/open-decisions.md`, the paper, one GCC ledger
+    row, `ops/probes/escape-errors.sh`.
+  - **Nothing has been pushed**, to `origin` or `ceridwen`, on any repository.
+- **Opens and closes one row**,
+  [`escape-alternative-token-spelling`](../../gcc/DEVIATIONS.md#escape-alternative-token-spelling),
+  a GCC printer finding fixed in the same commit. The ledgers still read
+  **1 / 1 / 0** open.
 
 ---
+
+## The gates
+
+| Gate | Result |
+|---|---|
+| `check-clang`, `backtick-trunk`, `build-backtick-trunk` | **54117 discovered / 48231 passed / 0 failed**, XFAIL 27, skipped 6, unsupported 5853, 200.59 s, `EXIT=0` read from the log. The maintainer's build, which the first session's number was not. |
+| `check-clang`, `backtick-23`, `build-backtick` | **54351 / 48509 / 1**, XFAIL 27, skipped 6, unsupported 5808. The one is `Format/dump-config-objc-stdin.m`, *Configuration file(s) do(es) not support Objective-C: /home/sdowney/src/.clang-format* — [`stray-clang-format-config`](../../BACKLOG.md#stray-clang-format-config), budgeted on this branch only. |
+| `check-clang`, `unicode-operators-experiment`, `build-unicode` | **54192 / 48304 / 0**, XFAIL 27, skipped 6, unsupported 5855, 200.53 s, `EXIT=0`, **zero `warning:` lines**. The last Baselines row, 54190 / 48302, plus the two new test files. |
+| GCC `check-c++ RUNTESTFLAGS="dg.exp=g++.dg/backtick/*.C"` | **149 expected passes, 0 unexpected.** `modules.exp=backtick-*` too: **15 / 0**. |
+| `escape-positions.sh` | `STD=c++20` **98/98 clang, 98/98 gcc**; `STD=c++17` **96/98 both**, the two being `decl-concept` and `use-type-constraint`. Category E **19/19 in every cell**. Same numbers with `CLANG=` pointed at `build-backtick`. |
+| `escape-errors.sh` | **46/46 diagnosed and stopped**, `EXIT=0`, against both trunk and 23.x clang. |
+| `flag-off-parity.sh` | **Identical in every flag-on/flag-off cell, both compilers.** Flag-off vs pristine identical for Clang; for GCC's assembly it differs in 2 lines, which are the `.ident` string (`20260906` vs `20260808`) — the branch's base moved when `main` was merged on 2026-09-09 and `build-trunk` did not. Shown, not assumed. |
+| papers | `make -C papers backtick-infix-and-keyword-escape.html …pdf`, `EXIT=0`, **0** warning / error / missing-character lines; artifacts land in `papers/generated/`. |
+
+## What was measured before the change
+
+The step asked for the `requires` pair to be run **before** the fix, because it
+had only been read from the source. The installed prefixes predate the change,
+so it was run on three compilers: `~/install/clang-trunk-backtick`,
+`~/install/clang-23-backtick`, and the GCC build before its rebuild. **All three
+reject `` bool `requires`(int); `` under `-std=c++17` and accept it under
+`-std=c++20`** — GCC by a different route (a C++20 keyword is a plain
+`CPP_NAME` below C++20, and its predicate asked for `CPP_KEYWORD`), with the same
+answer. The macro and reserved-name claims were asked of GCC before the change
+as well: `#define foobar 3` then `` int `foobar` `` was already reported against
+the replacement list, which is phase 4 running.
+
+## GCC
+
+`cp_token_escapable_word_p` (`gcc/cp/parser.cc`): `CPP_NAME`, `CPP_KEYWORD`, or
+`token->flags & NAMED_OP`. It replaces `CPP_KEYWORD` in
+`cp_parser_backtick_escaped_identifier` and in the lookahead
+`cp_lexer_nth_token_starts_name` — **two** sites, the second being the one the
+first session's forward note did not know about. An alternative token has no
+identifier on the token; the escape recovers it with
+`get_identifier (cpp_type2name (token->type, token->flags))`, which is how
+`cp_parser_std_attribute` already recovers an attribute name spelled `and`.
+Diagnostic: *backtick escape requires an identifier*. `cp_lexer_name_width`
+needed nothing — it keys on the backtick.
+
+**One finding**, [`escape-alternative-token-spelling`](../../gcc/DEVIATIONS.md#escape-alternative-token-spelling):
+the design said the `and`-escaped / `foobar`-bare printing asymmetry needed
+teaching in neither compiler. True of Clang, whose `IdentifierInfo` for `and`
+carries `tok::ampamp`. False of GCC, whose `dump_decl_name` asked only
+`IDENTIFIER_KEYWORD_P`, so a variable declared `` `and` `` was named `'and'` in
+a diagnostic. It now also asks for `NODE_OPERATOR` on the cpplib node. Pinned in
+`escape-identifier.C`.
+
+Tests: `escape-identifier.C` and `escape-macros.C` new, mirroring the Clang
+files; `escape-abi.C` gains `_Z8ordinaryi` and `_Z9takes_andi3and`, **the same
+symbols Clang pins**; `escape-tentative.C` gains the three non-keyword shapes;
+`escape-diag.C` swaps `` `x` `` for four non-words and a `clash` redeclaration;
+`lex-token.C` only changes its expected message. No `-std` in any of them, so
+the harness runs each under every dialect in its list (98, 11/14, 17, 20, 29 as
+configured), which is the dialect pair and more.
+
+GCC's object-like-macro error lands on the **`#define` line** with *in expansion
+of macro* at the escape, and it stops at one error where Clang adds a recovery
+`expected unqualified-id`. Both halves of the macro claim agree across
+compilers.
+
+## The forward-port, predicted and then checked
+
+Prediction: the only file both sides touch is
+`DiagnosticParseKinds.td`. `git diff --numstat` before merging — the Unicode side
+since `28b685c86ea2` touches that file alone of the incoming eight, at line 786;
+the incoming hunk is at 216. **No conflict predicted, none happened.** Verified
+the usual four ways: the merge delta is **8 files, +300/−27**, exactly the
+incoming pair's; the deleted lines are identical as a set; the feature diff
+against the new backtick tip is **121 files, +7701/−57, 221 hunks at `-U0`**,
+unchanged for the fifth merge running; `ParseExpr.cpp` is not in the merge, and
+`Level != prec::UserInfix` is still at line 309. **The fold guard was read, not
+re-proven by deletion** this time — the merge does not touch `ParseExpr.cpp`, so
+the deletion experiment would be a control and nothing more.
+`git -C ~/src/llvm/unicode-upstream log -p d28193fa1ff6..HEAD | grep -ic backtick`
+→ **0**.
+
+## The paper
+
+The three sentences are gone: the abstract's *"One rule in this revision is
+ahead of the forks"*, the *escape yields an ordinary identifier* section's
+*"the one thing … the two forks do not yet implement"*, and the fifth-sweep
+paragraph, which is rewritten from the measurements above and now reports the
+GCC printer line. **One more sentence was wrong and was not on the list**: the
+same section said *"A macro name is still replaced"* without qualification.
+Both compilers show that is true of an object-like macro and not of a
+function-like one, so it now says both, and so does the drafting note in the
+Wording. The implementation-changed bullet's *seventy-nine* is *ninety-eight*.
+
+## Forward notes
+
+- **Push** is the one thing left undone, and it is the maintainer's call:
+  `backtick-trunk`, `backtick-23`, `unicode-operators-experiment` and GCC
+  `backtick` are all ahead of `ceridwen` / `origin`. PR #1 is subsumed by the
+  fast-forward and can be merged or closed.
+- `ops/probes/README.md` and `docs/infix-backtick-operator.org` quote sweep
+  timings; with 98 programs the sweep is slower than 1.6 s. See the Status row.
+
+---
+
+# The first third, as written by the session that did it
 
 ## Where it was done, which is not where the plan says
 

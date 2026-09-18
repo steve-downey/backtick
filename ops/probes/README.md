@@ -1,15 +1,21 @@
 # Probes — the sweeps, checked in
 
-Three `bash` scripts — **1.6 s, 5.0 s and 0.4 s** on this machine, best of
+Three `bash` scripts — **2.0 s, 5.0 s and 0.4 s** on this machine, best of
 three consecutive runs each, warm — that ask the questions this feature keeps
 getting wrong. **Re-run them after touching the keyword escape.**
-They have found something on five of the six occasions they have been run, and
+They have found something on six of the seven occasions they have been run, and
 three of those five were after somebody had written down that the coverage was
 complete. **The sixth found nothing, and the run is recorded anyway**: it was
 [slot-callable-printing](../completion/steps/slot-callable-printing.md), which
 changed the AST printer and not the escape, so a green sweep is the expected
 reading rather than a disappointing one. A sweep that is only run when it is
-expected to fail stops being a control.
+expected to fail stops being a control. **The seventh**,
+[escape-any-identifier](../completion/steps/escape-any-identifier.md), found
+its own probes out of date: three of `escape-errors.sh`'s malformed escapes
+wrapped `notakeyword`, which the content rule made well-formed, and they now
+wrap `3`, `+` and `&&`. The GCC printer finding that run produced
+([escape-alternative-token-spelling](../gcc/DEVIATIONS.md#escape-alternative-token-spelling))
+came from the test suite, not from a sweep.
 
 They are `bash` and they use bash arrays. **`zsh` does not word-split**, and
 that has cost this track several sweeps; run them with `bash`, not by typing
@@ -17,7 +23,7 @@ their contents into an interactive shell.
 
 | Script | Question | Failure mode it catches |
 |---|---|---|
-| [`escape-positions.sh`](escape-positions.sh) | Where does the escape reach? | A name position nobody thought of. Seventy-nine one-line programs in four categories — declaration, use, qualified, and escapes whose keyword is a *type* keyword — run against both compilers. |
+| [`escape-positions.sh`](escape-positions.sh) | Where does the escape reach? | A name position nobody thought of. Ninety-eight one-line programs in five categories — declaration, use, qualified, escapes whose keyword is a *type* keyword, and escapes of a word that is not a keyword at all — run against both compilers. Run it under `STD=c++17` as well as the default: category E must not move. |
 | [`escape-errors.sh`](escape-errors.sh) | Does a bad escape diagnose **and stop**? | A parser loop. Twenty-three malformed or unresolvable escapes, each under `timeout`; a timeout is a failure, not a slow test. |
 | [`flag-off-parity.sh`](flag-off-parity.sh) | Does the flag change a program containing no backtick? | A leaked flag gate. Byte-identical comparison of flag-on against flag-off, and of flag-off against a pristine upstream binary, over `-fsyntax-only`, `-ast-print`, `-ast-dump` and generated assembly. |
 

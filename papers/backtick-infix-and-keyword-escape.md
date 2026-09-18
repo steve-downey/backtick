@@ -83,9 +83,7 @@ The two uses never collide: they occupy mutually exclusive grammatical
 positions, the same position-based disambiguation the language already applies
 to `*`, `&`, and `<`. Both are implemented, gated behind an opt-in
 `-fbacktick` flag, in two independent compilers, public forks of Clang and
-GCC, with tests. One rule in this revision is ahead of the forks and is
-flagged where it is stated: they still require the escaped word to be a
-keyword. This is a pure core-language proposal targeting C++29. No
+GCC, with tests. This is a pure core-language proposal targeting C++29. No
 library additions are proposed.
 
 # Before / After
@@ -624,10 +622,13 @@ identifier and nothing more specific. `` `foobar` `` **is** `foobar`: the same
 entity, found by the same lookup, with the same linkage and the same mangling,
 and a program may write the name either way in either place. Every other rule
 about identifiers then applies to the result unchanged. A reserved name stays
-reserved, so `` `__foo` `` buys nothing that `__foo` does not already cost. A
-macro name is still replaced, because the escape is a phase 7 construct and
-phase 4 has never heard of it: the backticks neither shield a name from the
-preprocessor nor expose one to it.
+reserved, so `` `__foo` `` buys nothing that `__foo` does not already cost.
+An object-like macro name is still replaced, because the escape is a phase 7
+construct and phase 4 has never heard of it. A function-like macro name is
+not, for the preprocessor's own reason: it is replaced only when the next
+token is `(`, and here the next token is the closing backtick. Both forks
+behave this way. The backticks neither shield a name from the preprocessor
+nor expose one to it.
 
 An earlier draft of this paper restricted the content to words that actually
 are keywords, so that `` `foo` `` was ill-formed rather than a noisy spelling
@@ -668,9 +669,8 @@ EWG can take the restricted rule instead. It is one clause in a parser
 predicate and one word in the grammar, and the wording below says which word.
 What it costs is stated here rather than left for the room to find: the escape
 becomes unwritable in the dialect where it does the most good, which is the
-one before the keyword lands. **This rule is the one thing in this paper the
-two forks do not yet implement**; both still require a keyword, and the
-implementation section below says what changing that costs.
+one before the keyword lands. Both forks implement the unrestricted rule,
+and the implementation section below says what the change cost.
 
 One consequence is user-visible, and it is settled here. The escape is part of
 the name's *spelling* and not of its identity, so a printer holding the
@@ -935,8 +935,9 @@ because the compilers demanded them.
 - *The escape reaches every position the grammar writes an identifier in.*
   The first prototypes took it wherever their parsers happened to route the
   token and refused it everywhere else. The position list in the wording is
-  what four sweeps of one program per position found, and the sweep,
-  seventy-nine programs, is in the repository.
+  what four sweeps of one program per position found, and the sweep, with a
+  fifth group that varies the word instead, is in the repository: ninety-eight
+  programs.
 - *The escape is spelling and not identity, and printers put it back.* A
   pretty-printed declaration and a diagnostic name the entity `` `new` ``; the
   AST dump keeps the bare word. Each compiler had to decide which of its
@@ -1067,23 +1068,32 @@ keyword. Every program anyone had written used `new`, `class`, `union` or
 `try`, which are pure keywords; `int` is not, and GCC rejected `` int `int` =
 0; `` in the first and best-tested position in the table, and had done for two
 months. Seventy-nine programs now, in four groups, and the whole sweep runs in
-under two seconds. It is checked into the repository, which it should have
+about two seconds. It is checked into the repository, which it should have
 been three sweeps ago.
 
 There is a fifth thing those seventy-nine programs never vary, and it is not a
 position. Every one of them escapes a keyword, because until this revision the
-rule required one, and **both prototypes therefore still reject
-`` `foobar` ``**. This is the one claim in this section that the built
-compilers do not support, and it is reported rather than smoothed over,
-because everything else here is measured. The change is a single predicate on
-each side: Clang asks `IdentifierInfo::isKeyword` in the two routines that
-recognise and consume an escape, and GCC asks the same question in its escape
-arm. Nothing downstream of either predicate has to move, and the reason is the
-identity rule itself. Neither compiler records that a name was escaped, so
-neither can print one differently; a name whose spelling is not a keyword
-already prints bare, which is exactly what the new rule says it should do. The
-restricted rule needed a parser check to *reject* programs. The unrestricted
-rule needs nothing to accept them but the removal of that check.
+rule required one. The fifth sweep changes the word: nineteen programs that
+escape an ordinary identifier, an alternative token, and a word that is a
+keyword only in a later standard, in the positions the first four covered.
+Before the change both compilers rejected all of them. After it, both accept
+all nineteen, under `-std=c++17` and under `-std=c++20` alike, and
+`` bool `requires`(int); ``, which each compiler had taken only in the dialect
+where `requires` is a keyword, is now the same declaration in both.
+
+The change was a single predicate on each side: Clang asked
+`IdentifierInfo::isKeyword` in the two routines that recognise and consume an
+escape, and GCC asked for a keyword token in its escape arm and in the
+lookahead that steps over one. Nothing else in either parser moved, and the
+reason is the identity rule itself. Neither compiler records that a name was
+escaped, so neither can print one differently, and a name whose spelling is
+not a keyword prints bare, which is what the rule says it should do. One
+printer did need a line. GCC decided whether to escape a name in a diagnostic
+by asking whether it was a keyword, and an alternative token is not one there:
+cpplib turns `and` into `&&` before the parser sees it. So GCC named a
+variable declared as `` `and` `` with a bare `and`, which does not re-parse.
+It now asks the preprocessor's question as well, and both compilers print
+`` `and` `` escaped and `` `foobar` `` bare.
 
 What it cost to fix is the useful number, and it is small but not the number
 first estimated. The escape parse becomes a helper called from each name
@@ -1439,7 +1449,9 @@ on choices the wording takes:
   preprocessor needs no change. The identifier between the backticks is an
   ordinary identifier preprocessing token throughout those phases and is
   macro-replaced there if it names a macro, exactly as it would be anywhere
-  else; the backticks neither suppress replacement nor cause any.
+  else; the backticks neither suppress replacement nor cause any. In
+  particular a function-like macro name between backticks is not replaced,
+  because the token after it is the closing backtick and not `(`.
 - One feature-test macro is proposed for the paper's two features, because
   they are one design. If they are ever polled separately, it splits
   into `__cpp_backtick_operator` and `__cpp_escaped_identifiers`. The value

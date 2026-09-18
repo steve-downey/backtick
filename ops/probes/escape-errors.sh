@@ -29,9 +29,12 @@ declare -a NAME=() PROG=()
 add() { NAME+=("$1"); PROG+=("$2"); }
 
 # Malformed escapes, in each of the four position categories.
-add bad-not-keyword-decl    'int `notakeyword` = 0;'
-add bad-not-keyword-class   'struct `notakeyword` { };'
-add bad-not-keyword-qual    'namespace N { struct S{}; } N::`notakeyword` g;'
+# Not a word between the backticks.  Until escape-content (2026-09-17) these
+# three held `notakeyword`, which is now a well-formed escape of an ordinary
+# identifier; what is left to reject is content that is not spelled as one.
+add bad-not-identifier-decl  'int `3` = 0;'
+add bad-not-identifier-class 'struct `+` { };'
+add bad-not-identifier-qual  'namespace N { struct S{}; } N::`&&` g;'
 add bad-unterminated-decl   'int `new = 0;'
 add bad-unterminated-class  'struct `int { };'
 add bad-unterminated-qual   'namespace N { struct S{}; } N::`union g;'

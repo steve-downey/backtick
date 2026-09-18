@@ -323,3 +323,27 @@ The third line is the sharpest: **one GCC diagnostic prints the same feature bot
 **Recommended doc change.** §12's **Printing and diagnostics** paragraph and §3 [keyword-escape-printing](../../docs/backtick-operator-design.md#keyword-escape-printing)'s `Log.` should say that the ruling is delivered on declaration names in both compilers and on **type** names in Clang only, which is the same shape as [§17.3](../../docs/backtick-operator-design.md#173-type-name-in-the-operator-slot-type-name-slot)'s single-compiler evidence and should be stated the same way. §17.8's closing paragraph currently says the divergence *lasted one day*; it lasted one day for one half of the surface.
 
 **Not fixed, and deliberately so.** It is not the same change as the two rows [escape-name-sweep](../completion/steps/escape-name-sweep.md) closed — those are name lookup, this is the diagnostic printer — and it is the third time this feature has touched GCC's error printer. **Both previous times the first build was wrong in the same direction**: `cp_parser_error_1` hands a raw keyword token to `%qE` as though it were a name, and a program containing *no backtick* began reporting against a backticked spelling ([escape-diagnostic-spelling](#escape-diagnostic-spelling)). A funnel one layer further out has more callers, not fewer, and the guard that makes it safe is `flag_backtick` plus a claim about *which* identifiers can only have come from an escape — a claim that is airtight for a declarator-id and has not been checked for a type name reached through `TYPE_NAME`. The measurement is done; the fix needs its own step, its own flag-off parity run, and its own negative test, and it should not be taken by reflex any more than the alias parity or the type-keyword binding was.
+
+### escape-alternative-token-spelling
+
+**Formerly:** none — new slug, 2026-09-17. **Status:** **FIXED**
+
+**Found by.** [escape-any-identifier](../completion/steps/escape-any-identifier.md), on the GCC half, building the alternative-token case the step file asks for and reading the diagnostic rather than only the exit code.
+
+**Design section.** §3 [escape-content](../../docs/backtick-operator-design.md#escape-content), the paragraph beginning *"And the printers already have them right"*; §3 [keyword-escape-printing](../../docs/backtick-operator-design.md#keyword-escape-printing)
+
+**What differed.** [escape-content](../../docs/backtick-operator-design.md#escape-content) says an entity named `and` prints as `` `and` `` "out of one rule neither compiler has to be taught", because `and`'s `IdentifierInfo` carries `TokenID` `tok::ampamp`. That is Clang's representation and it is true of Clang. **GCC has no such bit on the identifier.** cpplib turns `and` into `CPP_AND_AND` with `NAMED_OP` before the parser sees it, so the identifier the escape yields — recovered with `get_identifier (cpp_type2name (...))`, as `cp_parser_std_attribute` recovers an attribute name — is an ordinary one to everything above the lexer, and `dump_decl_name`'s test, `IDENTIFIER_KEYWORD_P`, is false for it. Measured 2026-09-17 on the first build of the change, flag on:
+
+```
+int `and` = 0; void f() { `and`(); }
+  gcc:   'and' cannot be used as a function
+  clang: called object type 'int' is not a function or function pointer
+```
+
+and the Clang side names the declaration `` `and` `` wherever it names it. GCC's bare `and` is the one spelling that does not re-parse — it lexes as `&&`.
+
+**Cross-compiler note.** Not an acceptance difference: both compilers accept and reject the same programs. It is the same class as [escape-diagnostic-spelling](#escape-diagnostic-spelling), and it would have been one had the content rule existed on 2026-09-07.
+
+**Fixed** in the same commit that implements the content rule on the GCC `backtick` branch: `dump_decl_name` (`gcc/cp/error.cc`) also escapes a name whose cpplib node carries `NODE_OPERATOR`. The condition is as airtight as the keyword one, and for the same reason: a declaration can be named `and` only if it was escaped, because a bare `and` is a punctuator. Under `-fno-operator-names` cpplib never sets the bit and `and` is an ordinary identifier, which prints bare — correctly. `g++.dg/backtick/escape-identifier.C` pins both halves: `` 'foobar' `` bare, `` '`and`' `` escaped. Type names are not covered, and are not this row: a *type* named `` `and` `` prints bare by [escape-type-name-spelling](#escape-type-name-spelling), exactly as a type named `` `union` `` does.
+
+**Recommended doc change.** [escape-content](../../docs/backtick-operator-design.md#escape-content)'s printing paragraph should say that one compiler needed teaching and why — the fact belongs to the representation, not to the rule. Done in that entry's `Log.`, 2026-09-17.

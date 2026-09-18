@@ -1738,3 +1738,38 @@ already had. **Green on the first run**: the machine held 101 inotify instances
 when the gate started, so [`inotify-watch-budget`](../../BACKLOG.md#inotify-watch-budget)
 cost nothing. Measured with `ulimit -c 0`, redirected, `EXIT=$?` appended to the
 log and read back out of it.
+
+## escape-any-identifier-forward-port — the seventh merge, 2026-09-17
+
+`git merge --no-ff ccc352392df4` onto `unicode-operators-experiment`, merge
+commit **`9b1a1b6c58d8`**. It brings the two commits of
+[escape-any-identifier](../../completion/steps/escape-any-identifier.md)
+([`43508c7c1e96`, `ccc352392df4`]): the escape takes any identifier-spelled
+word, one predicate asked twice in `clang/lib/Parse/Parser.cpp`, the
+diagnostic renamed to `err_backtick_escape_not_identifier`, and five test
+files. Full account in
+[the step's handoff](../../completion/handoffs/escape-any-identifier.handoff.md).
+
+**Predicted, then checked with one `git diff --numstat`, before the merge.**
+Of the eight incoming files, this branch has touched only
+`DiagnosticParseKinds.td` since `28b685c86ea2` — its user-operator block at
+line 786, against the incoming rename at 216. Nothing on this branch touches
+`ConsumeBacktickEscape` or `isBacktickEscapeAt`. **No conflict predicted, none
+happened.**
+
+- Merge delta **8 files, +300/−27**, exactly the incoming pair's totals, and
+  the deleted lines are identical to theirs as a set.
+- Feature diff against the new backtick tip: **121 files, +7701/−57, 221 hunks
+  at `-U0`**, unchanged.
+- `ParseExpr.cpp` is not in the merge; `Level != prec::UserInfix` is still at
+  line 309. Read, not re-proven by deletion — the merge cannot have reached it.
+- `git-clang-format --diff 0041778f1d4e` with the in-tree binary: *"clang-format
+  did not modify any files"*.
+- Probes against the merged binary: positions **98/98 clang, 98/98 gcc**,
+  errors `EXIT=0`, parity no `DIFFERS` cell.
+- `check-clang` **54192 / 48304 / 0**, XFAIL 27, unsupported 5855, skipped 6,
+  200.53 s, `EXIT=0`, zero `warning:` lines: the last Baselines row plus the
+  two new test files, `backtick-escape-identifier.cpp` and
+  `backtick-escape-macros.cpp`.
+- `unicode-operators-upstream` **untouched** at `8c2a90f56b00`;
+  `git log -p d28193fa1ff6..HEAD | grep -ic backtick` → **0**.

@@ -57,8 +57,8 @@ answer, which was to let the keyword escape reach every position the grammar
 writes an identifier in; and `escape-name-sweep` swept all of them again, in
 four categories rather than one, and closed the two that had held out. **There
 is now no program the two compilers treat differently on account of the
-keyword escape.** **Three boxes are open, Phase K, Phase L and Phase M, and
-they are the only three** — `ops/backlog/PLAN.md`'s BL05–BL07 are superseded
+keyword escape.** **Two boxes are open, Phase K and Phase L, and they are
+the only two** (Phase M closed on 2026-09-17) — `ops/backlog/PLAN.md`'s BL05–BL07 are superseded
 and absorbed, as noted above, and are not work.
 [`gcc-dependent-slot-lookup`](ops/completion/steps/gcc-dependent-slot-lookup.md)
 is a GCC front-end defect the merge of `main` surfaced on 2026-09-09: the
@@ -88,35 +88,23 @@ for outstanding work, read the design docs' paper-requirements lists too.**
 Unowned, nothing is blocked on it, and it should land before the two papers
 are submitted together.
 
-**Phase M** is
-[`escape-any-identifier`](ops/completion/steps/escape-any-identifier.md),
-opened on 2026-09-17 by a ruling from the author. It is not a defect either:
-the backtick paper carried one question to EWG *unanswered* — whether the word
-inside an escape has to be a keyword — and the author closed it. It does not.
-[escape-content](docs/backtick-operator-design.md#escape-content) is the
-decision: anything spelled as an identifier may stand between the backticks,
-and `` `foobar` `` **is** `foobar`, one name under two spellings, with every
-other identifier rule applying to the result unchanged. The reason is what the
-hatch is for — an escape that only takes words which are *already* keywords
-cannot be written until the standard that takes the word has shipped, so it
-repairs a break and can never prevent one. **This is the one place in the repo
-where the design and the papers are ahead of the code**: the docs, both papers
-and the blog post landed with the ruling; both prototypes still reject
-`` `foobar` ``, and D4307R0 says so in three places until they do not. The
-change is one predicate per compiler (`isKeyword`, asked twice in Clang's
-`Parser.cpp`), no printer and no Sema, plus a fifth category for
-`ops/probes/escape-positions.sh` and the seventh forward-port. **A third of it
-is done as of 2026-09-17 and the box is unticked on purpose**: `backtick-trunk`
-carries the change and `check-clang` is green on it
-([PR #1](https://github.com/steve-downey/llvm-project/pull/1)), while
-`backtick-23`, GCC, the forward-port and the paper's three sentences are owed —
-[the handoff](ops/completion/handoffs/escape-any-identifier.handoff.md) has the
-order. Nothing is blocked on it, but **the two papers may not be submitted
-while it is open.** One deviation row came out of building it,
-`ops/DEVIATIONS.md#ast-dump-type-name-spelling`, and it is older than the
-change.
+**Phase M**,
+[`escape-any-identifier`](ops/completion/steps/escape-any-identifier.md), is
+**done** (2026-09-17). It built the author's ruling
+[escape-content](docs/backtick-operator-design.md#escape-content): anything
+spelled as an identifier may stand between the backticks, and `` `foobar` ``
+**is** `foobar`, one name under two spellings, with every other identifier
+rule applying to the result unchanged. All four Clang/GCC branches carry it —
+`backtick-trunk`, `backtick-23`, GCC `backtick`, and by the seventh
+forward-port `unicode-operators-experiment` — gated green, and D4307R0 no
+longer says the forks lag. One GCC printer row opened and closed with it,
+[`escape-alternative-token-spelling`](ops/gcc/DEVIATIONS.md#escape-alternative-token-spelling);
+one older Clang row surfaced while building it,
+`ops/DEVIATIONS.md#ast-dump-type-name-spelling`. [The
+handoff](ops/completion/handoffs/escape-any-identifier.handoff.md) has the
+numbers. **Its commits were not pushed** as of that date.
 
-Any of the three is available to an agent arriving with no other instruction,
+Either of the two is available to an agent arriving with no other instruction,
 and there is no other work in `ops/`. One deviation row is open, it is a
 diagnostic rather than an acceptance divergence, and it is measured and surfaced rather
 than owned: `ops/gcc/DEVIATIONS.md#escape-type-name-spelling` — GCC escapes
@@ -145,15 +133,14 @@ defects, evidence debt, reconciliation section by section, hygiene, and the
 two papers last. `ops/completion/PLAN.md`'s "Coverage" table maps every open
 row to its step; nothing in `ops/` is outside it.
 
-No maintenance merge is outstanding. Six have run — M1, M2,
-`unicode-branch-maintenance`, and on 2026-09-08 `escape-positions-forward-port`,
-`escape-name-sweep-forward-port` and `slot-callable-forward-port`, which carried
-`slot-callable-printing`'s callable-slot printer arm onto
-`unicode-operators-experiment` and gated green at the Baselines row; the latest
-is `ops/completion/handoffs/slot-callable-forward-port.handoff.md`, and between
-them the six record what conflicts to expect and where the two features actually
+No maintenance merge is outstanding. Seven have run — M1, M2,
+`unicode-branch-maintenance`, on 2026-09-08 `escape-positions-forward-port`,
+`escape-name-sweep-forward-port` and `slot-callable-forward-port`, and on
+2026-09-17 `escape-any-identifier-forward-port`, recorded in
+`ops/unicode-operators/clang/REPLAY.md` and the escape-any-identifier handoff;
+between them the seven record what conflicts to expect and where the two features actually
 collide. **Check a predicted collision with one `git diff --numstat` before
-writing the paragraph about it** — three merges running have turned on that.
+writing the paragraph about it** — four merges running have turned on that.
 A new one is owed only if a later change lands on the backtick branches alone
 — the two Clang tracks share `clang/lib/AST`, `clang/lib/Parse` and
 `clang/lib/Sema`, and `unicode-operators-experiment` is downstream of
@@ -210,10 +197,9 @@ and a Status-log row so base-commit changes are not lost.
   directions, and the record of what was left numbered on purpose.
 - `ops/completion/PLAN.md` — the completion track (27 steps, named by slug), which schedules
   and gates **everything** still outstanding: defects, reconciliation,
-  decisions and the papers. Twenty-three boxes are green, one is `[—]`, and
-  **three are open: Phase K's `gcc-dependent-slot-lookup`, Phase L's
-  `backtick-paper-companion` and Phase M's `escape-any-identifier`**, all
-  three described above. Phase J, steps 21–24, was opened by the 2026-09-08
+  decisions and the papers. Twenty-four boxes are green, one is `[—]`, and
+  **two are open: Phase K's `gcc-dependent-slot-lookup` and Phase L's
+  `backtick-paper-companion`**, both described above. Phase J, steps 21–24, was opened by the 2026-09-08
   review of the two papers and closed the same day. Nothing in the plan is blocked on the author. Its Coverage table covers
   what originates in `ops/`; Phase L is there because that is not everything.
 - `docs/open-decisions.md` — the single record of the questions that need the
@@ -235,8 +221,8 @@ and a Status-log row so base-commit changes are not lost.
   reality contradicted the design (DEV-NN / DEV-GNN), including cross-compiler
   divergences, with reconciliation status.
 - `ops/probes/` — the sweeps, in `bash` because `zsh` does not word-split.
-  `escape-positions.sh` asks where the keyword escape reaches, as seventy-nine
-  one-line programs in four categories run against both compilers;
+  `escape-positions.sh` asks where the keyword escape reaches, as ninety-eight
+  one-line programs in five categories run against both compilers;
   `escape-errors.sh` asks whether the error paths diagnose and *stop*, under
   `timeout`; `flag-off-parity.sh` asks whether the flag changes a program
   containing no backtick, byte-identically and against pristine binaries.
@@ -438,8 +424,7 @@ installs.
   lookup/mangling/ABI unchanged. **The word inside need not be a keyword**
   ([escape-content](docs/backtick-operator-design.md#escape-content), decided
   2026-09-17): `` `foobar` `` *is* `foobar`, one name under two spellings.
-  **Built on `backtick-trunk` only** — not on `backtick-23`, not in GCC — so
-  read Phase M above before believing a particular compiler agrees.
+  Built on all four branches (Phase M above).
 - **ADL is normative (§17.4):** the slot must get the same ADL as the plain call.
   Clang carries it as an `UnresolvedLookupExpr`; GCC resolves a bare-name slot
   via explicit `perform_koenig_lookup` (the
