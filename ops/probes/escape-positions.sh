@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # escape-positions.sh — where does the keyword escape reach?
 #
-# One line per position: a complete C++ program that uses a backtick
-# keyword-escape in exactly one grammatical position, and nothing else
-# interesting.  Each is compiled with `-fbacktick -fsyntax-only`; the only
+# One line per position: a complete C++ program that uses a backtick escape in
+# exactly one grammatical position, and nothing else interesting.  Categories
+# A–D escape a keyword; category E escapes a word that is not one, which is
+# what escape-content decided and what those four never varied.  Each is compiled with `-fbacktick -fsyntax-only`; the only
 # question asked is *accepts* or *rejects*.
 #
 # Run it under bash.  zsh does not word-split, which has cost this track
@@ -164,6 +165,42 @@ add_type type-use-namespace  'namespace `int` { int x; } int f() { return `int`:
 add_type type-coexists       'struct `int` { int a; }; int x = 0; `int` v{1}; int f() { return v.a + x + sizeof(int); }'
 
 # ---------------------------------------------------------------------------
+# E. The word is not a keyword — escape-content, decided 2026-09-17.
+#    Categories A–D vary the *position* four ways and never once varied the
+#    word: every one of their seventy-nine programs escapes a keyword, because
+#    until 2026-09-17 the rule required one.  These are A's and D's shapes with
+#    an ordinary identifier in the backticks, plus the two consequences that
+#    only show up here: that the escaped and unescaped spellings are one name,
+#    and that an alternative token ([lex.digraph]) is a word like any other.
+#
+#    Run the whole sweep twice, STD=c++17 and STD=c++20.  This category is the
+#    one whose verdicts must be *identical* in the two runs — that is the point
+#    of the decision, and `requires' is the program that shows it.
+# ---------------------------------------------------------------------------
+declare -a WORD_NAME=() WORD_PROG=()
+add_word() { WORD_NAME+=("$1"); WORD_PROG+=("$2"); }
+
+add_word word-variable        'int `foobar` = 0;'
+add_word word-function        'void `foobar`();'
+add_word word-alias           'using `foobar` = char;'
+add_word word-class-head      'struct `foobar` { };'
+add_word word-alias-template  'template <class T> using `foobar` = T;'
+add_word word-enum            'enum `foobar` { A };'
+add_word word-namespace       'namespace `foobar` { }'
+add_word word-parameter       'void f(int `foobar`);'
+add_word word-member          'struct S { int `foobar`; };'
+add_word word-local           'void f() { int `foobar` = 0; (void)`foobar`; }'
+add_word word-identity        'int `foobar` = 0; int f() { return foobar; }'
+add_word word-identity-rev    'int foobar = 0; int f() { return `foobar`; }'
+add_word word-use-class       'struct `foobar` { int a; }; `foobar` v; int f() { return v.a; }'
+add_word word-qualified       'namespace `ns` { int `x`; } int f() { return ns::x + `ns`::`x`; }'
+add_word word-template-param  'template <class `T`> struct S { `T` v; }; S<int> s;'
+add_word word-label           'void f() { goto `done`; `done`: ; }'
+add_word word-altern-token    'int `and` = 0; int f() { return `and`; }'
+add_word word-altern-type     'struct `or` { int a; }; `or` v; int f() { return v.a; }'
+add_word word-future-keyword  'bool `requires`(int); bool f(int x) { return `requires`(x); }'
+
+# ---------------------------------------------------------------------------
 run_one() {  # $1 program, $2 outfile-prefix; sets CLANG_R and GCC_R
     local prog=$1 pfx=$2
     printf '%s\n' "$prog" > "$TMP/$pfx.cpp"
@@ -207,5 +244,6 @@ sweep "A. Declaration positions" DECL_NAME DECL_PROG
 sweep "B. Use positions"         USE_NAME  USE_PROG
 sweep "C. Qualified positions"   QUAL_NAME QUAL_PROG
 sweep "D. Type-keyword escapes"  TYPE_NAME TYPE_PROG
+sweep "E. Non-keyword words"     WORD_NAME WORD_PROG
 echo
 printf '%-26s %-8s %-8s\n' "ALL" "$TOT_C/$TOT_N" "$TOT_G/$TOT_N"

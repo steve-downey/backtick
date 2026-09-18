@@ -891,8 +891,8 @@ Two branches of the rule are unexercised by construction and will stay that
 way while the token set is frozen: every member of the set lies in
 U+2190–U+2BFF, so every derived name is exactly four hex digits, and neither
 the padding branch nor the astral widening can be reached without changing the
-set. That is a property of the enumeration, and it is
-the first thing to exercise if a later revision admits anything above the BMP.
+set. The gap follows from the enumeration rather than from the tests, and it
+is the first thing to exercise if a later revision admits anything above the BMP.
 
 "Demangler-tolerated" undersells the result. Both `llvm-cxxfilt` **and GNU
 binutils `c++filt` 2.46** — a different vendor's demangler, unmodified —

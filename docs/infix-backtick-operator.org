@@ -195,6 +195,27 @@ position-based disambiguation C++ already does for =*=, =&=, and =<=. The escape
 yields an ordinary identifier, so lookup, mangling, linkage, and ABI are
 unchanged; =void `new`();= links as a function named =new=.
 
+The word between the backticks doesn't have to be a keyword. Anything spelled
+like an identifier can go there, and what comes out is that identifier and
+nothing more specific: =`foobar`= /is/ =foobar=. Same entity, same lookup, same
+mangling, and you can declare a name one way and use it the other. That sounds
+like a detail and it is most of the point. An escape that only takes words
+which are /already/ keywords can't be written until the standard that breaks
+your code has shipped, so it is a repair and never a precaution. Taking any
+identifier lets you write =`requires`= before the committee takes the word, in
+code that still has to compile today, and it goes on naming the same function
+afterwards. It's the rule regex already has: a backslash before a metacharacter
+means that character, a backslash before anything else is just that character,
+and that's what makes /always escape/ a strategy instead of a guess. Everything else about identifiers still applies to what comes out:
+a reserved name is still reserved, and a macro name still gets replaced,
+because the escape is a phase 7 construct and phase 4 has never heard of it.
+
+I settled that on 2026-09-17, after both papers were written, and it is the one
+rule in the paper that is ahead of the code: both prototypes still insist on a
+keyword, so =`foobar`= is rejected by both as I write this. It is one predicate
+in each parser, and nothing downstream of it moves, because neither compiler
+remembers that a name was escaped in the first place.
+
 The two uses share one lexical token and one committee, so I am proposing them
 together, in one paper, rather than letting two independent designs drift into
 contradiction.

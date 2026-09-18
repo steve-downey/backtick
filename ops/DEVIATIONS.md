@@ -295,6 +295,34 @@ int b(int L,int R){ return L `obj` R; }
 
 **No GCC change, confirmed rather than assumed.** GCC desugars in the parser and has no pretty-printer for the form, so there is nothing on that side to get wrong. All six shapes are accepted by `cc1plus -fbacktick` before and after.
 
+### ast-dump-type-name-spelling
+
+**Formerly:** none — new slug, 2026-09-17. **Status:** **OPEN — measured, unowned, and not a regression**
+
+**Found by.** [escape-any-identifier](completion/steps/escape-any-identifier.md), writing the mangling test for a non-keyword escape. The test asserted what §12 says the dump does and the dump did something else.
+
+**Design section.** [§12](../docs/backtick-operator-design.md#12-coexistence-with-backtick-keyword-escaped-identifiers), the *Printing and diagnostics* paragraph; [keyword-escape-printing](../docs/backtick-operator-design.md#keyword-escape-printing).
+
+**What the design said.** *"`-ast-dump` keeps showing the bare identifier `new` — which is the evidence for the ABI paragraph above: the name really is an ordinary identifier, and the backticks are how you say it."* The paper says the same in one sentence: *"The AST dump is the one view that keeps the bare word."*
+
+**What is true.** That holds for a *declaration's own name* and not for the same name *inside a type*. Measured on `backtick-trunk` at `28b685c86e`, with a build of that branch, `clang -cc1 -std=c++17 -fbacktick -ast-dump`:
+
+```
+struct `union` { int v; };
+void takes_union(int, `union`);
+`union` returns_union();
+
+CXXRecordDecl ... struct union definition          // bare
+FunctionDecl  ... takes_union 'void (int, `union`)' // escaped
+FunctionDecl  ... returns_union '`union` ()'        // escaped
+```
+
+**Not a regression and not the content rule's doing.** The reproducer above is a keyword escape and behaves identically before the content rule; the row was found while writing `` struct `and` { }; void takes_and(int, `and`); ``, which dumps the same way. The split is between two printers, not between two rules: a declaration's name goes through `DeclarationName::print` under the node dumper's policy, and a type goes through `TypePrinter`, which prints the record's name under the *compilation's* policy, in which the escape is on.
+
+**Why it is worth a row rather than a shrug.** It is the exact mirror of [escape-type-name-spelling](gcc/DEVIATIONS.md#escape-type-name-spelling), the one open row on the GCC side — there the *declaration* is escaped and the *type* is bare, here the declaration is bare and the type is escaped — so the two compilers disagree about which half of the dump-vs-diagnostic surface carries the spelling, and both disagree with the design doc. It also weakens, without falsifying, the evidence §12 rests the ABI paragraph on: the bare name in the dump is still there, in the column the paragraph points at.
+
+**Not fixed here.** Fixing means giving the node dumper a policy that reaches the type printer, which is a printing change in a step whose whole claim is that it needs none, and it should be taken with the GCC row rather than against it. §12 and the paper are corrected to say what the two dumps actually do.
+
 ### escape-in-qualified-type-name
 
 **Formerly:** none — new slug, 2026-09-08. **Status:** **FIXED and RECONCILED**

@@ -24,6 +24,13 @@ recommendation — that record is what
 [reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md)
 and [unicode-paper](../ops/completion/steps/unicode-paper.md) cite.
 
+**A seventh ruling arrived on 2026-09-17 and has no page above**, because the
+question was never on this page: it was the one choice the backtick paper
+carried to EWG *unanswered* — whether the escape may wrap a word that is not a
+keyword. The author answered it unprompted. The ruling is
+[escape-content](backtick-operator-design.md#escape-content), its reader-facing
+form is §12, and its answer is recorded with the others below.
+
 Three further open items have their **pages** elsewhere, though their answers
 are recorded here with the rest: the ABI and mangling question is
 [mangling-abi](../ops/completion/steps/mangling-abi.md)'s and its page is
@@ -1200,6 +1207,71 @@ printing policy, in which the escape is off. That is the third time a printing
 surface has been found by asking what a change made printable rather than by a
 test failing.
 
+### 2026-09-17 — escape-content: the escape takes any identifier
+
+**Anything spelled as an identifier may stand between the backticks, keywords
+included, and the escaped and unescaped spellings are the same identifier.**
+`` `foobar` `` is `foobar`: same entity, same lookup, same linkage, same
+mangling. Otherwise the ordinary identifier rules apply to the result — a
+reserved name is still reserved, and a macro name is still replaced, because
+the escape is a phase-7 construct and phase 4 has never heard of it.
+
+This one was not asked by a brief and was not measured first. It was decided
+by the author on reading what the paper says, and what the paper said was that
+the choice was *deliberately left open for EWG*. The reason it closes is the
+hatch's own purpose: an escape restricted to words that are already keywords
+cannot be written until the standard that breaks the code has shipped, so it
+can repair a break and can never prevent one, and no single spelling of a name
+compiles both before and after the word is taken. Standardize the escape in
+version *N*, take the word `W` in *N+1*, and under the restricted rule
+`` `W` `` is ill-formed in *N* and required in *N+1*.
+
+**The author's framing, which is the one to keep**: the backticks always
+contain an identifier, they are only usable where an identifier is allowed,
+and they escape keywords and identifiers alike. It is the regex rule — a
+backslash before a metacharacter means that character, a backslash before
+anything else is just that character — and it is what makes *always escape* a
+strategy rather than a guess.
+
+**The prototypes can be asked the question directly**, because `-fbacktick` is
+orthogonal to `-std`: `requires` is a C++20 keyword and an ordinary identifier
+in C++17, and Clang's restriction predicate is LangOpts-sensitive
+(`CXX20_KEYWORD` is `KS_Future`, not `KS_Enabled`, under `-std=c++17`). So the
+restricted rule should accept `` bool `requires`(const License&); `` as C++20
+and reject it as C++17, which is the revision that still compiles the
+unescaped declaration and the one that would need the escape. **Derived from
+the source, not run** — there is no compiler in the container this was written
+in, and [escape-any-identifier](../ops/completion/steps/escape-any-identifier.md)
+runs it.
+
+*Doc work owed and done in the same sitting:* the decision entry
+[escape-content](backtick-operator-design.md#escape-content), §12's content
+subsection, and the paper, which now proposes the rule and keeps the
+restricted form as the alternative with the argument against it.
+
+*Ratified the same day, on the one part of the ruling that had been recorded
+as separately pollable:* the **alternative representations** are escapable.
+The author's reason is shorter than the one the brief gave and is the one to
+quote — *they are not macros, and there is no particular reason they should be
+exceptional*. In C++ `and` and its ten siblings are tokens ([lex.digraph]);
+the macro spelling is C's `<iso646.h>` and is a different mechanism, which the
+rule already handles by not interfering with phase 4. So the decision has no
+part left that is anybody else's to settle, and the wording says
+[lex.digraph] as well as [lex.key].
+
+*Implementation owed and not done:* **both prototypes implement the restricted
+form**, so this is the first answer on this page since
+[escape-name-positions](#escape-name-positions) that turns into code, and the
+only ruling here whose code does not yet exist.
+[escape-any-identifier](../ops/completion/steps/escape-any-identifier.md) is
+the step. One predicate per compiler, no printing change (Clang's printers
+already key on whether a spelling *is* a keyword rather than on how it was
+written, which is why the identity half of the ruling is already true of the
+built compiler), and a fifth category for
+[`ops/probes/escape-positions.sh`](../ops/probes/escape-positions.sh), whose
+seventy-nine programs vary the position four ways and have never once varied
+the word.
+
 ## Where each answer was recorded
 
 Per the convention that a ruling appends to its question's own Log rather than
@@ -1215,6 +1287,7 @@ getting a document of its own:
 | dependent-template-operator-id *(settled, 2026-09-06)* | same entry, second `Log.` line | [operator-id-anywhere](../ops/unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere) restated as reword-only, and the backlog row's `Closed by` and `Item` corrected |
 | abi-production-request | [operator-mangling](unicode-operators.md#operator-mangling) | none left to mark — [vendor-extended-mangling](../ops/unicode-operators/clang/DEVIATIONS.md#vendor-extended-mangling) and [msvc-mangling](../ops/unicode-operators/clang/DEVIATIONS.md#msvc-mangling) went **RECONCILED** in the same step, [postfix-operators](../ops/unicode-operators/clang/DEVIATIONS.md#postfix-operators)'s mangling clause with them |
 | escape-name-positions | [keyword-escape-coexistence](backtick-operator-design.md#keyword-escape-coexistence) | [escape-name-positions](../ops/DEVIATIONS.md#escape-name-positions) and [escape-alias-name-parity](../ops/gcc/DEVIATIONS.md#escape-alias-name-parity), both **FIXED and RECONCILED** in the same step, because the answer's destination section (§12's table) is written from the built compilers — the ABI row's shape again. One row opened: [escape-type-keyword-binding](../ops/gcc/DEVIATIONS.md#escape-type-keyword-binding) |
+| escape-content | [keyword-escape-coexistence](backtick-operator-design.md#keyword-escape-coexistence), and the new entry [escape-content](backtick-operator-design.md#escape-content) which *is* its page | no ledger row exists to mark: nothing was measured and nothing diverged. The prototypes' restriction is not a deviation from the design, it *was* the design |
 | keyword-escape-printing *(ratified)* | [keyword-escape-printing](backtick-operator-design.md#keyword-escape-printing) | [keyword-escape-printing](../ops/DEVIATIONS.md#keyword-escape-printing), already **RECONCILED** by the step that made the change — the answer *is* its destination section, as with the ABI row |
 
 Every ledger row above stays **`OPEN`** with a dated **DECIDED** note naming
