@@ -399,8 +399,12 @@ form's single Sema entry point: arity is the number of operands handed to it.
 
 ## Postfix, and why not
 
-No postfix form is proposed, and the reason is not the one usually given. The
-question gets asked immediately.
+No postfix form is proposed. The reason is not the one usually given, which is
+that `operator++` shows the problem to be solved already: it does not, it
+dodges it, and the dodge is unavailable here. A rule that works was prototyped
+and costs three things, one of them a misparse of `a ⊖ && b`. Declining it now
+forecloses nothing, because every program the rule would reinterpret is one
+this proposal rejects.
 
 `operator++` does not solve prefix-versus-postfix disambiguation. It *dodges*
 it: prefix is parsed in the cast-expression parse, postfix in the
@@ -550,8 +554,12 @@ you get by writing some.
 
 ## The expression node, and two-phase lookup
 
-This is the strongest evidence in the paper for the claim that C++'s operator
-tables are closed, and no reading of the grammar would have produced it.
+A use needs an expression node of its own, `UserOperatorExpr`, and the reason
+is invisible from the grammar. Leaving the use as the ordinary call the
+desugaring says it is works for every non-dependent shape and fails on a
+dependent operand, where `TreeTransform` rebuilds through
+[over.match.call]{.sref} and keeps ADL while losing member candidates. This is
+the strongest evidence in the paper that C++'s operator tables are closed.
 
 Clang's `CXXOperatorCallExpr` exists to record that a call was *written* with
 operator syntax, and `TreeTransform` reads the operator kind back off it to
@@ -595,7 +603,11 @@ survive a dependent one.
 
 # One level, and no fixity declarations
 
-Of the rules fixed above this is the one most likely to be argued.
+Precedence and associativity are fixed by this paper, at one level, and
+neither can be declared. Of the rules fixed above this is the one most likely
+to be argued, so the two alternatives are answered here: a declared fixity is
+an ODR factory, and a derived one has nothing in Unicode to derive from. One
+level is not neutral, and the section ends by saying whom it surprises.
 
 A declared precedence is a semantic property that must travel with the name
 across headers, modules and translation units. Two translation units
@@ -662,6 +674,44 @@ emitted IR), and this paper does not propose an answer. It calls CWG's
 attention to the question.
 
 # Implementation experience
+
+The feature is implemented in Clang behind `-funicode-operators`, default off,
+and the full `check-clang` suite passes with it. This section is what building
+it changed in the design and what building it got wrong. Both are summarized
+here and expanded in the subsections that follow; a reader who writes
+compilers for a living can take the summary and skip the rest.
+
+**What the implementation changed.** Three things in this paper are there
+because the compiler demanded them.
+
+- *The use needs an expression node of its own.* The desugaring says a use is
+  an ordinary call, and for a non-dependent use that is correct in every shape
+  tested. On a dependent operand it is not: `TreeTransform`
+  rebuilds through [over.match.call]{.sref}, which keeps ADL and loses member
+  candidates. No reading of the grammar would have produced that.
+- *The UCN equivalence is an equivalence of entities.* Classifying a
+  UCN-spelled operator is free; deriving its *identity* is not, and the first
+  implementation made `operator\U0000229E` a different entity from
+  `operator⊞` while every token-level test passed.
+- *Arity selects the form for declarations and does not filter uses.* Keeping
+  [over.oper]{.sref}p8 would have filtered them, and that breaks the
+  desugaring equivalence the design rests on.
+
+**What it cost.** Opening a closed operator table cost a *parallel*
+implementation every time, five times out of five, and never a widened one.
+That is the reassurance this proposal most needs to give, because it leaves
+the relaxation no route into `operator+`. A new expression node
+obliges 89 dispatch sites on three axes, and the toolchain forces about a
+third of them: nineteen are silently wrong if omitted, four are latent behind
+a build configuration, and one exists only because another obligation was met.
+Four separate defects passed their own tests before something else caught
+them.
+
+**Still open.** Microsoft mangling, the Itanium first-class production, and
+member-versus-non-member sequencing all wait on somebody other than the
+author, and §"What is not resolved" lists them. One limitation is this
+feature's own: `t.template operator⊞<int>(0)` on a dependent object expression
+is rejected.
 
 ## What was built
 

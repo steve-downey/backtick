@@ -1115,8 +1115,8 @@ variable declared as `` `and` `` with a bare `and`, which does not re-parse.
 It now asks the preprocessor's question as well, and both compilers print
 `` `and` `` escaped and `` `foobar` `` bare.
 
-What it cost to fix is the useful number, and it is small but not the number
-first estimated. The escape parse becomes a helper called from each name
+What it cost to fix is small, though not the number first estimated. The
+escape parse becomes a helper called from each name
 position — twenty call sites in Clang, one arm plus its guards in GCC — and
 then three things nobody had priced. A parser that decides what it is looking
 at from the token *after* a name has to step over three tokens where it
@@ -1179,8 +1179,8 @@ anywhere in it.
 
 ## The type-name slot, in one compiler
 
-The type-name slot has single-compiler evidence, said here so a reviewer does
-not have to discover it. Clang implements it: a bare name looked up as a type
+The type-name slot has single-compiler evidence. Clang implements it: a bare
+name looked up as a type
 with a deduction placeholder, a qualified one through a tentative parse, a
 builtin through the functional-cast path, all three routed to the `T(x, y)`
 build, which is where CTAD and temporaries come back for free. However, GCC
