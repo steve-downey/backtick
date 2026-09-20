@@ -2277,5 +2277,21 @@ identifiers** — added specifically so the 2018 edition could take `try` /
 `async` / `await` as keywords while 2015-edition code kept compiling
 (editions + raw identifiers make keyword adoption routine).
 [doc.rust-lang.org/edition-guide/rust-2018/module-system/raw-identifiers.html]
-C++ is the outlier: no escape, so new keywords break code and the coping
-strategies are `co_`-circumlocution and context-sensitive grammar.
+All of them are younger than C++'s first standard. **Do not frame this as C++
+being behind** — "every language that kept evolving past 1.0" says C++ never
+evolved, which is false and reads as a rebuke to the room (author's ruling,
+2026-09-17). The same-era comparison is the honest one, and it is C: same
+problem, different answer, the reserved spelling. `_Bool` (C99), `_Alignas` /
+`_Static_assert` / `_Thread_local` (C11), each with a header macro supplying
+the name anyone would write, each promoted to a plain keyword in C23 once the
+macro had carried the migration — `co_await` without the macro. Python is the
+nearer case, still taking keywords and with no escape either: 35 reserved
+words, and `match` / `case` / `_` (3.10) and `type` (3.12) are **soft
+keywords**, context-sensitive exactly as `module` and `import` are, arrived at
+independently. PEP 8 institutionalizes the workaround: "it is generally better
+to append a single trailing underscore rather than use an abbreviation or
+spelling corruption. Thus `class_` is better than `clss`." So: three answers
+are in use (break the code, mangle the keyword, context-sensitive grammar);
+C++ has used the last two and so has C; the fourth needs a spare token, which
+is why the languages with an escape are the ones designed with a token to
+spend.

@@ -39,8 +39,8 @@ character, designed separately, end in contradiction.
 
 **The infix operator.** C++ has two kinds of binary operation. A fixed set —
 the ones with tokens — may be written between their operands: `a + b`, `a <
-b`, `a | b`. Every other binary operation, which is to say every operation
-with a *name*, is a prefix call: `gcd(m, n)`, `dot(u, v)`, `intersects(a, b)`.
+b`, `a | b`. Every other binary operation, every operation with a *name*, is
+a prefix call: `gcd(m, n)`, `dot(u, v)`, `intersects(a, b)`.
 The distinction is lexical accident and not design. We propose to erase it at
 the call site. Put a callable between backticks and it is a binary operator:
 
@@ -66,14 +66,14 @@ keyword the committee adds breaks every program that used the word as one. The
 committee knows this, and pays for it every time: C++20 shipped `co_await`,
 `co_yield`, and `co_return` because `await` and `yield` were taken, and made
 `module` and `import` context-sensitive — at real specification and
-implementation cost — because breaking existing code was not acceptable. Every
-language that kept evolving past 1.0 grew an escape hatch instead: Swift's ``
+implementation cost — because breaking existing code was not acceptable. The
+languages designed since have built in an escape for this case: Swift's ``
 `class` ``, Kotlin's backtick identifiers, F#'s double-backtick names, Rust's
 `r#` raw identifiers. We propose the same hatch. A backtick pair in name
 position escapes a word and yields a plain identifier, so lookup, mangling,
 linkage, and ABI are untouched; `` void `new`(); `` declares an ordinary
-function named `new`. The word need not be a keyword, and that is what makes
-the hatch prospective rather than merely remedial: `` `foobar` `` is the same
+function named `new`. The word need not be a keyword, which makes the hatch
+prospective rather than merely remedial: `` `foobar` `` is the same
 identifier as `foobar`, so a name can be escaped before the committee takes
 it, in code that still has to compile today. Future keywords stop being
 breaking changes, and stop needing `co_`-style circumlocution to avoid
@@ -184,9 +184,9 @@ use of a good name against mangling the keyword into `co_`-style
 circumlocution or context-sensitivity. The escape hatch makes clean keywords
 affordable.
 
-Collecting that prospective payoff needs one more thing, and it is why the
-escape wraps any identifier rather than only the words that are keywords
-today. Suppose the escape is standardized in one revision and the committee
+That payoff depends on the escape wrapping any identifier, including the words
+that are not keywords yet. Suppose the escape is standardized in one revision
+and the committee
 takes `requires` in the next. If only a keyword could be escaped, the After
 column would be ill-formed in the first revision, where `requires` is still an
 ordinary name, and mandatory in the second. A header that must compile as both
@@ -326,7 +326,7 @@ r `pipe` std::bind_back(filter, pred) `pipe` std::bind_back(transform, fn)
 
 However, this is the case P2011's `|>` writes more directly, with the
 arguments inline. Same outcome, more ceremony, and it is why backtick does not
-make `|>` redundant. The boundary is drawn exactly in the next section.
+make `|>` redundant. The boundary is drawn in the next section.
 
 ## Reusable, point-free composition
 
@@ -411,7 +411,7 @@ r |> filter([](auto e){ return e `mod` 2 `eq` 0; }) |> sum()
 //                             \____ eq(mod(e, 2), 0) ____/
 ```
 
-This proposal deliberately declines the `|>` spelling for itself (see the
+This proposal declines the `|>` spelling for itself (see the
 appendix) so that both can coexist in one program. Backtick says "this is a
 binary operation"; `|>` says "thread this value through these stages."
 Different sentences.
@@ -449,7 +449,7 @@ citing a single function, `andThen`, as pretty much the only one that used the
 feature. [Unison likewise removed
 it](https://github.com/unisonweb/unison/pull/2570). However, both are
 pipeline-first functional languages, where the dominant backtick use was
-monadic chaining, exactly the use `|>` covers directly, so the feature was
+monadic chaining, the use `|>` covers directly, so the feature was
 carrying one use that already had a spelling. The motivating set here (`gcd`,
 `dot`, `mul_sat`, `approx_equal`) is binary operations, not chains, and the
 P2011 section of this paper keeps the pipeline and the infix operator as
@@ -467,20 +467,41 @@ spelling with the deepest working precedent.
 
 ## Escaping keywords as identifiers
 
-Every language that kept evolving past 1.0 installed an escape hatch: Swift's
-`` `class` ``, Kotlin's backtick identifiers, F#'s double-backtick names, C#'s
-`@`-verbatim identifiers, Nim's backtick stropping, and Rust's [`r#` raw
-identifiers](https://doc.rust-lang.org/edition-guide/rust-2018/module-system/raw-identifiers.html).
-The last was introduced specifically so the 2018 edition could take `try`,
-`async`, and `await` as keywords while 2015-edition code kept compiling and
-kept calling functions with those names. Editions plus raw identifiers are how
-Rust made keyword adoption routine. Rust's rule is also the shape of the one
-proposed here: the grammar is `r#` followed by an identifier or a keyword
-rather than `r#` followed by a keyword list, and the reference says the prefix
-"is not included as part of the actual identifier". C++ is the outlier:
-no escape, so every new keyword breaks real code, and the committee's coping
-strategies are `co_`-circumlocution and context-sensitive grammar. The hatch
-is standard equipment. C++ never installed it.
+The escape is standard equipment in the languages designed since: C#'s
+`@`-verbatim identifiers (2000), F#'s double-backtick names (2005), Nim's
+backtick stropping (2008), Kotlin's backtick identifiers (2011), Swift's ``
+`class` `` (2014), and Rust's [`r#` raw
+identifiers](https://doc.rust-lang.org/edition-guide/rust-2018/module-system/raw-identifiers.html)
+(2015). Every one of them is younger than C++'s first standard. Rust's
+motivation is on the record: `r#` was introduced so the 2018 edition could
+take `try`, `async`, and `await` as keywords while 2015-edition code kept
+compiling and kept calling functions with those names. Editions plus raw
+identifiers are how Rust made keyword adoption routine, and its grammar is
+the shape of the one proposed here; §"The escape yields an ordinary
+identifier" makes that case.
+
+The comparison that bears on C++ is C. Same problem, same era, a different
+answer: the reserved spelling. `_Bool` in C99, then `_Alignas`,
+`_Static_assert` and `_Thread_local` in C11, each shipped with a header macro
+supplying the name anyone would actually write, and each promoted to a plain
+keyword in C23 once the macro had carried the migration. Choose a spelling no
+program could have used, and let a macro hold the good name until the good
+name is safe. `co_await` is that move without the macro.
+
+Python is nearer still, is taking keywords now, and has no escape either. It
+has 35 reserved words and no way to spell one as a name, so when the language
+wanted `match` it did what C++ did with `module`: `match`, `case` and `_` are
+*soft keywords* in 3.10, reserved only inside the `match` statement, as `type`
+is in 3.12. Context-sensitive grammar, arrived at independently. Everywhere
+else the workaround is institutional, and PEP 8 writes it down: "it is
+generally better to append a single trailing underscore rather than use an
+abbreviation or spelling corruption. Thus `class_` is better than `clss`."
+
+Three answers to a keyword collision are in use: break the code, mangle the
+keyword, or make the grammar context-sensitive. C++ has used the second and
+the third, and so has C. The fourth needs a spare token, which is why the
+languages that have one are the ones designed with a token to spend. C++ has
+one left.
 
 # Design choices and decisions
 
@@ -559,8 +580,8 @@ restriction.
 
 The open and close delimiter are the same token, so the slot can never contain
 a bare backtick; the first interior backtick closes the slot. What looks like
-nesting is therefore *token-identical* to a left-associative chain, and a
-chain is what it parses as.
+nesting is therefore *token-identical* to a left-associative chain, and that
+is how it parses.
 
 ```cpp
 x `f `g` h` y           // a chain:  h(f(x, g), y)
@@ -607,7 +628,7 @@ else. `` `new` `` in a name position produces an ordinary identifier whose
 spelling is `new`; lookup, overload resolution, mangling, and linkage
 proceed as if the word had never been a keyword. There is no lexer
 identifier-synthesis, no new name category, no ABI surface. What the escape
-buys is exactly what Swift, Kotlin, F#, and Rust bought with theirs: the
+buys is what Swift, Kotlin, F#, and Rust bought with theirs: the
 committee can claim a good word as a keyword without breaking the programs
 that already use it, and a program that must interoperate with one of those
 languages, or with its own past, can name the entity it needs to name. The
@@ -636,7 +657,8 @@ of `foo`, and left the choice to EWG. The restriction is withdrawn, for the
 reason the motivating example gives: an escape that only accepts words that
 are already keywords cannot be written until the standard that takes the word
 has shipped, so it can repair a break and can never prevent one. Two more
-consequences of the restricted rule are worth naming. A tool that generates
+consequences of the restricted rule are worth the room's attention. A tool
+that generates
 C++ would have to carry the keyword list, per dialect, and would be wrong on
 the day the list changes, which is the day it was supposed to help. And the
 backticks would acquire a meaning of their own: a reader would have to know
@@ -648,7 +670,7 @@ asked.
 The alternative representations, `and`, `bitor` and their nine siblings, are
 escapable under the same rule and are meant to be. In C++ they are tokens and
 not macros: identifier-shaped words the language has claimed, which is the
-category the escape exists to release, and suppressing exactly that is what an
+category the escape exists to release, and suppressing that is what an
 escape is for. Nothing makes them exceptional, so nothing should except them,
 and excluding them would put a list back where the value of the rule is that
 there is no list. They also show the printing rule doing its job unaided: an
@@ -667,9 +689,9 @@ most recently and for this reason.
 
 EWG can take the restricted rule instead. It is one clause in a parser
 predicate and one word in the grammar, and the wording below says which word.
-What it costs is stated here rather than left for the room to find: the escape
-becomes unwritable in the dialect where it does the most good, which is the
-one before the keyword lands. Both forks implement the unrestricted rule,
+What it costs is that the escape becomes unwritable in the dialect where it
+does the most good, the one before the keyword lands. Both forks implement
+the unrestricted rule,
 and the implementation section below says what the change cost.
 
 One consequence is user-visible, and it is settled here. The escape is part of
@@ -681,8 +703,8 @@ diagnostic names the entity `` `new` `` for the same reason, that text copied
 out of a diagnostic should be text the reader can paste back. The AST dump
 keeps the bare word where it names the declaration, which is the evidence for
 the paragraph above: the name really is an ordinary identifier, and the
-backticks are how it is written. That view is not of one mind, and it is worth
-saying so rather than rounding it off, because the two implementations diverge
+backticks are how it is written. That view is not of one mind, and the two
+implementations diverge
 from opposite ends: Clang dumps a declaration's name bare and the same name
 inside a *type* escaped, while GCC escapes the name of a declaration and
 prints the name of a type bare. Neither split is visible to a program and
@@ -699,9 +721,8 @@ name. Both got the line wrong once before getting it right, and the symptom
 was the same both times: a program containing no backtick at all had its
 diagnostics change under the flag.
 
-One half of that is still wrong in GCC, and it is reported here rather than
-smoothed over, because it is the clearest evidence for what the paragraph
-above claims the cost is. GCC's routine is *the name of a declaration*. A
+The half GCC gets wrong is the clearest evidence for what the paragraph above
+claims the cost is. GCC's routine is *the name of a declaration*. A
 class or enum **type** is printed somewhere else, so a program that declares
 `` struct `union` { }; `` and then misuses it is told that *'struct union' has
 no member named '`new`'*: one sentence, two names, one of them escaped and the
@@ -792,7 +813,7 @@ expression that needs a saturating multiply and a wrapping add has nowhere to
 stand. `` a `mul_sat` b `add_wrap` c `` says it directly, at the site where
 each choice applies.
 
-Last, the lift is noise in exactly the place the objection claims to remove
+Last, the lift is noise in the place the objection claims to remove
 it. `Saturating{a} * b` reads worse than `` a `std::mul_sat` b ``, and it
 misdirects: it marks the *data* as special when the *operation* is. The
 reader must go find out what `Saturating` does to `*`; the named function
@@ -842,7 +863,7 @@ implementation terms this is one new top level in each compiler's binary
 operator precedence table. The left recursion gives left associativity; the
 *cast-expression* operands give the symmetric prefix binding argued for above.
 
-The new level is deliberately **not** a *fold-operator*: `` (... `f` N) `` is
+The new level is **not** a *fold-operator*: `` (... `f` N) `` is
 ill-formed. Both implementations reject it, each with an ordinary parse error
 that says nothing about why, which is the reason for stating the exclusion
 here: nothing else would say it was chosen. Excluding costs one clause in the
@@ -877,7 +898,7 @@ of a second, nested backtick operator. C++ has, of course, been here before:
 `>` inside a template-argument list is a closer, not an operator, and
 `vector<vector<int>>` is handled by a parser flag — Clang's
 `GreaterThanIsOperator`, GCC's `greater_than_is_operator_p` — that turns the
-operator meaning off in that context. We do exactly the same thing: a
+operator meaning off in that context. We do the same thing: a
 `BacktickIsOperator` flag, false while parsing the slot, restored inside any
 nested parentheses or brackets so that parenthesized nesting works. Both
 implementations are modeled line-for-line on their compiler's existing `>`
@@ -975,8 +996,7 @@ paragraph marks them open:
    GCC desugars in the parser and pays none of it.
 
 **Still open.** Two sets of programs are treated differently by the two
-compilers under the flag, and both are printed here rather than smoothed
-over. GCC does not implement the type-name slot, so `` 1 `Pt` 2 `` is
+compilers under the flag. GCC does not implement the type-name slot, so `` 1 `Pt` 2 `` is
 rejected there and accepted by Clang. And inside a template, GCC keeps only
 the ADL half of an unqualified slot's lookup at instantiation, discarding the
 definition-context lookup that [temp.dep.candidate]{.sref} requires, so
@@ -1059,7 +1079,7 @@ failing and nothing would have failed.
 It was found by writing one program per position and compiling them. That has
 now been done four times, and it has found something on all four. The first
 sweep covered the positions that *declare* a name; the second, written after
-somebody noticed that a type nothing can name is not a hatch, covered the
+somebody noticed that a type nothing can name is no use, covered the
 positions that *use* one. The third covered qualified names, and found that
 Clang read the final component of a qualified name as an unqualified-id only
 when it named an object or a function, so `` N::`new` `` had worked from the
@@ -1095,8 +1115,8 @@ variable declared as `` `and` `` with a bare `and`, which does not re-parse.
 It now asks the preprocessor's question as well, and both compilers print
 `` `and` `` escaped and `` `foobar` `` bare.
 
-What it cost to fix is the useful number, and it is small but not the number
-first estimated. The escape parse becomes a helper called from each name
+What it cost to fix is small, though not the number first estimated. The
+escape parse becomes a helper called from each name
 position — twenty call sites in Clang, one arm plus its guards in GCC — and
 then three things nobody had priced. A parser that decides what it is looking
 at from the token *after* a name has to step over three tokens where it
@@ -1116,8 +1136,8 @@ next backtracking parse resumes on. GCC pays none of that, because it does not
 cache and re-annotate. More than half the work was in those three, and none of
 them appears in the grammar.
 
-That last change also shipped an infinite loop, and what caught it is the
-instructive part. Clang's recovery for a qualified name it can not resolve is
+The loop came from that last change. Clang's recovery for a
+qualified name it can not resolve is
 to try implicit `int`; that does not apply to an escape and consumes nothing,
 so `` namespace N { int x; } N::`union` g; `` re-entered the same case with
 the same tokens indefinitely. The code it replaced had been avoiding that by
@@ -1145,7 +1165,8 @@ to say so, at the three places GCC consults it. `` int `int` = 0; `` compiles,
 `int`) `` mangles as `_Z1gi3int` in both compilers. Which is the ABI claim
 above, demonstrated on the hardest name the feature has.
 
-And once, briefly, GCC was the wider implementation: it took `` N::`union` ``
+The other of that pair ran the opposite way, with GCC briefly the wider
+implementation: it took `` N::`union` ``
 where Clang did not. One arm in the routine that reads an identifier reaches
 every name position GCC has, a qualified type among them. Clang reads a
 qualified type name somewhere else entirely, and in three somewhere-elses: the
@@ -1158,8 +1179,8 @@ anywhere in it.
 
 ## The type-name slot, in one compiler
 
-The type-name slot has single-compiler evidence, said here so a reviewer does
-not have to discover it. Clang implements it: a bare name looked up as a type
+The type-name slot has single-compiler evidence. Clang implements it: a bare
+name looked up as a type
 with a deduction placeholder, a qualified one through a tentative parse, a
 builtin through the functional-cast path, all three routed to the `T(x, y)`
 build, which is where CTAD and temporaries come back for free. However, GCC
@@ -1192,7 +1213,7 @@ layer built, so every node that layer can hand back needs its own arm. A type
 slot naming an aggregate does not construct through a constructor; it
 initializes through parenthesized aggregate initialization and comes back as a
 different node. A slot whose *value* is a class-typed callable (every lambda,
-every function object, which is to say every helper the motivation section is
+every function object, every helper the motivation section is
 written on) is called through the object's own `operator()`, which the
 semantic layer keys as an operator call: the slot lands at argument zero and
 the operands shift one place along. Both arms were missing.
@@ -1213,7 +1234,7 @@ written for the first of the two, before anyone knew there was a second. The
 second was found afterwards, by asking the question the sentence asks, which
 makes it the better evidence: a general statement that catches a further
 instance of itself, in the same paper, after it was written down. Both arms
-are written now, and the exception above is the whole of what is left.
+are written now, and the exception above is all that is left.
 
 ## Argument-dependent lookup, which both implementations got wrong
 
@@ -1276,14 +1297,12 @@ may find. What makes the reading unambiguous is that the plain call still
 compiles: in one translation unit, `pipe(t, inc)` is accepted where `` t
 `pipe` inc `` is not. That is the slot carrying weaker lookup than the call it
 desugars to, which is what this section opened by ruling out. Clang is the
-conforming implementation and the GCC prototype has a bug to fix. However, the
-boundary belongs in a paper claiming two implementations, so it is printed
-here rather than smoothed over.
+conforming implementation and the GCC prototype has a defect to fix.
 
 ## What the AST node costs, and which compiler pays it
 
 Clang builds a source-fidelity node, a transparent wrapper around the
-desugared call, and that node is what makes `-ast-print` reproduce the
+desugared call, and that node is why `-ast-print` reproduces the
 written syntax. GCC desugars in the parser and hands its semantic layer an
 ordinary call. The two accept the same programs and generate the same code,
 so they differ in kind and behave identically. The node has a price, and a
@@ -1308,8 +1327,8 @@ and explained less. One arm in the reporter's peeling routine fixes both
 symptoms at once, because peeled early the two forms are one expression for
 everything downstream; the two reports now agree note for note.
 
-None of that is the cost of infix application. It is the cost of source
-fidelity, and round-tripping the written syntax is what it buys. A front end
+That is the cost of source fidelity, and round-tripping the written syntax is
+the payoff. A front end
 that desugars in the parser pays none of it, and gets none of it.
 
 ## The gate fails quietly
@@ -1338,7 +1357,7 @@ Both implementations, built separately from the same design, accept the bare
 "nested" form as a left-associative chain, because the token stream for the
 two readings is identical. What the design predicted on paper, two unrelated
 parser architectures reproduced. Nesting-is-chaining is a consequence of the
-grammar and not an implementation accident. Clang carried a diagnostic for the
+grammar. Clang carried a diagnostic for the
 bare form through most of the implementation and it never once fired; it was
 deleted rather than made to fire, since making it fire needs the lookahead
 that would have to reject legal chaining too. A diagnostic that can not fire is
@@ -1719,8 +1738,8 @@ purpose.
 
 ## A.6 The wider inventory: what ASCII actually remains
 
-The same availability analysis generalizes, and it is what gets asked in the
-room, so it is recorded. A sequence `XY` is mintable only if `XY` is not a
+The same availability analysis generalizes, and it gets asked in the room. A
+sequence `XY` is mintable only if `XY` is not a
 token or token-prefix today *and* `Y` can not validly follow `X` in a current
 program. The second clause is the surprising one: after any binary operator or
 `<`, the unary-capable characters `- + * & ~ !` are already legal, so `<-`,
@@ -1738,7 +1757,7 @@ Clean two-or-more-character sequences of note: `==>`, `<==`, `<==>`, `<|`,
 spoken for, by P2971's implication operator and P2011's pipeline respectively;
 `<=>` is spaceship; and `^^` — available by the same analysis until recently —
 was claimed by reflection [@P2996R13]. Reflection moved from a single `^` to
-`^^` in P3381R0 [@P3381R0], after running exactly this exercise, and that
+`^^` in P3381R0 [@P3381R0], after running this exercise, and that
 paper's candidate table reaches this section's count independently: it calls
 the backtick the third character recently added to the basic character set,
 after `$` and `@`. The lesson from that precedent: doubling an operator with

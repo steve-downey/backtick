@@ -18,9 +18,10 @@ monofont: "DejaVu Sans Mono"
 
 # Abstract
 
-A user should be able to declare `operator⊞` and write `a ⊞ b`. That is the
-whole feature: a frozen set of Unicode symbols that have never had meaning in
-C++ becomes available as operator tokens, and an operator drawn from that set
+We propose that a user be able to declare `operator⊞` and write `a ⊞ b`. That
+is the whole feature: a frozen set of Unicode symbols that have never had
+meaning in C++ becomes available as operator tokens, and an operator drawn
+from that set
 is an ordinary overloadable function, found by ordinary lookup, called by
 ordinary overload resolution.
 
@@ -262,8 +263,8 @@ confusability claim is an assertion about reading, an intent guess is an
 assertion about writing, and only the first is one a compiler is entitled to
 make.
 
-Keeping the exclusions in a table with their reasons is what lets the
-diagnostic say why, instead of emitting a generic stray-character error. The
+Keeping the exclusions in a table with their reasons lets the diagnostic say
+why, instead of emitting a generic stray-character error. The
 table alone is not enough, and the prototype is where that showed: the three
 reasons need three different emission points.
 Confusables and emoji were never identifier characters, so rejecting them at
@@ -296,7 +297,7 @@ an argument in a document, and it iterates the whole set.
 It came out stronger than it had to, by an accident of timing.
 The set is derived against UCD 17.0; Clang's in-tree identifier
 tables have already moved to Unicode 18.0. The partition survived the UCD
-moving underneath it, which is exactly the version-skew case a real
+moving underneath it, which is the version-skew case a real
 implementation faces: a compiler updates its XID tables on Unicode's schedule
 while a frozen operator list does not move.
 
@@ -304,15 +305,15 @@ An implementer will meet one consequence of the partition. With the
 math-identifier extension on, `operator∂` **without a space** is a single
 identifier: `int operator∂(S, S);` declares a function *named* `operator∂`.
 With a space, `operator ∂` is a conversion-function-id. Whitespace is
-load-bearing in exactly that corner, and only there.
+load-bearing in that corner, and only there.
 
 ## Spelling: the glyph and the UCN
 
 A universal-character-name designating a user-operator code point (including
 the C++23 named form) forms that operator token. `operator⊞`,
-`operator\u229E` and `operator\N{SQUARED PLUS}` are the same declaration --
-declare with one, define with another, use with a third, and the compiler
-emits one symbol -- and `a \N{CIRCLED TIMES} b` is `a ⊗ b`.
+`operator\u229E` and `operator\N{SQUARED PLUS}` are the same declaration
+(declare with one, define with another, use with a third, and the compiler
+emits one symbol), and `a \N{CIRCLED TIMES} b` is `a ⊗ b`.
 
 The absence of UCN punctuators today is an accident: every punctuator so far
 has been in the basic character set. These are the first non-basic
@@ -320,9 +321,10 @@ tokens, and the extended-character-equals-UCN equivalence the language
 maintains for identifiers is the escape hatch for source encodings, fonts and
 review tools that can not carry the glyph. It must extend to them.
 
-Calling that structurally free is the obvious reading, and it is half right.
+Calling that free by construction is the obvious reading, and it is half
+right.
 The lexer's existing UCN path already produces a code point that takes the same
-classification as a literal one. Classification is free. **Identity is not.**
+classification as a literal one. Classification is free. Identity is not.
 The first implementation classified UCN-spelled operators correctly and
 derived the operator's identity by decoding the token's spelling as one UTF-8
 scalar, which answers zero for a UCN. That value is the `DeclarationName`, the
@@ -366,7 +368,7 @@ a ⊞ ⊖b             // operator⊞(a, operator⊖(b))
 ```
 
 Readers get the last line wrong, and it is the only example that shows all
-three binding strengths at once. It is included for that reason.
+three binding strengths at once.
 
 What does not appear: a delimiter-suppression rule, a nesting rule, a slot
 grammar. Each operator is one distinct token, so the ordinary
@@ -384,10 +386,10 @@ infix, one parameter (none as a member) is prefix, the same convention as
 position is prefix.
 
 Position alone suffices, with no lookahead, no whitespace rule and no
-consultation of what is declared. The structural reason is what makes the
-claim safe rather than lucky: the cast-expression parse is reached only in
+consultation of what is declared. The structural reason makes the claim safe
+rather than lucky: the cast-expression parse is reached only in
 operand position, the binary-precedence lookup is consulted only after a
-complete operand, and **the two never examine the same token.** The same code
+complete operand, and the two never examine the same token. The same code
 point can be both, in one expression: with both overloads declared, `⊖a ⊖ b`
 is `operator⊖(operator⊖(a), b)`, and so is `⊖⊖1 ⊖ ⊖⊖2`.
 
@@ -397,8 +399,12 @@ form's single Sema entry point: arity is the number of operands handed to it.
 
 ## Postfix, and why not
 
-No postfix form is proposed, and the reason is not the one usually given. The
-question gets asked immediately, so the answer belongs here.
+No postfix form is proposed. The reason is not the one usually given, which is
+that `operator++` shows the problem to be solved already: it does not, it
+dodges it, and the dodge is unavailable here. A rule that works was prototyped
+and costs three things, one of them a misparse of `a ⊖ && b`. Declining it now
+forecloses nothing, because every program the rule would reinterpret is one
+this proposal rejects.
 
 `operator++` does not solve prefix-versus-postfix disambiguation. It *dodges*
 it: prefix is parsed in the cast-expression parse, postfix in the
@@ -530,8 +536,7 @@ for every ADL shape, plus the member desugaring, plus both negative halves.
 There are **no built-in candidates**, and the implementation of that rule is
 that nothing calls the function which adds them. `1 ⊠ 2` with nothing declared
 is an ordinary undeclared-name error. `p ⊞ n` on `int*` is a no-viable-overload
-error, never pointer arithmetic. This is the structural difference from
-`operator+`.
+error, never pointer arithmetic. This is the difference from `operator+`.
 
 The implementation separated ADL from member-candidate assembly, so the two can
 be priced apart, and the non-member half costs nothing at all.
@@ -549,8 +554,12 @@ you get by writing some.
 
 ## The expression node, and two-phase lookup
 
-This is the strongest evidence in the paper for the claim that C++'s operator
-tables are closed, and no reading of the grammar would have produced it.
+A use needs an expression node of its own, `UserOperatorExpr`, and the reason
+is invisible from the grammar. Leaving the use as the ordinary call the
+desugaring says it is works for every non-dependent shape and fails on a
+dependent operand, where `TreeTransform` rebuilds through
+[over.match.call]{.sref} and keeps ADL while losing member candidates. This is
+the strongest evidence in the paper that C++'s operator tables are closed.
 
 Clang's `CXXOperatorCallExpr` exists to record that a call was *written* with
 operator syntax, and `TreeTransform` reads the operator kind back off it to
@@ -558,7 +567,7 @@ re-run operator candidate assembly at instantiation. It stores an
 `OverloadedOperatorKind`, in which `OO_None` is itself a valid operator kind,
 so there is no spare state and it can not carry a user operator.
 
-Leave the use as an ordinary call (which is exactly what the desugaring says
+Leave the use as an ordinary call (which is what the desugaring says
 it is) and the non-dependent case is correct in every shape tested. However,
 when an operand is type-dependent, `TreeTransform` rebuilds the expression
 through the ordinary call path: [over.match.call]{.sref}, not
@@ -594,8 +603,11 @@ survive a dependent one.
 
 # One level, and no fixity declarations
 
-Of the rules fixed above this is the one most likely to be argued, so the
-argument for it is here.
+Precedence and associativity are fixed by this paper, at one level, and
+neither can be declared. Of the rules fixed above this is the one most likely
+to be argued, so the two alternatives are answered here: a declared fixity is
+an ODR factory, and a derived one has nothing in Unicode to derive from. One
+level is not neutral, and the section ends by saying whom it surprises.
 
 A declared precedence is a semantic property that must travel with the name
 across headers, modules and translation units. Two translation units
@@ -663,6 +675,44 @@ attention to the question.
 
 # Implementation experience
 
+The feature is implemented in Clang behind `-funicode-operators`, default off,
+and the full `check-clang` suite passes with it. This section is what building
+it changed in the design and what building it got wrong. Both are summarized
+here and expanded in the subsections that follow; a reader who writes
+compilers for a living can take the summary and skip the rest.
+
+**What the implementation changed.** Three things in this paper are there
+because the compiler demanded them.
+
+- *The use needs an expression node of its own.* The desugaring says a use is
+  an ordinary call, and for a non-dependent use that is correct in every shape
+  tested. On a dependent operand it is not: `TreeTransform`
+  rebuilds through [over.match.call]{.sref}, which keeps ADL and loses member
+  candidates. No reading of the grammar would have produced that.
+- *The UCN equivalence is an equivalence of entities.* Classifying a
+  UCN-spelled operator is free; deriving its *identity* is not, and the first
+  implementation made `operator\U0000229E` a different entity from
+  `operator⊞` while every token-level test passed.
+- *Arity selects the form for declarations and does not filter uses.* Keeping
+  [over.oper]{.sref}p8 would have filtered them, and that breaks the
+  desugaring equivalence the design rests on.
+
+**What it cost.** Opening a closed operator table cost a *parallel*
+implementation every time, five times out of five, and never a widened one.
+That is the reassurance this proposal most needs to give, because it leaves
+the relaxation no route into `operator+`. A new expression node
+obliges 89 dispatch sites on three axes, and the toolchain forces about a
+third of them: nineteen are silently wrong if omitted, four are latent behind
+a build configuration, and one exists only because another obligation was met.
+Four separate defects passed their own tests before something else caught
+them.
+
+**Still open.** Microsoft mangling, the Itanium first-class production, and
+member-versus-non-member sequencing all wait on somebody other than the
+author, and §"What is not resolved" lists them. One limitation is this
+feature's own: `t.template operator⊞<int>(0)` on a dependent object expression
+is rejected.
+
 ## What was built
 
 Clang, on a branch off trunk, behind `-funicode-operators`, default off. The
@@ -684,7 +734,7 @@ corrections worth a reader's time are here.
 
 ## The desugaring survives to the back end
 
-The whole design rests on one claim: `x ⊞ y` *is* the call, so everything the
+The design rests on one claim: `x ⊞ y` *is* the call, so everything the
 call has is inherited and not reimplemented. That claim gets weaker the
 further from the parser it is asserted, and the last place it could fail is
 code generation. It does not fail there.
@@ -752,8 +802,7 @@ could not be supported: it returns a string reference into a *static* spelling
 table, and a user operator's spelling is a UTF-8 encoding computed into a
 buffer, so a matcher over user operators has to be keyed on the code point
 instead. The matcher that does exist says so in its own documentation. The
-tables are closed enough that a public matcher API structurally can not name
-your operator.
+tables are closed enough that a public matcher API can not name your operator.
 
 The fifth turns the count into a claim. Postfix-ness — see above — has no
 representation in Clang to make a sibling of. There is no `isPostfix()` on the
@@ -769,10 +818,10 @@ a fixed-size table indexed by tree code, and the move there is the same one:
 `cp_literal_operator_id` already synthesizes an identifier *outside* that
 table for `operator""_suffix`. Two compilers, one shape.
 
-This is the reassurance the proposal most needs to give, and it is structural
-rather than a promise. Every site is parallel and no table the
-existing operators are keyed on is ever widened, so **the relaxation provably
-can not leak into `operator+`.** The shared checker was never touched; the new
+This is the reassurance the proposal most needs to give, and it is structural.
+Every site is parallel and no table the
+existing operators are keyed on is ever widened, so the relaxation provably
+can not leak into `operator+`. The shared checker was never touched; the new
 kind is a new arm *beside* the old one everywhere it appears; and a program
 that declares no user operator reaches none of them. That is a stronger claim
 than "it is behind a flag".
@@ -783,7 +832,7 @@ Adding a name kind, a declarator-id kind and an expression node obliges 89
 dispatch sites on three axes that share no site: 34 over the name kind, 12
 over the declarator-id kind, and 43 over the expression node. The three
 numbers matter less than the answer to a different question, asked of the
-node's 43: **which of them did the toolchain make you find?**
+node's 43: which of them did the toolchain make you find?
 
 | What forces the site | Sites | What omitting it costs |
 |---|--:|---|
@@ -810,7 +859,7 @@ special. What made them latent was a CMake default, and every build directory
 in the project had it. How many obligations a new expression node has is
 bounded by the configuration of the tree you measure in.
 
-Two things this axis structurally can not see, and measurement found both
+Two things this axis can not see, and measurement found both
 where review had not. The last row is an obligation created by *meeting*
 another one: teaching the control-flow graph to look through the wrapper is
 what removes the wrapper's program point, and removing its program point is
@@ -837,7 +886,7 @@ pass are the ones you thought to write.
 
 The sketch this paper is written from said that parsing is the easy part of
 this feature, easier even than backtick. The prototype contradicted that from
-four directions, and reporting the correction beats quietly making it.
+four directions.
 
 The first half survives. The parse really is small, on both sides: the *using*
 side is two `case`s in a precedence loop that already exists, and the
@@ -869,8 +918,7 @@ answer to.
 
 The Itanium vendor-extended operator production `v <digit> <source-name>`
 exists for operators the grammar did not anticipate, and the prototype uses
-it. The derivation rule, stated so it can be reviewed instead of inferred from
-an example:
+it. The derivation rule:
 
 > `op_u`, followed by the code point in **uppercase hexadecimal**, with no
 > `U+` prefix, zero-padded to a **minimum of four digits** and widened as
@@ -953,10 +1001,10 @@ same payload, same `<source-name>` encoding, same position in the table as
 
 The letters are the ABI group's to pick, and this paper does not present
 them as agreed. Three things about the shape are load-bearing and the
-spelling is not. The fixity marker is the whole reason to ask. The name stays
+spelling is not. The fixity marker is the reason to ask. The name stays
 the ASCII hex derivation instead of the operator's UTF-8 bytes, for the
 `c++filt` reason above; pretty demangling is a demangler feature and should
-not be bought with a mangling decision. And reserving `s` now is what lets a
+not be bought with a mangling decision. And reserving `s` now lets a
 later revision take postfix without a cross-vendor ABI change made under
 pressure.
 
@@ -966,7 +1014,7 @@ and §5.1.6 gives `pp_` and `mm_` for the prefix ones. GCC 15.2.0 emits all
 four distinctly. Clang emits the postfix spelling for both fixities of both
 operators, so two function templates distinguished only by `++T{}` versus
 `T{}++` collide outright: *definition with same mangled name*. That is a
-Clang defect and not this proposal's, and it is exactly the corner where the
+Clang defect and not this proposal's, and it is the corner where the
 ABI *does* have room for fixity and an implementation still missed it.
 
 ### Windows
@@ -1016,24 +1064,23 @@ has to answer it.
   takes the position that the selected call's rules are the right ones and
   does not propose to legislate it.
 - **Combining-mark operator sequences, and the Latin-1 candidates** (`±` `×`
-  `÷` `¬`), both deliberately out of the frozen set and both coherent
+  `÷` `¬`), both out of the frozen set and both coherent
   extensions for a later revision. Either would be the first thing to reach
   the mangling rule's astral and padding branches.
 
 Four more were open in earlier drafts and are not open now. **Default
-arguments in prefix position**: the relaxation is kept, deliberately, and the
-consequence is documented above rather than tolerated. **Static member user
+arguments in prefix position**: the relaxation is kept, and the
+consequence is documented above. **Static member user
 operators**: rejected, and rejected on the desugaring reason and not on the
 arity rule, which would have accepted them. **Fold expressions**:
 excluded, one decision for both features, forward-compatible. **Postfix**:
 declined for this revision and explicitly not foreclosed, with the price
-measured instead of asserted. Each is argued in its own section; none of them
+measured. Each is argued in its own section; none of them
 is a question this paper is putting to the room.
 
-One limitation is this feature's own, and is reported here so a reviewer does
-not have to find it: `t.template operator⊞<int>(0)` on a dependent object
-expression is
-rejected, because the implementation's dependent-template representation holds
+One limitation is this feature's own: `t.template operator⊞<int>(0)` on a
+dependent object expression is rejected, because the implementation's
+dependent-template representation holds
 an identifier or a built-in operator kind and nothing else, and a new operator
 name is neither. Every non-dependent spelling works, and so does a dependent
 call without the `template` disambiguator. It is the same
