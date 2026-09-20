@@ -760,11 +760,11 @@ positions never coincide. Same position-based disambiguation C++ already
 applies to `*`, `&`, and `<`.
 
 ```cpp
-void `new`();        // declarator-id  -> escaped identifier "new"
+int `new`(int, int);  // declarator-id  -> escaped identifier "new"
 `new`(a, b);         // primary        -> call to function "new"
 obj.`delete`();      // after '.'      -> member named "delete"
 x `f` y;             // post-operand   -> infix: f(x, y)
-x `(`new`)` y;       // escaped callee -> new(x, y)   (uses nesting-vs-chaining parens)
+x `(`new`)` y;       // escaped callee -> (`new`)(x, y)   (uses nesting-vs-chaining parens)
 ```
 
 **Reinforcement, withdrawn 2026-09-17.** This paragraph used to offer a
@@ -1467,7 +1467,7 @@ Compose stages into a named pipeline once, apply it many times:
 ```cpp
 inline constexpr auto then =
     [](auto f, auto g)
-    { return = -> decltype(auto)
+    { return [=](auto&&... a) -> decltype(auto)
         { return g(f(std::forward<decltype(a)>(a)...)); }; };
 
 auto clean = trim `then` lower `then` dedup;   // a reusable callable

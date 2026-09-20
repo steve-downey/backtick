@@ -916,11 +916,11 @@ lookahead and no ambiguity, the same strategy the language already uses to
 give `*`, `&`, and `<` their multiple readings.
 
 ```cpp
-void `new`();        // declarator-id  -> escaped identifier "new"
+int `new`(int, int);  // declarator-id  -> escaped identifier "new"
 `new`(a, b);         // primary        -> call to the function named "new"
 obj.`delete`();      // after '.'      -> member named "delete"
 x `f` y;             // post-operand   -> infix: f(x, y)
-x `(`new`)` y;       // escaped callee -> new(x, y), parenthesized slot
+x `(`new`)` y;       // escaped callee -> (`new`)(x, y), parenthesized slot
 ```
 
 An earlier draft claimed a second and independent signal here: that an escape

@@ -53,7 +53,7 @@ dozen operators ASCII happens to contain, and neither did Unicode. So the
 sketch is this: let a user declare
 
 #+begin_src c++
-constexpr int operator⊞(int a, int b) { return a + b; }  // saturating, say
+constexpr int operator⊞(int a, int b) { return a + b; }
 constexpr Matrix operator⊗(Matrix const&, Matrix const&);
 #+end_src
 

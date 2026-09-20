@@ -181,7 +181,7 @@ identifier; Swift's =`class`=, Kotlin's backtick identifiers, F#'s
 double-backtick names, Rust's =r#= raw identifiers all do a version of it.
 
 #+begin_src c++
-void `new`();           // declares a function named "new"
+int `new`(int, int);     // declares a function named "new"
 `new`(a, b);            // calls it
 obj.`delete`();         // member named "delete"
 #+end_src
