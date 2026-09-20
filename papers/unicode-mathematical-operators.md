@@ -26,7 +26,7 @@ is an ordinary overloadable function, found by ordinary lookup, called by
 ordinary overload resolution.
 
 ```cpp
-constexpr int operator⊞(int, int);      // an ordinary function declaration
+constexpr int operator⊞(int a, int b) { return a + b; }
 static_assert(5 ⊞ 7 == 12);
 
 Matrix operator⊗(Matrix const&, Matrix const&);
