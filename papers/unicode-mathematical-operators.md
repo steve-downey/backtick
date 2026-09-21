@@ -342,9 +342,9 @@ has to say so.
 ## One level for all user-introduced infix
 
 ```
-infix-expression:
+user-infix-expression:
     cast-expression
-    infix-expression user-operator cast-expression
+    user-infix-expression user-operator cast-expression
 
 unary-expression:
     ...
@@ -1129,6 +1129,136 @@ which needed to ask "is this a user-introduced infix operator?". One
 precedence level for all user-introduced infix syntax is a real design
 primitive, and the two papers should settle it once, with both features in
 view, whichever of them proceeds.
+
+# Wording
+
+The following wording is pro forma. It is intended to make the grammar change
+concrete; it is not offered as final CWG wording. Wording is relative to the
+current working draft.
+
+## [lex.operators]
+
+Add *user-operator* as an alternative of *operator-or-punctuator* in
+[lex.operators]{.sref}:
+
+::: add
+> ```
+> user-operator:
+>     one of the characters in Table X, User-operator characters
+> ```
+:::
+
+[Table X will contain the frozen enumeration of 1,381 code points described
+in [The token set](#the-token-set). A *universal-character-name* designating
+one of those characters forms the same token by the existing translation
+rules.]{.note}
+
+## [expr.unary.general]
+
+Add an alternative to *unary-expression* in
+[expr.unary.general]{.sref}:
+
+::: add
+> ```
+> unary-expression:
+>     ...
+>     user-operator cast-expression
+> ```
+:::
+
+## [expr.mptr.oper]
+
+Modify the grammar of [expr.mptr.oper]{.sref} paragraph 1:
+
+> ```
+> pm-expression:
+>     @[cast-expression]{.rm} [user-infix-expression]{.add}@
+>     pm-expression .* @[cast-expression]{.rm} [user-infix-expression]{.add}@
+>     pm-expression ->* @[cast-expression]{.rm} [user-infix-expression]{.add}@
+> ```
+
+## [expr.user] (new subclause)
+
+Insert a new subclause between [expr.cast]{.sref} and
+[expr.mptr.oper]{.sref}:
+
+::: add
+> **User-defined operators   [expr.user]**
+>
+> ```
+> user-infix-expression:
+>     cast-expression
+>     user-infix-expression user-operator cast-expression
+> ```
+:::
+
+## [over.oper]
+
+Modify the *operator-function-id* grammar in [over.oper]{.sref}:
+
+> ```
+> operator-function-id:
+>     operator operator
+>     @[operator user-operator]{.add}@
+> ```
+
+Add after the grammar:
+
+::: add
+> [x]{.pnum} An operator function whose *operator-function-id* contains a
+> *user-operator* is a *user-operator function*.
+:::
+
+Modify the first sentence of [over.oper]{.sref} paragraph 6:
+
+> An operator function [other than a user-operator function]{.add} shall have
+> at least one function parameter or implicit object parameter whose type is
+> a class, a reference to a class, an enumeration, or a reference to an
+> enumeration.
+
+Modify [over.oper]{.sref} paragraph 8:
+
+> An operator function [other than a user-operator function]{.add} cannot have
+> default arguments, except where explicitly stated below. Operator functions
+> [other than user-operator functions]{.add} cannot have more or fewer
+> parameters than the number required for the corresponding operator, as
+> described in the rest of [over.oper]{.sref}.
+
+## [over.match.oper]
+
+Modify the first sentence of [over.match.oper]{.sref} paragraph 1:
+
+> [Unless the operator is a *user-operator*, if]{.add}
+> [If]{.rm} no operand of an operator in an expression has a type that is a
+> class or an enumeration, the operator is assumed to be a built-in operator
+> and interpreted according to [expr.compound]{.sref}.
+
+Modify the first and last sentences of [over.match.oper]{.sref} paragraph 2:
+
+> If [the operator is a *user-operator* or]{.add} either operand has a type
+> that is a class or an enumeration, a user-defined operator function can be
+> declared that implements this operator or a user-defined conversion can be
+> necessary to convert the operand to a type that is appropriate for a
+> built-in operator. [...] [For a *user-operator*, the evaluations are
+> sequenced as specified for the selected function call. Otherwise,]{.add}
+> [However,]{.rm} the operands are sequenced in the order prescribed for the
+> built-in operator.
+
+Modify the built-in-candidate bullet of [over.match.oper]{.sref} paragraph 3:
+
+> For the operator `,`, the unary operator `&`, [or]{.rm} the operator `->`
+> [, or a *user-operator*]{.add}, the built-in candidates set is empty.
+
+## [over.unary] and [over.binary]
+
+In [over.unary]{.sref}, extend the definition of a prefix unary operator
+function to include a function named by a *user-operator* in the added
+*unary-expression* production. In [over.binary]{.sref}, extend the definition
+of a binary operator function to include a function named by a
+*user-operator* in a *user-infix-expression*. The existing transformations to
+member and non-member function-call notation then apply unchanged.
+
+Annex A ([gram]{.sref}) is updated mechanically to match.
 
 # Acknowledgments
 

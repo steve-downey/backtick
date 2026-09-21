@@ -840,9 +840,9 @@ the entire remaining inventory.
 ## The productions
 
 ```bnf
-backtick-expression:
+user-infix-expression:
     cast-expression
-    backtick-expression ` backtick-operator ` cast-expression
+    user-infix-expression ` backtick-operator ` cast-expression
 
 backtick-operator:
     assignment-expression
@@ -856,8 +856,8 @@ follow from the expression slot: a bare type-name is not an *assignment-expressi
 so a grammar with only the first alternative would contradict the section
 above rather than imply it.
 
-*backtick-expression* slots between *cast-expression* and *pm-expression*:
-the pointer-to-member productions consume a *backtick-expression* where they
+*user-infix-expression* slots between *cast-expression* and *pm-expression*:
+the pointer-to-member productions consume a *user-infix-expression* where they
 consumed a *cast-expression*, and everything above them is unchanged. In
 implementation terms this is one new top level in each compiler's binary
 operator precedence table. The left recursion gives left associativity; the
@@ -1434,47 +1434,9 @@ noisy spelling of `foo`.
 
 # Wording
 
-Wording is relative to the current working draft. Drafting notes, for CWG,
-on choices the wording takes:
-
-- No change to [lex.charset]{.sref} is needed: `` ` `` (U+0060) is already
-  a member of the basic character set ([@P2558R2], adopted for C++26).
-  Today it appears in no preprocessing token outside literals; a program
-  containing a stray backtick is conditionally-supported with
-  implementation-defined semantics under [lex.pptoken]{.sref}. Adding it to
-  *operator-or-punctuator* makes it a token; no currently well-formed
-  program changes meaning.
-- The rewrite is specified with "identical (by definition) to", the
-  [expr.sub]{.sref} device, so [expr.call]{.sref} supplies overload
-  resolution, argument-dependent lookup, sequencing, and value category
-  with no restatement.
-- The same-delimiter parsing rule is modeled on [temp.names]{.sref}'s
-  "first non-nested `>`".
-- *escaped-identifier* is presented in [lex.name]{.sref} and takes an
-  *identifier*: the lexical production, which every keyword matches, since
-  [lex.key]{.sref} is what makes a keyword out of such a match. The paragraph
-  that follows the grammar says so, because the grammar term alone would be
-  read as excluding the keywords the escape exists for; CWG may prefer a
-  different device for "the production before [lex.key]{.sref} applies", and
-  nothing in this proposal turns on which one. If EWG prefers the restricted
-  rule, replace *identifier* with *keyword* in the grammar and strike that
-  paragraph. Alternative representations ([lex.digraph]{.sref}: `and`, `or`,
-  …) are escapable and are meant to be: in C++ they are tokens rather than
-  macros, identifier-shaped words the language has claimed, which is the thing
-  an escape suppresses. [lex.digraph]{.sref} is named in the paragraph below
-  for that reason.
-- The escape is a phase-7 grammar construct composed of three preprocessing
-  tokens, so no *escaped-identifier* arises in phases 3 through 6 and the
-  preprocessor needs no change. The identifier between the backticks is an
-  ordinary identifier preprocessing token throughout those phases and is
-  macro-replaced there if it names a macro, exactly as it would be anywhere
-  else; the backticks neither suppress replacement nor cause any. In
-  particular a function-like macro name between backticks is not replaced,
-  because the token after it is the closing backtick and not `(`.
-- One feature-test macro is proposed for the paper's two features, because
-  they are one design. If they are ever polled separately, it splits
-  into `__cpp_backtick_operator` and `__cpp_escaped_identifiers`. The value
-  shown is this paper's date; the adopting meeting sets the final value.
+The following wording is pro forma. It is intended to make the grammar change
+concrete; it is not offered as final CWG wording. Wording is relative to the
+current working draft.
 
 ## [lex.operators]
 
@@ -1503,30 +1465,19 @@ Add to [lex.name]{.sref}, after the paragraphs defining *identifier*:
 >     ` identifier `
 > ```
 >
-> [x]{.pnum} The *identifier* in an *escaped-identifier* is the production
-> in [lex.name]{.sref} as written, whether or not the token formed from it
-> would otherwise be a keyword or an alternative token; neither
-> [lex.key]{.sref} nor [lex.digraph]{.sref} applies to it.
+> [x]{.pnum} An *escaped-identifier* may appear wherever the grammar uses
+> *identifier*. The token between the `` ` `` tokens is treated as an
+> *identifier* even if it would otherwise be a keyword or alternative token.
+> The `` ` `` tokens are not part of the identifier. An
+> *escaped-identifier* and an unescaped *identifier* with the same spelling
+> are the same identifier.
 >
-> [x+1]{.pnum} An *escaped-identifier* may appear wherever the grammar uses
-> *identifier* as a terminal. It is an *identifier* whose value is that of
-> the *identifier* between the `` ` `` tokens; the `` ` `` tokens are not
-> part of that value. The rules that apply to identifiers apply to it in
-> every other respect, including the reservations in [lex.name]{.sref}.
-> [Note: An *escaped-identifier* and a lexically identical *identifier*
-> written without the `` ` `` tokens are the same identifier, and two
-> entities so named are the same entity. The construct is purely a
-> source-level spelling; name lookup, linkage, and mangling are unaffected.
-> — end note]
->
-> [x+2]{.pnum} [Example:
+> [x+1]{.pnum} [Example:
 > ```cpp
 > void `new`();          // declares a function named new
 > `new`();               // and calls it
-> struct `union` { };    // a class named union
-> obj.`delete`();        // member access
-> int `count` = 0;       // declares count; the ` tokens are not part of the name
-> ++count;               // increments the same variable
+> int `count` = 0;
+> ++count;               // names the same object
 > ```
 > — end example]
 :::
@@ -1537,9 +1488,9 @@ Modify the grammar of [expr.mptr.oper]{.sref} paragraph 1:
 
 > ```
 > pm-expression:
->     @[cast-expression]{.rm} [backtick-expression]{.add}@
->     pm-expression .* @[cast-expression]{.rm} [backtick-expression]{.add}@
->     pm-expression ->* @[cast-expression]{.rm} [backtick-expression]{.add}@
+>     @[cast-expression]{.rm} [user-infix-expression]{.add}@
+>     pm-expression .* @[cast-expression]{.rm} [user-infix-expression]{.add}@
+>     pm-expression ->* @[cast-expression]{.rm} [user-infix-expression]{.add}@
 > ```
 
 ## [expr.backtick] (new subclause)
@@ -1551,9 +1502,9 @@ Insert a new subclause between [expr.cast]{.sref} and
 > **Backtick operator   [expr.backtick]**
 >
 > ```
-> backtick-expression:
+> user-infix-expression:
 >     cast-expression
->     backtick-expression ` backtick-operator ` cast-expression
+>     user-infix-expression ` backtick-operator ` cast-expression
 >
 > backtick-operator:
 >     assignment-expression
@@ -1561,17 +1512,9 @@ Insert a new subclause between [expr.cast]{.sref} and
 >     typename-specifier
 > ```
 >
-> [1]{.pnum} The backtick operator applies a callable expression, the
-> *backtick-operator*, to two operands. An expression of the form
+> [1]{.pnum} An expression of the form
 > `` E1 `O` E2 `` is identical (by definition) to `O(E1, E2)`
 > ([expr.call]{.sref}).
-> [Note: Overload resolution, argument-dependent lookup, implicit
-> conversions, value category, and sequencing are those of the function
-> call. In particular, `O` is sequenced before `E1` and `E2`, and the
-> evaluations of `E1` and `E2` are unsequenced with respect to each other.
-> — end note]
-> [Note: The backtick operator is not an overloadable operator
-> ([over.oper]{.sref}). — end note]
 >
 > [2]{.pnum} If the *backtick-operator* is a *simple-type-specifier* or
 > *typename-specifier* denoting a type `T` or a placeholder for a deduced
@@ -1581,40 +1524,11 @@ Insert a new subclause between [expr.cast]{.sref} and
 > *assignment-expression* and as a *simple-type-specifier* or
 > *typename-specifier* is interpreted as a *simple-type-specifier* or
 > *typename-specifier*.
-> [Note: The interpretations coincide only when name lookup determines
-> that the name denotes a type or a class template; a name that denotes a
-> function, variable, or overload set is not a *simple-type-specifier*.
-> Class template argument deduction applies exactly as it would for the
-> equivalent explicit type conversion ([dcl.type.class.deduct]{.sref}).
-> — end note]
 >
 > [3]{.pnum} When parsing a *backtick-operator*, the first non-nested
 > `` ` ``^[A `` ` `` that appears within a matching pair of parentheses,
 > brackets, or braces is nested.] is taken as the ending delimiter, rather
-> than as the first delimiter of a nested *backtick-expression*.
->
-> [4]{.pnum} [Example:
-> ```cpp
-> int  min(int, int);
-> auto r1 = a `min` b;             // min(a, b)
-> auto r2 = -a `min` -b;           // min(-a, -b): operands are cast-expressions
-> auto r3 = a * b `min` c;         // a * min(b, c): binds tighter than *
-> auto r4 = a `f` b `g` c;         // g(f(a, b), c): left-associative
-> auto r5 = x `f `g` h` y;         // a chain: h(f(x, g), y)
-> auto r6 = x `(f `g` h)` y;       // nested: (g(f, h))(x, y)
-> auto r7 = a `std::pair` b;       // std::pair(a, b): CTAD applies
-> ```
-> — end example]
-:::
-
-## [cpp.predefined]
-
-Add a row to [tab:cpp.predefined.ft] in [cpp.predefined]{.sref}:
-
-::: add
-> | Macro name | Value |
-> |---|---|
-> | `__cpp_backtick` | `202607L` |
+> than as the first delimiter of a nested *user-infix-expression*.
 :::
 
 Annex A ([gram]{.sref}) is updated mechanically to match.
