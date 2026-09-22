@@ -1,7 +1,7 @@
 ---
 title: "Extending C++ with Unicode Mathematical Operators"
 subtitle: "Declaring `operator⊞`, and what an implementation says about it"
-document: D4345R0
+document: P4345R0
 date: today
 audience: SG16, EWG
 author:
@@ -14,6 +14,78 @@ toc-depth: 2
 # is not a style preference; without it the paper's subject matter is
 # invisible in one of its two output formats.
 monofont: "DejaVu Sans Mono"
+references:
+  - id: P4307R0
+    citation-label: P4307R0
+    title: "An Infix Operator and a Keyword Escape for C++"
+    author:
+      - family: Downey
+        given: Steve
+    issued: { year: 2026 }
+    URL: https://wg21.link/p4307r0
+  - id: UAX31
+    citation-label: UAX31
+    title: "Unicode Standard Annex #31: Unicode Identifiers and Syntax (Revision 43)"
+    author:
+      - family: Davis
+        given: Mark
+      - family: Leroy
+        given: Robin
+    issued: { year: 2025, month: 8, day: 20 }
+    URL: https://www.unicode.org/reports/tr31/tr31-43.html
+  - id: UAX31-45
+    citation-label: UAX31r45
+    title: "Unicode Standard Annex #31: Unicode Identifiers and Syntax (Revision 45)"
+    author:
+      - family: Davis
+        given: Mark
+      - family: Leroy
+        given: Robin
+    issued: { year: 2026, month: 9, day: 1 }
+    URL: https://www.unicode.org/reports/tr31/tr31-45.html
+  - id: UCD17
+    citation-label: UCD-17.0
+    title: "Unicode Character Database, Version 17.0.0"
+    author:
+      - literal: The Unicode Consortium
+    issued: { year: 2025 }
+    URL: https://www.unicode.org/Public/17.0.0/ucd/
+  - id: itanium-abi
+    citation-label: Itanium-ABI
+    title: "Itanium C++ ABI"
+    URL: https://itanium-cxx-abi.github.io/cxx-abi/abi.html
+  - id: D137051
+    citation-label: D137051
+    title: "[Clang] Allow additional mathematical symbols in identifiers"
+    author:
+      - family: Jabot
+        given: Corentin
+    issued: { year: 2022, month: 10, day: 30 }
+    URL: https://reviews.llvm.org/D137051
+  - id: gcc15
+    citation-label: GCC-15
+    title: "GCC 15 Release Series"
+    author:
+      - literal: The GCC team
+    URL: https://gcc.gnu.org/gcc-15/
+  - id: binutils
+    citation-label: binutils
+    title: "GNU Binutils"
+    author:
+      - literal: The GNU Project
+    URL: https://sourceware.org/binutils/
+  - id: julia-operators
+    citation-label: Julia
+    title: "The Julia Manual: Operator Precedence and Associativity"
+    URL: https://docs.julialang.org/en/v1/manual/mathematical-operations/
+  - id: ocaml-expr
+    citation-label: OCaml
+    title: "The OCaml Manual: Expressions"
+    URL: https://ocaml.org/manual/5.3/expr.html
+  - id: swift-operators
+    citation-label: Swift
+    title: "The Swift Programming Language: Advanced Operators"
+    URL: https://docs.swift.org/swift-book/documentation/the-swift-programming-language/advancedoperators/
 ---
 
 # Abstract
@@ -152,15 +224,26 @@ user operator inherits almost none of them. That is only safe if the two are
 implemented apart instead of by widening what already exists, so the paper
 reports, site by site, which of those the prototype did.
 
-## Relation to D4307
+## Relation to P4307R0
 
-D4307 proposes an infix operator for *named* callables, `` x `f` y ``, and a
+P4307R0 [@P4307R0] proposes an infix operator for *named* callables, `` x `f` y ``, and a
 keyword escape for using a keyword as an identifier. It is a separate paper to
 a separate audience, and the two are adoptable independently, in either order.
 
 The two share exactly one thing: the user-infix level above. Neither feature
 owns it, and where a decision here binds the shared level, as the fold-operator
-exclusion does, this paper says so. The character set, the UCN and
+exclusion does, this paper says so.
+
+*Drafting note, for whichever of the two is adopted second.* Both papers make
+the same edit to [expr.mptr.oper]{.sref}, and each *defines*
+*user-infix-expression* in a new subclause of its own — [expr.user] here,
+[expr.backtick] in P4307R0. The production has to have exactly one home. If
+both are adopted, the first one in owns the production and the
+[expr.mptr.oper]{.sref} edit, and the second adds only its own operator's
+alternative to the production already there. The proposal is that the
+grammar be spelled once, with one subclause defining it and the other
+referring to it; which subclause that is, is a question for the paper that
+lands first, not a design difference between them. The character set, the UCN and
 identifier interplay, the *operator-function-id* and [over.oper]{.sref}
 changes, the SG16 review and the ABI work are this paper's alone. Evidence that
 the two are separable in a compiler, as well as on paper, is at the end.
@@ -169,10 +252,20 @@ the two are separable in a compiler, as well as on paper, is at the end.
 
 ## Deriving it
 
-UAX #31 (revision 43) defines **R3c, "User-Defined Operators"**: operator
-syntax over the characters with the Pattern_Syntax property. That is
-the normative hook, and C++23 already references UAX #31 normatively for
-identifiers (P1949R7), so the citation is the same shape to the same document.
+UAX #31 defines **R3c, "Operator Identifiers"** — introduced by §4.2.1,
+"User-Defined Operators" — as operator syntax over the characters with the
+Pattern_Syntax property. That is the normative hook, and C++23 already
+references UAX #31 normatively for identifiers ([@P1949R7]), so the citation
+is the same shape to the same document.
+
+This paper pins UAX #31 at **revision 43** [@UAX31], the revision that goes
+with Unicode 17.0, and the derivation below runs against UCD 17.0 [@UCD17].
+That is a choice and not the latest state: revision 45 [@UAX31-45], for
+Unicode 18.0, was published on 2026-09-01. Pinning is the point — the set
+this paper ships is frozen (see "Immutable is not closed"), so it has to name
+the revision it was derived from, and §"The operator set and the identifier
+set are disjoint" reports what happened when a compiler's own tables moved to
+18.0 underneath it.
 
 R3c does not hand us a usable set directly. Pattern_Syntax includes, of
 course, the ASCII operator characters, every one of which is already a token,
@@ -213,7 +306,7 @@ committee's.
 
 Growth is lexically benign: a newly assigned code point was not a valid token
 before, so an assignment can only make ill-formed programs well-formed.
-However, it is not audit-benign: the confusability exclusion below can not be
+However, it is not audit-benign: the confusability exclusion below cannot be
 evaluated for
 characters that do not exist yet, so a predicate-defined set auto-admits
 unvetted symbols. That asymmetry is why the enumeration is frozen and pinned
@@ -270,14 +363,14 @@ reasons need three different emission points.
 Confusables and emoji were never identifier characters, so rejecting them at
 token classification is safe. `∂` `∇` `∞` *are* valid identifier characters.
 In Clang they are valid today, with no flag, because the math-identifier
-extension (D137051, P3658R1) is on by default at every `-std=`. A diagnostic
+extension ([@D137051], [@P3658R1]) is on by default at every `-std=`. A diagnostic
 for them at classification would fire on every legitimate use of `∂` as a
 name. The implementation emits that one as a note, in the declarator parse,
 after a conversion-function-id parse has already failed.
 
 The rule generalizes past this feature, and a later proposal that adds
 exclusions will need it: a reason is emittable at token classification if
-and only if its code points can not also be identifier constituents.
+and only if its code points cannot also be identifier constituents.
 
 One name did not survive the enumeration. "The middle-dot family" is not a UCD
 family: inside the blocks it is exactly `∙` U+2219 and `⋅` U+22C5, because
@@ -319,7 +412,7 @@ The absence of UCN punctuators today is an accident: every punctuator so far
 has been in the basic character set. These are the first non-basic
 tokens, and the extended-character-equals-UCN equivalence the language
 maintains for identifiers is the escape hatch for source encodings, fonts and
-review tools that can not carry the glyph. It must extend to them.
+review tools that cannot carry the glyph. It must extend to them.
 
 Calling that free by construction is the obvious reading, and it is half
 right.
@@ -354,7 +447,7 @@ unary-expression:
 Binary user operators occupy one precedence level: the highest binary level,
 tighter than `*` and looser than the unary operators, left-associative, with
 cast-expression operands. That is the *user-infix level*, and it is meant to
-serve all user-introduced infix syntax: it is the same level D4307 introduces
+serve all user-introduced infix syntax: it is the same level P4307R0 introduces
 for the backtick operator. Neither feature owns it.
 
 Symmetry falls out of the operand grammar: `-a ⊞ -b` is `operator⊞(-a, -b)`.
@@ -452,7 +545,7 @@ changing the meaning of any program this one accepts.
 A user operator is not a fold operator: `(... ⊞ N)` is ill-formed, and the
 diagnostic is `expected expression`. That is a decision this proposal takes,
 and it is stated here because nothing in the diagnostic would state it.
-D4307's backtick operator gets the character-identical diagnostic at the same
+P4307R0's backtick operator gets the character-identical diagnostic at the same
 level, so the decision covers both features and is taken once.
 
 Excluding costs one clause in the predicate that already decides which
@@ -471,11 +564,11 @@ operator foldable.
 
 ## Arity is the only rule that carries over
 
-[over.oper]{.sref} imposes five restrictions on an operator function. A user
-operator inherits exactly one of them, and the reason generalizes past the
-class-or-enum exception:
+[over.oper.general]{.sref} imposes five restrictions on an operator function.
+A user operator inherits exactly one of them, and the reason generalizes past
+the class-or-enum exception:
 
-> [over.oper]{.sref}'s restrictions exist to protect a token whose parse,
+> Those restrictions exist to protect a token whose parse,
 > arity and fixity the grammar has already fixed. A user operator's only fixed property
 > is arity, so arity is the only rule it inherits.
 
@@ -504,14 +597,14 @@ class-or-enum exception:
 Everything else is ordinary: templates, `constexpr`, `= delete`, member and
 non-member, explicit object parameters.
 
-Dropping [over.oper]{.sref}p8 has a visible consequence. Given only
+Dropping [over.oper.general]{.sref}p10 has a visible consequence. Given only
 `constexpr int operator⊟(int a, int b = 1)`, the prefix use `⊟5` is accepted
 and calls it through the default argument, and adding a genuine prefix
 overload makes `⊟5` ambiguous in the ordinary way. Filtering candidates by
 declared arity would fix it. However, it would break the desugaring
 equivalence below, on which the whole design rests: `⊟5` *is* `operator⊟(5)`,
 and that is what the equivalence promises. So arity selects the form for
-*declarations*, and does not filter *uses*. Reinstating [over.oper]{.sref}p8
+*declarations*, and does not filter *uses*. Reinstating [over.oper.general]{.sref}p10
 for user operators is the conservative alternative, costs one diagnostic, and
 is not what this paper asks for.
 
@@ -565,7 +658,7 @@ Clang's `CXXOperatorCallExpr` exists to record that a call was *written* with
 operator syntax, and `TreeTransform` reads the operator kind back off it to
 re-run operator candidate assembly at instantiation. It stores an
 `OverloadedOperatorKind`, in which `OO_None` is itself a valid operator kind,
-so there is no spare state and it can not carry a user operator.
+so there is no spare state and it cannot carry a user operator.
 
 Leave the use as an ordinary call (which is what the desugaring says
 it is) and the non-dependent case is correct in every shape tested. However,
@@ -613,7 +706,7 @@ A declared precedence is a semantic property that must travel with the name
 across headers, modules and translation units. Two translation units
 disagreeing about `a ⊕ b ⊗ c` is an ODR factory, and the parse of an expression
 comes to depend on which imports are visible: Haskell's fixity-import problem,
-and Swift's `precedencegroup` conflicts. With fixity settled by the standard,
+and Swift's `precedencegroup` conflicts [@swift-operators]. With fixity settled by the standard,
 the *parse* of an expression depends on nothing but the expression. Only the
 *meaning* of `operator⊞` travels, and that is ordinary lookup.
 
@@ -623,8 +716,9 @@ left, and there is no table.
 
 There is a second alternative, and it is the one worth answering: fix the
 precedence per code point in the standard, deriving it rather than letting
-anyone declare it. Julia does this, in many classes mirroring mathematical
-convention, and OCaml derives an operator's fixity from its first character.
+anyone declare it. Julia does this [@julia-operators], in many classes
+mirroring mathematical convention, and OCaml derives an operator's fixity
+from its first character [@ocaml-expr].
 It fails here twice over. Nothing in Unicode supports the derivation:
 Pattern_Syntax partitions syntax from identifiers and asserts nothing about
 meaning, blocks record allocation order, and the two distinctions a reader
@@ -666,9 +760,11 @@ resolution.**
 
 No existing C++ operator does this. [over.match.oper]{.sref}p2 gives an
 overloaded built-in-spelled operator the built-in's sequencing regardless of
-member-ness, and a user operator has no built-in to borrow from. The question
-is this feature's alone: D4307 inherits [expr.call]{.sref} the same way, but a
-backtick slot has no member form for the split to arise in. The implementation
+member-ness, and a user operator has no built-in to borrow from. The *split* is
+this feature's alone, and not because P4307R0 inherits [expr.call]{.sref} any
+less: it inherits it the same way, and a backtick slot desugars to a
+non-member call whatever it names, so its operands are always function
+arguments and there is no member form for the split to arise in. The implementation
 measured the difference three ways (constant evaluation, `-Wunsequenced`, and
 emitted IR), and this paper does not propose an answer. It calls CWG's
 attention to the question.
@@ -694,7 +790,7 @@ because the compiler demanded them.
   implementation made `operator\U0000229E` a different entity from
   `operator⊞` while every token-level test passed.
 - *Arity selects the form for declarations and does not filter uses.* Keeping
-  [over.oper]{.sref}p8 would have filtered them, and that breaks the
+  [over.oper.general]{.sref}p10 would have filtered them, and that breaks the
   desugaring equivalence the design rests on.
 
 **What it cost.** Opening a closed operator table cost a *parallel*
@@ -727,7 +823,8 @@ the AST node, serialization to PCH and modules, AST import, ODR hashing, an
 AST matcher, and clang-format support.
 
 The work was done as twenty-two gated steps, each with its own regression
-gate, and every place the build contradicted the design sketch this paper is
+gate, landing as the twenty-commit patch stack counted under "Volume" below,
+and every place the build contradicted the design sketch this paper is
 written from was recorded in a ledger as it was found. That ledger has
 twenty-four rows, and the rules stated above are what came out of it. The
 corrections worth a reader's time are here.
@@ -802,7 +899,7 @@ could not be supported: it returns a string reference into a *static* spelling
 table, and a user operator's spelling is a UTF-8 encoding computed into a
 buffer, so a matcher over user operators has to be keyed on the code point
 instead. The matcher that does exist says so in its own documentation. The
-tables are closed enough that a public matcher API can not name your operator.
+tables are closed enough that a public matcher API cannot name your operator.
 
 The fifth turns the count into a claim. Postfix-ness — see above — has no
 representation in Clang to make a sibling of. There is no `isPostfix()` on the
@@ -821,7 +918,7 @@ table for `operator""_suffix`. Two compilers, one shape.
 This is the reassurance the proposal most needs to give, and it is structural.
 Every site is parallel and no table the
 existing operators are keyed on is ever widened, so the relaxation provably
-can not leak into `operator+`. The shared checker was never touched; the new
+cannot leak into `operator+`. The shared checker was never touched; the new
 kind is a new arm *beside* the old one everywhere it appears; and a program
 that declares no user operator reaches none of them. That is a stronger claim
 than "it is behind a flag".
@@ -859,7 +956,7 @@ special. What made them latent was a CMake default, and every build directory
 in the project had it. How many obligations a new expression node has is
 bounded by the configuration of the tree you measure in.
 
-Two things this axis can not see, and measurement found both
+Two things this axis cannot see, and measurement found both
 where review had not. The last row is an obligation created by *meeting*
 another one: teaching the control-flow graph to look through the wrapper is
 what removes the wrapper's program point, and removing its program point is
@@ -885,8 +982,8 @@ pass are the ones you thought to write.
 ## Where the cost estimate went wrong, in a predictable direction
 
 The sketch this paper is written from said that parsing is the easy part of
-this feature, easier even than backtick. The prototype contradicted that from
-four directions.
+this feature, easier even than backtick. The prototype bore out half of that
+and contradicted the other half.
 
 The first half survives. The parse really is small, on both sides: the *using*
 side is two `case`s in a precedence loop that already exists, and the
@@ -895,7 +992,7 @@ second half does not survive. The parse is not where either feature's cost
 lives.
 Backtick's cost is in the parse and ends there; this feature's cost is in what
 a parsed operator has to *become*: a **name**, in tables that are closed, and
-an **expression node** that can not be transparent, because a user operator
+an **expression node** that cannot be transparent, because a user operator
 has member candidates and a backtick slot does not. The comparison inverts as
 soon as it leaves the parser.
 
@@ -916,7 +1013,8 @@ answer to.
 
 ### What is implemented, and why it needs nothing
 
-The Itanium vendor-extended operator production `v <digit> <source-name>`
+The Itanium ABI's vendor-extended operator production
+`v <digit> <source-name>` [@itanium-abi]
 exists for operators the grammar did not anticipate, and the prototype uses
 it. The derivation rule:
 
@@ -945,7 +1043,8 @@ set. The gap follows from the enumeration rather than from the tests, and it
 is the first thing to exercise if a later revision admits anything above the BMP.
 
 "Demangler-tolerated" undersells the result. Both `llvm-cxxfilt` **and GNU
-binutils `c++filt` 2.46** — a different vendor's demangler, unmodified —
+binutils `c++filt` 2.46 [@binutils]** — a different vendor's demangler,
+unmodified —
 render every form above, character-identically, including nested-name,
 const-qualified member, explicit-object member and template-id. Existing
 toolchains need no change to inspect these symbols, which is the first
@@ -968,8 +1067,8 @@ things argue for asking.
 The ABI's own prose scopes the vendor production more narrowly than the
 prototype uses it. §5.1.3 reads: "Vendors who define builtin extended
 operators (e.g. `__imag`) shall encode them as a `v` prefix followed by the
-operand count as a single decimal digit". A user-declared operator is not a
-vendor builtin. The prototype's encoding is well formed and demangles
+operand count as a single decimal digit, and the name in `<length,ID>` form."
+A user-declared operator is not a vendor builtin. The prototype's encoding is well formed and demangles
 everywhere. However, it is outside the stated purpose of the paragraph that
 defines it.
 
@@ -1008,14 +1107,19 @@ not be bought with a mangling decision. And reserving `s` now lets a
 later revision take postfix without a cross-vendor ABI change made under
 pressure.
 
-Fixity in mangling is easy to get wrong even where the ABI spells it out, and
-it spells this one out twice: §5.1.3 gives `pp` and `mm` for the postfix forms
-and §5.1.6 gives `pp_` and `mm_` for the prefix ones. GCC 15.2.0 emits all
-four distinctly. Clang emits the postfix spelling for both fixities of both
-operators, so two function templates distinguished only by `++T{}` versus
-`T{}++` collide outright: *definition with same mangled name*. That is a
-Clang defect and not this proposal's, and it is the corner where the
-ABI *does* have room for fixity and an implementation still missed it.
+Fixity in mangling is easy to get wrong even in the one place the ABI has
+room for it. That place is not the *operator-name*: a function named
+`operator++` mangles as `pp` whichever fixity it has, and the two overloads
+are told apart by the postfix one's `int` parameter. It is the *expression*
+encoding of §5.1.6 — what a template argument or a `decltype` mangles into —
+where §5.1.3's table marks `pp` and `mm` as postfix "in `<expression>`
+context" and §5.1.6 gives `pp_` and `mm_` for the prefix forms. GCC 15.2.0
+[@gcc15] emits all four distinctly. Clang emits the postfix spelling for both
+fixities of both operators, so two function templates distinguished only by
+`++T{}` versus `T{}++` collide outright: *definition with same mangled name*.
+That is a Clang expression-mangling defect and not this proposal's, and it is
+the corner where the ABI *does* have room for fixity and an implementation
+still missed it.
 
 ### Windows
 
@@ -1043,7 +1147,7 @@ overloaded-operator handling rewrites the annotation after `operator` with no
 new rule, so `operator ⊞` canonicalizes to `operator⊞` under the same option
 that governs `operator +`, and nothing was written to make that true. It also
 honours `BreakBeforeBinaryOperators`, which a delimiter-pair syntax
-structurally can not.
+structurally cannot.
 
 One touch point was not obvious: the formatter's own precedence query needs the
 feature enabled, or the token answers "unknown", the expression parser builds
@@ -1093,7 +1197,7 @@ operator can never be a class member, so no valid program contains the
 construct. So the operator-function-id names the overload set where an
 unqualified-id does, with that one exception, and the exception is new.
 
-# Separability from D4307, in evidence
+# Separability from P4307R0, in evidence
 
 The two papers share one grammar production and nothing else, as the design
 section said. They are separate papers because their routing differs, their
@@ -1192,9 +1296,9 @@ Insert a new subclause between [expr.cast]{.sref} and
 > ```
 :::
 
-## [over.oper]
+## [over.oper.general]
 
-Modify the *operator-function-id* grammar in [over.oper]{.sref}:
+Modify the *operator-function-id* grammar in [over.oper.general]{.sref}:
 
 > ```
 > operator-function-id:
@@ -1209,14 +1313,14 @@ Add after the grammar:
 > *user-operator* is a *user-operator function*.
 :::
 
-Modify the first sentence of [over.oper]{.sref} paragraph 6:
+Modify the first sentence of [over.oper.general]{.sref} paragraph 7:
 
 > An operator function [other than a user-operator function]{.add} shall have
 > at least one function parameter or implicit object parameter whose type is
 > a class, a reference to a class, an enumeration, or a reference to an
 > enumeration.
 
-Modify [over.oper]{.sref} paragraph 8:
+Modify [over.oper.general]{.sref} paragraph 10:
 
 > An operator function [other than a user-operator function]{.add} cannot have
 > default arguments, except where explicitly stated below. Operator functions
@@ -1266,12 +1370,14 @@ The implementation was carried out as a gated, one-step-at-a-time experiment;
 the deviation ledger it produced is the source for most of this paper's
 corrections to its own design.
 
-A defect found in passing and unrelated to this proposal: Clang mangles both
-prefix and postfix `operator++` — and `operator--` — as `pp` and `mm`, where
-the Itanium ABI (§5.1.3, §5.1.6) spells the prefix forms `pp_` and `mm_`. Two
-overloads distinguished only by that mangle identically on Clang and distinctly
-on GCC 15.2, so a five-line program is rejected by one compiler and accepted by
-the other. It belongs to Clang; a report is written and this
+A defect found in passing and unrelated to this proposal: in the *expression*
+encoding — what a template argument or a `decltype` mangles into — Clang
+spells prefix `++` and `--` the same as the postfix forms, `pp` and `mm`,
+where the Itanium ABI (§5.1.6) [@itanium-abi] spells the prefix ones `pp_`
+and `mm_`. The function's own mangled name is not affected; two function
+templates distinguished only by that expression mangle identically on Clang
+and distinctly on GCC 15.2, so a five-line program is rejected by one compiler
+and accepted by the other. It belongs to Clang; a report is written and this
 revision cites no issue number, because none has been filed yet.
 <!-- LLVM-ISSUE-PENDING -->
 

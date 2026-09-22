@@ -1,7 +1,7 @@
 ---
 title: "An Infix Operator and a Keyword Escape for C++"
 subtitle: "Two jobs for the backtick, the last free token"
-document: D4307R0
+document: P4307R0
 date: today
 audience: EWG
 author:
@@ -30,7 +30,7 @@ code span.er { color: inherit; font-weight: inherit; }
 # Abstract
 
 We propose two uses for one character: the backtick, the last printable ASCII
-character the language can still claim. One makes any callable a binary
+character the language can still usefully claim. One makes any callable a binary
 operator; the other lets a keyword be escaped for use as an ordinary
 identifier. Each is independently motivated, and each is defined by rewrite
 into something the language already has. They are proposed together, with
@@ -244,8 +244,10 @@ is language-only), and all of it was compiled and run under the built Clang.
 
 ## Short-circuiting returns to user code
 
-C++ reserves non-strict evaluation to a fixed set of built-ins, `&&`, `||`,
-`?:` and `,`. Overloading does not get it back: an overloaded `operator&&`
+C++ reserves non-strict evaluation to a fixed set of built-ins: `&&`, `||`
+and `?:`. The comma operator is the near neighbor, and is not one of them: it
+evaluates both of its operands, and what it fixes is the *sequencing*.
+Overloading does not get non-strict evaluation back: an overloaded `operator&&`
 evaluates both operands, which is the trap everyone has been bitten by, and
 the reason the standing advice is: don't. This is a capability boundary, not a
 style preference, and it has been closed since C++98.
@@ -358,7 +360,13 @@ Direction without commitment.
 
 # Neither replaces the other: P2011's `|>`
 
-The obvious neighbor is the pipeline-rewrite operator, `|>` [@P2011R1]. Both
+The obvious neighbor is the pipeline-rewrite operator, `|>` [@P2011R1]. The
+comparison below is against that 2020 design, which states the rewrite most
+plainly; the discussion has since moved on to P2672R0 [@P2672R0], which
+reopens the design space and puts several shapes of the operator in front of
+EWG. Nothing here turns on which shape wins: the orthogonality is between a
+symmetric binary infix operator and a directional rewrite that prepends the
+left operand to a call, and every shape under discussion is the latter. Both
 constructs bottom out in a call expression, and their two-argument cases
 coincide (`` a `plus` b ``, `a |> plus(b)`, and `plus(a, b)` are the same
 call). They are orthogonal and complementary, and neither subsumes the
@@ -393,13 +401,13 @@ What each one is:
 +-----------------+-----------------------------+-----------------------------------+
 
 The overlap stops at two arguments. Beyond that, each can do what the other
-can not:
+cannot:
 
-- Backtick can not thread. `x |> f(a, b, c)` prepends `x` to an
+- Backtick cannot thread. `x |> f(a, b, c)` prepends `x` to an
   arbitrary-arity call; backtick's right-hand side is a single operand, not
   an argument list, so there is no backtick spelling of `f(x, a, b, c)`.
   Beyond two operands, only `|>` threads.
-- `|>` can not write an operation *between* its operands. `` a `min` b ``
+- `|>` cannot write an operation *between* its operands. `` a `min` b ``
   becomes `a |> min(b)`, which reads as a pipeline stage. For `x op y`
   notation (predicates, arithmetic, metrics), backtick is the spelling.
 
@@ -431,7 +439,7 @@ and [Idris](https://docs.idris-lang.org/en/latest/tutorial/typesfuns.html)
 both apply any function infix with backticks, as do the Haskell-family
 dialects. PureScript is the interesting case, and what it shows is descent
 under pressure. Its backtick operators are left-associative at the highest
-precedence and can not be given a fixity at all, which is the Haskell default
+precedence and cannot be given a fixity at all, which is the Haskell default
 and not an independent answer: Haskell 2010 §4.4.2 makes any operator lacking
 a fixity declaration `infixl 9`, and the PureScript documentation says so in
 as many words, that identifiers in backticks all have the same associativity
@@ -472,7 +480,7 @@ The escape is standard equipment in the languages designed since: C#'s
 backtick stropping (2008), Kotlin's backtick identifiers (2011), Swift's ``
 `class` `` (2014), and Rust's [`r#` raw
 identifiers](https://doc.rust-lang.org/edition-guide/rust-2018/module-system/raw-identifiers.html)
-(2015). Every one of them is younger than C++'s first standard. Rust's
+(2018). Every one of them is younger than C++'s first standard. Rust's
 motivation is on the record: `r#` was introduced so the 2018 edition could
 take `try`, `async`, and `await` as keywords while 2015-edition code kept
 compiling and kept calling functions with those names. Editions plus raw
@@ -526,7 +534,7 @@ one grammar production and a definitional rewrite.
 
 ## Precedence: the highest binary operator, and why not higher
 
-Backtick binds tighter than `*` and looser than the unary and prefix
+Backtick binds tighter than `*` and looser than the unary and postfix
 operators. Both operands are *cast-expressions*, so prefix operators attach
 symmetrically:
 
@@ -588,7 +596,7 @@ x `f `g` h` y           // a chain:  h(f(x, g), y)
 x `(f `g` h)` y         // nested:   (g(f, h))(x, y)
 ```
 
-This can not be diagnosed without contradicting left-associativity, and it
+This cannot be diagnosed without contradicting left-associativity, and it
 does not need to be. It is the same regrouping-changes-the-answer situation
 as `a - b - c` versus `a - (b - c)`, which no compiler diagnoses either: the
 grammar groups, parentheses override. The language defends against honest
@@ -688,8 +696,8 @@ both halves of what is proposed here, in the language that installed its hatch
 most recently and for this reason.
 
 EWG can take the restricted rule instead. It is one clause in a parser
-predicate and one word in the grammar, and the wording below says which word.
-What it costs is that the escape becomes unwritable in the dialect where it
+predicate, and in the wording below one sentence of [lex.name]. What it costs
+is that the escape becomes unwritable in the dialect where it
 does the most good, the one before the keyword lands. Both forks implement
 the unrestricted rule,
 and the implementation section below says what the change cost.
@@ -703,9 +711,8 @@ diagnostic names the entity `` `new` `` for the same reason, that text copied
 out of a diagnostic should be text the reader can paste back. The AST dump
 keeps the bare word where it names the declaration, which is the evidence for
 the paragraph above: the name really is an ordinary identifier, and the
-backticks are how it is written. That view is not of one mind, and the two
-implementations diverge
-from opposite ends: Clang dumps a declaration's name bare and the same name
+backticks are how it is written. The two implementations are not of one mind
+about where that line falls, and they diverge from opposite ends: Clang dumps a declaration's name bare and the same name
 inside a *type* escaped, while GCC escapes the name of a declaration and
 prints the name of a type bare. Neither split is visible to a program and
 neither touches acceptance. Both implementations put the escape back where it
@@ -782,15 +789,15 @@ multiplication does not need `` a `mul_sat` b ``; it needs a
 `Saturating<double>` whose `operator*` saturates.
 
 Note first that the lift is not optional. Overloaded operators require a class
-or enumeration operand, so `double * double` can not be given new meaning at
+or enumeration operand, so `double * double` cannot be given new meaning at
 all; to change what `*` does to two doubles, inventing a type is the *only*
 move the language offers. The objection is not "there is a lighter
 alternative"; it is "the heavyweight alternative already exists." And the
 committee has already decided this exact example, in the library: C++26's
 saturation arithmetic ([@P0543R3]) is `std::add_sat`, `std::sub_sat`,
 `std::mul_sat`, `std::div_sat`, named free functions in `<numeric>`. No
-saturating wrapper type was shipped. So with `std::gcd`, `std::midpoint`, and
-`std::lerp` before it: the library keeps choosing names, because the type
+saturating wrapper type was shipped. As with `std::gcd`, `std::midpoint` and
+`std::lerp` before it, the library keeps choosing names, because the type
 encodes the wrong thing.
 
 Types are not free in C++. Haskell writes `newtype Sat = Sat Double` — one
@@ -807,7 +814,7 @@ lacking an infix spelling.
 And the type is the wrong scope. Wrapping a value makes *every* operation
 saturating for as long as the wrapper is on, when the intent was one
 multiplication in one expression. Saturating versus wrapping versus trapping
-is a property of an operation and not of an object. The wrapper can not compose
+is a property of an operation and not of an object. The wrapper cannot compose
 for the same reason: `operator*` can mean only one thing per type, so an
 expression that needs a saturating multiply and a wrapping add has nowhere to
 stand. `` a `mul_sat` b `add_wrap` c `` says it directly, at the site where
@@ -869,7 +876,7 @@ that says nothing about why, which is the reason for stating the exclusion
 here: nothing else would say it was chosen. Excluding costs one clause in the
 predicate that already decides which operators may be folded over; admitting
 would require a fold-expression node that can hold an arbitrary slot
-expression, which today's can not. Nothing is foreclosed; every program a later
+expression, which today's cannot. Nothing is foreclosed; every program a later
 revision would newly accept is one this proposal rejects.
 
 The keyword escape is a new *identifier* alternative in name positions:
@@ -1137,7 +1144,7 @@ cache and re-annotate. More than half the work was in those three, and none of
 them appears in the grammar.
 
 The loop came from that last change. Clang's recovery for a
-qualified name it can not resolve is
+qualified name it cannot resolve is
 to try implicit `int`; that does not apply to an escape and consumes nothing,
 so `` namespace N { int x; } N::`union` g; `` re-entered the same case with
 the same tokens indefinitely. The code it replaced had been avoiding that by
@@ -1360,7 +1367,7 @@ parser architectures reproduced. Nesting-is-chaining is a consequence of the
 grammar. Clang carried a diagnostic for the
 bare form through most of the implementation and it never once fired; it was
 deleted rather than made to fire, since making it fire needs the lookahead
-that would have to reject legal chaining too. A diagnostic that can not fire is
+that would have to reject legal chaining too. A diagnostic that cannot fire is
 a claim the grammar has already withdrawn.
 
 The motivation section is implementation experience as well. Every pattern in
@@ -1426,10 +1433,14 @@ implemented in both compilers except where noted.
   later paper with usage behind them.
 - Two uses, one paper, because they share the token and the committee.
 
-**Left to EWG.** One question, on which the author is indifferent and both
-implementations support either answer: whether the escape is restricted to
-words that are keywords, so that `` `foo` `` is ill-formed rather than a
-noisy spelling of `foo`.
+**Left to EWG.** One question, which this paper answers rather than leaves
+open: whether the escape is restricted to words that are keywords, so that
+`` `foo` `` is ill-formed rather than a second spelling of `foo`. The
+proposal is the unrestricted rule, for the reason §"The escape yields an
+ordinary identifier" gives — a restricted escape cannot be written until the
+standard that takes the word has shipped, so it can repair a break and can
+never prevent one. Both implementations support either answer, so EWG can
+still poll it.
 
 
 # Wording
@@ -1447,7 +1458,7 @@ paragraph 1 by adding `` ` `` :
 > ```
 > operator-or-punctuator: one of
 >        ...
->        ?     ::    .     .*    ->    ->*   `
+>        ?     ::    .     .*    ->    ->*   ^^    ~     `
 >        ...
 > ```
 :::
@@ -1550,9 +1561,9 @@ And backtick is a dead key or awkward on some non-US keyboard layouts; it was
 one of the ISO-646-variant characters, alongside `# [ ] { } | ~ ^ \`.
 
 The Markdown objection is on the record in WG21, made against this exact
-character by seven authors. P3381R0 [@P3381R0] evaluated eleven candidate
-spellings for the reflection operator, the backtick among them, and rejected
-it:
+character by seven authors. P3381R0 [@P3381R0] evaluated twelve
+single-character spellings for the reflection operator, and four
+multi-character ones, the backtick among them, and rejected it:
 
 > The backtick has the advantage that it's pretty small, even smaller than
 > `^`. But it has the disadvantage that backtick is used by Markdown
@@ -1604,7 +1615,7 @@ a real token before:
 
 | Spelling | Lexically clean? | Verdict |
 |---|---|---|
-| `\< … \>` | yes — `\` is no token today, and `\<` can not start a UCN | front-runner, if ever forced (A.4) |
+| `\< … \>` | yes — `\` is no token today, and `\<` cannot start a UCN | front-runner, if ever forced (A.4) |
 | `<\| … \|>` | yes | blocked socially: `\|>` is P2011's operator, and it reads as "pipe" |
 | `<\ … \>` | no — UCN munch (trap 3) | inferior twin of `\< … \>`; reject |
 | `(\| … \|)` | yes | heavy; Haskell "banana bracket" connotation; reads worse than backtick |
@@ -1654,7 +1665,7 @@ purpose.
 
 The same availability analysis generalizes, and it gets asked in the room. A
 sequence `XY` is mintable only if `XY` is not a
-token or token-prefix today *and* `Y` can not validly follow `X` in a current
+token or token-prefix today *and* `Y` cannot validly follow `X` in a current
 program. The second clause is the surprising one: after any binary operator or
 `<`, the unary-capable characters `- + * & ~ !` are already legal, so `<-`,
 `<+`, `<*`, `**`, `!!`, `~~` are all blocked; `a * *p` and `!!x` are the
@@ -1662,9 +1673,11 @@ cautionary cases. `<|` survives only because `|` is the one bar with no unary
 form.
 
 Free standalone characters: exactly three, as noted in the grammar section.
-They are the backtick (claimed by this proposal), `\` (free as a token but the
-line-continuation and UCN lead-in, usable only with care), and `@`/`$`
-(compromised by Objective-C and `-fdollars-in-identifiers` respectively).
+They are the backtick (claimed by this proposal) and `@` and `$`, compromised
+by Objective-C and `-fdollars-in-identifiers` respectively. There is a fourth
+character, `\`, which is free as a *token* and is not counted among the
+three: it is the line-continuation marker and the universal-character-name
+lead-in, so it is usable only with care.
 
 Clean two-or-more-character sequences of note: `==>`, `<==`, `<==>`, `<|`,
 `~>`, and `%%` are mintable today; `=>` and `|>` are lexically clean but
@@ -1688,7 +1701,7 @@ scarce lexical real estate, largely evaporates. `` x `implies` y ``, `` x
 A.6 can stay unspent.
 
 The residual cases where a dedicated punctuator is still worth minting are the
-ones a desugar-to-call can not express: non-strict evaluation with a
+ones a desugar-to-call cannot express: non-strict evaluation with a
 bare-expression right operand (Walter Brown's short-circuiting `=>`
 implication [@P2971R3]; though the motivation section shows a thunk recovers
 the capability, so the dedicated operator is an ergonomic win), custom
