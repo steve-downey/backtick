@@ -1,7 +1,7 @@
 # Unicode User-Defined Operators — Design Sketch
 
 Exploratory follow-on to the infix backtick operator (`backtick-operator-design.md`,
-paper D4307). Nothing in this document is implemented; every decision below is
+paper P4307). Nothing in this document is implemented; every decision below is
 **Proposed**. Bare `Dn` and `§n` references are into the backtick design doc;
 `Un` decisions and `U§n` sections are this document's own.
 
@@ -257,19 +257,19 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Formerly:** `U12`.
 
-**Question.** Does this ship inside D4307, or in a paper of its own?
+**Question.** Does this ship inside P4307, or in a paper of its own?
 
 **Status.** **Proposed**
 
-**Decision.** **A separate paper from D4307** — with D4307 carrying an informative future-directions appendix, and its precedence level named the *user-infix level*
+**Decision.** **A separate paper from P4307** — with P4307 carrying an informative future-directions appendix, and its precedence level named the *user-infix level*
 
-**Why.** [paper-bundling](backtick-operator-design.md#paper-bundling)'s own rule decides it: bundle what shares a design surface within one committee, split what crosses committees. The measured wording overlap is one grammar production plus the precedence prose; everything else is disjoint (normative character table, UCN/identifier interplay, operator-function-id and [over.oper] changes, SG16 review, ABI note — none of which backtick touches). The routing differs (SG16 and the ABI group vs EWG/CWG alone), the maturity differs (two implementations vs none — bundling dilutes D4307's strongest asset), and the fates must stay separable: Unicode-allergy is real in the room and must not be able to sink backtick. The shared-discussion value is recovered without coupling: D4307 presents one *user-infix level* with an informative appendix showing this direction, EWG banks the shared decisions (one level, left-assoc, desugar-to-call) once with the whole landscape visible, and this paper inherits them as adopted precedent (U§12).
+**Why.** [paper-bundling](backtick-operator-design.md#paper-bundling)'s own rule decides it: bundle what shares a design surface within one committee, split what crosses committees. The measured wording overlap is one grammar production plus the precedence prose; everything else is disjoint (normative character table, UCN/identifier interplay, operator-function-id and [over.oper] changes, SG16 review, ABI note — none of which backtick touches). The routing differs (SG16 and the ABI group vs EWG/CWG alone), the maturity differs (two implementations vs none — bundling dilutes P4307's strongest asset), and the fates must stay separable: Unicode-allergy is real in the room and must not be able to sink backtick. The shared-discussion value is recovered without coupling: P4307 presents one *user-infix level* with an informative appendix showing this direction, EWG banks the shared decisions (one level, left-assoc, desugar-to-call) once with the whole landscape visible, and this paper inherits them as adopted precedent (U§12).
 
 **Decided by.** Undecided — the whole log is Proposed until the paper is polled.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
-2026-09-15 — **the condition in the Decision above is not built, and had never been tracked.** D4307R0 does not name the *user-infix level* and carries no future-directions appendix; it does not name D4345 at all, while D4345R0 cites D4307 six times and carries the mirror-image "Relation to D4307" note. So the split happened and the recovery the **Why** promises did not. Recorded as [backtick-paper-companion](../ops/completion/steps/backtick-paper-companion.md), Phase L — the first entry in that plan whose scope came from a design doc rather than from `ops/`, which is why nothing caught it sooner. See its Notes.
+2026-09-15 — **the condition in the Decision above is not built, and had never been tracked.** P4307R0 does not name the *user-infix level* and carries no future-directions appendix; it does not name P4345 at all, while P4345R0 cites P4307 six times and carries the mirror-image "Relation to P4307" note. So the split happened and the recovery the **Why** promises did not. Recorded as [backtick-paper-companion](../ops/completion/steps/backtick-paper-companion.md), Phase L — the first entry in that plan whose scope came from a design doc rather than from `ops/`, which is why nothing caught it sooner. See its Notes.
 
 ---
 
@@ -1794,7 +1794,7 @@ split what is separable across committees. Applying it here:
   *rationale* overlaps heavily; the *wording* barely does.
 - *The routing differs* — SG16 first, and the ABI group for [operator-mangling](#operator-mangling), neither of
   which backtick needs. By [paper-bundling](backtick-operator-design.md#paper-bundling)'s own criterion, that is a split.
-- *The maturity differs.* D4307's strongest asset is **two independent**
+- *The maturity differs.* P4307's strongest asset is **two independent**
   implementations, in Clang and GCC. This feature has **one**, in Clang, and
   the asymmetry is what the bundling rule is weighing: a single-implementation
   half should not be able to spend the two-implementation half's credibility.
@@ -1878,7 +1878,7 @@ test changed, and neither the name tables nor the Unicode character-set
 headers moved at all.
 
 The cost of splitting — EWG discussing user infix twice — is recovered
-structurally: D4307 names its precedence level the **user-infix level**
+structurally: P4307 names its precedence level the **user-infix level**
 (not the backtick level) and carries a short **informative future-directions
 appendix** pointing at this sketch. EWG then has its one
 operators-and-infix discussion with the whole landscape visible and banks

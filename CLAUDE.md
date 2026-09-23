@@ -68,21 +68,21 @@ where `pipe(t, inc)` compiles in the same translation unit. That is the slot
 having weaker lookup than the call it desugars to, which §17.4 calls
 normative, and **Clang is the conforming side** — the opposite polarity from
 every other row in the GCC ledger. It is **unowned and nothing is blocked on
-it**; §17.4 and D4307 currently print the divergence rather than claiming
+it**; §17.4 and P4307 currently print the divergence rather than claiming
 agreement, and closing the step un-qualifies those two passages. The Unicode
 paper is not implicated.
 
 **Phase L** is
 [`backtick-paper-companion`](ops/completion/steps/backtick-paper-companion.md),
 opened on 2026-09-15 by the review of PR #3. It is not a defect: it is an
-action this project decided and never carried out. D4307R0 must name its
+action this project decided and never carried out. P4307R0 must name its
 precedence level the **user-infix level** and carry a short informative
 future-directions appendix pointing at the Unicode direction — written down
 in `docs/backtick-operator-design.md` §9's list of what the paper must carry,
 and made the *condition* the two papers were split under by
 [`paper-separation`](docs/unicode-operators.md#paper-separation). Neither half
-is in the paper, and D4307R0 does not name D4345 once, while D4345R0 cites
-D4307 six times. It went missing because the obligation lives in `docs/` and
+is in the paper, and P4307R0 does not name P4345 once, while P4345R0 cites
+P4307 six times. It went missing because the obligation lives in `docs/` and
 `ops/completion/PLAN.md`'s Coverage table only covers `ops/` — **when auditing
 for outstanding work, read the design docs' paper-requirements lists too.**
 Unowned, nothing is blocked on it, and it should land before the two papers
@@ -96,7 +96,7 @@ spelled as an identifier may stand between the backticks, and `` `foobar` ``
 **is** `foobar`, one name under two spellings, with every other identifier
 rule applying to the result unchanged. All four Clang/GCC branches carry it —
 `backtick-trunk`, `backtick-23`, GCC `backtick`, and by the seventh
-forward-port `unicode-operators-experiment` — gated green, and D4307R0 no
+forward-port `unicode-operators-experiment` — gated green, and P4307R0 no
 longer says the forks lag. One GCC printer row opened and closed with it,
 [`escape-alternative-token-spelling`](ops/gcc/DEVIATIONS.md#escape-alternative-token-spelling);
 one older Clang row surfaced while building it,
@@ -158,7 +158,7 @@ and a Status-log row so base-commit changes are not lost.
   question), the token set, the grammar, the implementation sketch, ABI (§9,
   three slugged subsections — what is implemented, what the paper asks the ABI
   groups for, and the Microsoft gap), and the open questions.
-  `papers/unicode-mathematical-operators.md` (D4345R0) is written from it.
+  `papers/unicode-mathematical-operators.md` (P4345R0) is written from it.
 - `docs/open-decisions.md` — the questions the implementation measured and
   only the design author can settle, one slug-headed page each (question /
   what was measured / options / cost / recommendation), with the author's
@@ -174,9 +174,9 @@ and a Status-log row so base-commit changes are not lost.
   `~/.claude/CLAUDE.md`: the number lives in the front matter and in the prose,
   because the upload system renames whatever is uploaded and a name is what a
   reader finds later.
-  - `papers/backtick-infix-and-keyword-escape.md` — **D4307R0**, the backtick
+  - `papers/backtick-infix-and-keyword-escape.md` — **P4307R0**, the backtick
     paper, written from `docs/backtick-operator-design.md`.
-  - `papers/unicode-mathematical-operators.md` — **D4345R0**, the Unicode
+  - `papers/unicode-mathematical-operators.md` — **P4345R0**, the Unicode
     paper, written from `docs/unicode-operators.md`.
   - `make -C papers <basename>.html <basename>.pdf` builds either. **Build the
     PDF, not only the HTML**, and read the log: a wg21 paper can exit 0 with
