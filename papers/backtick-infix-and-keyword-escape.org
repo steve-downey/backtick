@@ -1,20 +1,87 @@
-#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t
-#+options: broken-links:nil c:nil creator:nil d:(not "LOGBOOK") date:t e:t
-#+options: email:t f:t inline:t num:t p:nil pri:nil prop:nil stat:t tags:t
-#+options: tasks:t tex:t timestamp:t title:t toc:2 todo:t |:t
+# Export options, one per line so each can be found and changed by name.
+# Multiple #+options: lines merge, and a later line overrides an earlier
+# one, so a value can be flipped in place.
+
+# Front matter: emit title, author, and date; hold back the email.
+#+options: title:t
+#+options: author:t
+#+options: date:t
+#+options: email:nil
+
+# Structure: no table of contents, numbered sections, headings to depth 3
+# (deeper levels export as lists).
+#+options: toc:nil
+#+options: num:t
+#+options: H:3
+
+# Inline markup, all interpreted: emphasis (*bold*, /italic/), entities
+# (\alpha), LaTeX fragments, tables, footnotes, fixed-width ":" lines,
+# special strings (-- to dash, ... to ellipsis).
+#+options: *:t
+#+options: e:t
+#+options: tex:t
+#+options: |:t
+#+options: f:t
+#+options: ::t
+#+options: -:t
+
+# Inline markup, disabled: _ and ^ do not make sub/superscripts (code uses
+# them literally), no smart quotes, a newline in prose is not a line break.
+#+options: ^:nil
+#+options: ':nil
+#+options: \n:nil
+
+# Planning metadata: keep TODO keywords, task trees, inline tasks, tags,
+# statistics cookies, and timestamps.
+#+options: todo:t
+#+options: tasks:t
+#+options: inline:t
+#+options: tags:t
+#+options: stat:t
+#+options: <:t
+
+# Planning metadata, dropped: priority cookies, SCHEDULED/DEADLINE lines,
+# CLOCK lines, property drawers; other drawers export except LOGBOOK, and
+# an archived tree keeps only its headline.
+#+options: pri:nil
+#+options: p:nil
+#+options: c:nil
+#+options: prop:nil
+#+options: d:(not "LOGBOOK")
+#+options: arch:headline
+
+# Export mechanics: a broken internal link aborts the export rather than
+# exporting wrong; keep the export-time timestamp comment in the output.
+#+options: broken-links:nil
+#+options: timestamp:t
+
+# HTML backend: XHTML-strict-compatible output (no HTML5 elements),
+# preamble but no postamble and no creator line, no default CSS, and
+# relative links stay relative. NOTE html-scripts:n is inherited from the
+# old header; org reads the value with `read`, and the symbol n is not
+# nil, so the default script block IS included — write nil to drop it.
+#+options: html5-fancy:nil
+#+options: html-preamble:t
+#+options: html-postamble:nil
+#+options: creator:nil
+#+options: html-style:nil
+#+options: html-scripts:n
+#+options: html-link-use-abs-url:nil
 #+TITLE: An Infix Operator and a Keyword Escape for C++
 #+SUBTITLE: Two jobs for the backtick, the last free token
 #+AUTHOR: Steve Downey
 #+EMAIL: sdowney@gmail.com
-#+DATE: {{{time(%Y-%m-%d)}}}
+#+DATE: {{{modification-time(%Y-%m-%d, VC)}}}
 #+LANGUAGE: en
 #+DOCUMENT: D4307R1
 #+AUDIENCE: EWG
 #+SELECT_TAGS: export
 #+EXCLUDE_TAGS: noexport
 #+STARTUP: showall
+#+HTML_DOCTYPE: xhtml-strict
+#+HTML_CONTAINER: div
 
-#+bibliography: backtick-infix-and-keyword-escape.bib
+#+bibliography: references.bib
 #+cite_export: csl
 
 # Wording markup. The wg21 markdown spans map as: {.add} -> _underline_,
