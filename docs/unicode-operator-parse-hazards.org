@@ -1,0 +1,250 @@
+#+TITLE: Parse Failures by Rule Set
+#+SUBTITLE: What each alternative misparses, and what the proposed rules do instead
+#+AUTHOR: Steve Downey
+#+options: toc:nil num:t ^:nil ':nil
+
+The design declines four alternatives — ASCII multi-character operators,
+postfix forms, whitespace-sensitive fixity, and declaration-dependent
+parsing — and each was declined because of a specific misparse or a specific
+look the parser would need. This file collects those failures as annotated
+examples, one section per rule set, for eventual composition into the paper.
+Sources: [[file:unicode-operators.md][the design doc]] (/unary-forms/, /user-declared-fixity/,
+/operator-identifier-disjointness/, §13.1), the paper's "Postfix, and why
+not", and [[file:backtick-operator-design.md][the backtick design doc]] §14 (the ASCII inventory).
+
+Annotation convention, used under every example:
+
+- ~^~ marks the column where the parse commits, or where it breaks;
+- ~>~ marks a token the rule must examine *ahead* of that point;
+- ~<~ marks a token the rule must examine *behind* it.
+
+The proposed rules need only the ~^~: every decision is made at the token
+itself, from grammatical position alone. Every ~>~ and ~<~ below marks a
+look some alternative requires and this design avoids.
+
+* The comparative table
+
+| Hazard                              | Proposed | ASCII multi-char | Postfix (greedy-infix) | Whitespace fixity | Operator chars in identifiers | Declared fixity |
+|-------------------------------------+----------+------------------+------------------------+-------------------+-------------------------------+-----------------|
+| Silently changes existing code      | no       | yes              | no                     | no                | no                            | no              |
+| Misparses new, reasonable code      | no       | —                | yes                    | yes               | yes                           | yes             |
+| Degrades a diagnostic for everyone  | no       | —                | yes                    | —                 | —                             | —               |
+| Parse depends on whitespace         | no       | no               | no                     | yes               | its cheapest fix              | no              |
+| Parse depends on declarations       | no       | no               | no                     | no                | its other fix                 | yes             |
+| Parse depends on dialect flags      | no       | no               | yes                    | no                | no                            | no              |
+| Lookahead required                  | none     | in the lexer     | one token              | one column        | unbounded or one column       | unbounded       |
+| Lookback required                   | none     | at the lexer     | none                   | one column        | —                             | the imports     |
+
+* The proposed rules: position decides, and only position
+
+A user operator is a single frozen code point, never an identifier
+character. After a complete operand it is infix; in operand position it is
+prefix; there is no postfix form. One precedence level, left-associative.
+Each decision is made at the operator's own token.
+
+#+begin_example
+⊖a ⊖ ⊖b        // operator⊖(operator⊖(a), operator⊖(b))
+^    ^         operand position -> prefix
+   ^           post-operand -> infix; decided here, no look in either direction
+#+end_example
+
+The same code point is both forms in one expression, and nothing was
+consulted to get there: not whitespace, not a declaration, not the next
+token. The failure modes of the alternatives below are absent by
+construction, and the residue is ordinary:
+
+#+begin_example
+a ⊞ ;
+    ^          error: expected expression
+#+end_example
+
+A missing right operand is the ordinary incomplete-binary-expression error,
+character-identical to ~a +;~, with or without the space. (Keeping this
+diagnostic is a real cost of the postfix alternative — see below.)
+
+#+begin_example
+(... ⊞ N)
+     ^         error: expected expression -- not a fold operator, by design
+#+end_example
+
+And the one concession, recorded because a reviewer will raise it: one level
+is not neutral.
+
+#+begin_example
+a ⊕ b ⊗ c      // (a ⊕ b) ⊗ c -- everywhere, in every TU
+  ^   ^        each operator commits at its own token
+#+end_example
+
+The tensor reader expects ~a ⊕ (b ⊗ c)~ and does not get it; the surprise is
+uniform and learnable, and disambiguation lives in parentheses, which is
+where mathematics leaves it.
+
+* Alternative: ASCII multi-character operators
+
+The ~&&~-versus-~&~ problem. Tokens are made before parsing and long before
+name lookup, and maximal munch takes the longest token it can. Minting a new
+ASCII sequence therefore changes the lexing of programs that already exist —
+the failure is *silent reinterpretation of valid code*, before any grammar
+rule runs.
+
+#+begin_example
+a &&& b        // today: a && (&b) -- valid, and people write it
+  ^^           maximal munch has already produced &&
+    ^          the remainder is &, address-of b
+#+end_example
+
+A user ~&&&~ operator cannot be lexed into existence: the lexer would need
+to know that ~a~ is a complete operand (lookback into parse context it does
+not have) and that a declaration of ~operator&&&~ is visible (lookup that
+has not happened yet).
+
+#+begin_example
+a && b         // logical AND -- or a user & followed by address-of?
+  ^^           lexing precedes lookup: no declaration can reach
+               back and split, or fuse, this token
+#+end_example
+
+The same shape blocks nearly every candidate sequence, because after a
+binary operator, a unary-capable character is already meaningful:
+
+#+begin_example
+a<-b           // today: a < (-b)
+ ^^            with a <- token: munched, meaning changed silently
+#+end_example
+
+#+begin_example
+a**p           // today: a * (*p)
+ ^^            with ** exponentiation: munched -- and so no ** ever
+#+end_example
+
+~!!x~ (the bool-cast idiom), ~a<&x~, ~a<~b~ are all in this class; ~^^~ was
+lexically clean until P2996 spent it on reflection. The full inventory is
+§14 of the backtick design doc; its conclusion is that the free ASCII pool
+is a handful of sequences (~=>~, ~<|~, =~>=, ~%%~), each with one plausible
+claimant. The Unicode set exists because this pool is exhausted — no
+single-codepoint math operator is a prefix of another, so maximal munch is
+trivial there by construction.
+
+* Alternative: postfix forms, by the greedy-infix rule
+
+Postfix cannot be disambiguated the way ~operator++~ is (two grammar
+positions work only because ~++~ has no infix form) and cannot be
+disambiguated by declaration (lexing and parsing are
+declaration-independent). The rule that works was prototyped: after a
+complete operand, a user operator followed by a token that can begin a
+cast-expression is infix, otherwise postfix. One token of lookahead — and
+three real costs, found by building it.
+
+First, the witness set contains surprises, so reasonable code misparses:
+
+#+begin_example
+a ⊖ && b       // intended: postfix ⊖ on a, then logical AND
+  ^ >>         && can begin a cast-expression (GNU address-of-label)
+               -> infix: ⊖(a, &&b) ... "use of undeclared label 'b'"
+#+end_example
+
+Second, every missing-operand typo becomes a *valid* postfix parse, so the
+ordinary diagnostic degrades — for every user, whether or not they ever
+declare a postfix operator:
+
+#+begin_example
+a ⊞ ;
+  ^ >          ; cannot begin a cast-expression -> a valid postfix use
+               "no matching overload" replaces "expected expression"
+#+end_example
+
+Third, the witness set moves with the dialect — ~^^~ is gated on
+reflection, ~[~ differs between C++ and Objective-C, ~^~ on blocks — so the
+same characters change fixity under a flag:
+
+#+begin_example
+a ⊖ ^ b
+  ^ >          with -fblocks: ^ begins a block literal -> infix
+               without:       ^ cannot begin an expression -> postfix
+#+end_example
+
+Declining postfix costs nothing later: greedy-infix only ever reinterprets
+programs the proposal rejects today, so a future paper can add it without
+changing the meaning of any accepted program.
+
+* Alternative: whitespace-sensitive fixity (the Swift rule)
+
+Swift admits prefix, infix, *and* postfix custom operators, and pays for the
+third by reading the whitespace on both sides of the operator token:
+
+#+begin_example
+a ⊖ b          // spaces both sides            -> infix
+a ⊖b           // space before, none after     -> prefix, on b
+a⊖ b           // none before, space after     -> postfix, on a
+<^>            one column of lookback and one of lookahead, at every use
+#+end_example
+
+The parse is then hostage to formatting. A formatter that inserts one space
+— or a diff that loses one — produces a different program out of the same
+identifiers:
+
+#+begin_example
+x = a⊖ + b     // postfix ⊖ on a, then binary +
+x = a ⊖ + b    // infix ⊖, unary + on b
+     ^         same tokens either side of one space
+#+end_example
+
+This design never reads the space: position in the grammar decides, the
+prefix/postfix collision cannot arise because postfix does not exist, and
+~a ⊖b~, ~a⊖ b~, ~a⊖b~ and ~a ⊖ b~ are the same program.
+
+* Alternative: operator characters as identifier characters
+
+If ~⊞~ could also name a variable or function — dropping the
+Pattern_Syntax/XID disjointness — one true ambiguity appears, in operand
+position:
+
+#+begin_example
+⊞(x)
+ ^             a call of a function named ⊞? prefix ⊞ applied to (x)?
+#+end_example
+
+Both readings are legitimate expressions, and the grammar has no third
+position to send the question to. The available resolutions are whitespace
+sensitivity (~⊞(x)~ call versus ~⊞ (x)~ prefix — the Swift rule, declined
+above) or making the parse depend on what ~⊞~ is declared to be (declined
+below). The design keeps the sets disjoint instead — which TR31 already
+guarantees (Pattern_Syntax ∩ XID = ∅) and every C++ standard has honored —
+and the function-name use is already served: ~operator⊞~ *is* a name,
+callable and address-taken.
+
+* Alternative: user-declared fixity
+
+Haskell fixity declarations, Swift precedencegroups, Julia's precedence
+classes: the operator's precedence is declared, so the parse of an
+expression depends on which declarations are visible above it.
+
+#+begin_example
+a ⊕ b ⊗ c      // fixity visible:  ⊗ binds tighter -> a ⊕ (b ⊗ c)
+a ⊕ b ⊗ c      // fixity not seen:                    (a ⊕ b) ⊗ c
+  ^   ^
+<<<<<<<<<      the look required is *the imports*: headers, modules,
+               and their order, before the first token can shift
+#+end_example
+
+Two translation units disagreeing about the grouping is an ODR/IFNDR
+factory (Haskell's fixity-import problem, Swift's precedencegroup
+conflicts). And the tools below the parser never see the declarations at
+all: clang-format links no Sema and does no lookup, so it cannot know a
+declared precedence — when the prototype's formatter answered ~prec::Unknown~
+every test still passed and long chains wrapped wrongly, which is the bug a
+declaration cannot fix and a fixed level did.
+
+The derived-table variant — precedence from the code point itself, not a
+declaration — fails on the data: ⊕ ⊖ ⊗ ⊘ ⊙ are U+2295 through U+2299 and
+∩ ∪ are U+2229 and U+222A, so every mechanical derivation (block, range,
+shape) collapses exactly the pairs it would need to separate; and a curated
+table would have the committee assert that ⊗ *means* multiplication, which
+is true in tensor algebra, false in a monoidal category, and backwards in a
+tropical semiring. C++'s one precedent for fixing a precedence over a
+user-chosen meaning is ~operator<<~, and it is the language's most-cited
+precedence bug.
+
+Under the proposed rules the parse of every expression is a function of the
+expression alone; only the *meaning* of ~operator⊞~ travels, and that is
+ordinary name lookup, which already knows how to travel.
