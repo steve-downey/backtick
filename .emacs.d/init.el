@@ -152,10 +152,19 @@
 (setq org-support-shift-select 'always)
 
 
-;; Reveal.js + Org mode
+;; Reveal.js + Org mode.
+;;
+;; The default root is the checkout `make slides' clones into .tools/. Each
+;; deck in talks/ overrides it with its own `#+REVEAL_ROOT:' relative to the
+;; deck, which is what the batch export actually uses; this only matters when
+;; exporting interactively from a deck that sets none.
 (use-package org-re-reveal
   :config
-  (setq org-re-reveal-root "file:////home/sdowney/bld/reveal.js"))
+  (setq org-re-reveal-root
+        (concat "file://"
+                (expand-file-name ".tools/reveal.js"
+                                  (file-name-directory
+                                   (directory-file-name user-emacs-directory))))))
 
 
 (use-package org-transclusion

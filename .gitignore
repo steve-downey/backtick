@@ -12,3 +12,7 @@ papers/generated/
 # org export outputs (the wg21 pipeline writes to papers/generated/)
 /papers/*.html
 /docs/*.html
+
+# reveal.js decks, and the reveal.js checkout `make slides` clones on demand
+/talks/*.html
+/.tools/

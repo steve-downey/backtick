@@ -246,6 +246,29 @@ and a Status-log row so base-commit changes are not lost.
   `TOOLCHAIN=clang-trunk-backticks` select the three `~/install/` prefixes and
   add `-fbacktick`; see `examples/etc/*-backticks-toolchain.cmake`. This is
   where sample code for the paper gets compiled and run for real.
+- `talks/` — the conference decks, one org file each, exported to reveal.js by
+  `make slides` (`talks/<name>.org` → `talks/<name>-slides.html`). The
+  machinery is carried over from `steve-downey/cppnow26`'s `trees/`. Decks are
+  deliberately *not* in the Makefile's `ORGFILES`, so `make org-html` does not
+  also export each one as a plain article.
+  - `make slides` clones reveal.js 6.0.1 into `.tools/` on first use; both
+    that directory and the built `talks/*.html` are ignored by git. Because a
+    deck sets `#+OPTIONS: reveal_single_file:t`, the built HTML inlines all of
+    its CSS and JS and then needs neither `.tools/` nor a network — check that
+    by grepping the output for `src=`/`href=` and finding only the deliberate
+    hyperlinks.
+  - `etc/my_theme.css` is the reveal theme; `etc/modus-{vivendi,operandi}-tinted.css`
+    supply the syntax-highlighting classes that `org-html-htmlize-output-type
+    'css` emits. Those two are **bare CSS here and HTML `<style>` fragments in
+    cppnow26** — `#+REVEAL_EXTRA_CSS` inlines a file inside a `<style>`
+    element of its own, and a nested tag silently costs you the first rule.
+  - `etc/slide-footer.el` builds the per-slide footer from three variables a
+    deck sets in its own Local Variables block. All three are `org-`-prefixed
+    on purpose: the export runs in a *copy* of the deck's buffer, and
+    `org-element-copy-buffer` carries a buffer-local across only if its name
+    matches `^\(org-\|orgtbl-\)`. Under any other prefix the footer silently
+    comes out empty. Leaving all three blank emits no postamble at all, which
+    is also what keeps the jQuery CDN tag out of a single-file deck.
 
 ## The implementation worktrees (where the code actually is)
 

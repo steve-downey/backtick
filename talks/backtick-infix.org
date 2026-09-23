@@ -1,0 +1,130 @@
+#+TITLE: An Infix Backtick Operator for C++
+#+SUBTITLE: Any function can be a binary operator
+#+DATE: <2026-09-23 Wed>
+#+AUTHOR: Steve Downey
+#+EMAIL: sdowney@gmail.com
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+
+* export settings                                                  :noexport:
+#+org-export-with-smart-quotes: nil
+#+org-export-with-special-strings: t
+#+org-export-with-sub-superscripts: nil
+#+org-export-with-section-numbers: nil
+#+org-export-with-toc: nil
+#+org-export-headline-levels: 6
+
+#+STARTUP: showeverything
+
+#+OPTIONS: reveal_width:1600 reveal_height:900
+#+OPTIONS: ^:nil
+#+OPTIONS: toc:nil num:nil
+#+OPTIONS: reveal_single_file:t
+
+# Everything the deck needs is named by REVEAL_THEME / REVEAL_EXTRA_CSS below,
+# which reveal_single_file:t inlines. An HTML_HEAD <link> would not be inlined
+# and would dangle the moment the file is moved.
+#+REVEAL_TRANS: fade
+#+REVEAL_PLUGINS: (math markdown notes search zoom)
+#+REVEAL_THEME: ../etc/my_theme.css
+#+REVEAL_EXTRA_CSS: ../etc/modus-vivendi-tinted.css
+#+REVEAL_EXTRA_CSS: ../etc/footer.css
+#+REVEAL_TITLE_SLIDE: <p>
+
+# `make slides` clones reveal.js here; see the Makefile. With
+# reveal_single_file:t above, the built .html inlines everything it needs and
+# no longer refers to this path.
+#+REVEAL_ROOT: ../.tools/reveal.js
+#+REVEAL_VERSION: 6
+
+#+REVEAL_HLEVEL: 6
+#+REVEAL_SLIDE_LEVEL: 6
+#+REVEAL_DEFAULT_FRAG_STYLE: (appear)
+#+REVEAL_EXPORT_NOTES_TO_PDF: separate-page
+#+REVEAL_EXTRA_OPTIONS: controls: false
+#+reveal_defaulttiming: 60
+
+#+CITE_EXPORT: basic
+#+BIBLIOGRAPHY: ../papers/references.bib
+
+* The pitch in one line
+
+C++ spells a handful of binary operations infix and lets you overload them.
+Everything else is a call.
+
+#+begin_src c++
+a `plus` b              // plus(a, b)
+a `std::min` b          // std::min(a, b)
+m `at` k                // at(m, k)
+u `dot` v               // dot(u, v)
+x `approx_equal` y      // approx_equal(x, y)
+#+end_src
+
+=x `f` y= *is* =f(x, y)=. That is the entire semantic.
+
+#+begin_notes
+Haskell programmers recognise this immediately: =`div`=, =`mod`=, =`elem`=.
+#+end_notes
+
+* It desugars to a call
+
+The operator lowers to a call expression in the front end, before overload
+resolution runs. Not a macro, not a new AST category with its own type rules.
+
+So the feature inherits, for free and correctly:
+
+#+ATTR_REVEAL: :frag (appear)
+- overload resolution and ADL
+- templates and dependent lookup
+- =constexpr= evaluation
+- codegen, debug info, and the ABI
+
+* Precedence
+
+Highest-precedence *binary* operator: tighter than =*=, looser than
+unary/prefix. Operands are /cast-expressions/, so the rule is symmetric:
+
+#+begin_src c++
+-a `f` -b               // f(-a, -b)
+#+end_src
+
+The slot between the backticks is an /assignment-expression/.
+
+* The same-delimiter problem
+
+Open and close are the same token, so the operator interpretation has to be
+suppressed inside the slot — Clang's =BacktickIsOperator=, modelled on
+=GreaterThanIsOperator=; GCC's =backtick_is_operator_p=, modelled on
+=greater_than_is_operator_p=.
+
+Bare nesting is token-identical to a left-associative chain, so it is accepted
+rather than diagnosed. To nest, parenthesize the slot.
+
+* Two compilers
+
+| Track       | Branch           | Base                  |
+|-------------+------------------+-----------------------|
+| Clang       | =backtick-23=    | =release/23.x=        |
+| Clang       | =backtick-trunk= | =upstream/main=       |
+| GCC         | =backtick=       | trunk                 |
+
+Everything sits behind =-fbacktick=. A default build is byte-identical to
+upstream.
+
+* Colophon
+
+- Slideware: [[https://revealjs.com/][reveal.js]]
+- Slide preparation: [[https://gitlab.com/oer/org-re-reveal][org-re-reveal]]
+- Fonts: [[https://www.brailleinstitute.org/freefont/][Atkinson Hyperlegible]] Next and Mono
+- Colour themes: [[https://github.com/protesilaos/modus-themes][Modus]] Vivendi and Operandi Tinted
+
+Intended to conform to [[https://www.w3.org/WAI/WCAG2AAA-Conformance][Web Content Accessibility Guidelines Level AAA]]
+
+# Per-deck footer content. etc/slide-footer.el reads these when the deck is
+# exported; leaving all three empty means no footer at all. The `org-' prefix
+# is required — see the commentary in that file.
+# Local Variables:
+# org-slide-footer-text: ""
+# org-slide-footer-left-logo: ""
+# org-slide-footer-right-logo: ""
+# End:
