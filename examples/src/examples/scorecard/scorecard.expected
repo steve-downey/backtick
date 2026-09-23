@@ -1,0 +1,11 @@
+shape                         infix?                                example
+----------------------------  ------------------------------------  ------------------------
+algo(r, arg)                  yes, directly                         r `views::filter` pred
+algo(r)                       no -- pipe helper                     r `pipe` views::join
+algo(r, a, b)                 no -- bind_back or a call             fold_left(r, 0, plus)
+algo(a, b, c...)              no -- variadic                        views::zip(a, b, c)
+algo(r, arg), no closure      yes, and | never could                r `ranges::count` x
+Type(a, b)                    designed yes, implemented no          a `std::pair` b (DEV-06)
+f(a, {1, 2})                  no -- operands are cast-expressions   (D9)
+
+keyword escape: `requires`(1) == true

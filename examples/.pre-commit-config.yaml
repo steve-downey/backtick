@@ -1,0 +1,79 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+# infra/ is vendored in from bemanproject/infra by git subtree. Reformatting
+# it here would conflict with every future pull from upstream.
+exclude: ^(template/|papers/wg21|infra/)
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      # *.expected files are golden program output, compared byte for byte.
+      # Trimming their whitespace would rewrite the thing under test.
+      - id: trailing-whitespace
+        exclude: \.expected$
+      - id: end-of-file-fixer
+        exclude: \.expected$
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-added-large-files
+
+  # Clang-format for C++, from the prototype rather than the usual portable
+  # wheel: only the prototype's clang-format has a rule for the infix backtick.
+  # See scripts/clang-format-backtick.sh.
+  - repo: local
+    hooks:
+      - id: clang-format-backtick
+        name: clang-format (infix-backtick prototype)
+        entry: scripts/clang-format-backtick.sh
+        language: script
+        types_or: [c++, c]
+
+  # CMake linting and formatting
+  - repo: https://github.com/BlankSpruce/gersemi
+    rev: 0.24.0
+    hooks:
+      - id: gersemi
+        name: CMake linting
+
+  # Markdown linting
+  # Config file: .markdownlint.yaml
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.49.0
+    hooks:
+      - id: markdownlint
+        args: ['--disable', 'MD013', ' --']
+        exclude: ^papers/
+
+  # Config file: .codespell_ignore
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.2
+    hooks:
+      - id: codespell
+        args: ['-I', '.codespell_ignore', '--uri-ignore-words-list', '*']
+        exclude: >
+          (?x)^(
+            (papers|latex)/.*
+          )$
+
+  #  MBake Makefile formatting
+  - repo: https://github.com/EbodShojaei/bake
+    rev: v1.4.6
+    hooks:
+      # - id: mbake-format
+      #   args: ["--config=.github/bake.toml"]
+      - id: mbake-validate
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/jumanjihouse/pre-commit-hooks
+    rev: 3.0.0
+    hooks:
+      - id: shellcheck
+# Come back to cpplint
+#  - repo: https://github.com/pocc/pre-commit-hooks
+#    rev: v1.3.5
+#    hooks:
+#      - id: cpplint

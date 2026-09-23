@@ -1,0 +1,155 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "_backtick-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "CMAKE_PROJECT_TOP_LEVEL_INCLUDES": "./infra/cmake/use-fetch-content.cmake"
+      }
+    },
+    {
+      "name": "clang-23-backticks",
+      "displayName": "Clang 23.x infix-backtick prototype",
+      "inherits": [
+        "_backtick-base"
+      ],
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "etc/clang-23-backticks-toolchain.cmake"
+      }
+    },
+    {
+      "name": "clang-trunk-backticks",
+      "displayName": "Clang trunk infix-backtick prototype",
+      "inherits": [
+        "_backtick-base"
+      ],
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "etc/clang-trunk-backticks-toolchain.cmake"
+      }
+    },
+    {
+      "name": "gcc-backticks",
+      "displayName": "GCC trunk infix-backtick prototype",
+      "inherits": [
+        "_backtick-base"
+      ],
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "etc/gcc-backticks-toolchain.cmake"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "_root-build",
+      "hidden": true,
+      "jobs": 0
+    },
+    {
+      "name": "clang-23-backticks",
+      "configurePreset": "clang-23-backticks",
+      "inherits": [
+        "_root-build"
+      ]
+    },
+    {
+      "name": "clang-trunk-backticks",
+      "configurePreset": "clang-trunk-backticks",
+      "inherits": [
+        "_root-build"
+      ]
+    },
+    {
+      "name": "gcc-backticks",
+      "configurePreset": "gcc-backticks",
+      "inherits": [
+        "_root-build"
+      ]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "_test_base",
+      "hidden": true,
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      }
+    },
+    {
+      "name": "clang-23-backticks",
+      "inherits": "_test_base",
+      "configurePreset": "clang-23-backticks"
+    },
+    {
+      "name": "clang-trunk-backticks",
+      "inherits": "_test_base",
+      "configurePreset": "clang-trunk-backticks"
+    },
+    {
+      "name": "gcc-backticks",
+      "inherits": "_test_base",
+      "configurePreset": "gcc-backticks"
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "clang-23-backticks",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "clang-23-backticks"
+        },
+        {
+          "type": "build",
+          "name": "clang-23-backticks"
+        },
+        {
+          "type": "test",
+          "name": "clang-23-backticks"
+        }
+      ]
+    },
+    {
+      "name": "clang-trunk-backticks",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "clang-trunk-backticks"
+        },
+        {
+          "type": "build",
+          "name": "clang-trunk-backticks"
+        },
+        {
+          "type": "test",
+          "name": "clang-trunk-backticks"
+        }
+      ]
+    },
+    {
+      "name": "gcc-backticks",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "gcc-backticks"
+        },
+        {
+          "type": "build",
+          "name": "gcc-backticks"
+        },
+        {
+          "type": "test",
+          "name": "gcc-backticks"
+        }
+      ]
+    }
+  ]
+}
