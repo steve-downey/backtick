@@ -1,0 +1,126 @@
+#+TITLE: Extending C++ with Unicode Mathematical Operators
+#+SUBTITLE: Why the parse comes first
+#+AUTHOR: Steve Downey
+#+EMAIL: sdowney@gmail.com
+#+OPTIONS: toc:nil num:nil ^:nil ':nil
+#+REVEAL_TRANS: fade
+#+REVEAL_PLUGINS: (notes search zoom)
+#+REVEAL_DEFAULT_FRAG_STYLE: (appear)
+
+* The proposal
+
+- Declare ~operator⊞~; write ~a ⊞ b~.
+- The tokens: Unicode's mathematical operators — frozen by the paper,
+  confusables removed.
+- Otherwise ordinary functions: ordinary lookup, ordinary overload
+  resolution, no built-in meanings to protect.
+
+* It looks like this
+
+#+begin_src c++
+constexpr int operator⊞(int a, int b) { return a + b; }
+static_assert(5 ⊞ 7 == 12);
+
+Matrix operator⊗(Matrix const&, Matrix const&);
+a ⊗ b ⊗ c                    // operator⊗(operator⊗(a, b), c)
+
+Vec operator⊖(Vec const&);   // one parameter: unary prefix
+⊖v                           // operator⊖(v)
+#+end_src
+
+* Order of interpretation
+
+#+ATTR_REVEAL: :frag (appear)
+- Tokens are made, then the program is parsed, then names are looked up.
+  In that order. Always.
+- The parser identifies an operator with *no knowledge of any declaration*.
+- So the operator set is fixed by the grammar — a frozen enumeration, not
+  "whatever is declared".
+- Meaning arrives later, at overload resolution — exactly like ~operator+~
+  on a class type.
+- Julia's model: fixed parse table, user-defined meanings.
+  Not Swift's declaration-gated parse.
+- Corollary: no declaration can rescue, or change, a parse.
+
+** Position decides
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::08bc53d9-d490-46f7-bc42-cbeba7739317]]  :lines 2- :end "08bc53d9-d490-46f7-bc42-cbeba7739317 end"
+
+- Operand position → prefix. After a complete operand → infix. No postfix.
+- Nothing else consulted: not whitespace, not declarations, not the next
+  token.
+
+* The fixity problem
+
+#+ATTR_REVEAL: :frag (appear)
+- A declared precedence is a semantic property that must *travel with the
+  name* — across headers, modules, translation units.
+- The parse of ~a ⊕ b ⊗ c~ comes to depend on which imports are visible.
+- Two TUs disagreeing about the grouping: an ODR / IFNDR factory.
+- clang-format links no Sema. It cannot know a declared precedence.
+- Deriving precedence from the code point fails on the data:
+  ⊕ ⊖ ⊗ ⊘ ⊙ are U+2295 through U+2299.
+- And a precedence *is* a meaning: ⊗ is multiplication-like in tensor
+  algebra, backwards in a tropical semiring.
+
+** Fixity, concretely
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::bc4e65ec-ec59-44d9-b1b6-a100b4acd0a5]]  :lines 2- :end "bc4e65ec-ec59-44d9-b1b6-a100b4acd0a5 end"
+
+** One level, left
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::d19e6d00-bcce-442d-877b-47fadb71921f]]  :lines 2- :end "d19e6d00-bcce-442d-877b-47fadb71921f end"
+
+- The surprise is uniform and learnable; disambiguation lives in
+  parentheses, which is where mathematics leaves it.
+
+* The misparse
+
+#+ATTR_REVEAL: :frag (appear)
+- Postfix was prototyped: after a complete operand, look ahead one token —
+  "can it begin a cast-expression?" → infix; otherwise postfix.
+- The witness set contains surprises.
+
+** ~a ⊖ && b~
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::f0ab2919-c9eb-436a-a1ef-38376bb56d1a]]  :lines 2- :end "f0ab2919-c9eb-436a-a1ef-38376bb56d1a end"
+
+** The diagnostic cost
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::6bc14230-6efe-49de-8e43-a5f4c76fd407]]  :lines 2- :end "6bc14230-6efe-49de-8e43-a5f4c76fd407 end"
+
+- Every missing-operand typo becomes a /valid postfix parse/.
+- Every user pays, whether or not they write a postfix operator.
+
+* More ways to go wrong
+
+** Maximal munch
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::d49fbfc6-a346-4b6a-83fb-6c38f31aa06e]]  :lines 2- :end "d49fbfc6-a346-4b6a-83fb-6c38f31aa06e end"
+
+- Lexing precedes lookup: no declaration can split, or fuse, a token.
+- No user ~&&&~, ever. The single-code-point set has no munch at all: no
+  operator is a prefix of another.
+
+** Whitespace fixity — the Swift rule
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::f3dc6082-dcd8-494b-a26a-ee92b89f0c49]]  :lines 2- :end "f3dc6082-dcd8-494b-a26a-ee92b89f0c49 end"
+
+** One space, different program
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::a029339f-4bd6-466f-a80b-0739a564cf47]]  :lines 2- :end "a029339f-4bd6-466f-a80b-0739a564cf47 end"
+
+** The one true ambiguity
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::d09108ee-a9c2-43d0-99e2-4aa6c7536a96]]  :lines 2- :end "d09108ee-a9c2-43d0-99e2-4aa6c7536a96 end"
+
+- The resolutions on offer: whitespace sensitivity, or a
+  declaration-dependent parse. Both declined — the operator set and the
+  identifier set stay disjoint.
+
+* Position decides, and only position
+
+- The parse of every expression is a function of the expression alone.
+- Only the /meaning/ of ~operator⊞~ travels — by ordinary lookup, which
+  already knows how to travel.
+- ~^~ only: no lookahead, no lookback, no whitespace, no declarations.
