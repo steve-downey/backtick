@@ -65,7 +65,7 @@ ORGFILES := $(wildcard docs/*.org papers/*.org)
 	--eval "(org-export-to-file 'html \"$(abspath $@)\")"
 	echo $@ : \\ > $@.deps
 	echo "  $<" \\ >> $@.deps
-	sed -n "s/^.*\[\[file:\(\S*\)::.*$$/\1/p" < $<  | sort -u | xargs printf "  %s \\\\\\n" >> $@.deps
+	sed -n "s/^.*\[\[file:\(\S*\)::.*$$/\1/p" < $<  | sort -u | xargs printf "  $(dir $<)%s \\\\\\n" >> $@.deps
 
 -include $(wildcard $(ORGFILES:%.org=%.html.deps))
 
@@ -76,7 +76,7 @@ ORGFILES := $(wildcard docs/*.org papers/*.org)
 	--eval "(org-export-to-file 're-reveal \"$(abspath $@)\")"
 	echo $@ : \\ > $@.deps
 	echo "  $<" \\ >> $@.deps
-	sed -n "s/^.*\[\[file:\(\S*\)::.*$$/\1/p" < $<  | sort -u | xargs printf "  %s \\\\\\n" >> $@.deps
+	sed -n "s/^.*\[\[file:\(\S*\)::.*$$/\1/p" < $<  | sort -u | xargs printf "  $(dir $<)%s \\\\\\n" >> $@.deps
 
 -include $(wildcard $(ORGFILES:%.org=%-slides.html.deps))
 
