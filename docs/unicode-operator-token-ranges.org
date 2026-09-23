@@ -1,0 +1,116 @@
+#+TITLE: The Unicode Operator Token Set, as Ranges
+#+SUBTITLE: The 32 allowed ranges, and every code point in the blocks that is not one
+#+AUTHOR: Steve Downey
+#+options: toc:nil num:t ^:nil ':nil
+
+The frozen operator token set of P4345 ([[file:unicode-operators.md][the design doc]], /token-set/): a
+code point is a user-operator token iff it is Pattern_Syntax, non-ASCII,
+inside the nine mathematical/arrow blocks, of General_Category Sm or So, and
+not on the named exclusion list. The predicates were applied *once*, against
+UCD 17.0.0, and the result is frozen by enumeration — these tables do not
+track later Unicode versions.
+
+Derived by =docs/pattern-syntax-audit.py= from the five UCD 17.0.0 inputs
+pinned in =docs/ucd-17.0.0.sha256= (all five verified against the manifest
+before derivation). The allowed table below is byte-for-byte the
+=UserOperatorRanges[]= table the generator emits into
+=clang/lib/Lex/UnicodeOperatorCharSets.h= on the Unicode branches.
+
+The two tables partition the blocks exactly: 1,381 allowed + 75 rejected
+= 1,456 code points, the full span of the nine blocks. The one named
+exclusion *outside* the blocks, U+2044 ⁄ FRACTION SLASH (reads as ~/~), does
+not appear below: it already fails the block predicate, and is kept on the
+exclusion list only so that list reads as the confusability audit's complete
+output.
+
+* Allowed: 1,381 code points in 32 contiguous ranges
+
+| Range         | Count | Glyphs | Block(s)                                                                             |
+|---------------+-------+--------+--------------------------------------------------------------------------------------|
+| U+2190–U+21CF |    64 | ← … ⇏  | Arrows                                                                               |
+| U+21D1        |     1 | ⇑      | Arrows                                                                               |
+| U+21D3        |     1 | ⇓      | Arrows                                                                               |
+| U+21D5–U+2201 |    45 | ⇕ … ∁  | Arrows → Mathematical Operators                                                      |
+| U+2203–U+2206 |     4 | ∃ … ∆  | Mathematical Operators                                                               |
+| U+2208–U+2211 |    10 | ∈ … ∑  | Mathematical Operators                                                               |
+| U+2213–U+2214 |     2 | ∓ ∔    | Mathematical Operators                                                               |
+| U+2216        |     1 | ∖      | Mathematical Operators                                                               |
+| U+2218        |     1 | ∘      | Mathematical Operators                                                               |
+| U+221A–U+221D |     4 | √ … ∝  | Mathematical Operators                                                               |
+| U+221F–U+2222 |     4 | ∟ … ∢  | Mathematical Operators                                                               |
+| U+2224–U+2235 |    18 | ∤ … ∵  | Mathematical Operators                                                               |
+| U+2237–U+2263 |    45 | ∷ … ≣  | Mathematical Operators                                                               |
+| U+2266–U+22C4 |    95 | ≦ … ⋄  | Mathematical Operators                                                               |
+| U+22C6–U+2307 |    66 | ⋆ … ⌇  | Mathematical Operators → Miscellaneous Technical                                     |
+| U+230C–U+2319 |    14 | ⌌ … ⌙  | Miscellaneous Technical                                                              |
+| U+231C–U+2328 |    13 | ⌜ … ⌨  | Miscellaneous Technical                                                              |
+| U+232B–U+23E8 |   190 | ⌫ … ⏨  | Miscellaneous Technical                                                              |
+| U+23ED–U+23EF |     3 | ⏭ ⏮ ⏯  | Miscellaneous Technical                                                              |
+| U+23F1–U+23F2 |     2 | ⏱ ⏲    | Miscellaneous Technical                                                              |
+| U+23F4–U+23FF |    12 | ⏴ … ⏿  | Miscellaneous Technical                                                              |
+| U+27C0–U+27C4 |     5 | ⟀ … ⟄  | Misc Mathematical Symbols-A                                                          |
+| U+27C7–U+27E5 |    31 | ⟇ … ⟥  | Misc Mathematical Symbols-A                                                          |
+| U+27F0–U+27FF |    16 | ⟰ … ⟿  | Supplemental Arrows-A                                                                |
+| U+2900–U+2982 |   131 | ⤀ … ⦂  | Supplemental Arrows-B → Misc Mathematical Symbols-B                                  |
+| U+2999–U+29D7 |    63 | ⦙ … ⧗  | Misc Mathematical Symbols-B                                                          |
+| U+29DC–U+29FB |    32 | ⧜ … ⧻  | Misc Mathematical Symbols-B                                                          |
+| U+29FE–U+2B1A |   285 | ⧾ … ⬚  | Misc Mathematical Symbols-B → Supplemental Mathematical Operators → Misc Sym/Arrows  |
+| U+2B1D–U+2B4F |    51 | ⬝ … ⭏  | Miscellaneous Symbols and Arrows                                                     |
+| U+2B51–U+2B54 |     4 | ⭑ … ⭔  | Miscellaneous Symbols and Arrows                                                     |
+| U+2B56–U+2B73 |    30 | ⭖ … ⭳  | Miscellaneous Symbols and Arrows                                                     |
+| U+2B76–U+2BFF |   138 | ⭶ … ⯿  | Miscellaneous Symbols and Arrows                                                     |
+
+A range that names two or three blocks crosses their boundary — the table is
+sorted and non-overlapping, as =llvm::sys::UnicodeCharSet= requires, and
+block membership was a derivation input, not a property of the result.
+
+* Rejected: the 75 code points inside the blocks that are not operators
+
+Every code point in the nine blocks absent from the table above, grouped
+into contiguous runs by the reason it is out. The reason classes are the
+design's, in the order a reader meets them in the derivation: the named
+exclusions first (identifier profile, confusables, emoji presentation), then
+the General_Category screen (the paired brackets), then the unassigned
+reserve.
+
+| Range         | Count | Glyphs               | Class              | Why                                        |
+|---------------+-------+----------------------+--------------------+--------------------------------------------|
+| U+21D0        |     1 | ⇐                    | confusable         | reads as ~<=~                              |
+| U+21D2        |     1 | ⇒                    | confusable         | reads as ~=>~                              |
+| U+21D4        |     1 | ⇔                    | confusable         | reads as ~<=>~                             |
+| U+2202        |     1 | ∂                    | identifier profile | TR31 §7.1: identifier character            |
+| U+2207        |     1 | ∇                    | identifier profile | TR31 §7.1: identifier character            |
+| U+2212        |     1 | −                    | confusable         | reads as ~-~                               |
+| U+2215        |     1 | ∕                    | confusable         | reads as ~/~                               |
+| U+2217        |     1 | ∗                    | confusable         | reads as ~*~                               |
+| U+2219        |     1 | ∙                    | confusable         | reads as ~.~                               |
+| U+221E        |     1 | ∞                    | identifier profile | TR31 §7.1: identifier character            |
+| U+2223        |     1 | ∣                    | confusable         | reads as \vert                               |
+| U+2236        |     1 | ∶                    | confusable         | reads as ~:~                               |
+| U+2264        |     1 | ≤                    | confusable         | reads as ~<=~                              |
+| U+2265        |     1 | ≥                    | confusable         | reads as ~>=~                              |
+| U+22C5        |     1 | ⋅                    | confusable         | reads as ~.~                               |
+| U+2308–U+230B |     4 | ⌈ ⌉ ⌊ ⌋              | paired brackets    | gc Ps/Pe: delimiters, kept unspent         |
+| U+231A–U+231B |     2 | ⌚ ⌛                  | emoji presentation | TR31 §7.2 emoji profile carve-out          |
+| U+2329–U+232A |     2 | 〈 〉                  | paired brackets    | gc Ps/Pe: delimiters, kept unspent         |
+| U+23E9–U+23EC |     4 | ⏩ ⏪ ⏫ ⏬              | emoji presentation | TR31 §7.2 emoji profile carve-out          |
+| U+23F0        |     1 | ⏰                    | emoji presentation | TR31 §7.2 emoji profile carve-out          |
+| U+23F3        |     1 | ⏳                    | emoji presentation | TR31 §7.2 emoji profile carve-out          |
+| U+27C5–U+27C6 |     2 | ⟅ ⟆                  | paired brackets    | gc Ps/Pe: delimiters, kept unspent         |
+| U+27E6–U+27EF |    10 | ⟦ ⟧ ⟨ ⟩ ⟪ ⟫ ⟬ ⟭ ⟮ ⟯  | paired brackets    | gc Ps/Pe: delimiters, kept unspent         |
+| U+2983–U+2998 |    22 | ⦃ ⦄ ⦅ ⦆ ⦇ ⦈ … ⦗ ⦘    | paired brackets    | gc Ps/Pe: delimiters, kept unspent         |
+| U+29D8–U+29DB |     4 | ⧘ ⧙ ⧚ ⧛              | paired brackets    | gc Ps/Pe: delimiters, kept unspent         |
+| U+29FC–U+29FD |     2 | ⧼ ⧽                  | paired brackets    | gc Ps/Pe: delimiters, kept unspent         |
+| U+2B1B–U+2B1C |     2 | ⬛ ⬜                  | emoji presentation | TR31 §7.2 emoji profile carve-out          |
+| U+2B50        |     1 | ⭐                    | emoji presentation | TR31 §7.2 emoji profile carve-out          |
+| U+2B55        |     1 | ⭕                    | emoji presentation | TR31 §7.2 emoji profile carve-out          |
+| U+2B74–U+2B75 |     2 |                      | unassigned         | reserved in UCD 17.0; frozen out           |
+
+By class: 12 confusables (the 13th, U+2044, is outside the blocks), 3
+identifier-profile characters — exactly Pattern_Syntax ∩ ID_Compat_Math, the
+three the design cedes to the identifier side — 12 emoji-presentation
+carve-outs, 46 paired brackets (23 open/close pairs, worth keeping unspent
+for any future bracketing proposal), and the 2 code points Pattern_Syntax
+reserves but UCD 17.0 leaves unassigned. The confusables are *rejected, not
+aliased*: a program containing a character that looks like ~-~ but is not
+must fail to lex, not quietly mean something else.
