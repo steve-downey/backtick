@@ -1,6 +1,5 @@
 # Infix Backtick: Worked Examples
 
-
 Real code from the ranges and senders idioms, rewritten with the infix backtick
 operator, and compiled by the two prototype compilers that implement it.
 
