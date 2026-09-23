@@ -12,11 +12,17 @@ Build with `make -C papers <name>.html <name>.pdf`.
 ## Implementations
 
 - LLVM/Clang: [steve-downey/llvm-project](https://github.com/steve-downey/llvm-project)
-  - [`backtick-23`](https://github.com/steve-downey/llvm-project/tree/backtick-23)
   - [`backtick-trunk`](https://github.com/steve-downey/llvm-project/tree/backtick-trunk)
+    — the backtick operator and keyword escape, on LLVM main.
+  - [`backtick-23`](https://github.com/steve-downey/llvm-project/tree/backtick-23)
+    — the same feature on the LLVM 23 release branch.
   - [`unicode-operators-experiment`](https://github.com/steve-downey/llvm-project/tree/unicode-operators-experiment)
+    — Unicode operators, built on top of `backtick-trunk`.
+  - [`unicode-operators-upstream`](https://github.com/steve-downey/llvm-project/tree/unicode-operators-upstream)
+    — Unicode operators alone, on LLVM main, with no backtick code.
 - GCC: [steve-downey/gcc](https://github.com/steve-downey/gcc)
   - [`backtick`](https://github.com/steve-downey/gcc/tree/backtick)
+    — the backtick operator and keyword escape, on GCC trunk.
 
 ## Layout
 
