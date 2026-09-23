@@ -160,6 +160,18 @@ and a Status-log row so base-commit changes are not lost.
   three slugged subsections — what is implemented, what the paper asks the ABI
   groups for, and the Microsoft gap), and the open questions.
   `papers/unicode-mathematical-operators.md` (P4345R0) is written from it.
+- `docs/unicode-operators-r1-material.md` — what the 2026-09-23 SG16 review of
+  P4345R0 asked for, and the measurements it prompted, as material for a clean
+  R1. Seven sections: the MathClass inclusion predicate (with sizes for four
+  variants), floor-and-grow and the one-line stabilization ask to Unicode, the
+  confusables measurement (only 5 of 12 exclusions are derivable from UTS #39,
+  which is why the list stays enumerated), postfix, Scala prior art, the
+  citation gaps, and the reversibility principle. **Reverses `token-set`'s
+  "settled direction: enumerate".** Each claim is marked *Measured*,
+  *Recommended* or *Decided*. The fixity objections from the same review are
+  not here — they are in
+  [`user-declared-fixity`](docs/unicode-operators.md#user-declared-fixity)'s
+  log under 2026-09-23.
 - `docs/open-decisions.md` — the questions the implementation measured and
   only the design author can settle, one slug-headed page each (question /
   what was measured / options / cost / recommendation), with the author's
