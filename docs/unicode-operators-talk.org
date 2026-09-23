@@ -116,14 +116,8 @@ Vec operator⊖(Vec const&);   // one parameter: unary prefix
 - Still has to answer /how does this group?/
 - Prototype: the query answered ~prec::Unknown~; chains wrapped wrongly;
   *every spacing and annotation test passed*.
+- Teaching it these rules took about forty lines.
 - A table it can consult. A declaration it cannot.
-
-** What it costs
-
-- Three touch points, ~40 lines, three files.
-- No new ~TokenType~, no annotator state, no spacing or break rule, no
-  style option.
-- Classification is four lines: binary after an operand, unary otherwise.
 
 * The misparse
 
