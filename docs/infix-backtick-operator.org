@@ -210,11 +210,10 @@ and that's what makes /always escape/ a strategy instead of a guess. Everything 
 a reserved name is still reserved, and a macro name still gets replaced,
 because the escape is a phase 7 construct and phase 4 has never heard of it.
 
-I settled that on 2026-09-17, after both papers were written, and it is the one
-rule in the paper that is ahead of the code: both prototypes still insist on a
-keyword, so =`foobar`= is rejected by both as I write this. It is one predicate
-in each parser, and nothing downstream of it moves, because neither compiler
-remembers that a name was escaped in the first place.
+I settled that on 2026-09-17, after both papers were drafted, and both
+prototypes do it now. It was one predicate in each parser, and nothing
+downstream of it moved, because neither compiler remembers that a name was
+escaped in the first place.
 
 The two uses share one lexical token and one committee, so I am proposing them
 together, in one paper, rather than letting two independent designs drift into
@@ -452,7 +451,7 @@ compiler. Nobody drew that boundary; it fell out of two parsers, differently in
 each. Neither test suite had a negative test for any of it, so nothing was
 failing and nothing would have failed.
 
-I have now written that sweep four times, and it has found something every
+I have now written that sweep five times, and it has found something every
 time. First the positions that declare a name. Then the ones that use a name,
 after it occurred to me that a type nothing can name is not a hatch. Then
 qualified names, where it turned out Clang reads the last component as an
@@ -460,11 +459,13 @@ identifier only when it names an object or a function, so =N::`new`= had been
 fine since day one and =N::`union`= had never worked. Then I changed the
 keyword. Every program I had ever written used =new=, =class=, =union= or
 =try=, all of them pure keywords. =int= is not, and GCC had been rejecting
-=int `int` = 0;= for two months, in the very first row of my own table.
+=int `int` = 0;= for two months, in the very first row of my own table. Then
+I changed the word itself: nineteen programs that escape something that isn't
+a keyword at all, which both compilers rejected until =`foobar`= became legal.
 
-Seventy-nine one-line programs now, in four groups, ten seconds to run, and
-they live in the repository instead of in my shell history. Which is where
-they should have gone three sweeps ago.
+Ninety-eight one-line programs now, in five groups, and they live in the
+repository instead of in my shell history. Which is where they should have
+gone three sweeps ago.
 
 Fixing all that cost about twice what I'd estimated, and the extra was in
 three places that aren't in the grammar. A parser that decides what it's
@@ -496,11 +497,15 @@ hangs. What caught it was running the error cases under =timeout=, which is
 now the third script in the probe directory.
 
 The type-name slot is Clang-only: GCC parses its slot as an expression, so =1
-`Pt` 2= is rejected there. That is now the only program the two compilers
-treat differently under the flag, and the escape isn't in it anywhere.
+`Pt` 2= is rejected there. And inside a template GCC still drops the
+definition-context half of a dependent slot's lookup, so =t `pipe` inc= is
+rejected where =pipe(t, inc)= compiles; that one is a GCC bug. Those are the
+only programs the two compilers treat differently under the flag, and the
+escape isn't in either.
 
-Getting the last two off that list was more interesting than getting them on
-it. GCC binds =int= and =char= and the rest at global scope so that code
+The escape used to be on that list twice, and getting it off was more
+interesting than getting it on. GCC binds =int= and =char= and the rest at
+global scope so that code
 which looks builtin types up by name can find them, and the comment above
 that code says the bindings shouldn't exist. It looked like the design would
 have to pick a side on which keyword representation is right. It doesn't: in
