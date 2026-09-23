@@ -102,7 +102,7 @@ longer says the forks lag. One GCC printer row opened and closed with it,
 one older Clang row surfaced while building it,
 `ops/DEVIATIONS.md#ast-dump-type-name-spelling`. [The
 handoff](ops/completion/handoffs/escape-any-identifier.handoff.md) has the
-numbers. **Its commits were not pushed** as of that date.
+numbers. Its commits are on all four fork branches on GitHub.
 
 Either of the two is available to an agent arriving with no other instruction,
 and there is no other work in `ops/`. One deviation row is open, it is a
@@ -120,9 +120,10 @@ is what every cross-reference uses. The plan's own first step,
 `slug-the-ledgers`, retired the serial numbers this repo used to carry in its
 decision logs, deviation ledgers and backlog, for the same reason.
 [`ops/SLUGS.md`](ops/SLUGS.md) is the map from every retired number to its
-slug, and it also records what was deliberately *not* renamed. See
-`~/.claude/CLAUDE.md`, "Name things for what they are, not what number they
-came in at".
+slug, and it also records what was deliberately *not* renamed. The rule: a
+serial number says nothing about what it names and shifts when a list is
+reordered, so internal identifiers are slugs, named for the question rather
+than the answer.
 
 It is **ordered by what each item does to a paper**, not by severity and not
 by when the item was noticed — the implementation tracks are complete, so the
@@ -170,8 +171,8 @@ and a Status-log row so base-commit changes are not lost.
   per-compiler implementation plans (§6 Clang, §7 clang-format, §8 GCC), and
   post-implementation clarifications (§17). This is the source of truth the
   paper is written from; deviations get reconciled back into it.
-- `papers/` — the two WG21 papers, **named by name and not by number**, per
-  `~/.claude/CLAUDE.md`: the number lives in the front matter and in the prose,
+- `papers/` — the two WG21 papers, **named by name and not by number**: the
+  number lives in the front matter and in the prose,
   because the upload system renames whatever is uploaded and a name is what a
   reader finds later.
   - `papers/backtick-infix-and-keyword-escape.md` — **P4307R0**, the backtick
