@@ -2,7 +2,12 @@
 #+SUBTITLE: Why the parse comes first
 #+AUTHOR: Steve Downey
 #+EMAIL: sdowney@gmail.com
-#+OPTIONS: toc:nil num:nil ^:nil ':nil
+#+OPTIONS: ':nil
+
+# reveal root, version, single-file export, theme and CSS -- see the Makefile's
+# slides section. Without this the file exports as a plain article.
+#+SETUPFILE: ../etc/deck.setup
+
 #+REVEAL_TRANS: fade
 #+REVEAL_PLUGINS: (notes search zoom)
 #+REVEAL_DEFAULT_FRAG_STYLE: (appear)
@@ -124,3 +129,11 @@ Vec operator⊖(Vec const&);   // one parameter: unary prefix
 - Only the /meaning/ of ~operator⊞~ travels — by ordinary lookup, which
   already knows how to travel.
 - ~^~ only: no lookahead, no lookback, no whitespace, no declarations.
+
+# Per-deck footer content; see etc/slide-footer.el. Leaving all three empty
+# means no footer at all. The `org-' prefix is required.
+# Local Variables:
+# org-slide-footer-text: ""
+# org-slide-footer-left-logo: ""
+# org-slide-footer-right-logo: ""
+# End:

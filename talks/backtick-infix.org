@@ -16,33 +16,15 @@
 
 #+STARTUP: showeverything
 
-#+OPTIONS: reveal_width:1600 reveal_height:900
-#+OPTIONS: ^:nil
-#+OPTIONS: toc:nil num:nil
-#+OPTIONS: reveal_single_file:t
+# reveal root, version, single-file export, theme and CSS. Everything the
+# deck needs is inlined from there; an HTML_HEAD <link> would not be, and
+# would dangle the moment the file is moved.
+#+SETUPFILE: ../etc/deck.setup
 
-# Everything the deck needs is named by REVEAL_THEME / REVEAL_EXTRA_CSS below,
-# which reveal_single_file:t inlines. An HTML_HEAD <link> would not be inlined
-# and would dangle the moment the file is moved.
 #+REVEAL_TRANS: fade
 #+REVEAL_PLUGINS: (math markdown notes search zoom)
-#+REVEAL_THEME: ../etc/my_theme.css
-#+REVEAL_EXTRA_CSS: ../etc/modus-vivendi-tinted.css
-#+REVEAL_EXTRA_CSS: ../etc/footer.css
 #+REVEAL_TITLE_SLIDE: <p>
-
-# `make slides` clones reveal.js here; see the Makefile. With
-# reveal_single_file:t above, the built .html inlines everything it needs and
-# no longer refers to this path.
-#+REVEAL_ROOT: ../.tools/reveal.js
-#+REVEAL_VERSION: 6
-
-#+REVEAL_HLEVEL: 6
-#+REVEAL_SLIDE_LEVEL: 6
 #+REVEAL_DEFAULT_FRAG_STYLE: (appear)
-#+REVEAL_EXPORT_NOTES_TO_PDF: separate-page
-#+REVEAL_EXTRA_OPTIONS: controls: false
-#+reveal_defaulttiming: 60
 
 #+CITE_EXPORT: basic
 #+BIBLIOGRAPHY: ../papers/references.bib

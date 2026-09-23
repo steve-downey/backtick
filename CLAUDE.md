@@ -246,17 +246,27 @@ and a Status-log row so base-commit changes are not lost.
   `TOOLCHAIN=clang-trunk-backticks` select the three `~/install/` prefixes and
   add `-fbacktick`; see `examples/etc/*-backticks-toolchain.cmake`. This is
   where sample code for the paper gets compiled and run for real.
-- `talks/` — the conference decks, one org file each, exported to reveal.js by
-  `make slides` (`talks/<name>.org` → `talks/<name>-slides.html`). The
-  machinery is carried over from `steve-downey/cppnow26`'s `trees/`. Decks are
-  deliberately *not* in the Makefile's `ORGFILES`, so `make org-html` does not
-  also export each one as a plain article.
+- **Slide decks** — `make slides`, exported to reveal.js by org-re-reveal, the
+  machinery carried over from `steve-downey/cppnow26`'s `trees/`. A deck is
+  any org file under `talks/`, **and any `docs/*-talk.org`** — a deck that
+  transcludes from a design doc stays next to what it transcludes. A deck
+  exports to its own name (`docs/foo-talk.org` → `docs/foo-talk.html`), not to
+  a `-slides` suffix: which rule builds a `.html` is decided by whether the
+  source is in the Makefile's `DECK_ORGFILES`, not by the output's name. Decks
+  are filtered out of `ORGFILES` and `BLOG_ORGFILES`, so `org-html` and
+  `blog-md` stay about prose. **A new deck that comes out as a plain XHTML
+  article is one that matched neither pattern, or that is missing
+  `#+SETUPFILE: ../etc/deck.setup`.**
+  - `etc/deck.setup` carries everything common to all decks — reveal root,
+    version, `reveal_single_file`, theme, CSS. Its paths are `../`-relative
+    and every deck sits one level under the root, which is what lets one file
+    serve both `talks/` and `docs/`. A deck sets only what it differs on.
   - `make slides` clones reveal.js 6.0.1 into `.tools/` on first use; both
-    that directory and the built `talks/*.html` are ignored by git. Because a
-    deck sets `#+OPTIONS: reveal_single_file:t`, the built HTML inlines all of
-    its CSS and JS and then needs neither `.tools/` nor a network — check that
-    by grepping the output for `src=`/`href=` and finding only the deliberate
-    hyperlinks.
+    that directory and the built HTML are ignored by git. Because
+    `deck.setup` sets `#+OPTIONS: reveal_single_file:t`, the built HTML
+    inlines all of its CSS and JS and then needs neither `.tools/` nor a
+    network — check that by grepping the output for `src=`/`href=` and
+    finding only the deliberate hyperlinks.
   - `etc/my_theme.css` is the reveal theme; `etc/modus-{vivendi,operandi}-tinted.css`
     supply the syntax-highlighting classes that `org-html-htmlize-output-type
     'css` emits. Those two are **bare CSS here and HTML `<style>` fragments in
@@ -269,6 +279,10 @@ and a Status-log row so base-commit changes are not lost.
     matches `^\(org-\|orgtbl-\)`. Under any other prefix the footer silently
     comes out empty. Leaving all three blank emits no postamble at all, which
     is also what keeps the jQuery CDN tag out of a single-file deck.
+  - The `.deps` recipes pipe through `xargs -r`. Without it GNU `xargs` runs
+    `printf` once on empty input and, since the format carries a `$(dir $<)`
+    prefix, writes the *directory* into the deps file as a prerequisite —
+    whereupon every file added to that directory rebuilds the deck.
 
 ## The implementation worktrees (where the code actually is)
 

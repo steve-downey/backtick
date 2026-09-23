@@ -1,0 +1,34 @@
+# deck.setup --- shared org-re-reveal settings for a slide deck  -*- org -*-
+#
+# Pull this in from a deck with
+#
+#     #+SETUPFILE: ../etc/deck.setup
+#
+# Every path below is relative to the deck, and every deck sits one level
+# under the repository root -- talks/ or docs/ -- so one set of ../ paths
+# serves both.
+#
+# Anything a deck wants to differ on (title slide, transition, plugins,
+# heading level, bibliography) it sets for itself; this file carries only
+# what is the same for all of them.
+
+# .tools/reveal.js is the checkout `make slides' clones. reveal_single_file
+# then inlines the CSS and JS it finds there, so the built deck refers to
+# neither the checkout nor the network afterwards.
+#+REVEAL_ROOT: ../.tools/reveal.js
+#+REVEAL_VERSION: 6
+#+OPTIONS: reveal_single_file:t
+
+#+OPTIONS: reveal_width:1600 reveal_height:900
+#+OPTIONS: toc:nil num:nil ^:nil
+
+# my_theme.css is the reveal theme proper; the Modus file supplies the
+# syntax-highlighting classes htmlize emits, since init.el sets
+# org-html-htmlize-output-type to 'css.
+#+REVEAL_THEME: ../etc/my_theme.css
+#+REVEAL_EXTRA_CSS: ../etc/modus-vivendi-tinted.css
+#+REVEAL_EXTRA_CSS: ../etc/footer.css
+
+#+REVEAL_EXPORT_NOTES_TO_PDF: separate-page
+#+REVEAL_EXTRA_OPTIONS: controls: false
+#+reveal_defaulttiming: 60
