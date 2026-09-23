@@ -120,9 +120,16 @@ reveal.js: $(REVEAL_DIR) ## Clone reveal.js into .tools/ if it is not there yet
 # The two etc/ prerequisites are named here rather than left to the generated
 # .deps: a deck pulls them in by `#+SETUPFILE:' and by --load, neither of
 # which is a `[[file:...::...]]' link for the sed below to find.
+# htmlize emits class names rather than inline styles, so the Modus CSS that
+# etc/deck.setup pulls in can colour the source blocks. Set here and not in
+# .emacs.d/init.el: `use-package org' there is `:after (flycheck)', flycheck is
+# not installed, so the whole form -- and its :custom block -- never runs. Set
+# only for decks; an article export links no Modus CSS and would come out with
+# class names nothing colours.
 $(DECK_HTML) : %.html : %.org etc/deck.setup etc/slide-footer.el | $(REVEAL_DIR)
 	$(EMACS_BATCH) \
 	--load $(CURDIR)/etc/slide-footer.el \
+	--eval "(setq org-html-htmlize-output-type 'css)" \
 	--visit $< \
 	--eval "(org-transclusion-mode t)" \
 	--eval "(org-export-to-file 're-reveal \"$(abspath $@)\")"

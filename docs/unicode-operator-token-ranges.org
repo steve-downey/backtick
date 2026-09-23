@@ -25,6 +25,7 @@ output.
 
 * Allowed: 1,381 code points in 32 contiguous ranges
 
+<<c9fd4e12-7498-4a21-9af8-6b3cf6b22e77>>
 | Range         | Count | Glyphs | Block(s)                                                                             |
 |---------------+-------+--------+--------------------------------------------------------------------------------------|
 | U+2190–U+21CF |    64 | ← … ⇏  | Arrows                                                                               |
@@ -59,6 +60,8 @@ output.
 | U+2B51–U+2B54 |     4 | ⭑ … ⭔  | Miscellaneous Symbols and Arrows                                                     |
 | U+2B56–U+2B73 |    30 | ⭖ … ⭳  | Miscellaneous Symbols and Arrows                                                     |
 | U+2B76–U+2BFF |   138 | ⭶ … ⯿  | Miscellaneous Symbols and Arrows                                                     |
+
+<<c9fd4e12-7498-4a21-9af8-6b3cf6b22e77 end>>
 
 A range that names two or three blocks crosses their boundary — the table is
 sorted and non-overlapping, as =llvm::sys::UnicodeCharSet= requires, and

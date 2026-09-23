@@ -29,6 +29,9 @@
 #+REVEAL_EXTRA_CSS: ../etc/modus-vivendi-tinted.css
 #+REVEAL_EXTRA_CSS: ../etc/footer.css
 
+# Slide utility classes. Last, so it wins over the theme.
+#+REVEAL_EXTRA_CSS: ../etc/deck-extras.css
+
 #+REVEAL_EXPORT_NOTES_TO_PDF: separate-page
 #+REVEAL_EXTRA_OPTIONS: controls: false
 #+reveal_defaulttiming: 60

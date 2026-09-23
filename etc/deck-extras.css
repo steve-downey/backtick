@@ -1,0 +1,22 @@
+/* Slide utility classes, applied per headline with
+ *
+ *   :PROPERTIES:
+ *   :reveal_extra_attr: class="dense-table"
+ *   :END:
+ *
+ * Loaded last in etc/deck.setup so these win over my_theme.css. */
+
+/* A table too tall to read, shown to be seen rather than read -- the frozen
+ * operator ranges, say. my_theme.css sets .reveal table to 0.65em of a 40px
+ * base, 26px, with 0.2em padding: about 45px a row, so anything past fifteen
+ * rows runs off the bottom. At 0.38em a row is near 19px and thirty-odd rows
+ * fit the ~690px a slide has left under its heading. */
+.reveal section.dense-table table {
+  font-size: 0.38em;
+  line-height: 1.1;
+}
+
+.reveal section.dense-table table th,
+.reveal section.dense-table table td {
+  padding: 0.05em 0.4em;
+}

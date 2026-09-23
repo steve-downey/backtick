@@ -1,4 +1,4 @@
-#+TITLE: Extending C++ with Unicode Mathematical Operators
+#+TITLE: Unicode Operators
 #+SUBTITLE: Why the parse comes first
 #+AUTHOR: Steve Downey
 #+EMAIL: sdowney@gmail.com
@@ -14,11 +14,47 @@
 
 * The proposal
 
-- Declare ~operator⊞~; write ~a ⊞ b~.
-- The tokens: Unicode's mathematical operators — frozen by the paper,
-  confusables removed.
+Declare it —
+
+#+begin_src c++
+Vec operator⊞(Vec const& a, Vec const& b);
+#+end_src
+
+write it —
+
+#+begin_src c++
+a ⊞ b
+#+end_src
+
+- Operators drawn from [[https://www.unicode.org/reports/tr25/][UTR #25]],
+  /Unicode Support for Mathematics/ — frozen by the paper, confusables
+  removed.
 - Otherwise ordinary functions: ordinary lookup, ordinary overload
-  resolution, no built-in meanings to protect.
+  resolution.
+
+* The token set
+
+- Pattern_Syntax, non-ASCII, in nine math and arrow blocks, ~gc~ ~Sm~ or
+  ~So~, minus a named exclusion list.
+- Applied once, against UCD 17.0.0. Frozen by enumeration — the table does
+  not track later Unicode versions.
+- 1,381 code points, 32 contiguous ranges. Plus 75 rejected: the blocks
+  partition exactly.
+
+** The 32 ranges
+   :PROPERTIES:
+   :reveal_extra_attr: class="dense-table"
+   :END:
+
+#+transclude: [[file:unicode-operator-token-ranges.org::c9fd4e12-7498-4a21-9af8-6b3cf6b22e77]]  :lines 2- :end "c9fd4e12-7498-4a21-9af8-6b3cf6b22e77 end"
+
+** What came out
+
+- Confusables, multi-character: ⇐ ⇒ ⇔ ≤ ≥ read as ~<=~ ~=>~ ~<=>~ ~<=~ ~>=~.
+- Confusables, single: − ∕ ∗ ∙ ⋅ ∶ ∣ read as ~-~ ~/~ ~*~ ~.~ ~.~ ~:~ ~|~.
+- Identifier characters, by TR31 §7.1: ∂ ∇ ∞.
+- Paired brackets, ~gc Ps~ and ~gc Pe~: ⌈ ⌉ ⟦ ⟧ ⟨ ⟩ — delimiters.
+- Emoji presentation, by the TR31 §7.2 carve-out: ⌚ ⏰ ⏳.
 
 * It looks like this
 
@@ -36,21 +72,19 @@ Vec operator⊖(Vec const&);   // one parameter: unary prefix
 * Order of interpretation
 
 #+ATTR_REVEAL: :frag (appear)
-- Tokens are made, then the program is parsed, then names are looked up.
-  In that order. Always.
+- Tokens, then parse, then lookup. In that order. Always.
 - The parser identifies an operator with *no knowledge of any declaration*.
-- So the operator set is fixed by the grammar — a frozen enumeration, not
-  "whatever is declared".
-- Meaning arrives later, at overload resolution — exactly like ~operator+~
-  on a class type.
-- Julia's model: fixed parse table, user-defined meanings.
-  Not Swift's declaration-gated parse.
-- Corollary: no declaration can rescue, or change, a parse.
+- So the set is fixed by the grammar — a frozen enumeration.
+- Meaning arrives later, at overload resolution — like ~operator+~ on a
+  class type.
+- Julia: fixed parse table, user-defined meanings. Not Swift's
+  declaration-gated parse.
 
 ** Position decides
 
 #+transclude: [[file:unicode-operator-parse-hazards.org::08bc53d9-d490-46f7-bc42-cbeba7739317]]  :lines 2- :end "08bc53d9-d490-46f7-bc42-cbeba7739317 end"
 
+- ~^~ marks the column where the parse commits, or where it breaks.
 - Operand position → prefix. After a complete operand → infix. No postfix.
 - Nothing else consulted: not whitespace, not declarations, not the next
   token.
@@ -58,15 +92,11 @@ Vec operator⊖(Vec const&);   // one parameter: unary prefix
 * The fixity problem
 
 #+ATTR_REVEAL: :frag (appear)
-- A declared precedence is a semantic property that must *travel with the
-  name* — across headers, modules, translation units.
+- A declared precedence must *travel with the name* — headers, modules, TUs.
 - The parse of ~a ⊕ b ⊗ c~ comes to depend on which imports are visible.
 - Two TUs disagreeing about the grouping: an ODR / IFNDR factory.
-- clang-format links no Sema. It cannot know a declared precedence.
-- Deriving precedence from the code point fails on the data:
-  ⊕ ⊖ ⊗ ⊘ ⊙ are U+2295 through U+2299.
-- And a precedence *is* a meaning: ⊗ is multiplication-like in tensor
-  algebra, backwards in a tropical semiring.
+- A precedence *is* a meaning: ⊗ is multiplication-like in tensor algebra,
+  backwards in a tropical semiring.
 
 ** Fixity, concretely
 
@@ -76,8 +106,24 @@ Vec operator⊖(Vec const&);   // one parameter: unary prefix
 
 #+transclude: [[file:unicode-operator-parse-hazards.org::d19e6d00-bcce-442d-877b-47fadb71921f]]  :lines 2- :end "d19e6d00-bcce-442d-877b-47fadb71921f end"
 
-- The surprise is uniform and learnable; disambiguation lives in
-  parentheses, which is where mathematics leaves it.
+- Uniform, learnable. Disambiguation lives in parentheses — where
+  mathematics leaves it.
+
+* ~clang-format~ must work
+
+#+ATTR_REVEAL: :frag (appear)
+- Formats code it has not compiled: no Sema, no lookup, no imports.
+- Still has to answer /how does this group?/
+- Prototype: the query answered ~prec::Unknown~; chains wrapped wrongly;
+  *every spacing and annotation test passed*.
+- A table it can consult. A declaration it cannot.
+
+** What it costs
+
+- Three touch points, ~40 lines, three files.
+- No new ~TokenType~, no annotator state, no spacing or break rule, no
+  style option.
+- Classification is four lines: binary after an operand, unary otherwise.
 
 * The misparse
 
@@ -89,6 +135,8 @@ Vec operator⊖(Vec const&);   // one parameter: unary prefix
 ** ~a ⊖ && b~
 
 #+transclude: [[file:unicode-operator-parse-hazards.org::f0ab2919-c9eb-436a-a1ef-38376bb56d1a]]  :lines 2- :end "f0ab2919-c9eb-436a-a1ef-38376bb56d1a end"
+
+- ~>~ marks a token the rule must examine /ahead/ of the ~^~.
 
 ** The diagnostic cost
 
@@ -104,12 +152,14 @@ Vec operator⊖(Vec const&);   // one parameter: unary prefix
 #+transclude: [[file:unicode-operator-parse-hazards.org::d49fbfc6-a346-4b6a-83fb-6c38f31aa06e]]  :lines 2- :end "d49fbfc6-a346-4b6a-83fb-6c38f31aa06e end"
 
 - Lexing precedes lookup: no declaration can split, or fuse, a token.
-- No user ~&&&~, ever. The single-code-point set has no munch at all: no
-  operator is a prefix of another.
+- No user ~&&&~, ever. No operator is a prefix of another.
 
 ** Whitespace fixity — the Swift rule
 
 #+transclude: [[file:unicode-operator-parse-hazards.org::f3dc6082-dcd8-494b-a26a-ee92b89f0c49]]  :lines 2- :end "f3dc6082-dcd8-494b-a26a-ee92b89f0c49 end"
+
+- ~<~ marks one the rule must examine /behind/ it. So ~<^>~ is a column of
+  lookback and a column of lookahead, at every use.
 
 ** One space, different program
 
@@ -123,12 +173,16 @@ Vec operator⊖(Vec const&);   // one parameter: unary prefix
   declaration-dependent parse. Both declined — the operator set and the
   identifier set stay disjoint.
 
-* Position decides, and only position
+* Position decides
 
 - The parse of every expression is a function of the expression alone.
 - Only the /meaning/ of ~operator⊞~ travels — by ordinary lookup, which
   already knows how to travel.
 - ~^~ only: no lookahead, no lookback, no whitespace, no declarations.
+
+* Questions?
+
+* Thank You!
 
 # Per-deck footer content; see etc/slide-footer.el. Leaving all three empty
 # means no footer at all. The `org-' prefix is required.
