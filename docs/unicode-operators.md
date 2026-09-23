@@ -1,9 +1,11 @@
 # Unicode User-Defined Operators — Design Sketch
 
-Exploratory follow-on to the infix backtick operator (`backtick-operator-design.md`,
-paper P4307). Nothing in this document is implemented; every decision below is
-**Proposed**. Bare `Dn` and `§n` references are into the backtick design doc;
-`Un` decisions and `U§n` sections are this document's own.
+Follow-on to the infix backtick operator (`backtick-operator-design.md`,
+paper P4307), and the design paper P4345 is written from. It is prototyped in
+Clang on the `unicode-operators-experiment` branch; every decision below stays
+**Proposed** until the paper is polled. Bare `§n` references are into the
+backtick design doc; `U§n` sections are this document's own. Decisions are
+named by slug, and each records the number it used to carry as **Formerly**.
 
 This is the non-ASCII companion to §14: that appendix inventories the exhausted
 *ASCII* lexical real estate and concludes (§14.4) that backtick removes most of
