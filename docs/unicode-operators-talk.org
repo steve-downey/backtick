@@ -102,12 +102,12 @@ Vec operator⊖(Vec const&);   // one parameter: unary prefix
 
 #+transclude: [[file:unicode-operator-parse-hazards.org::bc4e65ec-ec59-44d9-b1b6-a100b4acd0a5]]  :lines 2- :end "bc4e65ec-ec59-44d9-b1b6-a100b4acd0a5 end"
 
-** One level, left
+** One precedence@@html:<br>@@one associativity
 
 #+transclude: [[file:unicode-operator-parse-hazards.org::d19e6d00-bcce-442d-877b-47fadb71921f]]  :lines 2- :end "d19e6d00-bcce-442d-877b-47fadb71921f end"
 
-- Uniform, learnable. Disambiguation lives in parentheses — where
-  mathematics leaves it.
+- Teachable and learnable. Parenthesis for grouping is already good
+  practice.
 
 * ~clang-format~ must work
 
