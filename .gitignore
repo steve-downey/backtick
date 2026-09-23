@@ -1,1 +1,14 @@
 papers/generated/
+
+# Emacs package cache and org export by-products
+/.emacs.d/eln-cache/
+/.emacs.d/elpa-*/
+/.emacs.d/elpa/
+/.emacs.d/custom.el
+*.deps
+*~
+\#*\#
+
+# org export outputs (the wg21 pipeline writes to papers/generated/)
+/papers/*.html
+/docs/*.html

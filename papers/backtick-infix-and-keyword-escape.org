@@ -1,0 +1,251 @@
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t
+#+options: broken-links:nil c:nil creator:nil d:(not "LOGBOOK") date:t e:t
+#+options: email:t f:t inline:t num:t p:nil pri:nil prop:nil stat:t tags:t
+#+options: tasks:t tex:t timestamp:t title:t toc:2 todo:t |:t
+#+TITLE: An Infix Operator and a Keyword Escape for C++
+#+SUBTITLE: Two jobs for the backtick, the last free token
+#+AUTHOR: Steve Downey
+#+EMAIL: sdowney@gmail.com
+#+DATE: {{{time(%Y-%m-%d)}}}
+#+LANGUAGE: en
+#+DOCUMENT: D4307R1
+#+AUDIENCE: EWG
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+STARTUP: showall
+
+#+bibliography: backtick-infix-and-keyword-escape.bib
+#+cite_export: csl
+
+# Wording markup. The wg21 markdown spans map as: {.add} -> _underline_,
+# {.rm} -> +strike+, `::: add` -> #+begin_addedblock (the stdtex environment
+# name), {.pnum} and {.sref} -> the two macros below.
+#+MACRO: pnum @@latex:\pnum@@@@html:<span class="pnum">$1</span>@@
+#+MACRO: sref @@latex:\href{https://eel.is/c++draft/$1}{[$1]}@@@@html:<a href="https://eel.is/c++draft/$1">[$1]</a>@@
+
+* Abstract
+
+* Revision history
+
+** R1
+
+** R0
+
+* Before / After
+
+** The infix operator
+
+*** Before
+
+*** After
+
+** The keyword escape
+
+*** Before
+
+*** After
+
+* The proposal
+
+* Motivation, beyond readability
+
+** Short-circuiting returns to user code
+
+** One helper makes it a pipeline, and the ranges closures already fit
+
+** Stages with extra arguments: the honest gap
+
+** Reusable, point-free composition
+
+** Motivation, not a library proposal
+
+* Neither replaces the other: P2011's =|>=
+
+* Prior art
+
+** Infix application of named callables
+
+** Escaping keywords as identifiers
+
+* Design choices and decisions
+
+** It desugars to the call, and that is the whole design
+
+** Precedence: the highest binary operator, and why not higher
+
+** Left-associative
+
+** The operator slot is an assignment-expression
+
+** Bare nesting is chaining; real nesting takes parentheses
+
+** Evaluation order is the call's
+
+** A type name in the slot constructs
+
+** The escape yields an ordinary identifier
+
+** One spelling
+
+** Two uses, one paper; no library
+
+* Anticipated objections
+
+** "Define =*= on a type instead"
+
+* Fitting the grammar, without collision
+
+** The token is free
+
+** The productions
+
+** The same-delimiter problem
+
+** Operator and escape never meet
+
+* Implementation experience
+
+** The forks
+
+** Escape coverage: four sweeps
+
+** The type-name slot, in one compiler
+
+** Printing: which surfaces name an entity
+
+** Argument-dependent lookup, which both implementations got wrong
+
+** What the AST node costs, and which compiler pays it
+
+** The gate fails quietly
+
+** What the parsers confirmed
+
+* The design, in one place
+
+* Wording
+
+The following wording is pro forma. It is intended to make the grammar change
+concrete; it is not offered as final CWG wording. Wording is relative to the
+current working draft.
+
+** [lex.operators]
+
+Modify the /operator-or-punctuator/ grammar in {{{sref(lex.operators)}}}
+paragraph 1 by adding =`=:
+
+#+begin_addedblock
+#+begin_quote
+#+begin_verse
+operator-or-punctuator: one of
+       ...
+       ?     ::    .     .*    ->    ->*   ^^    ~     `
+       ...
+#+end_verse
+#+end_quote
+#+end_addedblock
+
+#+begin_note
+The row shown is [lex.operators]'s third; only the trailing =`= is added.
+#+end_note
+
+** [lex.name]
+
+Add to {{{sref(lex.name)}}}, after the paragraphs defining /identifier/:
+
+#+begin_addedblock
+#+begin_quote
+#+begin_verse
+escaped-identifier:
+    ` identifier `
+#+end_verse
+
+{{{pnum(x)}}} An /escaped-identifier/ may appear wherever the grammar uses
+/identifier/. The token between the =`= tokens is treated as an /identifier/
+even if it would otherwise be a keyword or alternative token. The =`= tokens
+are not part of the identifier. An /escaped-identifier/ and an unescaped
+/identifier/ with the same spelling are the same identifier.
+
+{{{pnum(x+1)}}} [/Example/:
+#+begin_src cpp
+void `new`();          // declares a function named new
+`new`();               // and calls it
+int `count` = 0;
+++count;               // names the same object
+#+end_src
+— /end example/]
+#+end_quote
+#+end_addedblock
+
+** [expr.mptr.oper]
+
+Modify the grammar of {{{sref(expr.mptr.oper)}}} paragraph 1:
+
+#+begin_quote
+#+begin_verse
+pm-expression:
+    +cast-expression+ _user-infix-expression_
+    pm-expression .* +cast-expression+ _user-infix-expression_
+    pm-expression ->* +cast-expression+ _user-infix-expression_
+#+end_verse
+#+end_quote
+
+** [expr.backtick] (new subclause)
+
+Insert a new subclause between {{{sref(expr.cast)}}} and
+{{{sref(expr.mptr.oper)}}}:
+
+#+begin_addedblock
+#+begin_quote
+*Backtick operator   [expr.backtick]*
+
+#+begin_verse
+user-infix-expression:
+    cast-expression
+    user-infix-expression ` backtick-operator ` cast-expression
+
+backtick-operator:
+    assignment-expression
+    simple-type-specifier
+    typename-specifier
+#+end_verse
+
+{{{pnum(1)}}} An expression of the form =E1 `O` E2= is identical (by
+definition) to =O(E1, E2)= ({{{sref(expr.call)}}}).
+
+{{{pnum(2)}}} If the /backtick-operator/ is a /simple-type-specifier/ or
+/typename-specifier/ denoting a type =T= or a placeholder for a deduced class
+type, an expression of the form =E1 `T` E2= is identical (by definition) to
+=T(E1, E2)= ({{{sref(expr.type.conv)}}}). A /backtick-operator/ whose tokens
+can be interpreted both as an /assignment-expression/ and as a
+/simple-type-specifier/ or /typename-specifier/ is interpreted as a
+/simple-type-specifier/ or /typename-specifier/.
+
+{{{pnum(3)}}} When parsing a /backtick-operator/, the first non-nested
+=`=[fn:: A =`= that appears within a matching pair of parentheses, brackets, or
+braces is nested.] is taken as the ending delimiter, rather than as the first
+delimiter of a nested /user-infix-expression/.
+#+end_quote
+#+end_addedblock
+
+Annex A ({{{sref(gram)}}}) is updated mechanically to match.
+
+* Appendix A: alternative spellings, and the lexical inventory
+
+** A.1 Why alternatives get raised
+
+** A.2 The filter a candidate must pass
+
+** A.3 The candidates
+
+** A.4 The front-runner is not an alias
+
+** A.5 The rebuttals, pre-loaded
+
+** A.6 The wider inventory: what ASCII actually remains
+
+** A.7 Why the demand for that inventory evaporates
+
+* References
+
+#+print_bibliography:

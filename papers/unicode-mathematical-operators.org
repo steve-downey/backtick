@@ -1,0 +1,276 @@
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t
+#+options: broken-links:nil c:nil creator:nil d:(not "LOGBOOK") date:t e:t
+#+options: email:t f:t inline:t num:t p:nil pri:nil prop:nil stat:t tags:t
+#+options: tasks:t tex:t timestamp:t title:t toc:2 todo:t |:t
+#+TITLE: Extending C++ with Unicode Mathematical Operators
+#+SUBTITLE: Declaring =operator⊞=, and what an implementation says about it
+#+AUTHOR: Steve Downey
+#+EMAIL: sdowney@gmail.com
+#+DATE: {{{time(%Y-%m-%d)}}}
+#+LANGUAGE: en
+#+DOCUMENT: D4345R1
+#+AUDIENCE: SG16, EWG
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+STARTUP: showall
+
+#+bibliography: unicode-mathematical-operators.bib
+#+cite_export: csl
+
+# Wording markup. The wg21 markdown spans map as: {.add} -> _underline_,
+# {.rm} -> +strike+, `::: add` -> #+begin_addedblock (the stdtex environment
+# name), {.pnum} and {.sref} -> the two macros below.
+#+MACRO: pnum @@latex:\pnum@@@@html:<span class="pnum">$1</span>@@
+#+MACRO: sref @@latex:\href{https://eel.is/c++draft/$1}{[$1]}@@@@html:<a href="https://eel.is/c++draft/$1">[$1]</a>@@
+
+* Abstract
+I propose adding the ability to declare user defined operators, such as operator⊞ , allowing users to write ~a ⊞ b~. The list of allowed operators is drawn from the mathematical operators described in Unicode Technical Report #25, /Unicode Support for Mathematics/ [cite:@UTR25], with confusables removed. The operators are otherwise normal functions, found by ordinary lookup rules and ordinary overload resolution.
+
+#+begin_src c++
+constexpr int operator⊞(int a, int b) { return a + b; }
+static_assert(5 ⊞ 7 == 12);
+
+Matrix operator⊗(Matrix const&, Matrix const&);
+a ⊗ b ⊗ c                               // operator⊗(operator⊗(a, b), c)
+
+Vec operator⊖(Vec const&);              // one parameter: unary prefix
+⊖v                                      // operator⊖(v)
+#+end_src
+
+* Revision history
+
+** R1
+
+** R0
+Initial Paper
+* Before / After
+
+*** Before
+
+*** After
+
+* The design
+
+** =x ⊞ y= is the call
+
+** What this paper fixes
+
+** Three constraints the design holds itself to
+
+** Relation to P4307R0
+
+* The token set
+
+** Deriving it
+
+** Immutable is not closed
+
+** The exclusions, and why their reasons differ
+
+** The operator set and the identifier set are disjoint
+
+** Spelling: the glyph and the UCN
+
+* Fitting the grammar
+
+** One level for all user-introduced infix
+
+** Prefix, and how position decides
+
+** Postfix, and why not
+
+** Fold expressions
+
+* Declaring, looking up, desugaring
+
+** Arity is the only rule that carries over
+
+** One candidate set, and no built-in candidates
+
+** The expression node, and two-phase lookup
+
+* One level, and no fixity declarations
+
+* Sequencing is decided by overload resolution
+
+* Implementation experience
+
+** What was built
+
+** The desugaring survives to the back end
+
+** Volume
+
+** Opening a closed table cost a parallel implementation, five times out of five
+
+** What the compiler does not tell you
+
+** Where the cost estimate went wrong, in a predictable direction
+
+** Mangling and ABI
+
+*** What is implemented, and why it needs nothing
+
+*** What this paper asks for
+
+*** Windows
+
+** Formatting
+
+* What is not resolved
+
+* Separability from P4307R0, in evidence
+
+* Wording
+
+The following wording is pro forma. It is intended to make the grammar change
+concrete; it is not offered as final CWG wording. Wording is relative to the
+current working draft.
+
+** [lex.operators]
+
+Add /user-operator/ as an alternative of /operator-or-punctuator/ in
+{{{sref(lex.operators)}}}:
+
+#+begin_addedblock
+#+begin_quote
+#+begin_verse
+user-operator:
+    one of the characters in Table X, User-operator characters
+#+end_verse
+#+end_quote
+#+end_addedblock
+
+#+begin_note
+Table X will contain the frozen enumeration of 1,381 code points described in
+[[The token set]]. A /universal-character-name/ designating one of those
+characters forms the same token by the existing translation rules.
+#+end_note
+
+** [expr.unary.general]
+
+Add an alternative to /unary-expression/ in {{{sref(expr.unary.general)}}}:
+
+#+begin_addedblock
+#+begin_quote
+#+begin_verse
+unary-expression:
+    ...
+    user-operator cast-expression
+#+end_verse
+#+end_quote
+#+end_addedblock
+
+** [expr.mptr.oper]
+
+Modify the grammar of {{{sref(expr.mptr.oper)}}} paragraph 1:
+
+#+begin_quote
+#+begin_verse
+pm-expression:
+    +cast-expression+ _user-infix-expression_
+    pm-expression .* +cast-expression+ _user-infix-expression_
+    pm-expression ->* +cast-expression+ _user-infix-expression_
+#+end_verse
+#+end_quote
+
+** [expr.user] (new subclause)
+
+Insert a new subclause between {{{sref(expr.cast)}}} and
+{{{sref(expr.mptr.oper)}}}:
+
+#+begin_addedblock
+#+begin_quote
+*User-defined operators   [expr.user]*
+
+#+begin_verse
+user-infix-expression:
+    cast-expression
+    user-infix-expression user-operator cast-expression
+#+end_verse
+#+end_quote
+#+end_addedblock
+
+** [over.oper.general]
+
+Modify the /operator-function-id/ grammar in {{{sref(over.oper.general)}}}:
+
+#+begin_quote
+#+begin_verse
+operator-function-id:
+    operator operator
+    _operator user-operator_
+#+end_verse
+#+end_quote
+
+Add after the grammar:
+
+#+begin_addedblock
+#+begin_quote
+{{{pnum(x)}}} An operator function whose /operator-function-id/ contains a
+/user-operator/ is a /user-operator function/.
+#+end_quote
+#+end_addedblock
+
+Modify the first sentence of {{{sref(over.oper.general)}}} paragraph 7:
+
+#+begin_quote
+An operator function _other than a user-operator function_ shall have at least
+one function parameter or implicit object parameter whose type is a class, a
+reference to a class, an enumeration, or a reference to an enumeration.
+#+end_quote
+
+Modify {{{sref(over.oper.general)}}} paragraph 10:
+
+#+begin_quote
+An operator function _other than a user-operator function_ cannot have default
+arguments, except where explicitly stated below. Operator functions
+_other than user-operator functions_ cannot have more or fewer parameters than
+the number required for the corresponding operator, as described in the rest
+of {{{sref(over.oper)}}}.
+#+end_quote
+
+** [over.match.oper]
+
+Modify the first sentence of {{{sref(over.match.oper)}}} paragraph 1:
+
+#+begin_quote
+_Unless the operator is a /user-operator/, if_ +If+ no operand of an operator
+in an expression has a type that is a class or an enumeration, the operator is
+assumed to be a built-in operator and interpreted according to
+{{{sref(expr.compound)}}}.
+#+end_quote
+
+Modify the first and last sentences of {{{sref(over.match.oper)}}} paragraph 2:
+
+#+begin_quote
+If _the operator is a /user-operator/ or_ either operand has a type that is a
+class or an enumeration, a user-defined operator function can be declared that
+implements this operator or a user-defined conversion can be necessary to
+convert the operand to a type that is appropriate for a built-in operator.
+[...] _For a /user-operator/, the evaluations are sequenced as specified for
+the selected function call. Otherwise,_ +However,+ the operands are sequenced
+in the order prescribed for the built-in operator.
+#+end_quote
+
+Modify the built-in-candidate bullet of {{{sref(over.match.oper)}}} paragraph 3:
+
+#+begin_quote
+For the operator =,=, the unary operator =&=, +or+ the operator =->=
+_, or a /user-operator/_, the built-in candidates set is empty.
+#+end_quote
+
+** [over.unary] and [over.binary]
+
+In {{{sref(over.unary)}}}, extend the definition of a prefix unary operator
+function to include a function named by a /user-operator/ in the added
+/unary-expression/ production. In {{{sref(over.binary)}}}, extend the
+definition of a binary operator function to include a function named by a
+/user-operator/ in a /user-infix-expression/. The existing transformations to
+member and non-member function-call notation then apply unchanged.
+
+Annex A ({{{sref(gram)}}}) is updated mechanically to match.
+
+* References
+
+#+print_bibliography:

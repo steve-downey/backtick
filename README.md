@@ -7,7 +7,14 @@ Design documents, papers, and implementation records for two WG21 proposals.
 - [P4307R0 — An Infix Operator and a Keyword Escape for C++](papers/backtick-infix-and-keyword-escape.md)
 - [P4345R0 — Extending C++ with Unicode Mathematical Operators](papers/unicode-mathematical-operators.md)
 
-Build with `make -C papers <name>.html <name>.pdf`.
+Build with `make -C papers <name>.html <name>.pdf`, or `make papers` at the
+top level for both formats of both papers.
+
+Each paper also has an org-mode version next to it, `papers/<name>.org`, with
+its references in `papers/<name>.bib` for org-cite and citeproc. Those carry
+the full Wording section and the heading skeleton of the rest.
+`make papers/<name>.html` exports one through the Emacs configuration in
+`.emacs.d/`; `make help` lists the other org targets.
 
 ## Implementations
 
