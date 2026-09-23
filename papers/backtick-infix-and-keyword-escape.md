@@ -1,7 +1,7 @@
 ---
 title: "An Infix Operator and a Keyword Escape for C++"
 subtitle: "Two jobs for the backtick, the last free token"
-document: P4307R0
+document: D4307R1
 date: today
 audience: EWG
 author:
@@ -41,7 +41,7 @@ character, designed separately, end in contradiction.
 the ones with tokens — may be written between their operands: `a + b`, `a <
 b`, `a | b`. Every other binary operation, every operation with a *name*, is
 a prefix call: `gcd(m, n)`, `dot(u, v)`, `intersects(a, b)`.
-The distinction is lexical accident and not design. We propose to erase it at
+The distinction is a lexical accident. We propose to erase it at
 the call site. Put a callable between backticks and it is a binary operator:
 
 ```cpp
@@ -63,7 +63,7 @@ semantics of its own to get wrong.
 
 **The keyword escape.** C++ has no way to use a keyword as a name, so every
 keyword the committee adds breaks every program that used the word as one. The
-committee knows this, and pays for it every time: C++20 shipped `co_await`,
+committee knows this, and works around it every time: C++20 shipped `co_await`,
 `co_yield`, and `co_return` because `await` and `yield` were taken, and made
 `module` and `import` context-sensitive — at real specification and
 implementation cost — because breaking existing code was not acceptable. The
@@ -85,6 +85,21 @@ to `*`, `&`, and `<`. Both are implemented, gated behind an opt-in
 `-fbacktick` flag, in two independent compilers, public forks of Clang and
 GCC, with tests. This is a pure core-language proposal targeting C++29. No
 library additions are proposed.
+
+# Revision history
+
+## R1
+
+- Implementation experience now describes all three cross-compiler divergences
+  the escape sweeps found; R0 announced three and described two.
+- The escape-position sweep is linked in the public implementation record.
+- The GCC printing gap is described once, under Printing, instead of across the
+  design and implementation sections.
+- Editorial tightening throughout. No change to the proposed design or wording.
+
+## R0
+
+- Initial revision.
 
 # Before / After
 
@@ -178,13 +193,12 @@ if (`requires`(user.license))
 Today the "before" column has no fix short of renaming the function and every
 use of it, across every translation unit and every client. With the escape,
 the declaration and its call sites take a backtick pair and nothing else
-changes: same name, same mangling, same ABI. The deeper payoff is prospective.
+changes: same name, same mangling, same ABI. The more important use is prospective.
 A committee choosing a future keyword no longer has to weigh breaking every
 use of a good name against mangling the keyword into `co_`-style
-circumlocution or context-sensitivity. The escape hatch makes clean keywords
-affordable.
+circumlocution or context-sensitivity.
 
-That payoff depends on the escape wrapping any identifier, including the words
+That depends on the escape wrapping any identifier, including the words
 that are not keywords yet. Suppose the escape is standardized in one revision
 and the committee
 takes `requires` in the next. If only a keyword could be escaped, the After
@@ -249,8 +263,8 @@ and `?:`. The comma operator is the near neighbor, and is not one of them: it
 evaluates both of its operands, and what it fixes is the *sequencing*.
 Overloading does not get non-strict evaluation back: an overloaded `operator&&`
 evaluates both operands, which is the trap everyone has been bitten by, and
-the reason the standing advice is: don't. This is a capability boundary, not a
-style preference, and it has been closed since C++98.
+the reason the standing advice is: don't. Non-strict evaluation has been
+closed to user code since C++98.
 
 A backtick helper whose right operand is a *callable* reopens it, because the
 helper decides whether (and when) that operand runs:
@@ -280,10 +294,10 @@ parse(s) `mbind` validate `mbind` store;   // stops at the first error
 
 The concession: a bare-*expression* right operand still
 evaluates eagerly, because backtick desugars to a call and calls, of course,
-evaluate their arguments. The thunk is the price of generality. A dedicated
-implication operator pays that price differently, by building the laziness
-into the operator; Walter Brown has proposed `operator=>`, with short-circuit
-evaluation like `&&` and `||` [@P2971R3]. However, what it buys over the
+evaluate their arguments. The thunk is what the generality costs. A dedicated
+implication operator builds the laziness into the operator instead; Walter
+Brown has proposed `operator=>`, with short-circuit
+evaluation like `&&` and `||` [@P2971R3]. However, what it adds over the
 backtick spelling is ergonomic: omitting the thunk in the common boolean case.
 The capability is already there.
 
@@ -300,7 +314,7 @@ inline constexpr auto pipe =
 x `pipe` f `pipe` g `pipe` h        // h(g(f(x))) — data-flow order
 ```
 
-The decisive case is that this drives the *existing* range adaptor closures
+This drives the *existing* range adaptor closures
 unchanged. `views::filter(pred)` and `views::transform(fn)` are already unary
 callables (`c | a` is *defined* as `a(c)`), so `pipe` feeds them directly:
 
@@ -356,7 +370,6 @@ for no enabling gain. Land the language feature, let usage show which
 helpers deserve a place, and bring those in a companion library paper with
 field experience behind them rather than ahead. The patterns are here so
 the room can see the operator's reach before approving any of it.
-Direction without commitment.
 
 # Neither replaces the other: P2011's `|>`
 
@@ -422,7 +435,6 @@ r |> filter([](auto e){ return e `mod` 2 `eq` 0; }) |> sum()
 This proposal declines the `|>` spelling for itself (see the
 appendix) so that both can coexist in one program. Backtick says "this is a
 binary operation"; `|>` says "thread this value through these stages."
-Different sentences.
 
 # Prior art
 
@@ -450,9 +462,8 @@ the compiler](https://github.com/purescript/purescript/issues/137) and again
 as a standing change proposal on its Discourse. A fixed level, kept fixed
 under two requests to make it adjustable, is the level this paper proposes.
 
-Two languages adopted the construct and then removed it. That is part of the
-record too. [Elm dropped backticks in
-0.18](https://github.com/elm-lang/elm-platform/blob/master/upgrade-docs/0.18.md),
+Two languages adopted the construct and then removed it. [Elm dropped
+backticks in 0.18](https://github.com/elm-lang/elm-platform/blob/master/upgrade-docs/0.18.md),
 citing a single function, `andThen`, as pretty much the only one that used the
 feature. [Unison likewise removed
 it](https://github.com/unisonweb/unison/pull/2570). However, both are
@@ -470,8 +481,8 @@ Kotlin's [`infix
 fun`](https://kotlinlang.org/docs/functions.html#infix-notation), Scala's bare
 method infix, R's `%op%` operators, Miranda's `$fn` (the direct ancestor of
 the Haskell backtick), and Fortress's named operators. Languages keep
-reinventing the feature and disagree only on its spelling. Backtick is the
-spelling with the deepest working precedent.
+reinventing the feature and disagree only on its spelling, and backtick is
+the spelling with the deepest working precedent.
 
 ## Escaping keywords as identifiers
 
@@ -513,9 +524,8 @@ one left.
 
 # Design choices and decisions
 
-The implementation work was run against a decisions log. The decisions that
-shape the design are argued here, one to a section, so that EWG can poll any
-one of them on its own.
+The decisions that shape the design are argued here, one to a section, so
+that EWG can poll any one of them on its own.
 
 ## It desugars to the call, and that is the whole design
 
@@ -572,7 +582,7 @@ the meaning of the slot travels, and that is ordinary lookup.
 a `f` b `g` c           // g(f(a, b), c)
 ```
 
-Chains group in reading order, like `-` and `/`. Nothing more to it.
+Chains group in reading order, like `-` and `/`.
 
 ## The operator slot is an assignment-expression
 
@@ -635,15 +645,11 @@ The keyword escape does all of its work in the parser and none anywhere
 else. `` `new` `` in a name position produces an ordinary identifier whose
 spelling is `new`; lookup, overload resolution, mangling, and linkage
 proceed as if the word had never been a keyword. There is no lexer
-identifier-synthesis, no new name category, no ABI surface. What the escape
-buys is what Swift, Kotlin, F#, and Rust bought with theirs: the
+identifier-synthesis, no new name category, no ABI surface. The escape gives
+C++ what Swift, Kotlin, F#, and Rust got from theirs: the
 committee can claim a good word as a keyword without breaking the programs
 that already use it, and a program that must interoperate with one of those
-languages, or with its own past, can name the entity it needs to name. The
-one consequence users see is printing: because the escape is spelling and
-not identity, a diagnostic and a pretty-printer put the backticks back, and
-both compilers do, GCC with one surface, the name of a type, still printed
-bare.
+languages, or with its own past, can name the entity it needs to name.
 
 The word between the backticks does not have to be a keyword. Anything
 spelled as an identifier may stand there, and what comes out is that
@@ -659,16 +665,14 @@ token is `(`, and here the next token is the closing backtick. Both forks
 behave this way. The backticks neither shield a name from the preprocessor
 nor expose one to it.
 
-An earlier draft of this paper restricted the content to words that actually
-are keywords, so that `` `foo` `` was ill-formed rather than a noisy spelling
-of `foo`, and left the choice to EWG. The restriction is withdrawn, for the
-reason the motivating example gives: an escape that only accepts words that
-are already keywords cannot be written until the standard that takes the word
-has shipped, so it can repair a break and can never prevent one. Two more
-consequences of the restricted rule are worth the room's attention. A tool
-that generates
-C++ would have to carry the keyword list, per dialect, and would be wrong on
-the day the list changes, which is the day it was supposed to help. And the
+The alternative is to restrict the content to words that actually are
+keywords, so that `` `foo` `` is ill-formed rather than a noisy spelling of
+`foo`. We reject it, for the reason the motivating example gives: an escape
+that only accepts words that are already keywords cannot be written until the
+standard that takes the word has shipped, so it can repair a break and can
+never prevent one. The restricted rule has two more consequences. A tool that
+generates C++ would have to carry the keyword list, per dialect, and would be
+wrong on the day the list changes, which is the day it was supposed to help. And the
 backticks would acquire a meaning of their own: a reader would have to know
 whether the word is a keyword in this dialect before knowing whether the line
 is well-formed. Under the rule proposed here the backticks say only "this is a
@@ -691,7 +695,7 @@ for this rule as well: the production is `r#` followed by an identifier or a
 keyword rather than by a keyword list, and the reference is explicit that the
 prefix "is not included as part of the actual
 identifier" ([the Rust
-reference](https://doc.rust-lang.org/reference/identifiers.html)). That is
+reference](https://doc.rust-lang.org/reference/identifiers.html)), which is
 both halves of what is proposed here, in the language that installed its hatch
 most recently and for this reason.
 
@@ -709,36 +713,12 @@ declaration comes out as `` void `new`(); ``, since `void new();` is not a
 program and a printer that emitted it would have lost the source, and a
 diagnostic names the entity `` `new` `` for the same reason, that text copied
 out of a diagnostic should be text the reader can paste back. The AST dump
-keeps the bare word where it names the declaration, which is the evidence for
-the paragraph above: the name really is an ordinary identifier, and the
-backticks are how it is written. The two implementations are not of one mind
-about where that line falls, and they diverge from opposite ends: Clang dumps a declaration's name bare and the same name
-inside a *type* escaped, while GCC escapes the name of a declaration and
-prints the name of a type bare. Neither split is visible to a program and
-neither touches acceptance. Both implementations put the escape back where it
-matters, and it cost them the same thing. The
-escape yields the ordinary interned identifier and keeps no record of how it
-was written, so neither compiler can ask a name whether it was escaped; each
-has to decide instead *which printing surfaces name an entity*, and put the
-backticks back only there. Clang draws that line by the kind of argument a
-diagnostic was given, across six sites. GCC draws it in the one routine that
-prints the name of a declaration, plus a guard on the parser's own error
-printer, which hands a raw keyword token to that routine as though it were a
-name. Both got the line wrong once before getting it right, and the symptom
-was the same both times: a program containing no backtick at all had its
-diagnostics change under the flag.
-
-The half GCC gets wrong is the clearest evidence for what the paragraph above
-claims the cost is. GCC's routine is *the name of a declaration*. A
-class or enum **type** is printed somewhere else, so a program that declares
-`` struct `union` { }; `` and then misuses it is told that *'struct union' has
-no member named '`new`'*: one sentence, two names, one of them escaped and the
-other not, because the two halves arrive from two printers. Clang escapes
-both. No program is accepted or rejected differently; what fails is the thing
-the decision exists to deliver, which is that text copied out of a diagnostic
-can be pasted back. Deciding which surfaces name an entity is the whole cost
-of the feature's printing, and a compiler can pay it in one place and not
-another without anything failing.
+keeps the bare word where it names the declaration, which is evidence that the
+name really is an ordinary identifier and the backticks are how it is written.
+Since the escape keeps no record of how a name was written, an implementation
+has to decide *which printing surfaces name an entity*, and put the backticks
+back only there; §"Printing: which surfaces name an entity" gives what that
+took in both compilers, and where GCC still prints a name bare.
 
 The cost is bounded added context-sensitivity: tentative
 declaration-versus-expression parsing must recognize escapes, and tooling
@@ -807,8 +787,8 @@ is a constructor set; a conversion policy, where `explicit` is safe and noisy
 and implicit is quiet and dangerous; the rest of the operator zoo, forwarded;
 and an interoperation debt everywhere the wrapper meets existing code:
 `is_arithmetic` says no, `numeric_limits` wants a specialization, and every
-function that takes a `double` now takes a `.value()`. That is a real class to
-design, review, document, and maintain, as a workaround for one function
+function that takes a `double` now takes a `.value()`. The result is a real
+class to design, review, document, and maintain, as a workaround for one function
 lacking an infix spelling.
 
 And the type is the wrong scope. Wrapping a value makes *every* operation
@@ -930,12 +910,12 @@ x `f` y;             // post-operand   -> infix: f(x, y)
 x `(`new`)` y;       // escaped callee -> (`new`)(x, y), parenthesized slot
 ```
 
-An earlier draft claimed a second and independent signal here: that an escape
+There might seem to be a second, independent signal here: that an escape
 wraps a keyword, which is never a valid callee expression, and a slot wraps an
 expression, which is never a bare keyword. Since the escape wraps any
-identifier, that signal is gone. The design is unaffected, because it never
-rested on the signal, and the case where the two token sequences now coincide
-shows why. Read as an escape and read as a slot, `` `f` `` names the same
+identifier, that signal does not exist. The design does not rest on it, and
+the case where the two token sequences coincide shows why. Read as an escape
+and read as a slot, `` `f` `` names the same
 thing, `f`; the two readings differ only over whether `f` is an operand or a
 callee, and that is precisely what the position states. Position alone
 suffices, as it does for `*`, `&`, and `<`.
@@ -963,9 +943,9 @@ because the compilers demanded them.
 - *The escape reaches every position the grammar writes an identifier in.*
   The first prototypes took it wherever their parsers happened to route the
   token and refused it everywhere else. The position list in the wording is
-  what four sweeps of one program per position found, and the sweep, with a
-  fifth group that varies the word instead, is in the repository: ninety-eight
-  programs.
+  what four sweeps of one program per position found. The sweep, with a
+  fifth group that varies the word instead, is ninety-eight programs, published
+  as [`ops/probes/escape-positions.sh`](https://github.com/steve-downey/backtick/blob/main/ops/probes/escape-positions.sh).
 - *The escape is spelling and not identity, and printers put it back.* A
   pretty-printed declaration and a diagnostic name the entity `` `new` ``; the
   AST dump keeps the bare word. Each compiler had to decide which of its
@@ -1000,7 +980,7 @@ paragraph marks them open:
 6. *The transparent node.* Clang's source-fidelity wrapper had to be taught to
    the static analyzer and its bug reporter, the code generator, libclang, and
    the AST matchers, and every one of those sites is quiet when it is wrong.
-   GCC desugars in the parser and pays none of it.
+   GCC desugars in the parser and needs none of it.
 
 **Still open.** Two sets of programs are treated differently by the two
 compilers under the flag. GCC does not implement the type-name slot, so `` 1 `Pt` 2 `` is
@@ -1011,7 +991,7 @@ definition-context lookup that [temp.dep.candidate]{.sref} requires, so
 translation unit. Clang has it right; the GCC prototype has a bug to fix.
 Nothing the keyword escape does is on either list. One GCC
 diagnostic does still print an escaped declaration name beside a bare type
-name, which is a printing gap and not an acceptance one.
+name, a printing gap with no effect on which programs compile.
 
 ## The forks
 
@@ -1069,8 +1049,7 @@ both: `` N::`union` g; ``, `` using X = N::`union`; ``, `` sizeof(N::`union`)
 ``, `` typename T::`union` ``, `` `module`::inner::f() ``. The rest of this
 subsection is how that list was reached: four sweeps, what fixing what they
 found cost, the parser loop the fix shipped, and the three cross-compiler
-divergences met on the way, each of which closed as a gap and not a
-disagreement.
+divergences met on the way, each of which closed as a gap in one compiler.
 
 That coverage is recent, and how it was arrived at is a fair warning about
 what "implemented" means for a grammar extension. Both prototypes were
@@ -1095,12 +1074,12 @@ keyword. Every program anyone had written used `new`, `class`, `union` or
 `try`, which are pure keywords; `int` is not, and GCC rejected `` int `int` =
 0; `` in the first and best-tested position in the table, and had done for two
 months. Seventy-nine programs now, in four groups, and the whole sweep runs in
-about two seconds. It is checked into the repository, which it should have
-been three sweeps ago.
+about two seconds. It is the script linked in the summary above, and it should
+have been checked in three sweeps ago.
 
 There is a fifth thing those seventy-nine programs never vary, and it is not a
-position. Every one of them escapes a keyword, because until this revision the
-rule required one. The fifth sweep changes the word: nineteen programs that
+position. Every one of them escapes a keyword, because the prototypes' rule
+first required one. The fifth sweep changes the word: nineteen programs that
 escape an ordinary identifier, an alternative token, and a word that is a
 keyword only in a later standard, in the positions the first four covered.
 Before the change both compilers rejected all of them. After it, both accept
@@ -1125,7 +1104,7 @@ It now asks the preprocessor's question as well, and both compilers print
 What it cost to fix is small, though not the number first estimated. The
 escape parse becomes a helper called from each name
 position — twenty call sites in Clang, one arm plus its guards in GCC — and
-then three things nobody had priced. A parser that decides what it is looking
+then three things nobody had estimated. A parser that decides what it is looking
 at from the token *after* a name has to step over three tokens where it
 stepped over one, so every such lookahead is a call site too; a label is told
 from an expression statement only by the `:` that follows it. A new name
@@ -1139,8 +1118,8 @@ matches that token against the cached stream by source location; a name
 written as an escape occupies three tokens, so the annotation has to begin on
 the opening backtick and end on the closing one. Get either end wrong and the
 cache is left holding a stray `` ` `` in front of the annotation, which the
-next backtracking parse resumes on. GCC pays none of that, because it does not
-cache and re-annotate. More than half the work was in those three, and none of
+next backtracking parse resumes on. GCC has none of that work, because it does
+not cache and re-annotate. More than half the work was in those three, and none of
 them appears in the grammar.
 
 The loop came from that last change. Clang's recovery for a
@@ -1157,9 +1136,12 @@ different question from the one a coverage sweep asks and needs its own
 harness.
 
 Three cross-compiler divergences were found on the way, and every one of them
-left the same way: it turned out to be a gap rather than a disagreement, with
-a single cause behind however many programs it showed up in. The last two are
-the instructive pair, because they ran in opposite directions. GCC rejected an
+turned out to be a gap in one compiler, with a single cause behind however
+many programs it showed up in. The first was three name positions, an
+*alias-declaration*'s name, an alias template's and a concept's, which Clang
+accepted and GCC rejected, because GCC read all three through a routine that
+takes only a bare identifier token; the escape now reaches them in GCC too.
+The other two ran in opposite directions. GCC rejected an
 escape whose keyword is a *type* keyword, because `int` and `char` and their
 siblings are bound at global scope to the builtin type in GCC's name table, so
 the name the escape yields was already taken. That looks like a representation
@@ -1169,10 +1151,10 @@ everywhere else and the declarator check rejects a bare reserved word; a
 collision with that binding is therefore never a redeclaration, and the fix is
 to say so, at the three places GCC consults it. `` int `int` = 0; `` compiles,
 `int` still names the builtin in the same translation unit, and `` g(int,
-`int`) `` mangles as `_Z1gi3int` in both compilers. Which is the ABI claim
-above, demonstrated on the hardest name the feature has.
+`int`) `` mangles as `_Z1gi3int` in both compilers: the ABI claim above,
+demonstrated on the hardest name the feature has.
 
-The other of that pair ran the opposite way, with GCC briefly the wider
+The third ran the opposite way, with GCC briefly the wider
 implementation: it took `` N::`union` ``
 where Clang did not. One arm in the routine that reads an identifier reaches
 every name position GCC has, a qualified type among them. Clang reads a
@@ -1197,20 +1179,41 @@ parses its slot as an expression, so `` 1 `Pt` 2 `` is rejected there.
 
 Both compilers restore the backticks wherever an entity is *named*, in a
 pretty-printed declaration and in a diagnostic, and keep the bare word in the
-AST dump; the design section argues why. The cost of that decision is deciding
-which printing surfaces name an entity, and both compilers paid it twice, once
+AST dump; the design section argues why. That decision means deciding which
+printing surfaces name an entity, and both compilers had to make it twice, once
 for the escape and once for the operator. Clang's `-ast-print` now round-trips
 every shape the operator can take, with one exception a reviewer will find: a
 slot naming a builtin whose call the semantic layer rewrites into a node that
 is no longer a call (`` a `__builtin_shufflevector` b ``) prints as the
 rewrite, because the rewrite is not expressible in the syntax at all.
 
-The escape's printing cost is in the sweep account above: every new name
-position was a new printing surface, and each printed the bare keyword, which
+The escape yields the ordinary interned identifier and keeps no record of how
+it was written, so neither compiler can ask a name whether it was escaped.
+Each has to decide instead which printing surfaces name an entity, and put the
+backticks back only there. Clang draws that line by the kind of argument a
+diagnostic was given, across six sites. GCC draws it in the one routine that
+prints the name of a declaration, plus a guard on the parser's own error
+printer, which hands a raw keyword token to that routine as though it were a
+name. Both got the line wrong once before getting it right, and the symptom
+was the same both times: a program containing no backtick at all had its
+diagnostics change under the flag. Every new name position the sweeps opened
+was a new printing surface as well, and each printed the bare keyword, which
 is source that does not re-parse, until it was routed through the one routine
-that puts the backticks back. The one gap left is GCC's, described in the
-design section: it escapes the name of a declaration and prints the name of a
-type bare, so a single diagnostic can carry both spellings.
+that puts the backticks back.
+
+One gap is left in a diagnostic, and it is GCC's. GCC's routine is *the name of a
+declaration*. A class or enum **type** is printed somewhere else, so a program
+that declares `` struct `union` { }; `` and then misuses it is told that
+*'struct union' has no member named '`new`'*: one sentence, two names, one of
+them escaped and the other not, because the two halves arrive from two
+printers. Clang escapes both. No program is accepted or rejected differently;
+what fails is the thing the decision exists to deliver, which is that text
+copied out of a diagnostic can be pasted back. Clang has the mirror image of
+the split in its AST dump, which shows a declaration's name bare and the same
+name inside a *type* escaped. Neither split is visible to a program. Deciding
+which surfaces name an entity is the whole of the escape's printing work, and
+a compiler can get it right in one place and wrong in another without anything
+failing.
 
 The operator's printer failed twice more, and both were found the same way, by
 re-deriving this paper's claims against the compilers rather than reading them
@@ -1231,17 +1234,12 @@ written; in the deduced case it printed a cast applied to a comma expression,
 a different program altogether. The callable arm failed *loudly*. It printed
 text naming `operator()` as a free function, which does not compile, dropped
 an operand, and reported a source range whose end preceded its beginning.
-Neither was caught, because the round-trip test had no case of either shape,
-and a claim tested only where the printer already works is untested whichever
-way it fails.
+Neither was caught, because the round-trip test had no case of either shape.
 
 **A round-trip claim is a claim about every node the semantic layer can build,
-not about the nodes the printer was written against.** That sentence was
-written for the first of the two, before anyone knew there was a second. The
-second was found afterwards, by asking the question the sentence asks, which
-makes it the better evidence: a general statement that catches a further
-instance of itself, in the same paper, after it was written down. Both arms
-are written now, and the exception above is all that is left.
+not about the nodes the printer was written against.** The second of the two
+was found by asking that question. Both arms are written now, and the
+exception above is all that is left.
 
 ## Argument-dependent lookup, which both implementations got wrong
 
@@ -1250,8 +1248,9 @@ weaker lookup than `f(x, y)`. Neither compiler delivered it on its first
 attempt, and the two failures were the same failure: the name in the slot was
 resolved before the call builder ever saw it. Both deliver it now outside a
 template. Inside one, GCC still does not: it discards the definition-context
-half of a dependent slot's lookup at instantiation, which is the open case in
-the summary above, and the last paragraph of this section describes it.
+half of a dependent slot's lookup at instantiation, so a slot naming
+something only ordinary lookup finds is rejected where the plain call
+compiles.
 
 GCC took two goes. Its first cut resolved a bare-name slot at parse time, so a
 call depending on pure ADL — the callee visible in no enclosing scope, only in
@@ -1278,15 +1277,14 @@ operator lookup and hands an unresolved set to candidate assembly. One build,
 one machine, one author, one difference. The feature that reached the call
 builder unresolved inherited ADL from its first commit, without anyone
 deciding to inherit it; the feature that resolved its slot first had to be
-repaired. That is the whole thesis, with the compiler and the author held
-constant.
+repaired: the whole thesis, with the compiler and the author held constant.
 
-The near-miss tells a reviewer as much as the fix does. The defect survived
+The defect survived
 the entire implementation because the one test that announced itself as the
 ADL case used a *qualified* name in the slot, which correctly gets no ADL
 either way; it passed whatever the slot did, and its heading was enough to
 stop anyone writing the test that would have failed. The shape that catches
-this is *augmentation* rather than "does it compile": an ordinary-lookup
+this is *augmentation*: an ordinary-lookup
 candidate that is visible and viable, a better ADL candidate, and the choice
 made observable in the result type. That is the only shape in which weaker
 lookup on the slot produces no diagnostic at all, and no implementation should
@@ -1299,11 +1297,10 @@ rejected by GCC and accepted by Clang. GCC re-runs the lookup at instantiation
 and keeps only the ADL result, discarding the ordinary lookup from the
 definition context that [temp.dep.candidate]{.sref} requires it to keep. A
 variable fails the same way, and an ADL-reachable name is accepted, so what is
-lost is ordinary lookup itself rather than some narrower rule about what ADL
-may find. What makes the reading unambiguous is that the plain call still
+lost is ordinary lookup itself. What makes the reading unambiguous is that the plain call still
 compiles: in one translation unit, `pipe(t, inc)` is accepted where `` t
-`pipe` inc `` is not. That is the slot carrying weaker lookup than the call it
-desugars to, which is what this section opened by ruling out. Clang is the
+`pipe` inc `` is not: the slot carries weaker lookup than the call it
+desugars to, which this section opened by ruling out. Clang is the
 conforming implementation and the GCC prototype has a defect to fix.
 
 ## What the AST node costs, and which compiler pays it
@@ -1312,9 +1309,8 @@ Clang builds a source-fidelity node, a transparent wrapper around the
 desugared call, and that node is why `-ast-print` reproduces the
 written syntax. GCC desugars in the parser and hands its semantic layer an
 ordinary call. The two accept the same programs and generate the same code,
-so they differ in kind and behave identically. The node has a price, and a
-reviewer should attribute the price correctly: it is not the node, it is the
-transparency. A wrapper the rest of the compiler is meant not to notice is a
+so they differ in kind and behave identically. The node's cost is its
+transparency: a wrapper the rest of the compiler is meant not to notice is a
 wrapper nothing will remind you to teach anything about, and the sites that
 need teaching are quiet when they are wrong: six in the static analyzer's
 modelling layers, a seventh in the bug reporter created by meeting the other
@@ -1322,8 +1318,8 @@ six, four arms in the code generator, the exhaustive statement-class
 switches, the libclang cursor map, the AST matchers. Exactly one of the
 analyzer's seven announces itself, and only as a warning in a build log.
 
-The seventh is the instructive one. Teaching the control-flow graph to look
-through the wrapper leaves the wrapper with no program point of its own, so
+The seventh came from teaching the control-flow graph to look through the
+wrapper, which leaves the wrapper with no program point of its own, so
 the bug reporter's tracking chain is abandoned before a single handler runs,
 and with it the suppression, on by default, that keeps `core.NullDereference`
 quiet about a null returned from an inlined callee. `` p `identity` 0 ``
@@ -1334,9 +1330,8 @@ and explained less. One arm in the reporter's peeling routine fixes both
 symptoms at once, because peeled early the two forms are one expression for
 everything downstream; the two reports now agree note for note.
 
-That is the cost of source fidelity, and round-tripping the written syntax is
-the payoff. A front end
-that desugars in the parser pays none of it, and gets none of it.
+Round-tripping the written syntax costs all of that. A front end that
+desugars in the parser has none of the cost and none of the round trip.
 
 ## The gate fails quietly
 
@@ -1367,8 +1362,7 @@ parser architectures reproduced. Nesting-is-chaining is a consequence of the
 grammar. Clang carried a diagnostic for the
 bare form through most of the implementation and it never once fired; it was
 deleted rather than made to fire, since making it fire needs the lookahead
-that would have to reject legal chaining too. A diagnostic that cannot fire is
-a claim the grammar has already withdrawn.
+that would have to reject legal chaining too.
 
 The motivation section is implementation experience as well. Every pattern in
 it (`pipe` threading, the range-adaptor closures,
@@ -1433,11 +1427,10 @@ implemented in both compilers except where noted.
   later paper with usage behind them.
 - Two uses, one paper, because they share the token and the committee.
 
-**Left to EWG.** One question, which this paper answers rather than leaves
-open: whether the escape is restricted to words that are keywords, so that
-`` `foo` `` is ill-formed rather than a second spelling of `foo`. The
-proposal is the unrestricted rule, for the reason §"The escape yields an
-ordinary identifier" gives — a restricted escape cannot be written until the
+**Separately pollable.** One question: whether the escape is restricted to
+words that are keywords, so that `` `foo` `` is ill-formed rather than a
+second spelling of `foo`. The proposal is the unrestricted rule, for the
+reason §"The escape yields an ordinary identifier" gives — a restricted escape cannot be written until the
 standard that takes the word has shipped, so it can repair a break and can
 never prevent one. Both implementations support either answer, so EWG can
 still poll it.
@@ -1575,8 +1568,8 @@ The objection is granted, and the reasoning is right for the operator it was
 reasoning about. However, that operator is not this one. A reflection operator
 is written once per reflection and sits inside dense expression text, where a
 backtick operator is written where the name of an operation would go; the
-CommonMark cost falls on different text, at a different density, and it is
-paid by the same span form either way.
+CommonMark cost falls on different text, at a different density, and the
+same span form handles it either way.
 
 Neither is a capability gap. CommonMark's multi-backtick spans already delimit
 code containing backticks (writing ``` `` x `f` y `` ``` renders as `` x `f` y
@@ -1584,8 +1577,7 @@ code containing backticks (writing ``` `` x `f` y `` ``` renders as `` x `f` y
 The span form renders correctly on GitHub and on Mattermost, the committee's
 own chat server (author-verified). In the very forum where the operator would
 most often be typed in running text, the friction is a solved problem. What an
-alternative spelling buys is ergonomics for the minority case, inline prose.
-Nothing more.
+alternative spelling offers is ergonomics for the minority case, inline prose.
 
 There is also a self-test on the record: the source of this paper is pandoc
 Markdown, and every `` x `f` y `` in its running prose is a multi-backtick
@@ -1626,15 +1618,15 @@ a real token before:
 
 ## A.4 The front-runner is not an alias
 
-One candidate deserves honesty: `\< … \>` is lexically bulletproof *and*
+One candidate is different: `\< … \>` is lexically bulletproof *and*
 asymmetric. Distinct open and close tokens would eliminate the same-delimiter
 problem outright (no `BacktickIsOperator` flag) and with it the nesting rule,
 since `x \<f \<g\> h\> y` parses unambiguously with no parentheses. That is,
 on engineering grounds, a better-designed operator than the backtick.
 
-However, it is important to state plainly what adopting it would mean. It
-would be choosing a *different primary spelling*, a different operator with a
-different feel and none of the Haskell lineage. It would not be an alias. The
+However, adopting it would mean choosing a *different primary spelling*, a
+different operator with a different feel and none of the Haskell lineage. It
+would not be an alias. The
 decision taken here is backtick as the single spelling. We considered the
 better-engineered stranger and chose the familiar borrowed spelling, on
 purpose.

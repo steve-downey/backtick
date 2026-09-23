@@ -1,7 +1,7 @@
 ---
 title: "Extending C++ with Unicode Mathematical Operators"
 subtitle: "Declaring `operator⊞`, and what an implementation says about it"
-document: P4345R0
+document: D4345R1
 date: today
 audience: SG16, EWG
 author:
@@ -118,6 +118,20 @@ off current trunk, and every rule below is written from that prototype. Where
 the build contradicted what the rule was going to be, the section states the
 rule that survived and says what the build showed.
 
+# Revision history
+
+## R1
+
+- References to the implementation's internal process records are removed; the
+  Clang expression-mangling defect is described once, in Mangling and ABI, and
+  the Acknowledgments section, which held only those two things, is gone.
+- The UCN and fixity sections state their conclusions first.
+- Editorial tightening throughout. No change to the proposed design or wording.
+
+## R0
+
+- Initial revision.
+
 # Before / After
 
 ::: cmptable
@@ -156,9 +170,9 @@ auto s = (x ∩ y) ∪ z;
 
 :::
 
-The gain is not brevity. It is that the notation on the page is the notation
-in the domain, for domains that have had one for a century and have had to
-spell it `mul` in C++ because the language ran out of tokens.
+The notation on the page becomes the notation in the domain, for domains that
+have had one for a century and have had to spell it `mul` in C++ because the
+language ran out of tokens.
 
 # The design
 
@@ -242,8 +256,8 @@ both are adopted, the first one in owns the production and the
 [expr.mptr.oper]{.sref} edit, and the second adds only its own operator's
 alternative to the production already there. The proposal is that the
 grammar be spelled once, with one subclause defining it and the other
-referring to it; which subclause that is, is a question for the paper that
-lands first, not a design difference between them. The character set, the UCN and
+referring to it; the paper that lands first decides which subclause that is,
+and the two do not differ in design. The character set, the UCN and
 identifier interplay, the *operator-function-id* and [over.oper]{.sref}
 changes, the SG16 review and the ABI work are this paper's alone. Evidence that
 the two are separable in a compiler, as well as on paper, is at the end.
@@ -260,11 +274,10 @@ is the same shape to the same document.
 
 This paper pins UAX #31 at **revision 43** [@UAX31], the revision that goes
 with Unicode 17.0, and the derivation below runs against UCD 17.0 [@UCD17].
-That is a choice and not the latest state: revision 45 [@UAX31-45], for
-Unicode 18.0, was published on 2026-09-01. Pinning is the point — the set
-this paper ships is frozen (see "Immutable is not closed"), so it has to name
-the revision it was derived from, and §"The operator set and the identifier
-set are disjoint" reports what happened when a compiler's own tables moved to
+Revision 45 [@UAX31-45], for Unicode 18.0, was published on 2026-09-01; this
+paper pins 43 deliberately, because the set it ships is frozen (see
+"Immutable is not closed") and so has to name the revision it was derived
+from. §"The operator set and the identifier set are disjoint" reports what happened when a compiler's own tables moved to
 18.0 underneath it.
 
 R3c does not hand us a usable set directly. Pattern_Syntax includes, of
@@ -347,8 +360,7 @@ not: the published tables answer "what does this look like", while the
 diagnostic needs "which C++ token does this look like", and the two come
 apart. `∙` and `⋅` *mean* multiplication and *look like* `.`, and it is the
 look that endangers the reader; `⇔` is spelled `<=>`, a token this language
-acquired in 2020. The principle is one line, and the paper states it outright,
-having no derivation to claim: the spelling names the token a reader is most
+acquired in 2020. The principle, which has no derivation behind it: the spelling names the token a reader is most
 likely to mistake the character for, not the operation the character denotes.
 For the same reason the message says the character *is
 confusable with* the token, never *did you mean*, and carries no fix-it: a
@@ -384,8 +396,8 @@ question is whether it holds against a real compiler, and it does, measured
 per code point against the compiler's own tables and not against the UCD:
 of the 1,381 members of the set, **zero** are XID_Start, zero XID_Continue,
 zero in the math-identifier profile tables, and zero in the C++11–C++20
-Annex E identifier whitelist. That is a unit test in the implementation, not
-an argument in a document, and it iterates the whole set.
+Annex E identifier whitelist. A unit test in the implementation checks it over
+the whole set.
 
 It came out stronger than it had to, by an accident of timing.
 The set is derived against UCD 17.0; Clang's in-tree identifier
@@ -412,23 +424,19 @@ The absence of UCN punctuators today is an accident: every punctuator so far
 has been in the basic character set. These are the first non-basic
 tokens, and the extended-character-equals-UCN equivalence the language
 maintains for identifiers is the escape hatch for source encodings, fonts and
-review tools that cannot carry the glyph. It must extend to them.
+review tools that cannot carry the glyph. It must extend to them, and the rule
+has to say it is an equivalence of entities: a UCN-spelled operator is
+classified for free, and its identity is not.
 
-Calling that free by construction is the obvious reading, and it is half
-right.
 The lexer's existing UCN path already produces a code point that takes the same
-classification as a literal one. Classification is free. Identity is not.
-The first implementation classified UCN-spelled operators correctly and
-derived the operator's identity by decoding the token's spelling as one UTF-8
+classification as a literal one. The first implementation classified
+UCN-spelled operators correctly and derived the operator's identity by decoding the token's spelling as one UTF-8
 scalar, which answers zero for a UCN. That value is the `DeclarationName`, the
 mangled name, the printed form, and the on-disk lookup key, so
 `operator\U0000229E` would have been a *different entity* from `operator⊞`,
 mangling `op_u0000`, while a token dump looked perfectly correct. Every test
 that would have caught it had to be a declaration-and-use cross-spelling
 assertion; no token-level comparison can see it.
-
-The equivalence the UCN rule claims is an equivalence of entities, and the rule
-has to say so.
 
 # Fitting the grammar
 
@@ -543,8 +551,8 @@ changing the meaning of any program this one accepts.
 ## Fold expressions
 
 A user operator is not a fold operator: `(... ⊞ N)` is ill-formed, and the
-diagnostic is `expected expression`. That is a decision this proposal takes,
-and it is stated here because nothing in the diagnostic would state it.
+diagnostic is `expected expression`. This proposal excludes the fold form, and
+says so because the diagnostic does not.
 P4307R0's backtick operator gets the character-identical diagnostic at the same
 level, so the decision covers both features and is taken once.
 
@@ -660,9 +668,7 @@ re-run operator candidate assembly at instantiation. It stores an
 `OverloadedOperatorKind`, in which `OO_None` is itself a valid operator kind,
 so there is no spare state and it cannot carry a user operator.
 
-Leave the use as an ordinary call (which is what the desugaring says
-it is) and the non-dependent case is correct in every shape tested. However,
-when an operand is type-dependent, `TreeTransform` rebuilds the expression
+When an operand is type-dependent, `TreeTransform` rebuilds the expression
 through the ordinary call path: [over.match.call]{.sref}, not
 [over.match.oper]{.sref}. ADL survives, because ADL is a property of the call.
 Member candidates do not, because they are a property of the operator syntax.
@@ -691,16 +697,14 @@ back (a class-typed prvalue with a non-trivial destructor comes back inside a
 temporary-binding node), so a node that *is* the operator survives that, and a
 node that *hides* a built call does not.
 
-The desugaring is therefore exact for a non-dependent use, and needs a node to
-survive a dependent one.
-
 # One level, and no fixity declarations
 
 Precedence and associativity are fixed by this paper, at one level, and
 neither can be declared. Of the rules fixed above this is the one most likely
 to be argued, so the two alternatives are answered here: a declared fixity is
 an ODR factory, and a derived one has nothing in Unicode to derive from. One
-level is not neutral, and the section ends by saying whom it surprises.
+level is not neutral: `a ⊕ b ⊗ c` groups left, against the tensor reader's
+expectation.
 
 A declared precedence is a semantic property that must travel with the name
 across headers, modules and translation units. Two translation units
@@ -822,12 +826,10 @@ manglable name, explicit calls, infix and prefix expressions with full ADL,
 the AST node, serialization to PCH and modules, AST import, ODR hashing, an
 AST matcher, and clang-format support.
 
-The work was done as twenty-two gated steps, each with its own regression
-gate, landing as the twenty-commit patch stack counted under "Volume" below,
-and every place the build contradicted the design sketch this paper is
-written from was recorded in a ledger as it was found. That ledger has
-twenty-four rows, and the rules stated above are what came out of it. The
-corrections worth a reader's time are here.
+Every place the build contradicted the design was recorded as it was found,
+and the rules stated above are what came out of that record. Every
+measurement here was re-derived from a running compiler for this revision.
+The corrections worth a reader's time follow.
 
 ## The desugaring survives to the back end
 
@@ -913,11 +915,10 @@ stored.
 Little of this is Clang's in particular. GCC keeps its operator identifiers in
 a fixed-size table indexed by tree code, and the move there is the same one:
 `cp_literal_operator_id` already synthesizes an identifier *outside* that
-table for `operator""_suffix`. Two compilers, one shape.
+table for `operator""_suffix`.
 
-This is the reassurance the proposal most needs to give, and it is structural.
-Every site is parallel and no table the
-existing operators are keyed on is ever widened, so the relaxation provably
+Every site is parallel and no table the existing operators are keyed on is
+ever widened, so the relaxation provably
 cannot leak into `operator+`. The shared checker was never touched; the new
 kind is a new arm *beside* the old one everywhere it appears; and a program
 that declares no user operator reaches none of them. That is a stronger claim
@@ -945,9 +946,7 @@ The toolchain forces about a third of a new node's obligations, warns about
 two, is silent about nineteen, hides four behind a build configuration, and
 has no opinion about three more. These figures were taken on 2026-09-06 from
 the branch carrying this feature alone, and the categories sum to the total by
-construction, which is a cheap invariant that this project did not have and
-should have: an earlier count in the same notes circulated for weeks while
-being short of its own inputs.
+construction.
 
 The configuration-latent row is the one a vendor prototyping a language
 change is most likely to ship without. Those four are the second code
@@ -981,13 +980,13 @@ pass are the ones you thought to write.
 
 ## Where the cost estimate went wrong, in a predictable direction
 
-The sketch this paper is written from said that parsing is the easy part of
+The original estimate said that parsing is the easy part of
 this feature, easier even than backtick. The prototype bore out half of that
 and contradicted the other half.
 
 The first half survives. The parse really is small, on both sides: the *using*
 side is two `case`s in a precedence loop that already exists, and the
-*declaring* side, which the sketch left out, is about ninety lines. The
+*declaring* side, which the estimate left out, is about ninety lines. The
 second half does not survive. The parse is not where either feature's cost
 lives.
 Backtick's cost is in the parse and ends there; this feature's cost is in what
@@ -1007,9 +1006,12 @@ direction.
 
 ## Mangling and ABI
 
-This section says three things in order: what the prototype implements, what
-this paper asks the Itanium ABI group for, and what Windows still owes an
-answer to.
+The prototype mangles through the Itanium ABI's existing vendor-extended
+operator production, which works today, demangles with existing tools, and
+needs no ABI change. This paper asks the Itanium ABI group for a first-class
+production keyed by code point and carrying a fixity marker. The Microsoft ABI
+has no production for such operators at all, and the prototype rejects a
+definition on Windows targets rather than invent one.
 
 ### What is implemented, and why it needs nothing
 
@@ -1042,10 +1044,8 @@ the padding branch nor the astral widening can be reached without changing the
 set. The gap follows from the enumeration rather than from the tests, and it
 is the first thing to exercise if a later revision admits anything above the BMP.
 
-"Demangler-tolerated" undersells the result. Both `llvm-cxxfilt` **and GNU
-binutils `c++filt` 2.46 [@binutils]** — a different vendor's demangler,
-unmodified —
-render every form above, character-identically, including nested-name,
+Both `llvm-cxxfilt` **and GNU binutils `c++filt` 2.46 [@binutils]** — a
+different vendor's demangler, unmodified — render every form above, character-identically, including nested-name,
 const-qualified member, explicit-object member and template-id. Existing
 toolchains need no change to inspect these symbols, which is the first
 question an ABI reviewer asks.
@@ -1117,9 +1117,11 @@ context" and §5.1.6 gives `pp_` and `mm_` for the prefix forms. GCC 15.2.0
 [@gcc15] emits all four distinctly. Clang emits the postfix spelling for both
 fixities of both operators, so two function templates distinguished only by
 `++T{}` versus `T{}++` collide outright: *definition with same mangled name*.
-That is a Clang expression-mangling defect and not this proposal's, and it is
+It is a Clang expression-mangling defect, unrelated to this proposal, and it is
 the corner where the ABI *does* have room for fixity and an implementation
-still missed it.
+still missed it. A report is written; this revision cites no issue number,
+because none has been filed yet.
+<!-- LLVM-ISSUE-PENDING -->
 
 ### Windows
 
@@ -1172,7 +1174,7 @@ has to answer it.
   extensions for a later revision. Either would be the first thing to reach
   the mangling rule's astral and padding branches.
 
-Four more were open in earlier drafts and are not open now. **Default
+Four more questions are settled here. **Default
 arguments in prefix position**: the relaxation is kept, and the
 consequence is documented above. **Static member user
 operators**: rejected, and rejected on the desugaring reason and not on the
@@ -1363,24 +1365,3 @@ of a binary operator function to include a function named by a
 member and non-member function-call notation then apply unchanged.
 
 Annex A ([gram]{.sref}) is updated mechanically to match.
-
-# Acknowledgments
-
-The implementation was carried out as a gated, one-step-at-a-time experiment;
-the deviation ledger it produced is the source for most of this paper's
-corrections to its own design.
-
-A defect found in passing and unrelated to this proposal: in the *expression*
-encoding — what a template argument or a `decltype` mangles into — Clang
-spells prefix `++` and `--` the same as the postfix forms, `pp` and `mm`,
-where the Itanium ABI (§5.1.6) [@itanium-abi] spells the prefix ones `pp_`
-and `mm_`. The function's own mangled name is not affected; two function
-templates distinguished only by that expression mangle identically on Clang
-and distinctly on GCC 15.2, so a five-line program is rejected by one compiler
-and accepted by the other. It belongs to Clang; a report is written and this
-revision cites no issue number, because none has been filed yet.
-<!-- LLVM-ISSUE-PENDING -->
-
-Every measurement in this paper was re-derived from a running compiler for
-this revision, with nothing carried forward from a note. Several figures did
-not survive that, and the corrected ones are what is printed above.
