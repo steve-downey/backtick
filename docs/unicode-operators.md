@@ -43,8 +43,7 @@ Vec operator⊖(Vec const&);          // one parameter -> unary prefix form
 
 Each decision is headed by its **slug** and is therefore a Markdown anchor;
 every cross-reference links to it. `Formerly:` carries the serial number the
-entry used to have, because the completed tracks' handoffs still say it and
-are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
+entry used to have.
 
 ### token-set
 
@@ -78,7 +77,7 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
-**Log.** 2026-09-06 — [over-oper-restrictions](open-decisions.md#over-oper-restrictions) answered (a) by the design author. The class-or-enum waiver this entry records is **not the only [over.oper] rule that does not carry over**, and U§7 "Declaring" is owed the full enumeration: of the five restrictions, class-or-enum, no-default-arguments ([over.oper]p8) and not-variadic are all waived, the arity table has no entry to consult, and only the static-member rule is kept — and kept by choice, on the two-spellings reason, not by consequence of the arity rule. The generalization to state: **[over.oper]'s restrictions protect a token whose parse, arity and fixity the grammar already fixed, so a user operator inherits only what its own declared forms need.** Writing owed by [reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md).
+**Log.** 2026-09-06 — [over-oper-restrictions](open-decisions.md#over-oper-restrictions) answered (a) by the design author. The class-or-enum waiver this entry records is **not the only [over.oper] rule that does not carry over**, and U§7 "Declaring" is owed the full enumeration: of the five restrictions, class-or-enum, no-default-arguments ([over.oper]p8) and not-variadic are all waived, the arity table has no entry to consult, and only the static-member rule is kept — and kept by choice, on the two-spellings reason, not by consequence of the arity rule. The generalization to state: **[over.oper]'s restrictions protect a token whose parse, arity and fixity the grammar already fixed, so a user operator inherits only what its own declared forms need.** Writing owed by reconcile-declaring-using.
 
 **Log.** 2026-09-06 — written. U§7 "Declaring" now enumerates the five restrictions in a table with the generalization stated as a rule, and the kept one has its own entry, [static-member-operators](#static-member-operators). The variadic waiver was re-derived rather than taken from the row: `int operator⊞(int, int, ...)` is accepted, and the ellipsis is inert because operator syntax cannot pass a trailing argument.
 
@@ -114,7 +113,7 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
-**Log.** 2026-09-06 — [fold-over-user-infix](open-decisions.md#fold-over-user-infix) answered (a) by the design author: **a user-introduced infix operator is not a fold operator**, in v1, and the answer is the same for both features because they share this one level. `(... ⊞ N)` and `` (... `f` N) `` are ill-formed and stay so. Stated as a *decision* rather than left as the `expected expression` diagnostic it currently is, because that diagnostic reads like an oversight; U§13 has no fold entry and must gain one ([reconcile-remainder](../ops/completion/steps/reconcile-remainder.md)'s). Admitting folds later would change only ill-formed programs, so the exclusion forecloses nothing — but it is not free to keep: `Level != prec::UserInfix` in `Parser::isFoldOperator` is a **silent** guard on all four Clang branches, and a replay onto clean `main` must *add* that clause rather than rename one.
+**Log.** 2026-09-06 — [fold-over-user-infix](open-decisions.md#fold-over-user-infix) answered (a) by the design author: **a user-introduced infix operator is not a fold operator**, in v1, and the answer is the same for both features because they share this one level. `(... ⊞ N)` and `` (... `f` N) `` are ill-formed and stay so. Stated as a *decision* rather than left as the `expected expression` diagnostic it currently is, because that diagnostic reads like an oversight; U§13 has no fold entry and must gain one (reconcile-remainder's). Admitting folds later would change only ill-formed programs, so the exclusion forecloses nothing — but it is not free to keep: `Level != prec::UserInfix` in `Parser::isFoldOperator` is a **silent** guard on all four Clang branches, and a replay onto clean `main` must *add* that clause rather than rename one.
 
 ### unary-forms
 
@@ -132,9 +131,9 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
-**Log.** 2026-09-06 — the writing owed by the three answers below is done, by [reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md). The **Why** above now carries the declaration-arity / use-position split and the plain sentence about what a postfix attempt produces; U§7 "Declaring" carries the default-argument waiver and its consequence; and the static-member choice has its own entry, [static-member-operators](#static-member-operators), because it is a decision in its own right rather than a sub-point of this one. The postfix reframing (answer 3) is U§13.1's and is [reconcile-remainder](../ops/completion/steps/reconcile-remainder.md)'s.
+**Log.** 2026-09-06 — the writing owed by the three answers below is done, by reconcile-declaring-using. The **Why** above now carries the declaration-arity / use-position split and the plain sentence about what a postfix attempt produces; U§7 "Declaring" carries the default-argument waiver and its consequence; and the static-member choice has its own entry, [static-member-operators](#static-member-operators), because it is a decision in its own right rather than a sub-point of this one. The postfix reframing (answer 3) is U§13.1's and is reconcile-remainder's.
 
-**Log.** 2026-09-06 — **three of decision-brief's five answers land here, and none of them changes the decision; they settle what it means.** (1) [prefix-arity-selection](open-decisions.md#prefix-arity-selection) answered (a): [over.oper]p8 stays **waived**, so a user operator may have default arguments and a defaulted trailing parameter makes an infix-declared operator usable in prefix position. This entry's "arity selects the form" therefore runs two claims together and must be split: **arity selects the form at the point of declaration, grammatical position selects it at the point of use**, and the second needs no help from the first — which is what makes the Swift trap avoidable. (2) [over-oper-restrictions](open-decisions.md#over-oper-restrictions) answered (a): static member user operators stay **rejected**, but *not* on this entry's "two parameters, or one as a member" reading. The arity rule as implemented counts operands, so `static S operator⊞(S, S)` has two and would have been accepted; the rejection is a choice, and its reason is that the desugaring equivalence is defined over exactly two spellings, `operator⊞(x, y)` and `x.operator⊞(y)`, and a static member names neither. That choice is owed a decision entry of its own (suggested slug `static-member-operators`). (3) [postfix-operators](open-decisions.md#postfix-operators) answered (a): the decline is **for v1 and explicitly not foreclosed**, argued in U§13.1's *affordable and declined* terms, not the *ambiguous* terms this entry's original rationale used. Also owed here: one plain sentence saying what a postfix attempt actually produces (`expected expression`, character-identical to `a +;`), since "declining postfix" currently implies a diagnostic that does not exist. Decided by the design author; the writing is [reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md)'s and [reconcile-remainder](../ops/completion/steps/reconcile-remainder.md)'s.
+**Log.** 2026-09-06 — **three of decision-brief's five answers land here, and none of them changes the decision; they settle what it means.** (1) [prefix-arity-selection](open-decisions.md#prefix-arity-selection) answered (a): [over.oper]p8 stays **waived**, so a user operator may have default arguments and a defaulted trailing parameter makes an infix-declared operator usable in prefix position. This entry's "arity selects the form" therefore runs two claims together and must be split: **arity selects the form at the point of declaration, grammatical position selects it at the point of use**, and the second needs no help from the first — which is what makes the Swift trap avoidable. (2) [over-oper-restrictions](open-decisions.md#over-oper-restrictions) answered (a): static member user operators stay **rejected**, but *not* on this entry's "two parameters, or one as a member" reading. The arity rule as implemented counts operands, so `static S operator⊞(S, S)` has two and would have been accepted; the rejection is a choice, and its reason is that the desugaring equivalence is defined over exactly two spellings, `operator⊞(x, y)` and `x.operator⊞(y)`, and a static member names neither. That choice is owed a decision entry of its own (suggested slug `static-member-operators`). (3) [postfix-operators](open-decisions.md#postfix-operators) answered (a): the decline is **for v1 and explicitly not foreclosed**, argued in U§13.1's *affordable and declined* terms, not the *ambiguous* terms this entry's original rationale used. Also owed here: one plain sentence saying what a postfix attempt actually produces (`expected expression`, character-identical to `a +;`), since "declining postfix" currently implies a diagnostic that does not exist. Decided by the design author; the writing is reconcile-declaring-using's and reconcile-remainder's.
 
 ### static-member-operators
 
@@ -148,7 +147,7 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Decided by.** The design author, 2026-09-06 — [over-oper-restrictions](open-decisions.md#over-oper-restrictions), option (a). The *decision* was never in doubt; what the answer settled is the reason, the previous one having failed inspection.
 
-**Log.** 2026-09-06 — created by [reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md), which owed it. Recorded here rather than as a sub-point of [unary-forms](#unary-forms) because it is a restriction on *declarations* with a rationale of its own, and because the `static operator()` question will be asked of it directly. The superseded reason — "a static member has no implicit object parameter, so it can name neither form" — is false of the implementation as built and must not be reintroduced; see [over-oper-restrictions](../ops/unicode-operators/clang/DEVIATIONS.md#over-oper-restrictions).
+**Log.** 2026-09-06 — created by reconcile-declaring-using, which owed it. Recorded here rather than as a sub-point of [unary-forms](#unary-forms) because it is a restriction on *declarations* with a rationale of its own, and because the `static operator()` question will be asked of it directly. The superseded reason — "a static member has no implicit object parameter, so it can name neither form" — is false of the implementation as built and must not be reintroduced; see over-oper-restrictions.
 
 ### candidate-assembly
 
@@ -160,13 +159,13 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Decision.** Candidate assembly is that of the **existing overloaded operators**: member candidates + non-member candidates found by unqualified lookup and **ADL**, ranked as **one** set; no built-in candidates
 
-**Why.** §17.4's rule carries over verbatim and stays normative: `x ⊞ y` must find every `operator⊞` the call `operator⊞(x, y)` would, including by ADL into the operands' associated namespaces — the mechanism that makes `std::cout << x` work is the mechanism that makes a library's `⊗` work on its own types. The GCC parse-time-resolution defect ([gcc-slot-adl](../ops/gcc/DEVIATIONS.md#gcc-slot-adl)) is the cautionary tale: carry the name unresolved into the call machinery. There are no built-in candidates because there are no built-in meanings ([operator-function-id](#operator-function-id)).
+**Why.** §17.4's rule carries over verbatim and stays normative: `x ⊞ y` must find every `operator⊞` the call `operator⊞(x, y)` would, including by ADL into the operands' associated namespaces — the mechanism that makes `std::cout << x` work is the mechanism that makes a library's `⊗` work on its own types. The GCC parse-time-resolution defect (gcc-slot-adl) is the cautionary tale: carry the name unresolved into the call machinery. There are no built-in candidates because there are no built-in meanings ([operator-function-id](#operator-function-id)).
 
 **Decided by.** Undecided — the whole log is Proposed until the paper is polled.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
-**Log.** 2026-09-06 — three clauses of this decision are now measured rather than asserted, and U§7 "Using" carries them ([reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md)). (1) The three candidate sources are **one set ranked together**: with a member `operator⊘(long)` and a non-member `operator⊘(MN, int)` both visible, `MN{} ⊘ 0` picks the non-member and `MN{} ⊘ 0L` the member, so the wording now says "one set" — a member-first fallback is a different design and this distinguishes them. (2) **ADL is inherited by not writing code**: the callee is a name, never a parsed expression, and it reaches candidate assembly unresolved. (3) **"No built-in candidates" is a non-mechanism** — nothing assembles a built-in set, so there is nothing to suppress. A consequence this entry did not anticipate is recorded in U§7 "Desugaring": since the operands are the selected call's arguments, **which overload wins decides the sequencing**, and that is asked as a CWG question rather than settled here.
+**Log.** 2026-09-06 — three clauses of this decision are now measured rather than asserted, and U§7 "Using" carries them (reconcile-declaring-using). (1) The three candidate sources are **one set ranked together**: with a member `operator⊘(long)` and a non-member `operator⊘(MN, int)` both visible, `MN{} ⊘ 0` picks the non-member and `MN{} ⊘ 0L` the member, so the wording now says "one set" — a member-first fallback is a different design and this distinguishes them. (2) **ADL is inherited by not writing code**: the callee is a name, never a parsed expression, and it reaches candidate assembly unresolved. (3) **"No built-in candidates" is a non-mechanism** — nothing assembles a built-in set, so there is nothing to suppress. A consequence this entry did not anticipate is recorded in U§7 "Desugaring": since the operands are the selected call's arguments, **which overload wins decides the sequencing**, and that is asked as a CWG question rather than settled here.
 
 ### unicode-feature-gating
 
@@ -198,7 +197,7 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Decided by.** The design author, 2026-09-06, on [abi-production-request](#abi-production-request) — the *ask* is settled. The entry as a whole stays Proposed on the same terms as the rest of the log: it is polled with the paper.
 
-**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged. 2026-09-06 — [mangling-abi](../ops/completion/steps/mangling-abi.md) wrote U§9 out as three named subsections and put the open half in [abi-production-request](#abi-production-request) with options, costs and a recommendation; the `v`-production derivation and the Microsoft position are settled there and no longer open. 2026-09-06 — **the author answered [abi-production-request](#abi-production-request), accepting the recommendation as written**: describe the vendor-extended form as the fallback needing no ABI action *and* ask for a first-class production, as a request rather than as wording, with a fixity marker and `s` reserved so postfix stays takeable. Two facts from the ABI's prose carried the argument and are recorded there — §5.1.3 scopes `v` to vendor builtins, and the same table already spends four codes distinguishing unary from binary forms of one symbol.
+**Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged. 2026-09-06 — mangling-abi wrote U§9 out as three named subsections and put the open half in [abi-production-request](#abi-production-request) with options, costs and a recommendation; the `v`-production derivation and the Microsoft position are settled there and no longer open. 2026-09-06 — **the author answered [abi-production-request](#abi-production-request), accepting the recommendation as written**: describe the vendor-extended form as the fallback needing no ABI action *and* ask for a first-class production, as a request rather than as wording, with a fixity marker and `s` reserved so postfix stays takeable. Two facts from the ABI's prose carried the argument and are recorded there — §5.1.3 scopes `v` to vendor builtins, and the same table already spends four codes distinguishing unary from binary forms of one symbol.
 
 ### user-declared-fixity
 
@@ -232,7 +231,7 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
-**Log.** 2026-09-06 — *partly superseded the same day; the entry below corrects the struck clause. Kept, because the reword this entry asks for is the reword that was written.* [dependent-template-operator-id](open-decisions.md#dependent-template-operator-id) answered (c) by the design author, which touches this entry through the U§7.1 argument it rests on. U§7.1's fourth point — the operator-function-id "names the overload set anywhere an unqualified-id does", which is the reason a bare-identifier `⊞` would buy nothing — is **false in one position** and gets reworded rather than defended: `t.template operator⊞<int>(0)` on a dependent object expression is rejected, ~~an inherited limitation of every operator-function-id that is not a fixed `OverloadedOperatorKind` (user-defined literal operators have had it since C++11)~~ — **struck: false, see the next entry**; the limitation is this feature's own. The argument for disjointness is unaffected — the reword costs a clause and removes the one sentence in the design an implementer can falsify. Reword owed by [reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md); the upstream report, against the literal-operator reproducer, by [upstream-triage](../ops/completion/steps/upstream-triage.md).
+**Log.** 2026-09-06 — *partly superseded the same day; the entry below corrects the struck clause. Kept, because the reword this entry asks for is the reword that was written.* [dependent-template-operator-id](open-decisions.md#dependent-template-operator-id) answered (c) by the design author, which touches this entry through the U§7.1 argument it rests on. U§7.1's fourth point — the operator-function-id "names the overload set anywhere an unqualified-id does", which is the reason a bare-identifier `⊞` would buy nothing — is **false in one position** and gets reworded rather than defended: `t.template operator⊞<int>(0)` on a dependent object expression is rejected, ~~an inherited limitation of every operator-function-id that is not a fixed `OverloadedOperatorKind` (user-defined literal operators have had it since C++11)~~ — **struck: false, see the next entry**; the limitation is this feature's own. The argument for disjointness is unaffected — the reword costs a clause and removes the one sentence in the design an implementer can falsify. Reword owed by reconcile-declaring-using; the upstream report, against the literal-operator reproducer, by upstream-triage.
 
 **Log.** 2026-09-06 — **the reword is written, and the reason above is corrected.** [dependent-template-operator-id](open-decisions.md#dependent-template-operator-id) was re-answered (a), *reword only, no upstream report*: the literal-operator reproducer is **correctly** rejected, because [over.literal]/1 means a literal operator can never be a class member and so no valid program contains the construct. **The gap is therefore this feature's own and is not inherited from anything** — the clause "a limitation user-defined literal operators have had since C++11", which the entry above used, is false and must not be written into U§7.1 or either paper. The accurate reason, and the one U§7.1 now gives, is that Clang's dependent-template storage holds an identifier or a built-in operator kind and nothing else: the same closure-over-a-fixed-operator-table cost as the name tables and candidate assembly (U§8), reaching a third data structure. The disjointness argument is unaffected, which was the point of rewording rather than defending. Also strengthened here: the disjointness claim itself is now verified at **two** Unicode versions — the frozen 17.0 token set against identifier tables labelled 18.0 — which is the version-skew case an implementation actually faces (U§4, U§7.1).
 
@@ -253,7 +252,7 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
-**Log.** 2026-09-06 — **the equivalence this entry claims is an equivalence of *entities*, not of tokens, and that changes how it must be tested.** A reviewer's natural acceptance criterion — the spellings produce identical token streams — passes on an implementation that classifies UCNs correctly and then derives the operator's identity from the raw spelling, giving two entities with two mangled symbols that happen to print alike. The criterion has to be stated at declaration-and-use level instead: declare with `\N{SQUARED PLUS}`, define with the glyph, use with `\u229E`, and assert one entity and one mangled symbol. Recorded by [reconcile-remainder](../ops/completion/steps/reconcile-remainder.md); measured on `unicode-operators-upstream` @ `c0e07f78e679`, where those three spellings emit the single symbol `_Zv28op_u229E1SS_`. See [ucn-operator-spellings](../ops/unicode-operators/clang/DEVIATIONS.md#ucn-operator-spellings).
+**Log.** 2026-09-06 — **the equivalence this entry claims is an equivalence of *entities*, not of tokens, and that changes how it must be tested.** A reviewer's natural acceptance criterion — the spellings produce identical token streams — passes on an implementation that classifies UCNs correctly and then derives the operator's identity from the raw spelling, giving two entities with two mangled symbols that happen to print alike. The criterion has to be stated at declaration-and-use level instead: declare with `\N{SQUARED PLUS}`, define with the glyph, use with `\u229E`, and assert one entity and one mangled symbol. Recorded by reconcile-remainder; measured on `unicode-operators-upstream` @ `c0e07f78e679`, where those three spellings emit the single symbol `_Zv28op_u229E1SS_`. See ucn-operator-spellings.
 
 ### paper-separation
 
@@ -271,7 +270,7 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
-2026-09-15 — **the condition in the Decision above is not built, and had never been tracked.** P4307R0 does not name the *user-infix level* and carries no future-directions appendix; it does not name P4345 at all, while P4345R0 cites P4307 six times and carries the mirror-image "Relation to P4307" note. So the split happened and the recovery the **Why** promises did not. Recorded as [backtick-paper-companion](../ops/completion/steps/backtick-paper-companion.md), Phase L — the first entry in that plan whose scope came from a design doc rather than from `ops/`, which is why nothing caught it sooner. See its Notes.
+2026-09-15 — **the condition in the Decision above is not built, and had never been tracked.** P4307R0 does not name the *user-infix level* and carries no future-directions appendix; it does not name P4345 at all, while P4345R0 cites P4307 six times and carries the mirror-image "Relation to P4307" note. So the split happened and the recovery the **Why** promises did not. Recorded as backtick-paper-companion; nothing caught it sooner because the obligation lived in a design doc and the plan tracked only its own ledgers.
 
 ---
 
@@ -294,7 +293,7 @@ what is already litigated.
 | [type-name-slot](backtick-operator-design.md#type-name-slot) type-name in the slot | — | No slot, no analogue. |
 | §5 same-delimiter problem | **does not arise** | Each operator is one distinct token, not a matched pair. No `BacktickIsOperator` analogue, no suppression flag, nothing. |
 | §17.1 nesting vs chaining | **does not arise** | No delimiters to nest; chains are ordinary left-associative operator chains. |
-| §17.4 ADL is normative | [candidate-assembly](#candidate-assembly) | Verbatim, with [gcc-slot-adl](../ops/gcc/DEVIATIONS.md#gcc-slot-adl) as the recorded pitfall. |
+| §17.4 ADL is normative | [candidate-assembly](#candidate-assembly) | Verbatim, with gcc-slot-adl as the recorded pitfall. |
 
 Two things do **not** transfer, and they are the feature's real costs:
 
@@ -527,9 +526,9 @@ polled. What is settled here is that the paper claims them as curated and
 gives the principle, rather than claiming a derivation it does not have.
 
 **Log.** 2026-09-06 — recorded by
-[reconcile-remainder](../ops/completion/steps/reconcile-remainder.md), closing
-[confusable-spellings](../ops/BACKLOG.md#confusable-spellings) and the
-[exclusion-list-derivation](../ops/unicode-operators/clang/DEVIATIONS.md#exclusion-list-derivation)
+reconcile-remainder, closing
+confusable-spellings and the
+exclusion-list-derivation
 question behind it. The 13/3/12 split and every spelling above were
 re-derived from `clang/lib/Lex/UnicodeOperatorCharSets.h` on
 `unicode-operators-upstream` @ `c0e07f78e679` rather than copied forward.
@@ -1063,7 +1062,7 @@ Every count below was re-measured on the `unicode-operators-upstream` branch
 at `c0e07f78e679` on 2026-09-06; where a figure disagrees with one recorded
 earlier in the project, the earlier one was a snapshot taken before later
 steps added sites, and the greps that produce these are recorded in
-[the Clang deviation ledger](../ops/unicode-operators/clang/DEVIATIONS.md).
+the Clang deviation ledger.
 
 - *Lexer:* the [token-set](#token-set) set is a static property of a code point; lex a member as a
   new token kind (e.g. `tok::user_operator`) carrying the code point, gated on
@@ -1250,7 +1249,7 @@ steps added sites, and the greps that produce these are recorded in
   operators: `cp_literal_operator_id` synthesizes an identifier
   (`operator""_suffix`) outside that table. A `cp_user_operator_id` doing the
   same for `operator⊞`, resolved through the ordinary
-  `perform_koenig_lookup`-inclusive call path (the [gcc-slot-adl](../ops/gcc/DEVIATIONS.md#gcc-slot-adl) correction made
+  `perform_koenig_lookup`-inclusive call path (the gcc-slot-adl correction made
   this path honest), is the parallel move.
 
 Both implementations stay behind their flag ([unicode-feature-gating](#unicode-feature-gating)); a default build lexes these
@@ -1542,7 +1541,7 @@ choice is how strong a request to make.
   demangler already parses the trailing `_` its mangler never emits. U§13.1
   has the reproducer and the symbols. Reported upstream as
   **LLVM-ISSUE-PENDING**
-  ([draft](../ops/completion/upstream-drafts/increment-decrement-mangling.md),
+  (draft,
   not yet filed). A section arguing that the ABI needs room for fixity is a
   great deal stronger for pointing at fixity going wrong today, in the exact
   corner where the ABI *does* have room and an implementation still missed it.
@@ -1602,7 +1601,7 @@ ABI group picks the letters.
    cannot express, it is what §5.1.3/§5.1.6 already found necessary for `++`
    and `--`, and reserving `s` now is what lets a later revision take postfix
    without an ABI change. This is the clause the
-   [postfix-operators](../ops/unicode-operators/clang/DEVIATIONS.md#postfix-operators)
+   postfix-operators
    ledger row leaves to this section: v1 declines postfix, and declining it costs nothing later *only
    if* the encoding it standardizes has somewhere to put the distinction.
 2. **The name stays the ASCII hex derivation**, not the operator's UTF-8
@@ -2069,7 +2068,7 @@ property [user-declared-fixity](#user-declared-fixity) was written to protect.
 *Two: the chained-postfix wart is a hard error with an unhelpful message.*
 `a ⊖ ⊗` takes `⊗` as the start of an operand and then fails at the `;` with
 `expected expression`, pointing at the semicolon and mentioning neither
-postfix nor the fix. Unlike the backtick project's [bare-nesting-detection](../ops/DEVIATIONS.md#bare-nesting-detection), this one is
+postfix nor the fix. Unlike the backtick project's bare-nesting-detection, this one is
 diagnosable — the parser knows it has just taken a user operator as infix and
 run into a non-operand — so it is a QoI problem, not a grammatical one.
 
@@ -2104,7 +2103,7 @@ and `template void f<A>(double);` — before anything is mangled and the
 collision fires. `operator--` fails identically. Re-confirmed against LLVM
 trunk `72417eb739e5` on 2026-09-06; reported upstream as
 **LLVM-ISSUE-PENDING** — the report is
-[drafted](../ops/completion/upstream-drafts/increment-decrement-mangling.md)
+drafted
 and awaiting filing, and that token is the placeholder to replace with the
 issue number.)
 

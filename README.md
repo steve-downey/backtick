@@ -28,7 +28,9 @@ Build with `make -C papers <name>.html <name>.pdf`.
 
 - `papers/` — the papers.
 - `docs/` — design documents.
-- `ops/` — implementation plans, handoffs, and deviation records.
+- `probes/` — scripts that sweep both compilers for the keyword escape's coverage,
+  error paths, and flag-off parity.
+- `build/` — configure scripts for the prototype compilers.
 - `examples/` — sample code built with the prototype compilers, from
   [steve-downey/backtick-examples](https://github.com/steve-downey/backtick-examples).
 

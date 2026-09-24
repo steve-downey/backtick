@@ -5,7 +5,7 @@ implementer can settle. Each has a page below with the same five parts: the
 question, what was measured, the options, the cost of each, and a
 recommendation. Four of the first five have implementation consequences, so
 they gate
-[implement-decisions](../ops/completion/steps/implement-decisions.md); all of
+implement-decisions; all of
 them gate what the two papers may claim.
 
 **Five were asked and answered on 2026-09-06 and are all Unicode-side. The
@@ -18,11 +18,11 @@ anyone, in either compiler. It is also the only one of the six whose answer
 turned into code.
 
 This file is written by
-[decision-brief](../ops/completion/steps/decision-brief.md). **The answers get
+decision-brief. **The answers get
 recorded here**, dated, with the author's reason wherever it differs from the
 recommendation — that record is what
-[reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md)
-and [unicode-paper](../ops/completion/steps/unicode-paper.md) cite.
+reconcile-declaring-using
+and unicode-paper cite.
 
 **A seventh ruling arrived on 2026-09-17 and has no page above**, because the
 question was never on this page: it was the one choice the backtick paper
@@ -33,15 +33,15 @@ form is §12, and its answer is recorded with the others below.
 
 Three further open items have their **pages** elsewhere, though their answers
 are recorded here with the rest: the ABI and mangling question is
-[mangling-abi](../ops/completion/steps/mangling-abi.md)'s and its page is
+mangling-abi's and its page is
 [abi-production-request](unicode-operators.md#abi-production-request) in U§9
 itself, because that question's answer *is* a section of the design doc; the
 member/non-member operand sequencing question
-([operand-sequencing](../ops/unicode-operators/clang/DEVIATIONS.md#operand-sequencing))
+(operand-sequencing)
 is a CWG question with no implementation consequence and is written up by
-[reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md),
+reconcile-declaring-using,
 and U§6's missing sixth worked example is a two-line doc sync owned by
-[reconcile-remainder](../ops/completion/steps/reconcile-remainder.md).
+reconcile-remainder.
 
 ## Summary — six answered, none open
 
@@ -66,7 +66,7 @@ is the only one where a claim in the design is false as written.
 
 If you disagree with any of them, the page below says what the disagreement
 costs and which branches it touches, so
-[implement-decisions](../ops/completion/steps/implement-decisions.md) can be
+implement-decisions can be
 scoped from this document alone.
 
 **Branch vocabulary**, used throughout: the Unicode feature lives on
@@ -82,7 +82,7 @@ of that feature's branches.
 ## prefix-arity-selection
 
 Ledger entry:
-[prefix-arity-selection](../ops/unicode-operators/clang/DEVIATIONS.md#prefix-arity-selection).
+prefix-arity-selection.
 Decided jointly with [over-oper-restrictions](#over-oper-restrictions) — they
 are the same waiver seen from two sides, and answering them apart produces an
 incoherent rule.
@@ -95,14 +95,14 @@ one operand, prefix position — call it?
 ### What was measured
 
 From
-[prefix-arity-selection](../ops/unicode-operators/clang/DEVIATIONS.md#prefix-arity-selection),
+prefix-arity-selection,
 found by `U12`:
 
 > **"Arity selects the form" is true of declarations but not of uses, and
-> [over-oper-restrictions](../ops/unicode-operators/clang/DEVIATIONS.md#over-oper-restrictions)(b)
+> over-oper-restrictions(b)
 > is why.** [over.oper]p8 forbids default arguments on operator functions
 > precisely so that declared parameter count fixes fixity;
-> [over-oper-restrictions](../ops/unicode-operators/clang/DEVIATIONS.md#over-oper-restrictions)(b)
+> over-oper-restrictions(b)
 > waived it for user operators, and `CheckUserOperatorDeclaration` checks only
 > arity. Measured: with `constexpr int operator⊟(int a, int b = 1)` and
 > nothing else, `⊟5` is **accepted** and calls it, == 36 — a two-parameter
@@ -203,7 +203,7 @@ backtick branch and no GCC branch under either option.
 ## over-oper-restrictions
 
 Ledger entry:
-[over-oper-restrictions](../ops/unicode-operators/clang/DEVIATIONS.md#over-oper-restrictions).
+over-oper-restrictions.
 Decided jointly with [prefix-arity-selection](#prefix-arity-selection).
 
 ### The question
@@ -215,7 +215,7 @@ C++23 `static operator()` precedent?
 ### What was measured
 
 From
-[over-oper-restrictions](../ops/unicode-operators/clang/DEVIATIONS.md#over-oper-restrictions),
+over-oper-restrictions,
 found by `U08`, measured against `Sema::CheckOverloadedOperatorDeclaration`:
 
 > [over.oper] imposes five restrictions on an operator function, and a user
@@ -285,11 +285,11 @@ already do it, reusing `err_operator_overload_static`, so the diagnostic is
 the same one every non-call overloaded operator gets.
 *Paper:* U§7 "Declaring" is rewritten to enumerate the five [over.oper]
 restrictions and say which survive — which is
-[over-oper-restrictions](../ops/unicode-operators/clang/DEVIATIONS.md#over-oper-restrictions)'s
+over-oper-restrictions's
 own recommended doc change and is owed regardless of the answer — and the
 static-member choice becomes a **decision entry** in U§2 with the
 two-spellings reason, written by
-[reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md).
+reconcile-declaring-using.
 Suggested slug for that entry: `static-member-operators`, named for the
 question so it survives the answer reversing.
 
@@ -333,7 +333,7 @@ backtick branch and no GCC branch under either option.
 ## fold-over-user-infix
 
 No ledger entry of its own — it is a design-doc question, recorded in
-[infix-parse-cost](../ops/unicode-operators/clang/DEVIATIONS.md#infix-parse-cost)
+infix-parse-cost
 part (3) and by `U11`, `U12`, `U15`, `U18`, `U19` and `U21`, every one of
 which reports that "the design owes the fold decision". It belongs in U§13 and
 is not there yet. Slug named for the question, so it survives either answer.
@@ -351,7 +351,7 @@ is `(... ⊞ N)` well-formed, and is `` (... `f` N) ``?
 ### What was measured
 
 From
-[infix-parse-cost](../ops/unicode-operators/clang/DEVIATIONS.md#infix-parse-cost),
+infix-parse-cost,
 found by `U11`:
 
 > One thing U§6 does not mention and the implementation decides by
@@ -372,7 +372,7 @@ bool Parser::isFoldOperator(prec::Level Level) const {
 Two facts about that line decide the cost.
 
 **It fails silently if dropped.**
-[feature-coupling](../ops/unicode-operators/clang/DEVIATIONS.md#feature-coupling)
+feature-coupling
 records it as one of the three constructs that couple the two features, and
 `REPLAY.md`'s `U11` row calls it *"the single likeliest replay mistake in the
 step"*: on clean `main` the line reads `Level != prec::Spaceship;` and the
@@ -463,11 +463,10 @@ every rebase and replay on each. Option (b) would touch all four **and** GCC
 ## postfix-operators
 
 Ledger entry:
-[postfix-operators](../ops/unicode-operators/clang/DEVIATIONS.md#postfix-operators).
+postfix-operators.
 Priced by `U21`
-([handoff](../ops/unicode-operators/clang/handoffs/U21-postfix-probe.handoff.md))
 and written up in U§13.1. **Its mangling clause is not this question's** — it
-belongs to [mangling-abi](../ops/completion/steps/mangling-abi.md).
+belongs to mangling-abi.
 
 ### The question
 
@@ -478,7 +477,7 @@ and which of those do the papers say?
 ### What was measured
 
 U21 built the candidate rule and threw it away. From
-[postfix-operators](../ops/unicode-operators/clang/DEVIATIONS.md#postfix-operators):
+postfix-operators:
 
 > **The ambiguity is resolvable without whitespace sensitivity.** A one-token
 > greedy-infix rule — after a complete operand, a user operator followed by a
@@ -552,7 +551,7 @@ generalizing `CreateOverloadedUnaryOp`'s `IntegerLiteral 0` trick; a
 compiler-known library type with `Sema` validation on the
 `ComparisonCategories` model; four negative tests rewritten; and the mangling
 question reopened — which is
-[mangling-abi](../ops/completion/steps/mangling-abi.md)'s and where the
+mangling-abi's and where the
 `pp_`/`pp` cross-vendor divergence lives. Both Unicode branches.
 *Paper:* LEWG joins the routing, and
 [library-scope](backtick-operator-design.md#library-scope)'s own bundling rule
@@ -577,16 +576,16 @@ negative result is rarer and more persuasive than another feature.
 
 **Branches touched by the recommendation: none.** Option (c) would touch
 `unicode-operators-experiment` and `unicode-operators-upstream`, and would
-reopen [mangling-abi](../ops/completion/steps/mangling-abi.md).
+reopen mangling-abi.
 
 ---
 
 ## dependent-template-operator-id
 
 Backlog entry:
-[dependent-template-operator-id](../ops/BACKLOG.md#dependent-template-operator-id)
+dependent-template-operator-id
 (P3). Measured in
-[operator-id-anywhere](../ops/unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere)
+operator-id-anywhere
 by `U10`, cause diagnosed by `U07`. Not one of the seven §6 items, but the
 same shape — a question only the author can answer, because both answers are
 defensible and one of them is "the design sentence was too strong".
@@ -601,7 +600,7 @@ or reword the design?
 ### What was measured
 
 From
-[operator-id-anywhere](../ops/unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere):
+operator-id-anywhere:
 
 > **Both claims hold, and the ADL one holds unusually strongly — measured, not
 > assumed.** Every position in U10's sweep works with *zero* production
@@ -674,7 +673,7 @@ literal-operator control, which involves no user operator at all and therefore
 no unmerged branch — the strongest possible form of an upstream report.
 *Paper:* the reword, plus (optionally, once the issue has a number) one
 footnote citing it. The same argument that placed
-[upstream-reports](../ops/completion/steps/upstream-reports.md) first in the
+upstream-reports first in the
 plan applies: a paper that can cite the issue number is stronger, and issues
 take calendar time.
 
@@ -688,11 +687,11 @@ precisely *because* it needs nothing from this feature: it demonstrates that
 the limitation is C++11's and not the new name kind's, which is exactly the
 claim the paper wants to make. Do **not** gate the paper on the fix landing.
 Where this lands: the reword is
-[reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md)'s
+reconcile-declaring-using's
 (U§7.1 is its destination section), and the report is
-[upstream-triage](../ops/completion/steps/upstream-triage.md)-shaped work —
+upstream-triage-shaped work —
 which means this backlog row's `Closed by` is a *pair* of steps, not one, and
-neither of them is [implement-decisions](../ops/completion/steps/implement-decisions.md).
+neither of them is implement-decisions.
 
 **Branches touched by the recommendation: none.** Option (b) touches no branch
 of this project either — it is a change to upstream LLVM's `clang/AST`, outside
@@ -705,11 +704,11 @@ any of the five feature branches here.
 ## escape-name-positions
 
 Ledger entries:
-[escape-name-positions](../ops/DEVIATIONS.md#escape-name-positions) and
-[escape-alias-name-parity](../ops/gcc/DEVIATIONS.md#escape-alias-name-parity),
-opened by [backtick-paper](../ops/completion/steps/backtick-paper.md) and
+escape-name-positions and
+escape-alias-name-parity,
+opened by backtick-paper and
 measured further by
-[settle-paper-rows](../ops/completion/steps/settle-paper-rows.md). **This is
+settle-paper-rows. **This is
 the only question on this page that belongs to the backtick feature**, and the
 only one added after the first five were answered. It is the scope half of
 [keyword-escape-coexistence](backtick-operator-design.md#keyword-escape-coexistence),
@@ -825,9 +824,9 @@ are parsed — plus the guard that precedes each of them. `parser.cc` has 87
 front of the chosen positions matter, but each is a **lookahead predicate**,
 and a lookahead predicate is where this project has twice put the flag in a
 position to change what a backtick-free program means — once in the parser
-(the last commit of [gcc-resync](../ops/completion/steps/gcc-resync.md)) and
+(the last commit of gcc-resync) and
 once in the diagnostic printer
-([settle-paper-rows](../ops/completion/steps/settle-paper-rows.md)). The
+(settle-paper-rows). The
 *alias-declaration* has a second one: the routing between a using-declaration
 and an alias-declaration peeks two tokens for `identifier =` and must learn to
 peek four for `` ` kw ` = ``.
@@ -879,13 +878,13 @@ destination section says the new thing.
 
 **Consequence for the plan: nothing turned into code.** All five answers are
 "keep what is built and argue for it", so
-[implement-decisions](../ops/completion/steps/implement-decisions.md) has an
-empty scope and is marked not-applicable in `ops/completion/PLAN.md` rather
-than left looking unstarted, per its own step file. The work these answers
+implement-decisions has an
+empty scope and was marked not-applicable rather than left looking
+unstarted. The work these answers
 generate is documentary and belongs to
-[reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md),
-[reconcile-remainder](../ops/completion/steps/reconcile-remainder.md) and
-[upstream-triage](../ops/completion/steps/upstream-triage.md).
+reconcile-declaring-using,
+reconcile-remainder and
+upstream-triage.
 
 ### 2026-09-06 — prefix-arity-selection: option (a)
 
@@ -900,7 +899,7 @@ sentence splits into the two independent claims — **arity selects the form at
 the point of declaration, grammatical position selects it at the point of
 use** — with the note that the second needs no help from the first, which is
 what makes the Swift trap avoidable. Owner:
-[reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md).
+reconcile-declaring-using.
 
 ### 2026-09-06 — over-oper-restrictions: option (a)
 
@@ -916,7 +915,7 @@ and says which survive, and the static-member choice becomes a **new decision
 entry** in `docs/unicode-operators.md` §2 — suggested slug
 `static-member-operators`, named for the question — so that the C++23
 `static operator()` question is answered before it is asked. Owner:
-[reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md).
+reconcile-declaring-using.
 
 ### 2026-09-06 — fold-over-user-infix: option (a)
 
@@ -929,15 +928,13 @@ anywhere says the exclusion was chosen.
 must be added) and one sentence in the backtick paper, both saying the
 exclusion is deliberate and that admitting folds later changes only
 ill-formed programs. Owner:
-[reconcile-remainder](../ops/completion/steps/reconcile-remainder.md), which
+reconcile-remainder, which
 owns U§13.
 
 *And a standing guard, which is not doc work:* `Level != prec::UserInfix` in
 `Parser::isFoldOperator` must survive every rebase and replay on all four
 Clang branches, and it fails **silently** — a replay onto clean `main` must
-*add* the clause, not rename one. Recorded in `ops/completion/PLAN.md`'s gate
-facts and in the Unicode track's `REPLAY.md`, where a rebase or replay agent
-will actually read it.
+*add* the clause, not rename one.
 
 ### 2026-09-06 — postfix-operators: option (a)
 
@@ -951,12 +948,12 @@ that fixity stays user-declarable
 *Doc work owed:* keep U§13.1 as a full subsection in the paper rather than
 compressing it to a bullet, and make sure
 [unary-forms](unicode-operators.md#unary-forms)'s rationale agrees with it.
-Owner: [reconcile-remainder](../ops/completion/steps/reconcile-remainder.md)
-for U§13, [unicode-paper](../ops/completion/steps/unicode-paper.md) for the
+Owner: reconcile-remainder
+for U§13, unicode-paper for the
 paper's treatment. **The mangling clause of the
-[postfix-operators](../ops/unicode-operators/clang/DEVIATIONS.md#postfix-operators)
+postfix-operators
 row is not covered by this answer** — it stays
-[mangling-abi](../ops/completion/steps/mangling-abi.md)'s.
+mangling-abi's.
 
 ### 2026-09-06 — dependent-template-operator-id: option (c)
 
@@ -968,19 +965,18 @@ unmerged branch — which is precisely what demonstrates that the limitation is
 C++11's and not the new name kind's.
 
 *Doc work owed:* the U§7.1 reword —
-[reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md)'s,
+reconcile-declaring-using's,
 U§7.1 being its destination section. *Report owed:*
-[upstream-triage](../ops/completion/steps/upstream-triage.md). The backlog row
-[dependent-template-operator-id](../ops/BACKLOG.md#dependent-template-operator-id)
-therefore closes as a **pair** of steps, and neither is implement-decisions;
-`ops/completion/PLAN.md`'s Coverage table is corrected to say so.
+upstream-triage. The backlog row
+dependent-template-operator-id
+therefore closes as a **pair** of steps, and neither is implement-decisions.
 
 ### 2026-09-06 — dependent-template-operator-id: the report half is reopened
 
 **The reword half stands. The report half cannot be filed as described, and
 the reason it cannot is a fact the paper needs.**
 
-[upstream-triage](../ops/completion/steps/upstream-triage.md) was given the
+upstream-triage was given the
 report half, to be filed against the literal-operator reproducer
 `t.template operator""_lit<int>(0)` — chosen, per the answer above, *because*
 it "involves no user operator and no unmerged branch", which was taken to
@@ -1009,9 +1005,7 @@ explicitly before falling through to the diagnostic:
 
 A report filed against that reproducer would report deliberate, documented,
 correct behaviour as a bug, and would be closed with a pointer to that
-comment. **No draft was written**, and
-[`ops/completion/upstream-drafts/`](../ops/completion/upstream-drafts/README.md)
-says why in the same words.
+comment. **No draft was written.**
 
 **What this changes.** The control that made this a *decision* rather than a
 defect was: the identical construct on a literal operator gives the identical
@@ -1031,8 +1025,8 @@ an `OverloadedOperatorKind` and a user operator is neither. That is a genuine
 gap between the design's word "anywhere" and what a C++ with this feature
 would need, and it is the *only* one U10's sweep found. It is a consequence of
 adding a name kind to a data structure that predates it — which is the same
-thesis as [declaration-name-plumbing](../ops/unicode-operators/clang/DEVIATIONS.md#declaration-name-plumbing)
-and [operator-candidate-assembly](../ops/unicode-operators/clang/DEVIATIONS.md#operator-candidate-assembly),
+thesis as declaration-name-plumbing
+and operator-candidate-assembly,
 and is arguably better evidence for U§8's cost argument than an inherited
 limitation would have been.
 
@@ -1051,10 +1045,10 @@ a choice between:
   refactor asked for rather than done.
 
 This is a decision, so it is not taken here.
-[upstream-triage](../ops/completion/steps/upstream-triage.md) explicitly
+upstream-triage explicitly
 declined to generalise the report into the user-operator form on its own
 authority. The reword owed by
-[reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md)
+reconcile-declaring-using
 is **unblocked either way** and should not wait — only its *justifying clause*
 changes, and this entry gives it.
 
@@ -1092,7 +1086,7 @@ other two subsections
 ([mangling-derivation-rule](unicode-operators.md#mangling-derivation-rule),
 [microsoft-abi-position](unicode-operators.md#microsoft-abi-position)) were
 settled facts either way. Owner of the paper's treatment:
-[unicode-paper](../ops/completion/steps/unicode-paper.md), which should write
+unicode-paper, which should write
 from the answered section and not from the recommendation.
 
 ### 2026-09-06 — dependent-template-operator-id: (a), replacing the reopened half of (c)
@@ -1100,7 +1094,7 @@ from the answered section and not from the recommendation.
 **Reword only. No upstream report.** The report leg of the 2026-09-06 answer
 (c) is withdrawn: it was specified against the literal-operator reproducer,
 that reproducer is *correctly* rejected, and
-[upstream-triage](../ops/completion/steps/upstream-triage.md) declined to
+upstream-triage declined to
 generalise it on its own authority — see [the
 reopening](#2026-09-06--dependent-template-operator-id-the-report-half-is-reopened).
 Option (c′), reporting the user-operator case, is **not** taken: it needs an
@@ -1113,21 +1107,21 @@ avoid. So nothing is pending upstream and the row closes on the reword alone.
 share the code path but suffer no limitation from it, because
 [over.literal]/1 means no valid program contains the construct. This is the
 same closure-over-a-fixed-operator-table cost as
-[declaration-name-plumbing](../ops/unicode-operators/clang/DEVIATIONS.md#declaration-name-plumbing)
+declaration-name-plumbing
 and
-[operator-candidate-assembly](../ops/unicode-operators/clang/DEVIATIONS.md#operator-candidate-assembly),
+operator-candidate-assembly,
 reaching a third data structure — which is better evidence for U§8's cost
 argument than an inherited limitation would have been.
 
 **The clause "a limitation user-defined literal operators have had since
 C++11" is false and must not enter U§7.1 or either paper.** The wording to use
 instead is in
-[operator-id-anywhere](../ops/unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere)'s
+operator-id-anywhere's
 *Recommended doc change* item (1), which carries both the replacement clause
 and the prohibition.
 
 *Doc work owed:* the U§7.1 reword, unchanged and unblocked —
-[reconcile-declaring-using](../ops/completion/steps/reconcile-declaring-using.md)'s,
+reconcile-declaring-using's,
 U§7.1 being its destination section. *Report owed:* **none.**
 
 ### 2026-09-06 — keyword-escape-printing: ratified
@@ -1135,7 +1129,7 @@ U§7.1 being its destination section. *Report owed:* **none.**
 **The escape belongs in diagnostics as well as in printers.**
 [keyword-escape-printing](backtick-operator-design.md#keyword-escape-printing)
 was resolved by
-[clang-paper-truth](../ops/completion/steps/clang-paper-truth.md), whose step
+clang-paper-truth, whose step
 file required the diagnostic half to be decided deliberately rather than
 changed as a side effect of the round-trip fix. It recorded the decision on
 its own authority, with the reversal cost stated, and flagged it. The author
@@ -1157,7 +1151,7 @@ were found disagreeing already (`ak_declarationname` carried no policy while
 
 *Doc work owed:* **none.** The decision entry is written and the change is on
 both backtick branches; `unicode-operators-experiment` inherited it through
-[M2](../ops/completion/handoffs/M2-forward-port.handoff.md).
+M2.
 `unicode-operators-upstream` does not carry it, which is one of the branch
 differences M2's handoff records.
 
@@ -1185,7 +1179,7 @@ same `cp_parser_identifier` arm as the eight positions neither compiler took,
 which is what "one cause, not three" meant.
 
 *Doc work owed and done:*
-[escape-name-positions](../ops/completion/steps/escape-name-positions.md), the
+escape-name-positions, the
 step this answer generated, built it in both compilers and wrote it up. Two
 things it found are worth reading before quoting the price above.
 
@@ -1241,7 +1235,7 @@ restricted rule should accept `` bool `requires`(const License&); `` as C++20
 and reject it as C++17, which is the revision that still compiles the
 unescaped declaration and the one that would need the escape. **Derived from
 the source, not run** — there is no compiler in the container this was written
-in, and [escape-any-identifier](../ops/completion/steps/escape-any-identifier.md)
+in, and escape-any-identifier
 runs it.
 
 *Doc work owed and done in the same sitting:* the decision entry
@@ -1260,7 +1254,7 @@ part left that is anybody else's to settle, and the wording says
 [lex.digraph] as well as [lex.key].
 
 *Measured 2026-09-17, by
-[escape-any-identifier](../ops/completion/steps/escape-any-identifier.md).*
+escape-any-identifier.*
 The prediction above was run before the change, on three compilers that
 predate it — the installed `clang-trunk-backtick` and `clang-23-backtick`
 prefixes and the GCC `backtick` build — and all three agree with it:
@@ -1277,12 +1271,12 @@ forward-port, `unicode-operators-experiment`.
 form**, so this is the first answer on this page since
 [escape-name-positions](#escape-name-positions) that turns into code, and the
 only ruling here whose code does not yet exist.
-[escape-any-identifier](../ops/completion/steps/escape-any-identifier.md) is
+escape-any-identifier is
 the step. One predicate per compiler, no printing change (Clang's printers
 already key on whether a spelling *is* a keyword rather than on how it was
 written, which is why the identity half of the ruling is already true of the
 built compiler), and a fifth category for
-[`ops/probes/escape-positions.sh`](../ops/probes/escape-positions.sh), whose
+[`probes/escape-positions.sh`](../probes/escape-positions.sh), whose
 seventy-nine programs vary the position four ways and have never once varied
 the word.
 
@@ -1293,16 +1287,16 @@ getting a document of its own:
 
 | Answer | Decision-log `Log.` entries appended | Ledger `Status:` marked |
 |---|---|---|
-| prefix-arity-selection | [unary-forms](unicode-operators.md#unary-forms) | [prefix-arity-selection](../ops/unicode-operators/clang/DEVIATIONS.md#prefix-arity-selection) |
-| over-oper-restrictions | [operator-function-id](unicode-operators.md#operator-function-id), [unary-forms](unicode-operators.md#unary-forms) | [over-oper-restrictions](../ops/unicode-operators/clang/DEVIATIONS.md#over-oper-restrictions) |
-| fold-over-user-infix | [user-infix-precedence](unicode-operators.md#user-infix-precedence), [precedence-level](backtick-operator-design.md#precedence-level) | [infix-parse-cost](../ops/unicode-operators/clang/DEVIATIONS.md#infix-parse-cost) (part 3 only) |
-| postfix-operators | [unary-forms](unicode-operators.md#unary-forms) | [postfix-operators](../ops/unicode-operators/clang/DEVIATIONS.md#postfix-operators) (substance; mangling clause untouched) |
-| dependent-template-operator-id | [operator-identifier-disjointness](unicode-operators.md#operator-identifier-disjointness) | [operator-id-anywhere](../ops/unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere), and the backlog row [dependent-template-operator-id](../ops/BACKLOG.md#dependent-template-operator-id) |
-| dependent-template-operator-id *(settled, 2026-09-06)* | same entry, second `Log.` line | [operator-id-anywhere](../ops/unicode-operators/clang/DEVIATIONS.md#operator-id-anywhere) restated as reword-only, and the backlog row's `Closed by` and `Item` corrected |
-| abi-production-request | [operator-mangling](unicode-operators.md#operator-mangling) | none left to mark — [vendor-extended-mangling](../ops/unicode-operators/clang/DEVIATIONS.md#vendor-extended-mangling) and [msvc-mangling](../ops/unicode-operators/clang/DEVIATIONS.md#msvc-mangling) went **RECONCILED** in the same step, [postfix-operators](../ops/unicode-operators/clang/DEVIATIONS.md#postfix-operators)'s mangling clause with them |
-| escape-name-positions | [keyword-escape-coexistence](backtick-operator-design.md#keyword-escape-coexistence) | [escape-name-positions](../ops/DEVIATIONS.md#escape-name-positions) and [escape-alias-name-parity](../ops/gcc/DEVIATIONS.md#escape-alias-name-parity), both **FIXED and RECONCILED** in the same step, because the answer's destination section (§12's table) is written from the built compilers — the ABI row's shape again. One row opened: [escape-type-keyword-binding](../ops/gcc/DEVIATIONS.md#escape-type-keyword-binding) |
+| prefix-arity-selection | [unary-forms](unicode-operators.md#unary-forms) | prefix-arity-selection |
+| over-oper-restrictions | [operator-function-id](unicode-operators.md#operator-function-id), [unary-forms](unicode-operators.md#unary-forms) | over-oper-restrictions |
+| fold-over-user-infix | [user-infix-precedence](unicode-operators.md#user-infix-precedence), [precedence-level](backtick-operator-design.md#precedence-level) | infix-parse-cost (part 3 only) |
+| postfix-operators | [unary-forms](unicode-operators.md#unary-forms) | postfix-operators (substance; mangling clause untouched) |
+| dependent-template-operator-id | [operator-identifier-disjointness](unicode-operators.md#operator-identifier-disjointness) | operator-id-anywhere, and the backlog row dependent-template-operator-id |
+| dependent-template-operator-id *(settled, 2026-09-06)* | same entry, second `Log.` line | operator-id-anywhere restated as reword-only, and the backlog row's `Closed by` and `Item` corrected |
+| abi-production-request | [operator-mangling](unicode-operators.md#operator-mangling) | none left to mark — vendor-extended-mangling and msvc-mangling went **RECONCILED** in the same step, postfix-operators's mangling clause with them |
+| escape-name-positions | [keyword-escape-coexistence](backtick-operator-design.md#keyword-escape-coexistence) | escape-name-positions and escape-alias-name-parity, both **FIXED and RECONCILED** in the same step, because the answer's destination section (§12's table) is written from the built compilers — the ABI row's shape again. One row opened: escape-type-keyword-binding |
 | escape-content | [keyword-escape-coexistence](backtick-operator-design.md#keyword-escape-coexistence), and the new entry [escape-content](backtick-operator-design.md#escape-content) which *is* its page | no ledger row exists to mark: nothing was measured and nothing diverged. The prototypes' restriction is not a deviation from the design, it *was* the design |
-| keyword-escape-printing *(ratified)* | [keyword-escape-printing](backtick-operator-design.md#keyword-escape-printing) | [keyword-escape-printing](../ops/DEVIATIONS.md#keyword-escape-printing), already **RECONCILED** by the step that made the change — the answer *is* its destination section, as with the ABI row |
+| keyword-escape-printing *(ratified)* | [keyword-escape-printing](backtick-operator-design.md#keyword-escape-printing) | keyword-escape-printing, already **RECONCILED** by the step that made the change — the answer *is* its destination section, as with the ABI row |
 
 Every ledger row above stays **`OPEN`** with a dated **DECIDED** note naming
 the step that owes the writing. A row goes `RECONCILED` when its destination

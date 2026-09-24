@@ -945,7 +945,7 @@ because the compilers demanded them.
   token and refused it everywhere else. The position list in the wording is
   what four sweeps of one program per position found. The sweep, with a
   fifth group that varies the word instead, is ninety-eight programs, published
-  as [`ops/probes/escape-positions.sh`](https://github.com/steve-downey/backtick/blob/main/ops/probes/escape-positions.sh).
+  as [`probes/escape-positions.sh`](https://github.com/steve-downey/backtick/blob/main/probes/escape-positions.sh).
 - *The escape is spelling and not identity, and printers put it back.* A
   pretty-printed declaration and a diagnostic name the entity `` `new` ``; the
   AST dump keeps the bare word. Each compiler had to decide which of its

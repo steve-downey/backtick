@@ -46,8 +46,7 @@ are lexed before the punctuator stage and are therefore unaffected.
 
 Each decision is headed by its **slug** and is therefore a Markdown anchor;
 every cross-reference links to it. `Formerly:` carries the serial number the
-entry used to have, because the completed tracks' handoffs still say it and
-are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
+entry used to have.
 
 ### chaining-associativity
 
@@ -93,7 +92,7 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Decision.** Nesting requires parentheses; the bare form is a chain
 
-**Why.** The slot's open/close are the same token, so the first interior backtick closes it: the slot can never hold a bare backtick, and "bare nesting" is *token-identical* to a [chaining-associativity](#chaining-associativity) left-assoc chain (`x `f `g` h` y` == `h(f(x,g),y)`). It therefore cannot be diagnosed without contradicting [chaining-associativity](#chaining-associativity). To nest, parenthesize — `x `(f `g` h)` y` == `(g(f,h))(x,y)`; without parens you get a chain — ordinary operator grouping, the same answer-changing-but-undiagnosed regroup as non-associative binary minus (`a-b-c` ≠ `a-(b-c)`). The original "produces a parse error" wording was impossible; this reclassifies [bare-nesting-detection](../ops/DEVIATIONS.md#bare-nesting-detection) / [gcc-bare-nesting-detection](../ops/gcc/DEVIATIONS.md#gcc-bare-nesting-detection) from deferred-enforcement to no-enforcement-needed.
+**Why.** The slot's open/close are the same token, so the first interior backtick closes it: the slot can never hold a bare backtick, and "bare nesting" is *token-identical* to a [chaining-associativity](#chaining-associativity) left-assoc chain (`x `f `g` h` y` == `h(f(x,g),y)`). It therefore cannot be diagnosed without contradicting [chaining-associativity](#chaining-associativity). To nest, parenthesize — `x `(f `g` h)` y` == `(g(f,h))(x,y)`; without parens you get a chain — ordinary operator grouping, the same answer-changing-but-undiagnosed regroup as non-associative binary minus (`a-b-c` ≠ `a-(b-c)`). The original "produces a parse error" wording was impossible; this reclassifies bare-nesting-detection / gcc-bare-nesting-detection from deferred-enforcement to no-enforcement-needed.
 
 **Decided by.** The design author.
 
@@ -131,7 +130,7 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
-**Log.** 2026-09-06 — the gate is **C++-only in the option table as well as in the grammar**, and it was not. `-fbacktick` carried no `ShouldParseIf<cplusplus.KeyPath>`, so it changed C *tokenization* — and the effect was not a lost diagnostic but an acceptance: `` int f(int a,int b){ return a `g` b; } `` compiled as C with the flag on exited 0 ([c-mode-tokenization](../ops/BACKLOG.md#c-mode-tokenization)). Fixed on both Clang branches by [clang-paper-truth](../ops/completion/steps/clang-paper-truth.md) and pinned by `clang/test/Lexer/backtick-c-mode.c`, whose assertion is the *rejection*: the flag-on and flag-off compilations must produce byte-identical output and both must fail. A test that checked only the diagnostic text would have passed with the bug present. The Unicode branch already carried the paired guard for both flags ([flag-language-mode](../ops/unicode-operators/clang/DEVIATIONS.md#flag-language-mode)); this is the backtick half of it.
+**Log.** 2026-09-06 — the gate is **C++-only in the option table as well as in the grammar**, and it was not. `-fbacktick` carried no `ShouldParseIf<cplusplus.KeyPath>`, so it changed C *tokenization* — and the effect was not a lost diagnostic but an acceptance: `` int f(int a,int b){ return a `g` b; } `` compiled as C with the flag on exited 0 (c-mode-tokenization). Fixed on both Clang branches by clang-paper-truth and pinned by `clang/test/Lexer/backtick-c-mode.c`, whose assertion is the *rejection*: the flag-on and flag-off compilations must produce byte-identical output and both must fail. A test that checked only the diagnostic text would have passed with the bug present. The Unicode branch already carried the paired guard for both flags (flag-language-mode); this is the backtick half of it.
 
 ### desugaring-target
 
@@ -165,11 +164,11 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
-**Log.** 2026-09-06 — the node's source range is now the *point* of it, and §17.5 says so. Triage of [inner-call-source-range](../ops/BACKLOG.md#inner-call-source-range) closed that row **WONTFIX**: the wrapper spans the written expression and the inner `CallExpr` begins at the operator, which is what Clang does for every desugaring — C++20's `CXXRewrittenBinaryOperator` spans `p < q` while the `CXXOperatorCallExpr` it wraps spans only `p <`. Two facts found while closing it, recorded because they are the ones a reader will check. First, it is *not* expensive to change: `CallExpr::setUsesMemberSyntax()` is public, clears the cached trailing `SourceLocation` and recomputes `getBeginLoc()` from argument 0, which is the wanted range. Second, it is declined anyway — that bit means "a call to an explicit-object member function written with member syntax", which these nodes are not, and it serializes into PCHs and modules for any later upstream consumer to read back. The range is right because the wrapper carries it, not because nothing cheaper was available.
+**Log.** 2026-09-06 — the node's source range is now the *point* of it, and §17.5 says so. Triage of inner-call-source-range closed that row **WONTFIX**: the wrapper spans the written expression and the inner `CallExpr` begins at the operator, which is what Clang does for every desugaring — C++20's `CXXRewrittenBinaryOperator` spans `p < q` while the `CXXOperatorCallExpr` it wraps spans only `p <`. Two facts found while closing it, recorded because they are the ones a reader will check. First, it is *not* expensive to change: `CallExpr::setUsesMemberSyntax()` is public, clears the cached trailing `SourceLocation` and recomputes `getBeginLoc()` from argument 0, which is the wanted range. Second, it is declined anyway — that bit means "a call to an explicit-object member function written with member syntax", which these nodes are not, and it serializes into PCHs and modules for any later upstream consumer to read back. The range is right because the wrapper carries it, not because nothing cheaper was available.
 
-**Log.** 2026-09-06 — and until this date the wrapper did **not** carry it. `BacktickInfixExpr` forwarded `getBeginLoc`/`getEndLoc` to the node it wraps, so its range was the operator slot alone — `` 1 `add` 2 `` gave `<col:16, col:19>`, beginning after the left operand and ending before the right ([backtick-source-range](../ops/BACKLOG.md#backtick-source-range)). The entry above, and §17.5 with it, described what the design intended rather than what the build did. Fixed on both Clang branches by [clang-paper-truth](../ops/completion/steps/clang-paper-truth.md), modelled on the Unicode feature's `UserOperatorExpr::getBeginLoc` so that a reader comparing the two features finds the same shape; the ranges are now pinned as literal columns rather than wildcards, so the claim cannot silently lapse again.
+**Log.** 2026-09-06 — and until this date the wrapper did **not** carry it. `BacktickInfixExpr` forwarded `getBeginLoc`/`getEndLoc` to the node it wraps, so its range was the operator slot alone — `` 1 `add` 2 `` gave `<col:16, col:19>`, beginning after the left operand and ending before the right (backtick-source-range). The entry above, and §17.5 with it, described what the design intended rather than what the build did. Fixed on both Clang branches by clang-paper-truth, modelled on the Unicode feature's `UserOperatorExpr::getBeginLoc` so that a reader comparing the two features finds the same shape; the ranges are now pinned as literal columns rather than wildcards, so the claim cannot silently lapse again.
 
-**Log.** 2026-09-06 — the wrapper's cost to the **static analyzer** is now fully measured, and it is *seven* sites rather than the six [analysis-layer-sites](../ops/DEVIATIONS.md#analysis-layer-sites) records. The seventh is in the bug *reporter* rather than in the modelling layers, and it exists **because** of the other six: a node the CFG is taught to look through is a node the exploded graph has no program point for, so the tracker's `findNodeForExpression` fails and the entire tracking chain is abandoned — the default null-return suppression and every explanatory note along with it. Both features had it, from their first analyzer pass; both are fixed ([null-return-suppression](../ops/BACKLOG.md#null-return-suppression)), and §17.6 states the rule for a reviewer who asks what a source-fidelity node costs.
+**Log.** 2026-09-06 — the wrapper's cost to the **static analyzer** is now fully measured, and it is *seven* sites rather than the six analysis-layer-sites records. The seventh is in the bug *reporter* rather than in the modelling layers, and it exists **because** of the other six: a node the CFG is taught to look through is a node the exploded graph has no program point for, so the tracker's `findNodeForExpression` fails and the entire tracking chain is abandoned — the default null-return suppression and every explanatory note along with it. Both features had it, from their first analyzer pass; both are fixed (null-return-suppression), and §17.6 states the rule for a reviewer who asks what a source-fidelity node costs.
 
 ### format-break-policy
 
@@ -219,11 +218,11 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
-2026-09-07 — **the open half now has a page rather than a pointer.** "Scope open" had never been more specific than the section it names; the nineteen-position measurement in §12 says what is actually implemented, in both compilers, and shows that the boundary was drawn by which parser routine each name goes through rather than by anyone deciding it. The question, the options and what each costs in each compiler are in [`docs/open-decisions.md`](open-decisions.md#escape-name-positions) ([escape-name-positions](../ops/DEVIATIONS.md#escape-name-positions), [escape-alias-name-parity](../ops/gcc/DEVIATIONS.md#escape-alias-name-parity)). Still **open**, and still the author's.
+2026-09-07 — **the open half now has a page rather than a pointer.** "Scope open" had never been more specific than the section it names; the nineteen-position measurement in §12 says what is actually implemented, in both compilers, and shows that the boundary was drawn by which parser routine each name goes through rather than by anyone deciding it. The question, the options and what each costs in each compiler are in [`docs/open-decisions.md`](open-decisions.md#escape-name-positions) (escape-name-positions, escape-alias-name-parity). Still **open**, and still the author's.
 
-2026-09-07 — **answered, and the Status stops saying "scope open" after eleven weeks.** The author took option **(c)**: implement the broad set in both compilers, so the prototypes reach what the [lex.name] wording already proposed — an escaped-identifier may appear wherever the grammar uses `identifier` as a terminal. The transitional half of the recommendation was struck rather than taken, with the reason: *there is no real shipped anything other than a GitHub fork, and no one is relying on anything*, so there was no window to stage the change across and no compatibility argument to make. **The scope question is now the same kind of thing as the mechanism** — a decision with a reason — rather than a boundary two parsers arrived at independently. §12 carries the table, the price, and the one divergence that survives ([escape-type-keyword-binding](../ops/gcc/DEVIATIONS.md#escape-type-keyword-binding), which predates the change and hid behind a choice of test keywords for two months).
+2026-09-07 — **answered, and the Status stops saying "scope open" after eleven weeks.** The author took option **(c)**: implement the broad set in both compilers, so the prototypes reach what the [lex.name] wording already proposed — an escaped-identifier may appear wherever the grammar uses `identifier` as a terminal. The transitional half of the recommendation was struck rather than taken, with the reason: *there is no real shipped anything other than a GitHub fork, and no one is relying on anything*, so there was no window to stage the change across and no compatibility argument to make. **The scope question is now the same kind of thing as the mechanism** — a decision with a reason — rather than a boundary two parsers arrived at independently. §12 carries the table, the price, and the one divergence that survives (escape-type-keyword-binding, which predates the change and hid behind a choice of test keywords for two months).
 
-2026-09-08 — **the answer holds, and two more categories of position had to be built before it was true.** The nineteen-position measurement, and the fifteen use positions added a day later, were all *unqualified* names. Sweeping the qualified ones found that Clang read the final component of a qualified **type** name in three parsers that had never seen the escape, so `` N::`new` `` worked and `` N::`union` `` did not — briefly making GCC the wider implementation, which had not happened before ([escape-in-qualified-type-name](../ops/DEVIATIONS.md#escape-in-qualified-type-name)). And the one surviving acceptance divergence, GCC's rejection of an escape whose keyword is a **type** keyword, turned out not to be a parser question at all but a name-table one, and to be fixable at three call sites ([escape-type-keyword-binding](../ops/gcc/DEVIATIONS.md#escape-type-keyword-binding)). **Both compilers now take all seventy-nine programs in all four categories, and there is no acceptance divergence left in the escape.** The rule is unchanged; what changed each time is that somebody wrote programs for a category nobody had written programs for, which is why the sweep is now a script in the repository rather than a paragraph in a handoff.
+2026-09-08 — **the answer holds, and two more categories of position had to be built before it was true.** The nineteen-position measurement, and the fifteen use positions added a day later, were all *unqualified* names. Sweeping the qualified ones found that Clang read the final component of a qualified **type** name in three parsers that had never seen the escape, so `` N::`new` `` worked and `` N::`union` `` did not — briefly making GCC the wider implementation, which had not happened before (escape-in-qualified-type-name). And the one surviving acceptance divergence, GCC's rejection of an escape whose keyword is a **type** keyword, turned out not to be a parser question at all but a name-table one, and to be fixable at three call sites (escape-type-keyword-binding). **Both compilers now take all seventy-nine programs in all four categories, and there is no acceptance divergence left in the escape.** The rule is unchanged; what changed each time is that somebody wrote programs for a category nobody had written programs for, which is why the sweep is now a script in the repository rather than a paragraph in a handoff.
 
 ### escape-content
 
@@ -237,7 +236,7 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 - **The hatch has to be writable *before* the word is a keyword.** The escape exists so that a future keyword does not break code that used the word as a name. Say the escape is standardized in version *N* and the committee takes the word `W` in *N+1*. Under the restricted rule `` `W` `` is **ill-formed in N**, where `W` is not a keyword, and **required in N+1** — so a header that must compile as both has no single spelling, and a name can only be escaped *after* it has broken. Under this decision `` `W` `` is the same declaration in both, so code can be escaped in advance, deliberately, before the committee has chosen anything. That is the difference between a hatch and a patch, and it is the one property the hatch is for.
 
-  **The prototypes can already be asked this question**, because `-fbacktick` is orthogonal to `-std`. `requires` is a C++20 keyword and an ordinary identifier in C++17, and Clang's restriction is `IdentifierInfo::isKeyword(LangOpts)`, which for a `CXX20_KEYWORD` returns `KS_Future` rather than `KS_Enabled` under `-std=c++17`. So `` bool `requires`(const License&); `` is accepted under `-fbacktick -std=c++20` and rejected under `-fbacktick -std=c++17`, in which the unescaped `bool requires(const License&);` still compiles: one source file, two `-std` values, the restricted rule taking the escape in exactly the dialect that does not need it and refusing it in the one that does. That pair is the sharpest test this decision has, and [escape-any-identifier](../ops/completion/steps/escape-any-identifier.md) carries it. (Read from `backtick-trunk` at `28b685c86e` and then run, on 2026-09-17, against both Clang prototypes and GCC as they stood before the change: all three reject it under `-std=c++17` and accept it under `-std=c++20`, exactly as read.)
+  **The prototypes can already be asked this question**, because `-fbacktick` is orthogonal to `-std`. `requires` is a C++20 keyword and an ordinary identifier in C++17, and Clang's restriction is `IdentifierInfo::isKeyword(LangOpts)`, which for a `CXX20_KEYWORD` returns `KS_Future` rather than `KS_Enabled` under `-std=c++17`. So `` bool `requires`(const License&); `` is accepted under `-fbacktick -std=c++20` and rejected under `-fbacktick -std=c++17`, in which the unescaped `bool requires(const License&);` still compiles: one source file, two `-std` values, the restricted rule taking the escape in exactly the dialect that does not need it and refusing it in the one that does. That pair is the sharpest test this decision has, and escape-any-identifier carries it. (Read from `backtick-trunk` at `28b685c86e` and then run, on 2026-09-17, against both Clang prototypes and GCC as they stood before the change: all three reject it under `-std=c++17` and accept it under `-std=c++20`, exactly as read.)
 - **Nobody should have to know the keyword list.** A generator emitting C++ from another language's names, or a macro that pastes a name it was handed, can escape unconditionally under this rule and never enumerate keywords, never track which release added one, and never get a different answer under `-std=c++17` than under `-std=c++26`. Under the restricted rule every such tool needs the table, per dialect, and is wrong the day the table changes — which is the same day the hatch was supposed to help.
 - **The backticks then carry no meaning of their own, which is the point.** The restricted rule makes the reader ask *is this word a keyword in this dialect*, and makes the answer load-bearing. The unrestricted rule makes the backticks say only "this is a name", which is true whatever the word is.
 - **What the restriction was buying was never load-bearing.** It was proposed as reinforcement for the disambiguation ([keyword-escape-coexistence](#keyword-escape-coexistence)), and the disambiguation is positional and always said so: *position alone suffices without it*. Withdrawing the reinforcement subtracts nothing from the argument, because nothing was resting on it.
@@ -253,11 +252,11 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 **Decided by.** The design author, 2026-09-17.
 
-**Log.** 2026-09-17 — recorded. Until this entry, this was the one question the paper deliberately carried to EWG *unanswered* ("whether the escape is restricted to words that actually are keywords, so that `` `foo` `` is ill-formed rather than a noisy spelling of `foo`"), and both prototypes implement the restricted form. The paper now proposes the unrestricted rule and states the restricted variant as the alternative with the argument against it. **The prototypes do not implement this yet** — `` `foobar` `` is rejected by both, by the predicate named under Cost — so no paper may say the rule is built until [escape-any-identifier](../ops/completion/steps/escape-any-identifier.md) is green. §12 carries the reader-facing form.
+**Log.** 2026-09-17 — recorded. Until this entry, this was the one question the paper deliberately carried to EWG *unanswered* ("whether the escape is restricted to words that actually are keywords, so that `` `foo` `` is ill-formed rather than a noisy spelling of `foo`"), and both prototypes implement the restricted form. The paper now proposes the unrestricted rule and states the restricted variant as the alternative with the argument against it. **The prototypes do not implement this yet** — `` `foobar` `` is rejected by both, by the predicate named under Cost — so no paper may say the rule is built until escape-any-identifier is green. §12 carries the reader-facing form.
 
-2026-09-17 — **the content half is decided too, and it is the last of the three.** Mechanism was decided when the entry was written, scope on 2026-09-07, and what may stand *between* the backticks had never been asked as a question at all: the prototypes restrict it to keywords because that is what the first one did, and the paper carried the restriction to EWG as an open choice. [escape-content](#escape-content) answers it — any identifier, and the escaped and unescaped spellings are one name — for the reason the hatch exists: an escape that only accepts words that are already keywords cannot be written *before* the word becomes one, so it can repair a break but never prevent one. Unlike the scope answer, this one has not been built yet; [escape-any-identifier](../ops/completion/steps/escape-any-identifier.md) is the step, and §12 says what each compiler has to change.
+2026-09-17 — **the content half is decided too, and it is the last of the three.** Mechanism was decided when the entry was written, scope on 2026-09-07, and what may stand *between* the backticks had never been asked as a question at all: the prototypes restrict it to keywords because that is what the first one did, and the paper carried the restriction to EWG as an open choice. [escape-content](#escape-content) answers it — any identifier, and the escaped and unescaped spellings are one name — for the reason the hatch exists: an escape that only accepts words that are already keywords cannot be written *before* the word becomes one, so it can repair a break but never prevent one. Unlike the scope answer, this one has not been built yet; escape-any-identifier is the step, and §12 says what each compiler has to change.
 
-2026-09-17 — **built, in both compilers, the same day.** [escape-any-identifier](../ops/completion/steps/escape-any-identifier.md) changed the one predicate on each side — Clang's `isEscapableWord` in `Parser::isBacktickEscapeAt` and `Parser::ConsumeBacktickEscape`, GCC's `cp_token_escapable_word_p` in `cp_parser_backtick_escaped_identifier` and the lookahead `cp_lexer_nth_token_starts_name` — on `backtick-trunk`, `backtick-23`, GCC `backtick`, and by the seventh forward-port `unicode-operators-experiment`. The dialect pair above was run before the change and matched what was read from the source; after it, `` bool `requires`(int); `` is one declaration under `-std=c++17` and `-std=c++20` in all of them. The two consequences stated under **Decision** were measured rather than derived: a reserved name stays reserved, and an object-like macro name is replaced — while a function-like one is not, which §12 records as the preprocessor's rule and not the escape's. **One claim in this entry was wrong for one compiler.** The printing paragraph said no compiler had to be taught the `and`/`foobar` asymmetry; GCC did, because the fact that separates them in Clang is a property of Clang's `IdentifierInfo` and GCC's identifier carries nothing comparable. One line in `dump_decl_name` ([escape-alternative-token-spelling](../ops/gcc/DEVIATIONS.md#escape-alternative-token-spelling)), fixed in the same commit; the paragraph now says which compiler needed it.
+2026-09-17 — **built, in both compilers, the same day.** escape-any-identifier changed the one predicate on each side — Clang's `isEscapableWord` in `Parser::isBacktickEscapeAt` and `Parser::ConsumeBacktickEscape`, GCC's `cp_token_escapable_word_p` in `cp_parser_backtick_escaped_identifier` and the lookahead `cp_lexer_nth_token_starts_name` — on `backtick-trunk`, `backtick-23`, GCC `backtick`, and by the seventh forward-port `unicode-operators-experiment`. The dialect pair above was run before the change and matched what was read from the source; after it, `` bool `requires`(int); `` is one declaration under `-std=c++17` and `-std=c++20` in all of them. The two consequences stated under **Decision** were measured rather than derived: a reserved name stays reserved, and an object-like macro name is replaced — while a function-like one is not, which §12 records as the preprocessor's rule and not the escape's. **One claim in this entry was wrong for one compiler.** The printing paragraph said no compiler had to be taught the `and`/`foobar` asymmetry; GCC did, because the fact that separates them in Clang is a property of Clang's `IdentifierInfo` and GCC's identifier carries nothing comparable. One line in `dump_decl_name` (escape-alternative-token-spelling), fixed in the same commit; the paragraph now says which compiler needed it.
 
 ### keyword-escape-printing
 
@@ -271,13 +270,13 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 The switch is `PrintingPolicy::BacktickKeywordEscape`, initialised from `LangOptions::Backtick` the way `Bool`, `Restrict` and `Half` are initialised from their language facts, so a build without the flag prints byte-for-byte what it printed before. Nothing weaker is needed: a compilation without the escape cannot *have* an `Identifier` name whose spelling is a keyword.
 
-**Decided by.** [clang-paper-truth](../ops/completion/steps/clang-paper-truth.md), whose step file required the diagnostic half to be decided deliberately rather than changed as a side effect of the round-trip fix. It is reversible: confining the escape to source-reproducing printers costs one more policy bit and an opt-in at every printer entry point, and nothing else depends on the answer. **Ratified by the author on 2026-09-06**, the reversal option having been offered and declined; see [the ratification](open-decisions.md#2026-09-06--keyword-escape-printing-ratified).
+**Decided by.** clang-paper-truth, whose step file required the diagnostic half to be decided deliberately rather than changed as a side effect of the round-trip fix. It is reversible: confining the escape to source-reproducing printers costs one more policy bit and an opt-in at every printer entry point, and nothing else depends on the answer. **Ratified by the author on 2026-09-06**, the reversal option having been offered and declined; see [the ratification](open-decisions.md#2026-09-06--keyword-escape-printing-ratified).
 
-**Log.** 2026-09-06 — recorded when [keyword-escape-round-trip](../ops/BACKLOG.md#keyword-escape-round-trip) was fixed on both Clang branches. One site does the escaping (`DeclarationName::print`); five more had to be routed *to* it, because upstream reaches those names through paths that carry no policy — three declarator printers in `DeclPrinter` that hand the name to the *type* printer as a placeholder string, `StmtPrinter::VisitMemberExpr`, and the `ak_declarationname` diagnostic argument (its `ak_nameddecl` sibling already used the context's policy, which is how the two halves of the diagnostic surface were found disagreeing). One site is gated the other way, `TextNodeDumper::VisitMemberExpr`, so that `-ast-dump` is bare consistently. The costs are in [keyword-escape-printing](../ops/DEVIATIONS.md#keyword-escape-printing).
+**Log.** 2026-09-06 — recorded when keyword-escape-round-trip was fixed on both Clang branches. One site does the escaping (`DeclarationName::print`); five more had to be routed *to* it, because upstream reaches those names through paths that carry no policy — three declarator printers in `DeclPrinter` that hand the name to the *type* printer as a placeholder string, `StmtPrinter::VisitMemberExpr`, and the `ak_declarationname` diagnostic argument (its `ak_nameddecl` sibling already used the context's policy, which is how the two halves of the diagnostic surface were found disagreeing). One site is gated the other way, `TextNodeDumper::VisitMemberExpr`, so that `-ast-dump` is bare consistently. The costs are in keyword-escape-printing.
 
 2026-09-06 — ratified by the author. The step that made the change recorded the decision itself, because the fix could not be made without taking one; the ratification settles that the diagnostic half was chosen rather than inherited from the printing half.
 
-**Log.** 2026-09-07 — **the ruling had single-compiler evidence for a day.** Clang delivers both halves. GCC has no `-ast-print`, so the printing half has no counterpart there at all; the diagnostic half did have one, and it diverged — GCC named a keyword-escaped entity `new`, which is the spelling the ruling exists to keep out of diagnostics ([escape-diagnostic-spelling](../ops/gcc/DEVIATIONS.md#escape-diagnostic-spelling), measured 2026-09-07).
+**Log.** 2026-09-07 — **the ruling had single-compiler evidence for a day.** Clang delivers both halves. GCC has no `-ast-print`, so the printing half has no counterpart there at all; the diagnostic half did have one, and it diverged — GCC named a keyword-escaped entity `new`, which is the spelling the ruling exists to keep out of diagnostics (escape-diagnostic-spelling, measured 2026-09-07).
 
 2026-09-07 — **GCC now delivers the diagnostic half too**, so the ruling has two-compiler evidence for the half both compilers have. The condition is one the flag already guarantees: under `-fbacktick` a *declaration* can be named by a keyword only if it was escaped, because `grokdeclarator` rejects the bare declarator-id — so `dump_decl_name`, GCC's one funnel for the name of a declaration, prints the escape. **The cost has the same shape on both compilers, and that is worth recording as a general fact about this decision**: the escape yields the ordinary interned identifier and keeps no trace of how it was written, so an implementation must decide *which printing surfaces name an entity*. Clang drew that line by diagnostic argument kind, across six sites. GCC's line is one funnel plus one guard, because its parser hands a raw keyword token to the same funnel as though it were a name — with a comment saying that is what it is doing. Without the guard, `void new (int, int);`, a program containing no backtick at all, reported its error against a backticked spelling the program does not contain. Getting the line wrong in either direction breaks flag-off parity, and both compilers got it wrong once before getting it right. §17.8 carries the paper-facing version.
 
@@ -377,7 +376,7 @@ The switch is `PrintingPolicy::BacktickKeywordEscape`, initialised from `LangOpt
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
-**Log.** 2026-09-06 — **"blessed as a consequence, not a special rule" is struck: it was false as grammar and the implementation proved it.** ~~The slot is any callable expression and a type-name is callable, so the meaning falls out for free.~~ A bare type-name is not an *assignment-expression*, which is all [slot-grammar](#slot-grammar) admits, so the "consequence" contradicted this proposal's own grammar while a normative example depended on it; the first implementation rejected all four type-slot shapes with three different diagnostics. The decision is unchanged and the wording is not. Priced in §17.3, and reconciled by [reconcile-remainder](../ops/completion/steps/reconcile-remainder.md) from [type-slot-cost](../ops/DEVIATIONS.md#type-slot-cost). Struck rather than deleted, so the record of what was believed survives.
+**Log.** 2026-09-06 — **"blessed as a consequence, not a special rule" is struck: it was false as grammar and the implementation proved it.** ~~The slot is any callable expression and a type-name is callable, so the meaning falls out for free.~~ A bare type-name is not an *assignment-expression*, which is all [slot-grammar](#slot-grammar) admits, so the "consequence" contradicted this proposal's own grammar while a normative example depended on it; the first implementation rejected all four type-slot shapes with three different diagnostics. The decision is unchanged and the wording is not. Priced in §17.3, and reconciled by reconcile-remainder from type-slot-cost. Struck rather than deleted, so the record of what was believed survives.
 
 
 ---
@@ -490,7 +489,7 @@ for `>` inside template-argument lists:
    open/close paren locations (the inner `CallExpr`'s LParen/RParen), which
    lets the phase-2 wrapper's pretty-printer reconstruct the syntax from
    structure (LHS, callee, RHS) rather than from stored locations
-   ([backtick-source-locations](../ops/DEVIATIONS.md#backtick-source-locations)).
+   (backtick-source-locations).
    They are **not** enough for the wrapper's own source range: the desugared
    call begins at its synthesized callee, so the wrapper computes its range
    from the operands it recovers from the semantic form (§17.5). Dedicated
@@ -513,18 +512,18 @@ for `>` inside template-argument lists:
    `op(x, y)`* is unaffected, while *`-ast-print` round-trips backtick syntax*
    is correct for every well-formed use whose slot is a real callee and
    degraded — correct, but spelled as the desugaring — for a builtin rewrite.
-   ([wrapper-inner-shape](../ops/DEVIATIONS.md#wrapper-inner-shape))
+   (wrapper-inner-shape)
 5. **Gating** ([feature-gating](#feature-gating)). A `LANGOPT` in `LangOptions.def` — use the current 5-arg
    form `LANGOPT(Name, Bits, Default, Compatibility, Description)`, e.g.
    `LANGOPT(Backtick, 1, 0, NotCompatible, "backtick operator")`; the old
-   4-arg form no longer compiles ([langopt-macro-arity](../ops/DEVIATIONS.md#langopt-macro-arity)). The driver/`-cc1` flag lives in
+   4-arg form no longer compiles (langopt-macro-arity). The driver/`-cc1` flag lives in
    `clang/include/clang/Options/Options.td` — the file moved there from
-   `.../Driver/Options.td` ([options-td-path](../ops/DEVIATIONS.md#options-td-path)). Add marshalling in `CompilerInvocation.cpp`, but
+   `.../Driver/Options.td` (options-td-path). Add marshalling in `CompilerInvocation.cpp`, but
    note marshalling alone does **not** forward the flag into the `-cc1` argv:
    `Clang.cpp::ConstructJob()` needs an explicit
    `Args.addLastArg(CmdArgs, OPT_fbacktick, OPT_fno_backtick)` (as
    `-fsized-deallocation` / `-freflection` do) for driver-level visibility
-   ([driver-flag-forwarding](../ops/DEVIATIONS.md#driver-flag-forwarding)). The
+   (driver-flag-forwarding). The
    option itself takes `ShouldParseIf<cplusplus.KeyPath>`, because the grammar
    it enables is C++-only: without the guard `-fbacktick` still changed C
    *tokenization*, and a C compilation with the flag on **accepted** the infix
@@ -541,7 +540,7 @@ for `>` inside template-argument lists:
    with a design change looks like from inside the implementation, and it is
    the shape a reviewer should expect: a diagnostic that cannot fire is a claim
    the grammar has already withdrawn.
-   ([bare-nesting-detection](../ops/DEVIATIONS.md#bare-nesting-detection))
+   (bare-nesting-detection)
 7. **The analysis layer, which no site list contained.** A new `Expr` node
    owes the CFG builder, the liveness analysis, the environment and the path-
    sensitive engine a rule for looking through it — **six modelling sites** —
@@ -568,8 +567,8 @@ for `>` inside template-argument lists:
    sees the synthesized call rather than the operands as written. The generated
    `clang/docs/LibASTMatchersReference.html` is gated by a test and must be
    regenerated, not hand-edited.
-   ([backtick-ast-matchers](../ops/BACKLOG.md#backtick-ast-matchers),
-   [libclang-cursor-arm](../ops/BACKLOG.md#libclang-cursor-arm))
+   (backtick-ast-matchers,
+   libclang-cursor-arm)
 8. **The code generator.** `BacktickInfixExpr` needs **four** arms — scalar,
    aggregate, complex and l-value — and the four fallbacks are not alike. Two
    emit a "not yet implemented" diagnostic naming the node, one emits a
@@ -581,7 +580,7 @@ for `>` inside template-argument lists:
    is a call returning a reference and the existing call handling above it is
    already right. (The asserting default arm is upstream's, not this
    feature's, and is worth reporting as such.)
-   ([cir-backtick-arms](../ops/DEVIATIONS.md#cir-backtick-arms))
+   (cir-backtick-arms)
 9. **The type-name slot** is a second parser production, not a consequence —
    see §17.3, which now prices it.
 10. **Tests.** Lexer token kind; parser `-ast-dump` (shows the desugared
@@ -686,7 +685,7 @@ and port.
   papers' fates stay separate — Unicode-allergy must not be able to sink
   backtick. **Not built as of 2026-09-15, and P4307R0 does not name P4345 at
   all**; tracked at last as
-  [backtick-paper-companion](../ops/completion/steps/backtick-paper-companion.md).
+  backtick-paper-companion.
   Until that lands, this list is the only record of the obligation, which is
   how it went missing.
 
@@ -717,7 +716,7 @@ and port.
   reconstructs the surface form from structure (LHS, callee, RHS); the
   backtick token locations it needs are already the inner `CallExpr`'s
   open/close paren locations, so no separate `SourceLocation` fields are
-  required on the wrapper node ([backtick-source-locations](../ops/DEVIATIONS.md#backtick-source-locations)). Lands once the MVP is stable.
+  required on the wrapper node (backtick-source-locations). Lands once the MVP is stable.
 
   **"Purely additive" is the word this phase got wrong, and it is worth
   correcting rather than deleting.** It is additive in the sense that no
@@ -732,7 +731,7 @@ and port.
   compiler is meant not to notice is a wrapper nothing will remind you to
   teach anything about, and every one of the silent sites is silent for
   precisely that reason.
-  ([analysis-layer-sites](../ops/DEVIATIONS.md#analysis-layer-sites), [wrapper-inner-shape](../ops/DEVIATIONS.md#wrapper-inner-shape))
+  (analysis-layer-sites, wrapper-inner-shape)
 - **Phase 3 — reach.** Compiler Explorer deployment once stable; GCC
   implementation in parallel for the second independent data point.
 
@@ -834,7 +833,7 @@ when it was a keyword, and cpplib has already turned `and` into `&&` by the
 time the parser sees it, so the identifier `` `and` `` yields is not a keyword
 to anything above the lexer. It printed bare, which does not re-parse, until
 the printer was taught to ask the preprocessor's question too
-([escape-alternative-token-spelling](../ops/gcc/DEVIATIONS.md#escape-alternative-token-spelling)).
+(escape-alternative-token-spelling).
 
 **Which positions the escape reaches — decided 2026-09-07, built 2026-09-08.** The
 bullet list above is the *disambiguation* rule and was never the coverage
@@ -908,7 +907,7 @@ implementation** — one arm in `cp_parser_identifier` reaches a qualified type
 name as it reaches everything else — and it is the clearest illustration of
 what the coverage rule buys: Clang's boundary had been drawn, invisibly, by
 which of its parsers happened to read a name
-([escape-in-qualified-type-name](../ops/DEVIATIONS.md#escape-in-qualified-type-name)).
+(escape-in-qualified-type-name).
 
 **And a fourth, which is not about parsing at all.** An escape whose keyword
 is a *type* keyword — `` int `int` = 0; ``, `` using `int` = char; ``,
@@ -930,7 +929,7 @@ same three places it consults it, and takes all fifteen programs; the keyword
 still names the builtin in the same translation unit, and `` g(int, `int`) ``
 mangles as `_Z1gi3int` in both compilers, which is the ABI paragraph below
 demonstrated on the hardest case
-([escape-type-keyword-binding](../ops/gcc/DEVIATIONS.md#escape-type-keyword-binding)).
+(escape-type-keyword-binding).
 
 **The sweep, as it stands on 2026-09-17.** Five categories, ninety-eight
 one-line programs, both compilers, run under `STD=c++20` and `STD=c++17` —
@@ -984,20 +983,20 @@ Nothing in the disambiguation argument turns on any of it: a *class-head-name*
 is a name position exactly as a declarator-id is, a qualified type name is one
 exactly as a qualified object name is, and the operator still lives only in
 post-operand position.
-([escape-name-positions](../ops/DEVIATIONS.md#escape-name-positions),
-[escape-alias-name-parity](../ops/gcc/DEVIATIONS.md#escape-alias-name-parity),
-[escape-in-qualified-type-name](../ops/DEVIATIONS.md#escape-in-qualified-type-name),
-[escape-type-keyword-binding](../ops/gcc/DEVIATIONS.md#escape-type-keyword-binding))
+(escape-name-positions,
+escape-alias-name-parity,
+escape-in-qualified-type-name,
+escape-type-keyword-binding)
 
 **The list is only as good as the programs it was measured with, and that has
 now been demonstrated four times.** Every one of the four categories above was
 found by writing one-line programs and running them, and three of the four
 were found *after* somebody had written down that the coverage was complete.
 The sweep is therefore in the repository rather than in a handoff:
-[`ops/probes/escape-positions.sh`](../ops/probes/escape-positions.sh) is
+[`probes/escape-positions.sh`](../probes/escape-positions.sh) is
 ninety-eight one-line programs in five categories, run against both compilers
 in **2.0 seconds** (best of three, 2026-09-17), and
-[`ops/probes/flag-off-parity.sh`](../ops/probes/flag-off-parity.sh) is the
+[`probes/flag-off-parity.sh`](../probes/flag-off-parity.sh) is the
 other half of the claim — that a program containing no backtick compiles and
 diagnoses identically with the flag on and off.
 
@@ -1024,9 +1023,9 @@ the compilation's policy rather than through the node dumper's, so
 `` void takes_union(int, `union`); `` dumps as
 `` FunctionDecl … takes_union 'void (int, `union`)' ``. It is older than the
 content rule, it is the exact mirror of GCC's
-[escape-type-name-spelling](../ops/gcc/DEVIATIONS.md#escape-type-name-spelling)
+escape-type-name-spelling
 — that compiler escapes the declaration and prints the type bare — and it is
-[ast-dump-type-name-spelling](../ops/DEVIATIONS.md#ast-dump-type-name-spelling),
+ast-dump-type-name-spelling,
 measured and unowned. The ABI evidence survives it: the bare name is still in
 the column the paragraph points at.
 
@@ -1039,7 +1038,7 @@ routine, so `` struct `union` { }; `` produces *"'struct union' has no member
 named '`new`'"* — one diagnostic printing the same feature both ways, because
 its two halves come from two printers. It accepts and rejects exactly the
 programs Clang does; only the text differs
-([escape-type-name-spelling](../ops/gcc/DEVIATIONS.md#escape-type-name-spelling)).
+(escape-type-name-spelling).
 
 **Costs.** Bounded added context-sensitivity: tentative
 declaration-vs-expression parsing (`TryParseDeclarator` and friends) must
@@ -1629,7 +1628,7 @@ Same shape, different names. Therefore:
   to fire on legal [chaining-associativity](#chaining-associativity) chaining, a contradiction.
 - The original [nesting-vs-chaining](#nesting-vs-chaining) wording ("bare nesting naturally produces a parse error") was
   not just wrong but impossible; the parser is correct to accept it, and Clang
-  and GCC agree ([bare-nesting-detection](../ops/DEVIATIONS.md#bare-nesting-detection) / [gcc-bare-nesting-detection](../ops/gcc/DEVIATIONS.md#gcc-bare-nesting-detection), reclassified from "deferred enforcement" to
+  and GCC agree (bare-nesting-detection / gcc-bare-nesting-detection, reclassified from "deferred enforcement" to
   "no enforcement needed").
 
 **Rule ([nesting-vs-chaining](#nesting-vs-chaining), reframed):** to nest a backtick expression in the operator slot,
@@ -1744,7 +1743,7 @@ the whole form is an expression by construction — so it can never appear in
 declaration position and the most-vexing-parse reading cannot arise. The
 keyword-escape use of backtick (§12) occupies operand/declarator position, not
 the post-operand infix position, so there is no collision.
-([type-slot-cost](../ops/DEVIATIONS.md#type-slot-cost))
+(type-slot-cost)
 
 **Implementation status: one compiler, and that is a claim the paper has to
 make carefully.** Clang implements it — a bare name is looked up as a type
@@ -1753,7 +1752,7 @@ builtin through the functional-cast machinery, and all three route to the
 `T(x, y)` build path. **GCC does not**: its slot is parsed as an expression,
 so `` 1 `P` 2 `` is rejected there, and under `-fbacktick` the two compilers
 accept different programs
-([gcc-type-slot-parity](../ops/gcc/DEVIATIONS.md#gcc-type-slot-parity)). This
+(gcc-type-slot-parity). This
 is the one place where the two implementations disagree about what is
 well-formed, and it is a gap rather than a design consequence — nothing about
 GCC's parser-level desugaring prevents the type arm, it simply has not been
@@ -1776,7 +1775,7 @@ on its first attempt, with the same failure twice. They do not yet agree
 inside a template.** GCC drops the definition-context ordinary lookup for a
 dependent slot and keeps only the ADL result, so an unqualified slot naming
 something ADL cannot reach is rejected there and accepted by Clang
-([gcc-dependent-slot-lookup](../ops/gcc/DEVIATIONS.md#gcc-dependent-slot-lookup)).
+(gcc-dependent-slot-lookup).
 A function visible only through a using-declaration is rejected exactly as a
 variable is, and an ADL-reachable name is accepted, so what is lost is
 ordinary lookup itself rather than any narrower rule about what ADL may find.
@@ -1798,12 +1797,12 @@ call gets no ADL either.
 
 Getting there took two goes in GCC — resolving the slot name at parse time
 defeated pure ADL entirely
-([gcc-slot-adl](../ops/gcc/DEVIATIONS.md#gcc-slot-adl)), and the fix for that
+(gcc-slot-adl), and the fix for that
 detected only a bare name, so a template-id slot silently kept the old
-behaviour ([gcc-template-id-slot-adl](../ops/gcc/DEVIATIONS.md#gcc-template-id-slot-adl)).
+behaviour (gcc-template-id-slot-adl).
 Clang started further back: its slot was parsed with the ordinary expression
 parser, which resolves the name before the call builder ever sees it, so the
-slot got **no** ADL at all ([clang-slot-adl](../ops/DEVIATIONS.md#clang-slot-adl)).
+slot got **no** ADL at all (clang-slot-adl).
 A hidden friend in the slot was *use of undeclared identifier* — and, in the
 shape that matters, nothing was said at all: with an ordinary-lookup candidate
 visible and viable and a better ADL candidate reachable, `` u `pick` u ``
@@ -1886,7 +1885,7 @@ initialization, so what comes back is a `CXXFunctionalCastExpr` over a
 `CXXParenListInitExpr` and not a `CXXTemporaryObjectExpr`. Until the fourth
 arm was written, `` a `Agg` b `` printed as `Agg(a, b)` and reported the
 operator slot as its range, exactly as everything did before the range fix
-([type-slot-aggregate-shape](../ops/DEVIATIONS.md#type-slot-aggregate-shape)).
+(type-slot-aggregate-shape).
 The arm takes the *user-written* initializers, because the full list carries
 defaulted members beyond the two operands, and prints the type from the
 semantic node as the constructor arm does, so one rule covers all four shapes
@@ -1905,7 +1904,7 @@ slot as the left operand, the implicit `operator()` reference as the operator,
 the left operand as the right one, and argument 2 never read. `` L `obj` R ``
 printed as `` obj `operator()` L `` and reported `<col:31, col:28>` — a range
 that ends before it begins
-([slot-callable-shape](../ops/DEVIATIONS.md#slot-callable-shape)). The reach is
+(slot-callable-shape). The reach is
 what made it worth a step rather than a footnote: the pipeline and composition
 helpers this proposal motivates itself with are `inline constexpr auto`
 lambdas, so the headline examples were precisely the broken shape.
@@ -1977,7 +1976,7 @@ result is reaped as dead the instant it is bound, so every operator expression
 reads back as unknown; miss the last and the path is dropped without a
 successor, so the *whole enclosing function* goes unanalyzed. Exactly one of the
 six is announced by the compiler, as a `-Wswitch` warning on a build whose
-`LLVM_ENABLE_WERROR` is off ([analysis-layer-sites](../ops/DEVIATIONS.md#analysis-layer-sites)).
+`LLVM_ENABLE_WERROR` is off (analysis-layer-sites).
 
 **Reporting — and here is the part that is not in anyone's site list.** Making
 the node transparent to the CFG makes it *invisible* to everything that keys on
@@ -2063,7 +2062,7 @@ be reported that way: the l-value emitter's default arm returns a
 default-constructed l-value whose null type then asserts, so **any** unhandled
 l-value expression class crashes the compiler instead of producing a
 not-yet-implemented diagnostic, as the other three arms do.
-([cir-backtick-arms](../ops/DEVIATIONS.md#cir-backtick-arms))
+(cir-backtick-arms)
 
 ### 17.8 Which of this is Clang's alone, and why
 
@@ -2109,24 +2108,24 @@ out not to be a parser question but a name-table one, and closed at three call
 sites once the observation was made that a keyword can name a declaration only
 if it was escaped, so a collision with the builtin's global binding is never a
 redeclaration
-([escape-type-keyword-binding](../ops/gcc/DEVIATIONS.md#escape-type-keyword-binding)).
+(escape-type-keyword-binding).
 The third ran **the other way, and it is the only time it ever has**: Clang
 refused `` N::`union` `` — an escape as the final component of a qualified
 *type* name — where GCC took it, because the last component of a qualified
 name is read as an unqualified-id only when it names an object or a function,
 and three other parsers read it when it names a type
-([escape-in-qualified-type-name](../ops/DEVIATIONS.md#escape-in-qualified-type-name)).
+(escape-in-qualified-type-name).
 **A list of divergences is only as good as the programs it was measured
 with**, and a list this short is worth re-deriving rather than reading: the
 ninety-eight programs are
-[`ops/probes/escape-positions.sh`](../ops/probes/escape-positions.sh) and take
+[`probes/escape-positions.sh`](../probes/escape-positions.sh) and take
 **2.0 seconds** to run against both compilers. The kind difference belongs in
 the argument; the gaps belong in the status table.
-([gcc-wrapper-parity](../ops/gcc/DEVIATIONS.md#gcc-wrapper-parity),
-[gcc-type-slot-parity](../ops/gcc/DEVIATIONS.md#gcc-type-slot-parity),
-[escape-alias-name-parity](../ops/gcc/DEVIATIONS.md#escape-alias-name-parity),
-[escape-type-keyword-binding](../ops/gcc/DEVIATIONS.md#escape-type-keyword-binding),
-[escape-in-qualified-type-name](../ops/DEVIATIONS.md#escape-in-qualified-type-name))
+(gcc-wrapper-parity,
+gcc-type-slot-parity,
+escape-alias-name-parity,
+escape-type-keyword-binding,
+escape-in-qualified-type-name)
 
 **One asymmetry the escape did add to this section, and it is a real one
 rather than a gap.** Clang collapses a resolved qualified type name into a
@@ -2147,7 +2146,7 @@ even though the divergence is gone: Clang named a keyword-escaped entity
 [keyword-escape-printing](#keyword-escape-printing), and GCC named it `new` —
 a spelling no program under the flag can contain. GCC now prints the escape
 too, from the one funnel that prints the name of a declaration
-([escape-diagnostic-spelling](../ops/gcc/DEVIATIONS.md#escape-diagnostic-spelling)).
+(escape-diagnostic-spelling).
 What the fix cost is the interesting part and it is the same on both
 compilers: the escape yields the ordinary interned identifier and carries no
 trace of how it was written, so both had to decide *which printing surfaces
@@ -2166,7 +2165,7 @@ named '`new`'* — escaping one name in the sentence and not the other. Clang
 escapes both. This changes no program's acceptance, which is why §17.8's list
 above is still one; it is a defect in the deliverable the printing decision
 exists to protect, which is that text copied out of a diagnostic re-parses
-([escape-type-name-spelling](../ops/gcc/DEVIATIONS.md#escape-type-name-spelling)).
+(escape-type-name-spelling).
 It is measured, unfixed and unowned, and the reason it was not taken here is
 the one the row gives: this is the third time the feature has touched GCC's
 error printer and the first build was wrong in the same direction both
