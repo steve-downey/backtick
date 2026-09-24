@@ -259,6 +259,35 @@ are not rewritten. [`ops/SLUGS.md`](../ops/SLUGS.md) is the whole map.
 
 2026-09-17 — **built, in both compilers, the same day.** [escape-any-identifier](../ops/completion/steps/escape-any-identifier.md) changed the one predicate on each side — Clang's `isEscapableWord` in `Parser::isBacktickEscapeAt` and `Parser::ConsumeBacktickEscape`, GCC's `cp_token_escapable_word_p` in `cp_parser_backtick_escaped_identifier` and the lookahead `cp_lexer_nth_token_starts_name` — on `backtick-trunk`, `backtick-23`, GCC `backtick`, and by the seventh forward-port `unicode-operators-experiment`. The dialect pair above was run before the change and matched what was read from the source; after it, `` bool `requires`(int); `` is one declaration under `-std=c++17` and `-std=c++20` in all of them. The two consequences stated under **Decision** were measured rather than derived: a reserved name stays reserved, and an object-like macro name is replaced — while a function-like one is not, which §12 records as the preprocessor's rule and not the escape's. **One claim in this entry was wrong for one compiler.** The printing paragraph said no compiler had to be taught the `and`/`foobar` asymmetry; GCC did, because the fact that separates them in Clang is a property of Clang's `IdentifierInfo` and GCC's identifier carries nothing comparable. One line in `dump_decl_name` ([escape-alternative-token-spelling](../ops/gcc/DEVIATIONS.md#escape-alternative-token-spelling)), fixed in the same commit; the paragraph now says which compiler needed it.
 
+### escape-module-names
+
+**Question.** Does the keyword escape reach the identifiers in a *module-name* and a *module-partition*, both where a module is declared and where it is imported?
+
+**Status.** **OPEN.** The author has given the direction; nothing is built.
+
+**Decision.** Not yet taken. The direction, from the author on 2026-09-23: an escape hatch that does not handle module names would be *"very unfortunate"*. A module name is a dotted sequence of identifiers ([module.unit]), and a keyword cannot be one of them. So a module whose name contains a word the committee later takes breaks every importer and every name attached to the module. Those are the least renameable names a program has.
+
+**Why.** It is open because neither compiler takes the escape there, and the wording as written does not make them. Module and import declarations are recognized during preprocessing ([cpp.module], [cpp.import]), and only when `module` or `import` is followed by one of a short list of tokens ([lex.pptoken]). A backtick is not on that list. The escape is handled at the parser stage ([lex.name], phase 7), so it never reaches the preprocessor's rules. Measured on 2026-09-23 against both built compilers:
+
+- `` export module acme.`class`.util; `` is rejected by both. Clang: *expected identifier after '.' in module name*. GCC: *expected module-name before '`'*.
+- Without the flag, `export module new;`, `export module acme.class.util;` and, under C++23, `export module requires;` are all rejected by both. This is the break the escape exists to prevent.
+- Clang does not recognize `` import `std`; `` as an import at all (*unknown type name 'import'*).
+
+A fix needs two wording changes, and a matching change to each compiler's module-directive recognition (Clang's lexer and preprocessor, GCC's cpplib and parser):
+
+1. add `` ` `` to the tokens that may follow `module` or `import` when [lex.pptoken] recognizes those directives;
+2. admit an *escaped-identifier* for each component of *pp-module-name* and *pp-module-partition* in [cpp.module] and [cpp.import].
+
+The identity rule ([escape-content](#escape-content)) does the rest: `` acme.`class`.util `` is the module `acme.class.util`, and mangles as that name. For the same reason, `module` and `import` stay forbidden as module-name components ([module.unit]) whether escaped or not. The escape yields an ordinary identifier, and every other identifier rule still applies. (GCC accepts the unescaped `export module import;`. That is a GCC conformance bug, unrelated to the escape.)
+
+**One collision with the infix operator.** Step 1 changes the meaning of a line that begins `` module `f` y; ``. Today that is an infix call on a variable named `module`, and both compilers accept it inside a function body. After step 1 it is a malformed module directive. C++20 made the same trade for `module x;` and `import x;` at the start of a line. This one breaks no existing code, because backticks are new. The escape itself is the workaround: `` `module` `f` y `` begins with a backtick, so it is never a directive, and `(module) `f` y` also works. Whichever paper carries the fix must say so, and if the papers are separate the other one must say so too.
+
+**Cost.** This is the first time the escape touches the preprocessor. [keyword-escape-coexistence](#keyword-escape-coexistence)'s "parsed, not lexed" becomes "parsed, and recognized by the preprocessor only in module and import directives". The lexer still synthesizes no identifier. The probe sweep gains a module-name category, which includes the line-start collision case, on all four fork branches.
+
+**Decided by.** The design author set the direction on 2026-09-23. The mechanism above is a proposal and has not been ruled on.
+
+**Log.** 2026-09-23 — opened. It was found by asking what a parser-level escape gives up compared with a lexer-level one. A lexer-level escape would have reached module names for free, because the preprocessor would have seen an identifier token. The parser-level escape reaches every other position the grammar writes *identifier* in, and the paper's claim that it goes "wherever the grammar uses *identifier*" is false for this one.
+
 ### keyword-escape-printing
 
 **Question.** When an entity's name is spelled with a keyword, what does a printer — and what does a diagnostic — call it?
@@ -835,6 +864,13 @@ time the parser sees it, so the identifier `` `and` `` yields is not a keyword
 to anything above the lexer. It printed bare, which does not re-parse, until
 the printer was taught to ask the preprocessor's question too
 ([escape-alternative-token-spelling](../ops/gcc/DEVIATIONS.md#escape-alternative-token-spelling)).
+
+**Module names are the exception — measured 2026-09-23, open**
+([escape-module-names](#escape-module-names)). Module and import
+declarations are recognized by the preprocessor before the escape exists, so
+neither compiler takes `` export module acme.`class`.util; `` or
+`` import `std`; ``, and the wording as written does not make them. Every
+position below is a phase-7 position.
 
 **Which positions the escape reaches — decided 2026-09-07, built 2026-09-08.** The
 bullet list above is the *disambiguation* rule and was never the coverage

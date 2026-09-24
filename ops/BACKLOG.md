@@ -144,6 +144,16 @@ rewritten. [`ops/SLUGS.md`](SLUGS.md) is the whole map.
 **Closed by.** *(open)* — one word, no measurement owed. It wants to ride along with the next edit to that file, the same way [`hunk-count-provenance`](#hunk-count-provenance) does, and for the same reason: a reader-facing document whose figure is stale and whose owner is whichever pass next opens it. It is **not** an extension of that row — that one asks where a hunk count came from, this one asks what the sweep costs — so it gets its own slug rather than being folded in.
 
 
+### escape-module-names
+
+**Severity:** P1. **Both compilers**, filed under Clang because the Clang fix is the larger of the two.
+
+**Item.** **The keyword escape does not reach module names, in either compiler.** `` export module acme.`class`.util; `` and `` import `std`; `` are rejected. Module and import declarations are recognized during preprocessing, and the escape is a phase-7 construct. The paper's claim that the escape goes "wherever the grammar uses *identifier*" is false for *module-name*. The question, the measurements, the proposed wording fix and its one collision with the infix operator (a line beginning `` module `f` y; ``) are in [`docs/backtick-operator-design.md`](../docs/backtick-operator-design.md#escape-module-names).
+
+**Where.** Found 2026-09-23 by probing both built compilers while working out what a parser-level escape gives up compared with a lexer-level one. It is not in `ops/probes/escape-positions.sh`, which has no module category.
+
+**Closed by.** — (no step owns it; not in `ops/completion/PLAN.md`'s Coverage table).
+
 ## 2. Backtick track — GCC (`backtick`)
 
 ### template-id-slot-adl
