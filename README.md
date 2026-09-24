@@ -1,10 +1,12 @@
 # backtick
 
-Design documents, papers, and implementation records for two WG21 proposals.
+Design documents, papers, and implementation records for three WG21 proposals.
 
 ## Papers
 
-- [P4307R0 — An Infix Operator and a Keyword Escape for C++](papers/backtick-infix-and-keyword-escape.md)
+- [D4307R1 — An Infix Operator for C++](papers/backtick-infix-operator.md)
+  (P4307R0, published, proposed the operator and the keyword escape together)
+- [DxxxxR0 — A Keyword Escape for C++](papers/backtick-keyword-escape.md)
 - [P4345R0 — Extending C++ with Unicode Mathematical Operators](papers/unicode-mathematical-operators.md)
 
 Build with `make -C papers <name>.html <name>.pdf`.

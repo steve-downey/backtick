@@ -22,12 +22,19 @@ removed; git history still has them. What is still open:
   definition-context ordinary lookup for every dependent slot and keeps only
   ADL, so `` t `pipe` inc `` is rejected inside a template where
   `pipe(t, inc)` compiles. Clang is the conforming side. §17.4 and the
-  backtick paper print the divergence; fixing it un-qualifies both.
-- **`backtick-paper-companion`** — the backtick paper must name its precedence
+  infix paper print the divergence; fixing it un-qualifies both.
+- **`backtick-paper-companion`** — the infix paper must name its precedence
   level the **user-infix level** and carry a short informative
   future-directions appendix pointing at the Unicode paper, the condition
   [`paper-separation`](docs/unicode-operators.md#paper-separation) split the
   papers under. It should land before the two papers go in together.
+- **`escape-module-names`** — the escape does not reach module names in
+  either compiler (`` export module acme.`class`.util; ``,
+  `` import `std`; ``), because module and import declarations are
+  recognized during preprocessing. The author wants it fixed; the mechanism
+  and its one collision with the infix operator are in
+  [`escape-module-names`](docs/backtick-operator-design.md#escape-module-names).
+  The escape paper records it as open.
 - Two printer gaps, neither affecting acceptance: GCC escapes a
   *declaration's* name but prints a *type's* name bare, and Clang's
   `-ast-dump` does the mirror image.
@@ -48,11 +55,15 @@ paper must carry, not only the decision logs.
 - `docs/open-decisions.md` — the questions the implementation measured and
   only the author could settle, one slug-headed page each, with the dated
   answers. All are answered.
-- `papers/` — the two WG21 papers, **named by name and not by number**: the
+- `papers/` — the three WG21 papers, **named by name and not by number**: the
   number lives in the front matter and in the prose, because the upload
   system renames whatever is uploaded.
-  - `papers/backtick-infix-and-keyword-escape.md` — **D4307R1** (P4307R0
-    published).
+  - `papers/backtick-infix-operator.md` — **D4307R1**, the infix operator
+    (P4307R0 published, and proposed the escape too).
+  - `papers/backtick-keyword-escape.md` — **DxxxxR0**, the keyword escape,
+    split out on 2026-09-23 (number not yet assigned). The split and the one
+    invariant both papers must keep (the escape is parsed, not lexed) are in
+    [`paper-bundling`](docs/backtick-operator-design.md#paper-bundling).
   - `papers/unicode-mathematical-operators.md` — **D4345R1** (P4345R0
     published).
   - `make -C papers <basename>.html <basename>.pdf` builds either. **Build the
@@ -70,7 +81,7 @@ paper must carry, not only the decision logs.
   one-line programs in five categories, both compilers); `escape-errors.sh`
   asks whether the error paths diagnose and *stop*, under `timeout`;
   `flag-off-parity.sh` asks whether the flag changes a program containing no
-  backtick. **Re-run them after touching the escape.** The backtick paper
+  backtick. **Re-run them after touching the escape.** The escape paper
   links `escape-positions.sh`.
 - `build/` — `configure-{clang23,clang-trunk,gcc-trunk}-backtick.sh`, the
   reproducible configure invocations (below).

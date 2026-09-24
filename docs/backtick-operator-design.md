@@ -224,6 +224,8 @@ entry used to have.
 
 2026-09-08 — **the answer holds, and two more categories of position had to be built before it was true.** The nineteen-position measurement, and the fifteen use positions added a day later, were all *unqualified* names. Sweeping the qualified ones found that Clang read the final component of a qualified **type** name in three parsers that had never seen the escape, so `` N::`new` `` worked and `` N::`union` `` did not — briefly making GCC the wider implementation, which had not happened before (escape-in-qualified-type-name). And the one surviving acceptance divergence, GCC's rejection of an escape whose keyword is a **type** keyword, turned out not to be a parser question at all but a name-table one, and to be fixable at three call sites (escape-type-keyword-binding). **Both compilers now take all seventy-nine programs in all four categories, and there is no acceptance divergence left in the escape.** The rule is unchanged; what changed each time is that somebody wrote programs for a category nobody had written programs for, which is why the sweep is now a script in the repository rather than a paragraph in a handoff.
 
+2026-09-23 — **now binds two papers rather than one.** With [paper-bundling](#paper-bundling) reversed, the parse-not-lex half of the Decision is what lets the escape paper and the infix paper share the token without either foreclosing the other. Both papers state it: the escape paper as a design choice made for the operator's sake, the infix paper as the thing it needs from the escape. The one seam (an escape inside a slot must be parenthesized) was re-measured on both built compilers the same day.
+
 ### escape-content
 
 **Question.** What may stand between the backticks of an escape: a keyword, or any identifier?
@@ -257,6 +259,35 @@ entry used to have.
 2026-09-17 — **the content half is decided too, and it is the last of the three.** Mechanism was decided when the entry was written, scope on 2026-09-07, and what may stand *between* the backticks had never been asked as a question at all: the prototypes restrict it to keywords because that is what the first one did, and the paper carried the restriction to EWG as an open choice. [escape-content](#escape-content) answers it — any identifier, and the escaped and unescaped spellings are one name — for the reason the hatch exists: an escape that only accepts words that are already keywords cannot be written *before* the word becomes one, so it can repair a break but never prevent one. Unlike the scope answer, this one has not been built yet; escape-any-identifier is the step, and §12 says what each compiler has to change.
 
 2026-09-17 — **built, in both compilers, the same day.** escape-any-identifier changed the one predicate on each side — Clang's `isEscapableWord` in `Parser::isBacktickEscapeAt` and `Parser::ConsumeBacktickEscape`, GCC's `cp_token_escapable_word_p` in `cp_parser_backtick_escaped_identifier` and the lookahead `cp_lexer_nth_token_starts_name` — on `backtick-trunk`, `backtick-23`, GCC `backtick`, and by the seventh forward-port `unicode-operators-experiment`. The dialect pair above was run before the change and matched what was read from the source; after it, `` bool `requires`(int); `` is one declaration under `-std=c++17` and `-std=c++20` in all of them. The two consequences stated under **Decision** were measured rather than derived: a reserved name stays reserved, and an object-like macro name is replaced — while a function-like one is not, which §12 records as the preprocessor's rule and not the escape's. **One claim in this entry was wrong for one compiler.** The printing paragraph said no compiler had to be taught the `and`/`foobar` asymmetry; GCC did, because the fact that separates them in Clang is a property of Clang's `IdentifierInfo` and GCC's identifier carries nothing comparable. One line in `dump_decl_name` (escape-alternative-token-spelling), fixed in the same commit; the paragraph now says which compiler needed it.
+
+### escape-module-names
+
+**Question.** Does the keyword escape reach the identifiers in a *module-name* and a *module-partition*, both where a module is declared and where it is imported?
+
+**Status.** **OPEN.** The author has given the direction; nothing is built.
+
+**Decision.** Not yet taken. The direction, from the author on 2026-09-23: an escape hatch that does not handle module names would be *"very unfortunate"*. A module name is a dotted sequence of identifiers ([module.unit]), and a keyword cannot be one of them. So a module whose name contains a word the committee later takes breaks every importer and every name attached to the module. Those are the least renameable names a program has.
+
+**Why.** It is open because neither compiler takes the escape there, and the wording as written does not make them. Module and import declarations are recognized during preprocessing ([cpp.module], [cpp.import]), and only when `module` or `import` is followed by one of a short list of tokens ([lex.pptoken]). A backtick is not on that list. The escape is handled at the parser stage ([lex.name], phase 7), so it never reaches the preprocessor's rules. Measured on 2026-09-23 against both built compilers:
+
+- `` export module acme.`class`.util; `` is rejected by both. Clang: *expected identifier after '.' in module name*. GCC: *expected module-name before '`'*.
+- Without the flag, `export module new;`, `export module acme.class.util;` and, under C++23, `export module requires;` are all rejected by both. This is the break the escape exists to prevent.
+- Clang does not recognize `` import `std`; `` as an import at all (*unknown type name 'import'*).
+
+A fix needs two wording changes, and a matching change to each compiler's module-directive recognition (Clang's lexer and preprocessor, GCC's cpplib and parser):
+
+1. add `` ` `` to the tokens that may follow `module` or `import` when [lex.pptoken] recognizes those directives;
+2. admit an *escaped-identifier* for each component of *pp-module-name* and *pp-module-partition* in [cpp.module] and [cpp.import].
+
+The identity rule ([escape-content](#escape-content)) does the rest: `` acme.`class`.util `` is the module `acme.class.util`, and mangles as that name. For the same reason, `module` and `import` stay forbidden as module-name components ([module.unit]) whether escaped or not. The escape yields an ordinary identifier, and every other identifier rule still applies. (GCC accepts the unescaped `export module import;`. That is a GCC conformance bug, unrelated to the escape.)
+
+**One collision with the infix operator.** Step 1 changes the meaning of a line that begins `` module `f` y; ``. Today that is an infix call on a variable named `module`, and both compilers accept it inside a function body. After step 1 it is a malformed module directive. C++20 made the same trade for `module x;` and `import x;` at the start of a line. This one breaks no existing code, because backticks are new. The escape itself is the workaround: `` `module` `f` y `` begins with a backtick, so it is never a directive, and `(module) `f` y` also works. Whichever paper carries the fix must say so, and if the papers are separate the other one must say so too.
+
+**Cost.** This is the first time the escape touches the preprocessor. [keyword-escape-coexistence](#keyword-escape-coexistence)'s "parsed, not lexed" becomes "parsed, and recognized by the preprocessor only in module and import directives". The lexer still synthesizes no identifier. The probe sweep gains a module-name category, which includes the line-start collision case, on all four fork branches.
+
+**Decided by.** The design author set the direction on 2026-09-23. The mechanism above is a proposal and has not been ruled on.
+
+**Log.** 2026-09-23 — opened. It was found by asking what a parser-level escape gives up compared with a lexer-level one. A lexer-level escape would have reached module names for free, because the preprocessor would have seen an identifier token. The parser-level escape reaches every other position the grammar writes *identifier* in, and the paper's claim that it goes "wherever the grammar uses *identifier*" is false for this one.
 
 ### keyword-escape-printing
 
@@ -336,13 +367,15 @@ The switch is `PrintingPolicy::BacktickKeywordEscape`, initialised from `LangOpt
 
 **Status.** **Resolved**
 
-**Decision.** Both backtick usages (infix operator + keyword-escape) proposed jointly, in one paper
+**Decision.** **Two papers** (from 2026-09-23). The infix operator stays in P4307, from R1 (`papers/backtick-infix-operator.md`); the keyword escape is a new paper, DxxxxR0, number not yet assigned (`papers/backtick-keyword-escape.md`). Each paper states the one invariant that lets them share the token — **the escape is parsed, not lexed**: backtick stays one punctuator, the escape claims it only in operand/name position, the operator only in post-operand position ([keyword-escape-coexistence](#keyword-escape-coexistence)) — and each carries a drafting note that whichever is adopted second drops its [lex.operators] edit. *Until 2026-09-23:* both backtick usages proposed jointly, in one paper (P4307R0).
 
-**Why.** Same lexical token ([keyword-escape-coexistence](#keyword-escape-coexistence)), same committee (EWG/CWG). Joint proposal *conserves EWG attention* — one "what does backtick mean" discussion, not two — and prevents the two uses being designed into *contradiction* if pursued independently (punctuator vs. lexer-synthesized identifier; divergent disambiguation). Consistent with [library-scope](#library-scope), not contrary to it: the rule is **bundle what shares a design surface within one committee; split what is separable across committees** — so the two language uses bundle, the library layer ([library-scope](#library-scope)) splits off to LEWG. Resolves the §10 scope question.
+**Why.** *Current:* reviewers of P4307R0 asked to consider the two uses separately, and with both implemented in the same forks the split could be checked rather than argued. Only three things are shared. The [lex.operators] edit is identical in both, so the second paper in drops it. The positions are disjoint, so adopting either leaves the other's position unused. And one real constraint: a lexer-synthesized escape would make `` `f` `` an identifier token and make `` x `f` y `` unwritable, which is exactly the "contradiction" the original rationale below guarded against. It is now a stated design choice in the escape paper rather than a consequence of co-authorship. An escape *inside* a slot must be parenthesized (`` x `(`new`)` y ``); that follows from the operator's closing-delimiter rule alone, and both built compilers reject `` x ``new`` y `` (measured 2026-09-23). The drift risk that remains is managed by one author holding both papers and one flag gating both in the forks. *Original (superseded):* Same lexical token ([keyword-escape-coexistence](#keyword-escape-coexistence)), same committee (EWG/CWG). Joint proposal *conserves EWG attention* — one "what does backtick mean" discussion, not two — and prevents the two uses being designed into *contradiction* if pursued independently (punctuator vs. lexer-synthesized identifier; divergent disambiguation). Consistent with [library-scope](#library-scope), not contrary to it: the rule is **bundle what shares a design surface within one committee; split what is separable across committees** — so the two language uses bundle, the library layer ([library-scope](#library-scope)) splits off to LEWG. Resolves the §10 scope question.
 
-**Decided by.** The design author.
+**Decided by.** The design author (both the original and the 2026-09-23 reversal).
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+2026-09-23 — **reversed: two papers.** Prompted by reviewer feedback on P4307R0. An audit of every shared surface (token, positions, slot content, flag, wording, the Unicode paper's citations) found one binding constraint, parse-not-lex, and no structural reason to keep the papers together. The papers were split the same day; the escape paper's number is still to be assigned. The "bundle within a committee" half of the rule below no longer governs this case; "split across committees" still governs [library-scope](#library-scope) and [paper-separation](unicode-operators.md#paper-separation).
 
 ### evaluation-order
 
@@ -687,13 +720,26 @@ and port.
   all**; tracked at last as
   backtick-paper-companion.
   Until that lands, this list is the only record of the obligation, which is
-  how it went missing.
+  how it went missing. Since the 2026-09-23 split
+  ([paper-bundling](#paper-bundling)), this obligation belongs to the
+  **infix paper** (`papers/backtick-infix-operator.md`); the escape paper
+  has no Unicode connection.
+- **Both papers, since the split** ([paper-bundling](#paper-bundling)):
+  each states the parse-not-lex invariant from
+  [keyword-escape-coexistence](#keyword-escape-coexistence) in its own
+  design, each carries the drafting note that whichever is adopted second
+  drops its [lex.operators] edit, and each says that an escape inside a
+  slot must be parenthesized. The escape paper
+  (`papers/backtick-keyword-escape.md`) carries §12's content, the escape
+  prior art (§19.2), and the [lex.name] wording; the infix paper carries
+  the rest.
 
 ---
 
 ## 10. Open questions
 
-- **Scope — Resolved ([paper-bundling](#paper-bundling)): jointly, one paper.** The infix operator and the
+- **Scope — Resolved ([paper-bundling](#paper-bundling)): two papers, since 2026-09-23.** What follows is
+  the original reasoning for one paper, kept for the record; the entry has the reversal. The infix operator and the
   keyword-escape share one lexical token ([keyword-escape-coexistence](#keyword-escape-coexistence)), so they are co-designed in a
   single paper — to conserve EWG attention (one backtick discussion, not two)
   and to keep two independent designs from contradicting each other. The
@@ -834,6 +880,13 @@ time the parser sees it, so the identifier `` `and` `` yields is not a keyword
 to anything above the lexer. It printed bare, which does not re-parse, until
 the printer was taught to ask the preprocessor's question too
 (escape-alternative-token-spelling).
+
+**Module names are the exception — measured 2026-09-23, open**
+([escape-module-names](#escape-module-names)). Module and import
+declarations are recognized by the preprocessor before the escape exists, so
+neither compiler takes `` export module acme.`class`.util; `` or
+`` import `std`; ``, and the wording as written does not make them. Every
+position below is a phase-7 position.
 
 **Which positions the escape reaches — decided 2026-09-07, built 2026-09-08.** The
 bullet list above is the *disambiguation* rule and was never the coverage

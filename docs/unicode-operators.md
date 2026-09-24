@@ -272,6 +272,8 @@ entry used to have.
 
 2026-09-15 — **the condition in the Decision above is not built, and had never been tracked.** P4307R0 does not name the *user-infix level* and carries no future-directions appendix; it does not name P4345 at all, while P4345R0 cites P4307 six times and carries the mirror-image "Relation to P4307" note. So the split happened and the recovery the **Why** promises did not. Recorded as backtick-paper-companion; nothing caught it sooner because the obligation lived in a design doc and the plan tracked only its own ledgers.
 
+2026-09-23 — **the rule this entry cites was revised, and the answer stands.** [paper-bundling](backtick-operator-design.md#paper-bundling) reversed: the backtick paper split into an infix paper (P4307, from R1) and a keyword-escape paper, so "bundle within a committee" no longer holds even for the two backtick uses. This entry never depended on that half; it rests on "split across committees" and on the maturity and fate arguments, all unchanged. The companion obligation (user-infix level, future-directions appendix) now falls on the **infix** paper. P4345R0's citations of P4307R0 are to a published paper that does contain the operator, so they stay correct.
+
 ---
 
 ## 3. What transfers from backtick
