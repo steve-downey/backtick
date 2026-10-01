@@ -1,0 +1,51 @@
+* Abstract
+* Revision history
+** R1
+** R0
+* Before / After
+*** Before
+*** After
+* The design
+** =x ⊞ y= is the call
+** What this paper fixes
+** Three constraints the design holds itself to
+** Relation to P4307R0
+* The token set
+** Deriving it
+** Immutable is not closed
+** The exclusions, and why their reasons differ
+** The operator set and the identifier set are disjoint
+** Spelling: the glyph and the UCN
+* Fitting the grammar
+** One level for all user-introduced infix
+** Prefix, and how position decides
+** Postfix, and why not
+** Fold expressions
+* Declaring, looking up, desugaring
+** Arity is the only rule that carries over
+** One candidate set, and no built-in candidates
+** The expression node, and two-phase lookup
+* One level, and no fixity declarations
+* Sequencing is decided by overload resolution
+* Implementation experience
+** What was built
+** The desugaring survives to the back end
+** Volume
+** Opening a closed table cost a parallel implementation, five times out of five
+** What the compiler does not tell you
+** Where the cost estimate went wrong, in a predictable direction
+** Mangling and ABI
+*** What is implemented, and why it needs nothing
+*** What this paper asks for
+*** Windows
+** Formatting
+* What is not resolved
+* Separability from P4307R0, in evidence
+* Wording
+** [lex.operators]
+** [expr.unary.general]
+** [expr.mptr.oper]
+** [expr.user] (new subclause)
+** [over.oper.general]
+** [over.match.oper]
+** [over.unary] and [over.binary]
