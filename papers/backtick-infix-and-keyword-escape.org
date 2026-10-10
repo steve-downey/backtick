@@ -1,0 +1,63 @@
+* Abstract
+* Revision history
+** R1
+** R0
+* Before / After
+** The infix operator
+*** Before
+*** After
+** The keyword escape
+*** Before
+*** After
+* The proposal
+* Motivation, beyond readability
+** Short-circuiting returns to user code
+** One helper makes it a pipeline, and the ranges closures already fit
+** Stages with extra arguments: the honest gap
+** Reusable, point-free composition
+** Motivation, not a library proposal
+* Neither replaces the other: P2011's =|>=
+* Prior art
+** Infix application of named callables
+** Escaping keywords as identifiers
+* Design choices and decisions
+** It desugars to the call, and that is the whole design
+** Precedence: the highest binary operator, and why not higher
+** Left-associative
+** The operator slot is an assignment-expression
+** Bare nesting is chaining; real nesting takes parentheses
+** Evaluation order is the call's
+** A type name in the slot constructs
+** The escape yields an ordinary identifier
+** One spelling
+** Two uses, one paper; no library
+* Anticipated objections
+** "Define =*= on a type instead"
+* Fitting the grammar, without collision
+** The token is free
+** The productions
+** The same-delimiter problem
+** Operator and escape never meet
+* Implementation experience
+** The forks
+** Escape coverage: four sweeps
+** The type-name slot, in one compiler
+** Printing: which surfaces name an entity
+** Argument-dependent lookup, which both implementations got wrong
+** What the AST node costs, and which compiler pays it
+** The gate fails quietly
+** What the parsers confirmed
+* The design, in one place
+* Wording
+** [lex.operators]
+** [lex.name]
+** [expr.mptr.oper]
+** [expr.backtick] (new subclause)
+* Appendix A: alternative spellings, and the lexical inventory
+** A.1 Why alternatives get raised
+** A.2 The filter a candidate must pass
+** A.3 The candidates
+** A.4 The front-runner is not an alias
+** A.5 The rebuttals, pre-loaded
+** A.6 The wider inventory: what ASCII actually remains
+** A.7 Why the demand for that inventory evaporates
