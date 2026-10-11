@@ -6,10 +6,12 @@
 # CMake, ctest, coverage and install machinery of the sibling projects'
 # Makefile (steve-downey/expected) is therefore not here. What is here:
 #
-#   - the wg21 markdown papers under papers/, built by pandoc through the
-#     vendored papers/wg21 submodule (`make papers`);
-#   - org-mode export of docs/*.org and papers/*.org, driven by the Emacs
-#     configuration in .emacs.d/ (`make <file>.html`, `make blog-md`).
+#   - the wg21 papers, papers/*.org, built by the vendored papers/wg21org
+#     exporter (`make papers`, or `make -C papers <name>.html <name>.pdf`);
+#     the R0 markdown papers are still built by papers/wg21 through
+#     papers/mpark.mk;
+#   - org-mode export of docs/*.org, driven by the Emacs configuration in
+#     .emacs.d/ (`make <file>.html`, `make blog-md`).
 #     `make` with no target is `org-html`;
 #   - reveal.js decks from talks/*.org and docs/*-talk.org (`make slides`),
 #     themed out of etc/.
@@ -22,7 +24,7 @@ default: org-html
 .PHONY: default
 
 .PHONY: papers
-papers: ## Build the wg21 markdown papers, HTML and PDF
+papers: ## Build the wg21 papers with wg21org, HTML and PDF
 	$(MAKE) -C papers html pdf
 
 .PHONY: clean-papers
@@ -64,7 +66,9 @@ EMACS_BATCH := $(EMACS) --init-directory=$(CURDIR)/.emacs.d/ \
 # so `org-html' and `blog-md' stay about prose; `slides' builds the decks.
 DECK_ORGFILES := $(wildcard talks/*.org docs/*-talk.org)
 
-ORGFILES := $(filter-out $(DECK_ORGFILES),$(wildcard docs/*.org papers/*.org))
+# The papers are not here: papers/Makefile exports them with wg21org, and a
+# second rule for the same .html would race it.
+ORGFILES := $(filter-out $(DECK_ORGFILES),$(wildcard docs/*.org))
 
 %.html : %.org
 	$(EMACS_BATCH) \

@@ -191,22 +191,30 @@ and a Status-log row so base-commit changes are not lost.
     paper, written from `docs/backtick-operator-design.md`.
   - `papers/unicode-mathematical-operators.md` — **P4345R0**, the Unicode
     paper, written from `docs/unicode-operators.md`.
-  - `make -C papers <basename>.html <basename>.pdf` builds either. **Build the
-    PDF, not only the HTML**, and read the log: a wg21 paper can exit 0 with
-    its content wrong. Both traps are live here — a `header-includes` key in
-    the front matter silently replaces the wg21 LaTeX preamble (`\pnum` then
-    undefined), and Latin Modern carries none of the Unicode operator glyphs,
-    so the Unicode paper sets `monofont`.
-  - `papers/<basename>.org` + `papers/<basename>.bib` — the org-mode version
-    of each paper: the front matter, every heading, and the Wording section in
-    full; the other sections are heading-only. The `.bib` holds the paper's
-    references (the WG21 index entries the markdown build resolves at build
-    time included) for org-cite with `#+cite_export: csl`. Wording markup maps
-    `{.add}` to `_underline_`, `{.rm}` to `+strike+`, `::: add` to
-    `#+begin_addedblock`, and `{.pnum}` / `{.sref}` to two macros in the
-    header. `make papers/<basename>.html` at the top level exports one
-    through `.emacs.d/` (brought over from `steve-downey/expected`; the
-    top-level `Makefile` is that repo's, with the code-build targets removed).
+  - `make -C papers <basename>.html <basename>.pdf` builds either paper
+    from its **org** source with wg21org, vendored as a squashed git subtree
+    at `papers/wg21org/` (from `~/src/wg21org`, branch `main` — the same
+    exporter `transcode` uses). The papers stay in `papers/`; the exporter
+    finds its CSS, prolog and preamble next to itself, so the subtree carries
+    no local edits. **Always `git subtree pull --squash`**: wg21org's own
+    history carries the work address this repo was scrubbed of.
+    `make -C papers check` re-exports both and fails on any external load.
+    The R0 markdown papers still build through mpark/wg21 (`papers/wg21/`)
+    with `make -C papers -f mpark.mk html pdf`, into `papers/generated/`.
+  - **Build the PDF, not only the HTML**, and read the log: a paper can exit
+    0 with its content wrong. The Unicode operator glyphs are the live trap —
+    Latin Modern has none of them, so both papers set `#+LATEX_COMPILER:
+    lualatex` with a Noto Sans Math / DejaVu fallback and DejaVu Sans Mono;
+    grep the `.log` for `Missing character`. (Under mpark the matching traps
+    were a `header-includes` key replacing the preamble, and `monofont`.)
+  - `papers/<basename>.org` — the org-mode source of each paper, written to
+    wg21org's conventions (`papers/wg21org/` has worked examples): front
+    matter `#+DOCNUMBER` / `#+AUDIENCE`, references in `papers/references.bib`
+    for org-cite with `#+cite_export: csl`. The older wording markup is still
+    in use and still renders: `_underline_` / `+strike+` for `{.add}` /
+    `{.rm}`, `#+begin_addedblock` for `::: add`, and `pnum` / `sref` macros
+    in the header; wg21org's native forms are `#+begin_wording`,
+    `#+begin_pnum` and `[[insert:]]` / `[[delete:]]` links.
 - `docs/infix-backtick-operator.org` and `docs/unicode-infix-operators.org`
   (each + a `.meta`) — the blog-post version of each paper, org-mode source
   with a Nikola sidecar. Reader-facing prose the design docs feed, in the

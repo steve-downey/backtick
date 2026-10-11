@@ -78,13 +78,17 @@
 #+EMAIL: sdowney@gmail.com
 #+DATE: {{{modification-time(%Y-%m-%d, VC)}}}
 #+LANGUAGE: en
-#+DOCUMENT: D4307R1
+#+DOCNUMBER: D4307R1
 #+AUDIENCE: EWG
 #+SELECT_TAGS: export
 #+EXCLUDE_TAGS: noexport
 #+STARTUP: showall
 #+HTML_DOCTYPE: xhtml-strict
 #+HTML_CONTAINER: div
+#+LATEX_COMPILER: lualatex
+#+LATEX_HEADER: \directlua{luaotfload.add_fallback("wg21fallback", {"Noto Sans Math:mode=harf;", "DejaVu Sans:mode=harf;"})}
+#+LATEX_HEADER: \setmainfont{Latin Modern Roman}[RawFeature={fallback=wg21fallback}]
+#+LATEX_HEADER: \setmonofont{DejaVu Sans Mono}[Scale=MatchLowercase,RawFeature={fallback=wg21fallback}]
 
 #+bibliography: references.bib
 #+cite_export: csl
@@ -92,7 +96,7 @@
 # Wording markup. The wg21 markdown spans map as: {.add} -> _underline_,
 # {.rm} -> +strike+, `::: add` -> #+begin_addedblock (the stdtex environment
 # name), {.pnum} and {.sref} -> the two macros below.
-#+MACRO: pnum @@latex:\pnum@@@@html:<span class="pnum">$1</span>@@
+#+MACRO: pnum @@latex:\pnum{}@@@@html:<span class="pnum">$1</span>@@
 #+MACRO: sref @@latex:\href{https://eel.is/c++draft/$1}{[$1]}@@@@html:<a href="https://eel.is/c++draft/$1">[$1]</a>@@
 
 * Abstract

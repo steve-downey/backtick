@@ -11,6 +11,18 @@ papers/generated/
 
 # org export outputs (the wg21 pipeline writes to papers/generated/)
 /papers/*.html
+
+# wg21org's LaTeX route (papers/Makefile): the .tex, the PDF, and what
+# latexmk leaves beside them
+/papers/*.tex
+/papers/*.pdf
+/papers/*.aux
+/papers/*.fdb_latexmk
+/papers/*.fls
+/papers/*.log
+/papers/*.out
+/papers/*.toc
+/papers/.deps/
 /docs/*.html
 
 # reveal.js decks, and the reveal.js checkout `make slides` clones on demand
