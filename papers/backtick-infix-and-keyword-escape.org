@@ -93,13 +93,12 @@
 #+bibliography: references.bib
 #+cite_export: csl
 
-# Wording markup. The wg21 markdown spans map as: {.add} -> _underline_,
-# {.rm} -> +strike+, `::: add` -> #+begin_addedblock (the stdtex environment
-# name), {.pnum} and {.sref} -> the two macros below.
-# Each macro emits one snippet, for the backend in use: a second snippet
-# for the other backend would be dropped with the space that follows it.
-#+MACRO: pnum (eval (if (org-export-derived-backend-p org-export-current-backend 'latex) "@@latex:\\pnum{}@@" (format "@@html:<span class=\"pnum\">%s</span>@@" $1)))
-#+MACRO: sref (eval (if (org-export-derived-backend-p org-export-current-backend 'latex) (format "@@latex:\\href{https://eel.is/c++draft/%s}{[%s]}@@" $1 $1) (format "@@html:<a href=\"https://eel.is/c++draft/%s\">[%s]</a>@@" $1 $1)))
+# Wording markup is wg21org's own (papers/wg21org/AUTHORING.md):
+# [[insert:]] / [[delete:]] for inline edits, #+begin_addedblock for an
+# added block, #+begin_pnum for a paragraph number, [[sref:name]] for a
+# stable-name reference, and a heading with :WG21_CHANGE: add for a new
+# subclause. Grammar is still in verse blocks: wg21org has no grammar
+# form yet.
 
 * Abstract
 
@@ -209,7 +208,7 @@ current working draft.
 
 ** [lex.operators]
 
-Modify the /operator-or-punctuator/ grammar in {{{sref(lex.operators)}}}
+Modify the /operator-or-punctuator/ grammar in [[sref:lex.operators]]
 paragraph 1 by adding =`=:
 
 #+begin_addedblock
@@ -229,7 +228,7 @@ The row shown is [lex.operators]'s third; only the trailing =`= is added.
 
 ** [lex.name]
 
-Add to {{{sref(lex.name)}}}, after the paragraphs defining /identifier/:
+Add to [[sref:lex.name]], after the paragraphs defining /identifier/:
 
 #+begin_addedblock
 #+begin_quote
@@ -237,14 +236,22 @@ Add to {{{sref(lex.name)}}}, after the paragraphs defining /identifier/:
 escaped-identifier:
     ` identifier `
 #+end_verse
+#+end_quote
 
-{{{pnum(x)}}} An /escaped-identifier/ may appear wherever the grammar uses
+# A verse followed by a paragraph in the same quote overprints in the PDF:
+# Org ends the verse's last line with \\, and memoir's verse pulls the
+# next paragraph up onto it. Ending the quote here keeps them apart.
+#+begin_quote
+#+begin_pnum x
+An /escaped-identifier/ may appear wherever the grammar uses
 /identifier/. The token between the =`= tokens is treated as an /identifier/
 even if it would otherwise be a keyword or alternative token. The =`= tokens
 are not part of the identifier. An /escaped-identifier/ and an unescaped
 /identifier/ with the same spelling are the same identifier.
+#+end_pnum
 
-{{{pnum(x+1)}}} [/Example/:
+#+begin_pnum x+1
+[/Example/:
 #+begin_src cpp
 void `new`();          // declares a function named new
 `new`();               // and calls it
@@ -252,30 +259,37 @@ int `count` = 0;
 ++count;               // names the same object
 #+end_src
 — /end example/]
+#+end_pnum
 #+end_quote
 #+end_addedblock
 
 ** [expr.mptr.oper]
 
-Modify the grammar of {{{sref(expr.mptr.oper)}}} paragraph 1:
+Modify the grammar of [[sref:expr.mptr.oper]] paragraph 1:
 
 #+begin_quote
 #+begin_verse
 pm-expression:
-    +cast-expression+ _user-infix-expression_
-    pm-expression .* +cast-expression+ _user-infix-expression_
-    pm-expression ->* +cast-expression+ _user-infix-expression_
+    [[delete:][cast-expression]] [[insert:][user-infix-expression]]
+    pm-expression .* [[delete:][cast-expression]] [[insert:][user-infix-expression]]
+    pm-expression ->* [[delete:][cast-expression]] [[insert:][user-infix-expression]]
 #+end_verse
 #+end_quote
 
 ** [expr.backtick] (new subclause)
 
-Insert a new subclause between {{{sref(expr.cast)}}} and
-{{{sref(expr.mptr.oper)}}}:
+Annex A ([[sref:gram]]) is updated mechanically to match.
 
-#+begin_addedblock
-#+begin_quote
-*Backtick operator   [expr.backtick]*
+Insert a new subclause between [[sref:expr.cast]] and
+[[sref:expr.mptr.oper]]:
+
+*** Backtick operator [expr.backtick]
+:PROPERTIES:
+:CUSTOM_ID: expr.backtick
+:UNNUMBERED: t
+:WG21_WORDING: t
+:WG21_CHANGE: add
+:END:
 
 #+begin_verse
 user-infix-expression:
@@ -288,25 +302,27 @@ backtick-operator:
     typename-specifier
 #+end_verse
 
-{{{pnum(1)}}} An expression of the form =E1 `O` E2= is identical (by
-definition) to =O(E1, E2)= ({{{sref(expr.call)}}}).
+#+begin_pnum 1
+An expression of the form =E1 `O` E2= is identical (by
+definition) to =O(E1, E2)= ([[sref:expr.call]]).
+#+end_pnum
 
-{{{pnum(2)}}} If the /backtick-operator/ is a /simple-type-specifier/ or
+#+begin_pnum 2
+If the /backtick-operator/ is a /simple-type-specifier/ or
 /typename-specifier/ denoting a type =T= or a placeholder for a deduced class
 type, an expression of the form =E1 `T` E2= is identical (by definition) to
-=T(E1, E2)= ({{{sref(expr.type.conv)}}}). A /backtick-operator/ whose tokens
+=T(E1, E2)= ([[sref:expr.type.conv]]). A /backtick-operator/ whose tokens
 can be interpreted both as an /assignment-expression/ and as a
 /simple-type-specifier/ or /typename-specifier/ is interpreted as a
 /simple-type-specifier/ or /typename-specifier/.
+#+end_pnum
 
-{{{pnum(3)}}} When parsing a /backtick-operator/, the first non-nested
+#+begin_pnum 3
+When parsing a /backtick-operator/, the first non-nested
 =`=[fn:: A =`= that appears within a matching pair of parentheses, brackets, or
 braces is nested.] is taken as the ending delimiter, rather than as the first
 delimiter of a nested /user-infix-expression/.
-#+end_quote
-#+end_addedblock
-
-Annex A ({{{sref(gram)}}}) is updated mechanically to match.
+#+end_pnum
 
 * Appendix A: alternative spellings, and the lexical inventory
 
