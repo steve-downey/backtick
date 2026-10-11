@@ -4,8 +4,8 @@
 # *:t). A later #+bind: of the same variable overrides an earlier one, so a
 # value can be flipped in place. Values are read, not evaluated, exactly as
 # the compact form reads them. Honoring #+bind: requires
-# `org-export-allow-bind-keywords', set by papers/Makefile for the wg21org
-# export (and by this repo's .emacs.d/init.el for interactive use).
+# `org-export-allow-bind-keywords', which wg21org's export sets (and
+# this repo's .emacs.d/init.el, for interactive use).
 
 # Front matter: emit title, author, and date; hold back the email.
 #+bind: org-export-with-title t
@@ -97,8 +97,8 @@
 # [[insert:]] / [[delete:]] for inline edits, #+begin_addedblock for an
 # added block, #+begin_pnum for a paragraph number, [[sref:name]] for a
 # stable-name reference, and a heading with :WG21_CHANGE: add for a new
-# subclause. Grammar is still in verse blocks: wg21org has no grammar
-# form yet.
+# subclause, #+begin_grammar for productions (keywords as ~kw~), and
+# #+begin_wgexample for a draft example.
 
 * Abstract
 I propose adding the ability to declare user defined operators, such as operator⊞ , allowing users to write ~a ⊞ b~. The list of allowed operators is drawn from the mathematical operators described in Unicode Technical Report #25, /Unicode Support for Mathematics/ [cite:@UTR25], with confusables removed. The operators are otherwise normal functions, found by ordinary lookup rules and ordinary overload resolution.
@@ -278,7 +278,7 @@ define with another, use with a third, they are emitted identically.
 * Placement in Grammar
 
 ** One level for all user-introduced infix
-#+begin_quote
+#+begin_grammar
 user-infix-expression:
     cast-expression
     user-infix-expression user-operator cast-expression
@@ -286,7 +286,7 @@ user-infix-expression:
 unary-expression:
     ...
     user-operator cast-expression
-#+end_quote
+#+end_grammar
 
 Binary user operators occupy one precedence level: the highest binary level,
 tighter than ~*~ and looser than the unary operators, left-associative, with
@@ -419,10 +419,10 @@ Add /user-operator/ as an alternative of /operator-or-punctuator/ in
 
 #+begin_addedblock
 #+begin_quote
-#+begin_verse
+#+begin_grammar
 user-operator:
-    one of the characters in Table X, User-operator characters
-#+end_verse
+    @\descr{one of the characters in Table X, User-operator characters}@
+#+end_grammar
 #+end_quote
 #+end_addedblock
 
@@ -438,11 +438,11 @@ Add an alternative to /unary-expression/ in [[sref:expr.unary.general]]:
 
 #+begin_addedblock
 #+begin_quote
-#+begin_verse
+#+begin_grammar
 unary-expression:
     ...
     user-operator cast-expression
-#+end_verse
+#+end_grammar
 #+end_quote
 #+end_addedblock
 
@@ -451,12 +451,12 @@ unary-expression:
 Modify the grammar of [[sref:expr.mptr.oper]] paragraph 1:
 
 #+begin_quote
-#+begin_verse
+#+begin_grammar
 pm-expression:
     [[delete:][cast-expression]] [[insert:][user-infix-expression]]
     pm-expression .* [[delete:][cast-expression]] [[insert:][user-infix-expression]]
     pm-expression ->* [[delete:][cast-expression]] [[insert:][user-infix-expression]]
-#+end_verse
+#+end_grammar
 #+end_quote
 
 ** [expr.user] (new subclause)
@@ -472,22 +472,22 @@ Insert a new subclause between [[sref:expr.cast]] and
 :WG21_CHANGE: add
 :END:
 
-#+begin_verse
+#+begin_grammar
 user-infix-expression:
     cast-expression
     user-infix-expression user-operator cast-expression
-#+end_verse
+#+end_grammar
 
 ** [over.oper.general]
 
 Modify the /operator-function-id/ grammar in [[sref:over.oper.general]]:
 
 #+begin_quote
-#+begin_verse
+#+begin_grammar
 operator-function-id:
-    operator operator
-    [[insert:][operator user-operator]]
-#+end_verse
+    ~operator~ operator
+    [[insert:][~operator~ user-operator]]
+#+end_grammar
 #+end_quote
 
 Add after the grammar:
@@ -545,7 +545,7 @@ in the order prescribed for the built-in operator.
 Modify the built-in-candidate bullet of [[sref:over.match.oper]] paragraph 3:
 
 #+begin_quote
-For the operator =,=, the unary operator =&=, [[delete:][or]] the operator =->=[[insert:][, or a /user-operator/]],
+For the operator ~,~, the unary operator ~&~, [[delete:][or]] the operator ~->~[[insert:][, or a /user-operator/]],
 the built-in candidates set is empty.
 #+end_quote
 

@@ -4,7 +4,8 @@
 # *:t). A later #+bind: of the same variable overrides an earlier one, so a
 # value can be flipped in place. Values are read, not evaluated, exactly as
 # the compact form reads them. Honoring #+bind: requires
-# `org-export-allow-bind-keywords', set in this repo's .emacs.d/init.el.
+# `org-export-allow-bind-keywords', which wg21org's export sets (and
+# this repo's .emacs.d/init.el, for interactive use).
 
 # Front matter: emit title, author, and date; hold back the email.
 #+bind: org-export-with-title t
@@ -97,8 +98,8 @@
 # [[insert:]] / [[delete:]] for inline edits, #+begin_addedblock for an
 # added block, #+begin_pnum for a paragraph number, [[sref:name]] for a
 # stable-name reference, and a heading with :WG21_CHANGE: add for a new
-# subclause. Grammar is still in verse blocks: wg21org has no grammar
-# form yet.
+# subclause, #+begin_grammar for productions (keywords as ~kw~), and
+# #+begin_wgexample for a draft example.
 
 * Abstract
 
@@ -136,7 +137,7 @@ Blank slate rewrite of prose.
 
 ** Motivation, not a library proposal
 
-* Neither replaces the other: P2011's =|>=
+* Neither replaces the other: P2011's ~|>~
 
 * Prior art
 
@@ -168,7 +169,7 @@ Blank slate rewrite of prose.
 
 * Anticipated objections
 
-** "Define =*= on a type instead"
+** "Define ~*~ on a type instead"
 
 * Fitting the grammar, without collision
 
@@ -209,21 +210,19 @@ current working draft.
 ** [lex.operators]
 
 Modify the /operator-or-punctuator/ grammar in [[sref:lex.operators]]
-paragraph 1 by adding =`=:
+paragraph 1 by adding ~`~:
 
-#+begin_addedblock
 #+begin_quote
-#+begin_verse
+#+begin_grammar
 operator-or-punctuator: one of
-       ...
-       ?     ::    .     .*    ->    ->*   ^^    ~     `
-       ...
-#+end_verse
+    ...
+    ?     ::    .     .*    ->    ->*   ^^    ~     [[insert:][`]]
+    ...
+#+end_grammar
 #+end_quote
-#+end_addedblock
 
 #+begin_note
-The row shown is [lex.operators]'s third; only the trailing =`= is added.
+The row shown is [lex.operators]'s third; only the trailing ~`~ is added.
 #+end_note
 
 ** [lex.name]
@@ -232,33 +231,28 @@ Add to [[sref:lex.name]], after the paragraphs defining /identifier/:
 
 #+begin_addedblock
 #+begin_quote
-#+begin_verse
+#+begin_grammar
 escaped-identifier:
     ` identifier `
-#+end_verse
-#+end_quote
+#+end_grammar
 
-# A verse followed by a paragraph in the same quote overprints in the PDF:
-# Org ends the verse's last line with \\, and memoir's verse pulls the
-# next paragraph up onto it. Ending the quote here keeps them apart.
-#+begin_quote
 #+begin_pnum x
 An /escaped-identifier/ may appear wherever the grammar uses
-/identifier/. The token between the =`= tokens is treated as an /identifier/
-even if it would otherwise be a keyword or alternative token. The =`= tokens
+/identifier/. The token between the ~`~ tokens is treated as an /identifier/
+even if it would otherwise be a keyword or alternative token. The ~`~ tokens
 are not part of the identifier. An /escaped-identifier/ and an unescaped
 /identifier/ with the same spelling are the same identifier.
 #+end_pnum
 
 #+begin_pnum x+1
-[/Example/:
+#+begin_wgexample
 #+begin_src cpp
 void `new`();          // declares a function named new
 `new`();               // and calls it
 int `count` = 0;
 ++count;               // names the same object
 #+end_src
-— /end example/]
+#+end_wgexample
 #+end_pnum
 #+end_quote
 #+end_addedblock
@@ -268,12 +262,12 @@ int `count` = 0;
 Modify the grammar of [[sref:expr.mptr.oper]] paragraph 1:
 
 #+begin_quote
-#+begin_verse
+#+begin_grammar
 pm-expression:
     [[delete:][cast-expression]] [[insert:][user-infix-expression]]
     pm-expression .* [[delete:][cast-expression]] [[insert:][user-infix-expression]]
     pm-expression ->* [[delete:][cast-expression]] [[insert:][user-infix-expression]]
-#+end_verse
+#+end_grammar
 #+end_quote
 
 ** [expr.backtick] (new subclause)
@@ -291,7 +285,7 @@ Insert a new subclause between [[sref:expr.cast]] and
 :WG21_CHANGE: add
 :END:
 
-#+begin_verse
+#+begin_grammar
 user-infix-expression:
     cast-expression
     user-infix-expression ` backtick-operator ` cast-expression
@@ -300,18 +294,18 @@ backtick-operator:
     assignment-expression
     simple-type-specifier
     typename-specifier
-#+end_verse
+#+end_grammar
 
 #+begin_pnum 1
-An expression of the form =E1 `O` E2= is identical (by
-definition) to =O(E1, E2)= ([[sref:expr.call]]).
+An expression of the form ~E1 `O` E2~ is identical (by
+definition) to ~O(E1, E2)~ ([[sref:expr.call]]).
 #+end_pnum
 
 #+begin_pnum 2
 If the /backtick-operator/ is a /simple-type-specifier/ or
-/typename-specifier/ denoting a type =T= or a placeholder for a deduced class
-type, an expression of the form =E1 `T` E2= is identical (by definition) to
-=T(E1, E2)= ([[sref:expr.type.conv]]). A /backtick-operator/ whose tokens
+/typename-specifier/ denoting a type ~T~ or a placeholder for a deduced class
+type, an expression of the form ~E1 `T` E2~ is identical (by definition) to
+~T(E1, E2)~ ([[sref:expr.type.conv]]). A /backtick-operator/ whose tokens
 can be interpreted both as an /assignment-expression/ and as a
 /simple-type-specifier/ or /typename-specifier/ is interpreted as a
 /simple-type-specifier/ or /typename-specifier/.
@@ -319,7 +313,7 @@ can be interpreted both as an /assignment-expression/ and as a
 
 #+begin_pnum 3
 When parsing a /backtick-operator/, the first non-nested
-=`=[fn:: A =`= that appears within a matching pair of parentheses, brackets, or
+~`~[fn:: A ~`~ that appears within a matching pair of parentheses, brackets, or
 braces is nested.] is taken as the ending delimiter, rather than as the first
 delimiter of a nested /user-infix-expression/.
 #+end_pnum

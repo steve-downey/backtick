@@ -212,14 +212,16 @@ and a Status-log row so base-commit changes are not lost.
     lualatex` with a Noto Sans Math / DejaVu fallback and DejaVu Sans Mono;
     grep the `.log` for `Missing character`. (Under mpark the matching traps
     were a `header-includes` key replacing the preamble, and `monofont`.)
-  - `papers/<basename>.org` — the org-mode source of each paper, written to
-    wg21org's conventions (`papers/wg21org/` has worked examples): front
-    matter `#+DOCNUMBER` / `#+AUDIENCE`, references in `papers/references.bib`
-    for org-cite with `#+cite_export: csl`. The older wording markup is still
-    in use and still renders: `_underline_` / `+strike+` for `{.add}` /
-    `{.rm}`, `#+begin_addedblock` for `::: add`, and `pnum` / `sref` macros
-    in the header; wg21org's native forms are `#+begin_wording`,
-    `#+begin_pnum` and `[[insert:]]` / `[[delete:]]` links.
+  - `papers/<basename>.org` — the org-mode source of each paper, in
+    wg21org's own markup (`papers/wg21org/AUTHORING.md` is the reference,
+    including its "Converting from mpark/wg21 markdown" list): front matter
+    `#+DOCNUMBER` / `#+AUDIENCE`; references in `papers/references.bib` for
+    org-cite with `#+cite_export: csl`; `[[sref:]]`, `[[insert:]]` /
+    `[[delete:]]`, `#+begin_pnum`, `#+begin_grammar` (keywords as `~kw~`),
+    `#+begin_wgexample`, and a `:WG21_CHANGE: add` heading for a new
+    subclause. Inline code is `~code~`. The `#+bind:` preludes are honoured
+    by wg21org's export itself. The backtick paper is still mostly an
+    outline awaiting its rewrite; only its Wording section has text.
 - `docs/infix-backtick-operator.org` and `docs/unicode-infix-operators.org`
   (each + a `.meta`) — the blog-post version of each paper, org-mode source
   with a Nikola sidecar. Reader-facing prose the design docs feed, in the

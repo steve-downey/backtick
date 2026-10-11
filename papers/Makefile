@@ -37,15 +37,15 @@ PAPERS := $(wildcard *.org)
 HTML := $(PAPERS:.org=.html)
 
 EXPORTER := $(addprefix $(WG21ORG)/,wg21-links.el wg21-git.el wg21-cmptbl.el \
-	wg21-cite.el wg21-wording.el wg21-front.el wg21-code.el emacs.d/export-init.el \
+	wg21-cite.el wg21-wording.el wg21-grammar.el wg21-front.el wg21-code.el \
+	emacs.d/export-init.el \
 	packages/org-transclusion/org-transclusion.el \
 	packages/org-transclusion/org-transclusion-src-lines.el \
 	packages/org-transclusion/text-clone.el)
 
 EXPORT = WG21_BABEL=$(BABEL) $(EMACS) --batch --init-directory=$(WG21ORG)/emacs.d \
 	--load $(WG21ORG)/emacs.d/export-init.el \
-	--eval '(setq enable-local-variables :all)' \
-	--eval '(setq org-export-allow-bind-keywords t)'
+	--eval '(setq enable-local-variables :all)'
 
 .DELETE_ON_ERROR:
 
