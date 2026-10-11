@@ -193,11 +193,16 @@ and a Status-log row so base-commit changes are not lost.
     paper, written from `docs/unicode-operators.md`.
   - `make -C papers <basename>.html <basename>.pdf` builds either paper
     from its **org** source with wg21org, vendored as a squashed git subtree
-    at `papers/wg21org/` (from `~/src/wg21org`, branch `main` — the same
-    exporter `transcode` uses). The papers stay in `papers/`; the exporter
-    finds its CSS, prolog and preamble next to itself, so the subtree carries
-    no local edits. **Always `git subtree pull --squash`**: wg21org's own
-    history carries the work address this repo was scrubbed of.
+    at `papers/wg21org/` (from `steve-downey/wg21org` `main` on GitHub —
+    the same exporter `transcode` uses; **pull from GitHub, not from
+    `~/src/wg21org`**, whose local `main` has lagged it and once cost this
+    repo the whole pnum/wording vocabulary). The papers stay in `papers/`;
+    the exporter finds its CSS, prolog and preamble next to itself, so the
+    subtree carries no local edits. **Always `git subtree pull --squash`**:
+    wg21org's own history carries the work address this repo was scrubbed
+    of. The exporter refuses to run without its pinned org-transclusion
+    submodule, registered here as `papers/wg21org/packages/org-transclusion`
+    — `git submodule update --init` it after a fresh clone.
     `make -C papers check` re-exports both and fails on any external load.
     The R0 markdown papers still build through mpark/wg21 (`papers/wg21/`)
     with `make -C papers -f mpark.mk html pdf`, into `papers/generated/`.

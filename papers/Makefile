@@ -10,8 +10,13 @@
 #   make -C papers <name>.html <name>.pdf
 #   make -C papers check                # export all, fail on external loads
 #
-# Refresh the exporter with:
-#   git subtree pull --prefix=papers/wg21org --squash <wg21org repo> main
+# Refresh the exporter from GitHub (a local clone's main can lag it):
+#   git subtree pull --prefix=papers/wg21org --squash \
+#       git@github.com:steve-downey/wg21org.git main
+#
+# The exporter needs its pinned org-transclusion submodule, registered in
+# the top-level .gitmodules; after cloning this repository run
+#   git submodule update --init papers/wg21org/packages/org-transclusion
 #
 # Always --squash: wg21org's own history carries an address that must not
 # enter this repository's history.
@@ -32,7 +37,10 @@ PAPERS := $(wildcard *.org)
 HTML := $(PAPERS:.org=.html)
 
 EXPORTER := $(addprefix $(WG21ORG)/,wg21-links.el wg21-git.el wg21-cmptbl.el \
-	wg21-cite.el wg21-wording.el wg21-front.el emacs.d/export-init.el)
+	wg21-cite.el wg21-wording.el wg21-front.el wg21-code.el emacs.d/export-init.el \
+	packages/org-transclusion/org-transclusion.el \
+	packages/org-transclusion/org-transclusion-src-lines.el \
+	packages/org-transclusion/text-clone.el)
 
 EXPORT = WG21_BABEL=$(BABEL) $(EMACS) --batch --init-directory=$(WG21ORG)/emacs.d \
 	--load $(WG21ORG)/emacs.d/export-init.el \
