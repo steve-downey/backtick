@@ -72,7 +72,7 @@
 #+bind: org-html-head-include-scripts t
 #+bind: org-html-link-use-abs-url nil
 #+TITLE: Extending C++ with Unicode Mathematical Operators
-#+SUBTITLE: Declaring =operator⊞=, and what an implementation says about it
+#+SUBTITLE: Declaring =operator⊞=
 #+AUTHOR: Steve Downey
 #+EMAIL: sdowney@gmail.com
 #+DATE: {{{modification-time(%Y-%m-%d, VC)}}}
@@ -157,74 +157,242 @@ Defer the meaning of the expression to name lookup and overload resolution.
 For the operators assign a fixed precedence and associativity so that parsing does not need to take into account declarations.
 
 ** ~x ⊞ y~ is the call
+The form ~x ⊞ y~ desugars to ~operator ⊞(x,y)~ and everything else follows from that.
+~x ⊞ y~ _is_  ~operator⊞(x, y)~
+~⊖x~ _is_ ~operator⊖(x)~
+and the member forms are ~x.operator⊞(y)~ and ~x.operator⊖()~.
+** What this paper changes
+An /operator-function-id/ may be ~operator~ followed by a *user-operator
+token* --- a single non-ASCII code point drawn from an enumerated set.
+Such a function is an ordinary free or member function.
 
-** What this paper fixes
+- One precedence level :: A user-operator token after a complete operand is a
+  binary operator at the *user-infix level* (the highest binary level,
+  tighter than ~*~, looser than the unary operators), left-associative, with
+  cast-expression operands. Every user-introduced infix operator binds at that
+  one strength, and there is no table.
+- No fixity declarations :: Precedence and associativity are fixed.
+- Position decides fixity at the use :: Operand position is prefix,
+  post-operand is infix. No lookahead or whitespace rule.  No consultation of
+  what declarations are visible during parsing.
+- Arity decides the form at the declaration, and does not filter uses ::  Two
+  parameters, or one as a member, is infix; one parameter, or none as a member,
+  is prefix. The same convention as ~operator-()~.
+- No built-in candidates ::  There is no built-in meaning to protect, so
+  nothing adds any. ~p ⊞ n~ on ~int*~ is a no-viable-overload error.
+- Candidates are assembled as for an existing overloaded operator :: member
+  and non-member together in one set, with ADL.
+- No postfix form, and no fold operator ::  Fold is not precluded, but not proposed. Postfix is unusual in math notation, and is also not proposed.
 
-** Three constraints the design holds itself to
+** Design Constraints
+1. The operator set is disjoint from the identfier character set.
+2. The list is derived from Unicode recommendations.
 
 ** Relation to P4307R0
+Infix named operators are a disjoint proposal. The only shared bit is the proposed /user-infix level/ for precedence.
 
 * The token set
 
 ** Deriving it
+UAX #31 defines *R3c, "Operator Identifiers"* — introduced by §4.2.1,
+"User-Defined Operators" — as operator syntax over the characters with the
+Pattern_Syntax property. C++23 already references UAX #31 normatively for
+identifiers ([@P1949R7]), so the citation is the same shape to the same
+document.
 
+This paper pins UAX #31 at **revision 43** [@UAX31], the revision that goes
+with Unicode 17.0, and the derivation below runs against UCD 17.0 [@UCD17].
+Revision 45 [@UAX31-45], for Unicode 18.0, was published on 2026-09-01, while I was working on this paper. There is no particular reason not to adopt Unicode 18, but because code points can be added to the set we must set a baseline for portable code.
+
+R3c does not hand us a usable set directly. Pattern_Syntax includes the ASCII
+operator characters, every one of which is already a token, a token prefix, or
+blocked by adjacency. The usable pool is Pattern_Syntax minus ASCII.
+
+A code point is a user-operator token if all of:
+
+1. it has Pattern_Syntax;
+2. it is outside ASCII;
+3. it lies in the mathematical and arrow blocks (U+2190–21FF, U+2200–22FF,
+   U+2300–23FF, U+27C0–27EF, U+27F0–27FF, U+2900–297F, U+2980–29FF,
+   U+2A00–2AFF, U+2B00–2BFF);
+4. its General_Category is Sm or So, which excludes the paired brackets
+   (Ps/Pe) as delimiters worth leaving unspent;
+5. it is not on the exclusion list below.
+
+Applied once against UCD 17.0, that yields *1,381 code points in 32
+contiguous ranges*. The lexer's table is 256 bytes and one binary search,
+on the non-ASCII path both compilers already walk for extended identifiers.
+The cost is very small.
+
+This paper proposes to list the allowed code point table explicitly with the algorithm as non-normative.
 ** Immutable is not closed
+An immutable property in Unicode means that an assigned code point will neve gain or lose that property. However, that does not mean that newly asinged code points could not be given the property.
+In particular this means that confusability analysis can not be carried out in advance and must be performed after code point assignment. This is the reason not to just apply the algorithm blindly.
+** The exclusion sets
+*** Identifier Characters
+ TR31 §7.1's mathematical profile earmarks ~∂~, ~∇~ and ~∞~ as /identifier/
+characters, and its companion syntax profile removes them from syntactic use.
+*** Confusable with an existing token
+ A character that looks like `-` and is not `-` should fail to lex.
 
-** The exclusions, and why their reasons differ
+|      |                               |
+|------+-------------------------------|
+| ~−~  | U+2212 (~-~)                  |
+| ~∕~   | U+2215 and ⁄ U+2044 (~/~)     |
+| ~∗~  | U+2217 (~*~)                  |
+| ~∣~  | U+2223 (~∣~)                  |
+| ~∶~  | U+2236 (~:~)                  |
+| ~∙~  | U+2219 and ~⋅~ U+22C5 (~.~)    |
+| ~≤~  | U+2264 and ~⇐~ U+21D0 (~<=~) |
+| ~≥~  | U+2265 (~>=~)                 |
+| ~⇒~ | U+21D2 (~=>~)                 |
+| ~⇔~ | U+21D4 (~<=>~)                |
 
-** The operator set and the identifier set are disjoint
+*** Emoji Presentation
+The code points inside the blocks that TR31 §7.2's emoji profile carves out:
+U+231A, U+231B, U+23E9 through U+23EC, U+23F0, U+23F3, U+2B1B, U+2B1C, U+2B50
+and U+2B55 --- watches, hourglasses, media-control triangles, large squares, a
+star and a circle. They are named by code point here because I could not get
+them to render consistently.
 
 ** Spelling: the glyph and the UCN
+A universal-character-name designating a user-operator code point (including
+the C++23 named form) forms that operator token. ~operator⊞~, ~operator\u229E~
+and ~operator\N{SQUARED PLUS}~ are the same declaration. Declare with one,
+define with another, use with a third, they are emitted identically.
+~a \N{CIRCLED TIMES} b~ /is/ ~a ⊗ b~.
 
-* Fitting the grammar
+
+* Placement in Grammar
 
 ** One level for all user-introduced infix
+#+begin_quote
+user-infix-expression:
+    cast-expression
+    user-infix-expression user-operator cast-expression
 
+unary-expression:
+    ...
+    user-operator cast-expression
+#+end_quote
+
+Binary user operators occupy one precedence level: the highest binary level,
+tighter than ~*~ and looser than the unary operators, left-associative, with
+cast-expression operands. That is the /user-infix level/, and it is meant to
+serve all user-introduced infix syntax: it is the same level P4307R0 introduces
+for the backtick operator.
+
+The precedence rules mean that  ~-a ⊞ -b~ is ~operator⊞(-a, -b)~.
+
+#+begin_src c++
+-a ⊞ -b            // operator⊞(-a, -b)
+a * b ⊞ c          // a * operator⊞(b, c)
+a ⊞ b ⊗ c          // operator⊗(operator⊞(a, b), c)
+a ⊞ ⊖b             // operator⊞(a, operator⊖(b))
+⊖a ⊞ 2 * ⊖b        // (operator⊖(a) ⊞ 2) * operator⊖(b)
+#+end_src
 ** Prefix, and how position decides
+Arity determines at the declaraion. In use, it is purely positional. Post-operand is infix, in operand position it is prefix. There is no lookahead or whitespace sensitivity.
 
 ** Postfix, and why not
+~operator++~ in prefix form is parsed as a cast-expression, in postfix in postfix-suffix, and ~++~ has no infix form. This restriction is not available for user defined operators without somehow pre-classifying them, which would mean assinging meaning to them. That is not possible as different fields have already ambiguated them.
 
 ** Fold expressions
+A user operator is not a fold operator: ~(... ⊞ N)~ is ill-formed.
+
+This is primarily because the existing implementations do not provide a mechanism to extend the fold-expression node beyond the current fixed and closed set. Adding the capability is certainly possible if there is real demand, but should be a separate paper, possibly considering other monoidal operations.
 
 * Declaring, looking up, desugaring
 
-** Arity is the only rule that carries over
+** Restrictions on Operators
+[over.oper.general]{.sref} imposes five restrictions on an operator function.
+A user operator inherits only one of them.
+
+- class-or-enum parameter ::  does not apply. The rule protects a built-in
+  meaning, and there is none. ~constexpr int operator⊞(int, int)~ is legal, and
+  ~5 ⊞ 7~ finding it is the motivating case.
+- no default arguments ::  does not apply.
+- not variadic ::  does not apply, likewise.
+- the fixed arity table ::  has no entry to consult, so the prefix/infix
+  rule is written out.
+- not a static member ::  kept, and kept as a /choice/, because the arity rule
+  does not exclude it.
+
+ That rule counts operands, so ~static S operator⊞(S, S)~ has two and would be
+  accepted; an implementation must reject it deliberately. The reason is the
+  desugaring: ~x ⊞ y~ is defined to mean exactly one of two spellings,
+  ~operator⊞(x, y)~ or ~x.operator⊞(y)~, and a static member names neither. On
+  a static member, ~x.operator⊞(y)~ is legal C++ but discards the object
+  expression and passes one argument to a two-parameter function.
+
+Everything else is ordinary: templates, ~constexpr~, ~= delete~, member and
+non-member, explicit object parameters.
+
+Dropping [over.oper.general]{.sref}p10 has a visible consequence. Given only
+~constexpr int operator⊟(int a, int b = 1)~, the prefix use ~⊟5~ is accepted
+and calls it through the default argument, and adding a genuine prefix overload
+makes ~⊟5~ ambiguous in the ordinary way. Filtering candidates by declared
+arity would fix it. However, it would break the desugaring equivalence below,
+on which the whole design rests: ~⊟5~ /is/ ~operator⊟(5)~. So arity selects the
+form for /declarations/, and does not filter /uses/.
 
 ** One candidate set, and no built-in candidates
 
-** The expression node, and two-phase lookup
+~x ⊞ y~ assembles member candidates from the left operand's class and
+non-member candidates from unqualified lookup and ADL, ranked together in one
+set.
+
+The normative requirement is that the operator form finds what the explicit
+call finds:
+#+begin_src c++
+static_assert(__is_same(decltype(x ⊘ y), decltype(operator⊘(x, y))));
+#+end_src
 
 * One level, and no fixity declarations
+Precedence and associativity are fixed by this paper, at one level, and
+neither can be declared. Of the rules fixed above this is the one most likely
+to be argued, so the two alternatives are answered here: a declared fixity is
+an ODR factory, and a derived one has nothing in Unicode to derive from.
 
-* Sequencing is decided by overload resolution
+A declared precedence is a semantic property that must travel with the name
+across headers, modules and translation units. Two translation units
+disagreeing about ~a ⊕ b ⊗ c~ is an ODR factory, and the parse of an expression
+comes to depend on which imports are visible: Haskell's fixity-import problem,
+and Swift's ~precedencegroup~ conflicts [@swift-operators]. With fixity settled
+by the standard, the /parse/ of an expression depends on nothing but the
+expression. Only the /meaning/ of ~operator⊞~ travels, and that is ordinary
+lookup.
 
 * Implementation experience
-
-** What was built
-
-** The desugaring survives to the back end
-
+This proposal has been implemented in Clang against 23 and the changes ported forward to trunk. There were no particular surprises or difficulty once a new expression node was added.
 ** Volume
 
-** Opening a closed table cost a parallel implementation, five times out of five
-
-** What the compiler does not tell you
-
-** Where the cost estimate went wrong, in a predictable direction
+|                 | files | lines       |
+|-----------------+-------+-------------|
+| Compiler proper |    86 | +2035 / −18 |
+| Tests           |    34 | +5416       |
+| Total           |   120 | +7451 / −18 |
 
 ** Mangling and ABI
+The prototype mangles through the Itanium ABI's existing vendor-extended
+operator production, which works today, demangles with existing tools, and
+needs no ABI change. However, it would be better to have the Itanium ABI group
+provide first-class production keyed by code point and carrying a fixity
+marker.
 
-*** What is implemented, and why it needs nothing
-
-*** What this paper asks for
-
-*** Windows
+The Microsoft ABI has no production for such operators at all, and I declined
+to invent one at let it escape.
 
 ** Formatting
+~clang-format~ required about forty lines across three files: no new token
+type, no annotator state, no custom spacing rule, no custom break rule and no
+style option. A user operator is annotated as a binary or unary operator by
+position, with no delimiter pairing and no break-suppression rules, and the
+existing overloaded-operator handling rewrites the annotation after ~operator~
+with no new rule, so ~operator ⊞~ canonicalizes to ~operator⊞~ under the same
+option that governs ~operator +~. It also honours ~BreakBeforeBinaryOperators~,
+which a delimiter-pair syntax structurally cannot.
 
-* What is not resolved
-
-* Separability from P4307R0, in evidence
 
 * Wording
 
