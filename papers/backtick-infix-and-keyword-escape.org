@@ -96,8 +96,10 @@
 # Wording markup. The wg21 markdown spans map as: {.add} -> _underline_,
 # {.rm} -> +strike+, `::: add` -> #+begin_addedblock (the stdtex environment
 # name), {.pnum} and {.sref} -> the two macros below.
-#+MACRO: pnum @@latex:\pnum{}@@@@html:<span class="pnum">$1</span>@@
-#+MACRO: sref @@latex:\href{https://eel.is/c++draft/$1}{[$1]}@@@@html:<a href="https://eel.is/c++draft/$1">[$1]</a>@@
+# Each macro emits one snippet, for the backend in use: a second snippet
+# for the other backend would be dropped with the space that follows it.
+#+MACRO: pnum (eval (if (org-export-derived-backend-p org-export-current-backend 'latex) "@@latex:\\pnum{}@@" (format "@@html:<span class=\"pnum\">%s</span>@@" $1)))
+#+MACRO: sref (eval (if (org-export-derived-backend-p org-export-current-backend 'latex) (format "@@latex:\\href{https://eel.is/c++draft/%s}{[%s]}@@" $1 $1) (format "@@html:<a href=\"https://eel.is/c++draft/%s\">[%s]</a>@@" $1 $1)))
 
 * Abstract
 
