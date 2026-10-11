@@ -151,6 +151,13 @@
 
 (setq org-support-shift-select 'always)
 
+;; Let a file set export options by variable name (#+bind: org-export-with-toc
+;; nil) instead of the OPTIONS compact form's cryptic keys (toc:nil, *:t). The
+;; papers' org files are written that way. Top level, not in the use-package
+;; :custom block above: that block waits on flycheck, which a batch export
+;; never loads, so nothing in it reaches `make'-driven exports.
+(setq org-export-allow-bind-keywords t)
+
 
 ;; Reveal.js + Org mode.
 ;;

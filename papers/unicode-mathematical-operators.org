@@ -1,72 +1,76 @@
 # Export options, one per line so each can be found and changed by name.
-# Multiple #+options: lines merge, and a later line overrides an earlier
-# one, so a value can be flipped in place.
+# Each #+bind: line sets the option's customization variable itself, by its
+# full name, instead of the #+options: compact form's cryptic keys (toc:nil,
+# *:t). A later #+bind: of the same variable overrides an earlier one, so a
+# value can be flipped in place. Values are read, not evaluated, exactly as
+# the compact form reads them. Honoring #+bind: requires
+# `org-export-allow-bind-keywords', set in this repo's .emacs.d/init.el.
 
 # Front matter: emit title, author, and date; hold back the email.
-#+options: title:t
-#+options: author:t
-#+options: date:t
-#+options: email:nil
+#+bind: org-export-with-title t
+#+bind: org-export-with-author t
+#+bind: org-export-with-date t
+#+bind: org-export-with-email nil
 
 # Structure: no table of contents, numbered sections, headings to depth 3
 # (deeper levels export as lists).
-#+options: toc:nil
-#+options: num:t
-#+options: H:3
+#+bind: org-export-with-toc nil
+#+bind: org-export-with-section-numbers t
+#+bind: org-export-headline-levels 3
 
 # Inline markup, all interpreted: emphasis (*bold*, /italic/), entities
 # (\alpha), LaTeX fragments, tables, footnotes, fixed-width ":" lines,
 # special strings (-- to dash, ... to ellipsis).
-#+options: *:t
-#+options: e:t
-#+options: tex:t
-#+options: |:t
-#+options: f:t
-#+options: ::t
-#+options: -:t
+#+bind: org-export-with-emphasize t
+#+bind: org-export-with-entities t
+#+bind: org-export-with-latex t
+#+bind: org-export-with-tables t
+#+bind: org-export-with-footnotes t
+#+bind: org-export-with-fixed-width t
+#+bind: org-export-with-special-strings t
 
 # Inline markup, disabled: _ and ^ do not make sub/superscripts (code uses
 # them literally), no smart quotes, a newline in prose is not a line break.
-#+options: ^:nil
-#+options: ':nil
-#+options: \n:nil
+#+bind: org-export-with-sub-superscripts nil
+#+bind: org-export-with-smart-quotes nil
+#+bind: org-export-preserve-breaks nil
 
 # Planning metadata: keep TODO keywords, task trees, inline tasks, tags,
 # statistics cookies, and timestamps.
-#+options: todo:t
-#+options: tasks:t
-#+options: inline:t
-#+options: tags:t
-#+options: stat:t
-#+options: <:t
+#+bind: org-export-with-todo-keywords t
+#+bind: org-export-with-tasks t
+#+bind: org-export-with-inlinetasks t
+#+bind: org-export-with-tags t
+#+bind: org-export-with-statistics-cookies t
+#+bind: org-export-with-timestamps t
 
 # Planning metadata, dropped: priority cookies, SCHEDULED/DEADLINE lines,
 # CLOCK lines, property drawers; other drawers export except LOGBOOK, and
 # an archived tree keeps only its headline.
-#+options: pri:nil
-#+options: p:nil
-#+options: c:nil
-#+options: prop:nil
-#+options: d:(not "LOGBOOK")
-#+options: arch:headline
+#+bind: org-export-with-priority nil
+#+bind: org-export-with-planning nil
+#+bind: org-export-with-clocks nil
+#+bind: org-export-with-properties nil
+#+bind: org-export-with-drawers (not "LOGBOOK")
+#+bind: org-export-with-archived-trees headline
 
 # Export mechanics: a broken internal link aborts the export rather than
 # exporting wrong; keep the export-time timestamp comment in the output.
-#+options: broken-links:nil
-#+options: timestamp:t
+#+bind: org-export-with-broken-links nil
+#+bind: org-export-timestamp-file t
 
 # HTML backend: XHTML-strict-compatible output (no HTML5 elements),
 # preamble but no postamble and no creator line, no default CSS, and
-# relative links stay relative. NOTE html-scripts:n is inherited from the
-# old header; org reads the value with `read`, and the symbol n is not
-# nil, so the default script block IS included — write nil to drop it.
-#+options: html5-fancy:nil
-#+options: html-preamble:t
-#+options: html-postamble:nil
-#+options: creator:nil
-#+options: html-style:nil
-#+options: html-scripts:n
-#+options: html-link-use-abs-url:nil
+# relative links stay relative. The default script block stays: the old
+# compact header spelled it html-scripts:n, and the symbol n is not nil, so
+# it was always included — t now says so on purpose.
+#+bind: org-html-html5-fancy nil
+#+bind: org-html-preamble t
+#+bind: org-html-postamble nil
+#+bind: org-export-with-creator nil
+#+bind: org-html-head-include-default-style nil
+#+bind: org-html-head-include-scripts t
+#+bind: org-html-link-use-abs-url nil
 #+TITLE: Extending C++ with Unicode Mathematical Operators
 #+SUBTITLE: Declaring =operator⊞=, and what an implementation says about it
 #+AUTHOR: Steve Downey
@@ -105,20 +109,50 @@ Vec operator⊖(Vec const&);              // one parameter: unary prefix
 #+end_src
 
 * Revision history
-
 ** R1
-
+Rewrite from scratch without technical change.
 ** R0
 Initial Paper
 * Before / After
 
-*** Before
+** Before
+#+begin_src c++
+Matrix mul(Matrix const&, Matrix const&);
+Matrix kron(Matrix const&, Matrix const&);
 
-*** After
+auto r = mul(kron(a, b), mul(c, d));
+#+end_src
+** After
+#+begin_src c++
+Matrix operator⊗(Matrix const&, Matrix const&);
+Matrix operator⊠(Matrix const&, Matrix const&);
+
+auto r = (a ⊠ b) ⊗ (c ⊗ d);
+#+end_src
+
+** Before
+#+begin_src c++
+Set union_(Set const&, Set const&);
+Set inter(Set const&, Set const&);
+
+auto s = union_(inter(x, y), z);
+#+end_src
+** After
+#+begin_src c++
+Set operator∪(Set const&, Set const&);
+Set operator∩(Set const&, Set const&);
+
+auto s = (x ∩ y) ∪ z;
+#+end_src
+
 
 * The design
+Recognize the mathematical symbols that are not identifier as possible C++ operators when they appear in operator position.
+Since they are disjoint from identifiers there is no ambiguity.
+Defer the meaning of the expression to name lookup and overload resolution.
+For the operators assign a fixed precedence and associativity so that parsing does not need to take into account declarations.
 
-** =x ⊞ y= is the call
+** ~x ⊞ y~ is the call
 
 ** What this paper fixes
 
