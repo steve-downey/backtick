@@ -93,15 +93,12 @@
 #+bibliography: references.bib
 #+cite_export: csl
 
-# Wording markup, in wg21org's vocabulary: [[insert:][text]] and
-# [[delete:][text]] for inline edits, #+begin_addedblock for a whole added
-# block (the stdtex environment name), and the two macros below for
-# paragraph numbers and stable-name references, which wg21org has no
-# native form for.
-# Each macro emits one snippet, for the backend in use: a second snippet
-# for the other backend would be dropped with the space that follows it.
-#+MACRO: pnum (eval (if (org-export-derived-backend-p org-export-current-backend 'latex) "@@latex:\\pnum{}@@" (format "@@html:<span class=\"pnum\">%s</span>@@" $1)))
-#+MACRO: sref (eval (if (org-export-derived-backend-p org-export-current-backend 'latex) (format "@@latex:\\href{https://eel.is/c++draft/%s}{[%s]}@@" $1 $1) (format "@@html:<a href=\"https://eel.is/c++draft/%s\">[%s]</a>@@" $1 $1)))
+# Wording markup is wg21org's own (papers/wg21org/AUTHORING.md):
+# [[insert:]] / [[delete:]] for inline edits, #+begin_addedblock for an
+# added block, #+begin_pnum for a paragraph number, [[sref:name]] for a
+# stable-name reference, and a heading with :WG21_CHANGE: add for a new
+# subclause. Grammar is still in verse blocks: wg21org has no grammar
+# form yet.
 
 * Abstract
 I propose adding the ability to declare user defined operators, such as operator⊞ , allowing users to write ~a ⊞ b~. The list of allowed operators is drawn from the mathematical operators described in Unicode Technical Report #25, /Unicode Support for Mathematics/ [cite:@UTR25], with confusables removed. The operators are otherwise normal functions, found by ordinary lookup rules and ordinary overload resolution.
@@ -320,7 +317,7 @@ This is primarily because the existing implementations do not provide a mechanis
 * Declaring, looking up, desugaring
 
 ** Restrictions on Operators
-{{{sref(over.oper.general)}}} imposes five restrictions on an operator function.
+[[sref:over.oper.general]] imposes five restrictions on an operator function.
 A user operator inherits only one of them.
 
 - class-or-enum parameter ::  does not apply. The rule protects a built-in
@@ -343,7 +340,7 @@ A user operator inherits only one of them.
 Everything else is ordinary: templates, ~constexpr~, ~= delete~, member and
 non-member, explicit object parameters.
 
-Dropping {{{sref(over.oper.general)}}} paragraph 10 has a visible consequence. Given only
+Dropping [[sref:over.oper.general]] paragraph 10 has a visible consequence. Given only
 ~constexpr int operator⊟(int a, int b = 1)~, the prefix use ~⊟5~ is accepted
 and calls it through the default argument, and adding a genuine prefix overload
 makes ~⊟5~ ambiguous in the ordinary way. Filtering candidates by declared
@@ -418,7 +415,7 @@ current working draft.
 ** [lex.operators]
 
 Add /user-operator/ as an alternative of /operator-or-punctuator/ in
-{{{sref(lex.operators)}}}:
+[[sref:lex.operators]]:
 
 #+begin_addedblock
 #+begin_quote
@@ -437,7 +434,7 @@ characters forms the same token by the existing translation rules.
 
 ** [expr.unary.general]
 
-Add an alternative to /unary-expression/ in {{{sref(expr.unary.general)}}}:
+Add an alternative to /unary-expression/ in [[sref:expr.unary.general]]:
 
 #+begin_addedblock
 #+begin_quote
@@ -451,7 +448,7 @@ unary-expression:
 
 ** [expr.mptr.oper]
 
-Modify the grammar of {{{sref(expr.mptr.oper)}}} paragraph 1:
+Modify the grammar of [[sref:expr.mptr.oper]] paragraph 1:
 
 #+begin_quote
 #+begin_verse
@@ -464,24 +461,26 @@ pm-expression:
 
 ** [expr.user] (new subclause)
 
-Insert a new subclause between {{{sref(expr.cast)}}} and
-{{{sref(expr.mptr.oper)}}}:
+Insert a new subclause between [[sref:expr.cast]] and
+[[sref:expr.mptr.oper]]:
 
-#+begin_addedblock
-#+begin_quote
-*User-defined operators   [expr.user]*
+*** User-defined operators [expr.user]
+:PROPERTIES:
+:CUSTOM_ID: expr.user
+:UNNUMBERED: t
+:WG21_WORDING: t
+:WG21_CHANGE: add
+:END:
 
 #+begin_verse
 user-infix-expression:
     cast-expression
     user-infix-expression user-operator cast-expression
 #+end_verse
-#+end_quote
-#+end_addedblock
 
 ** [over.oper.general]
 
-Modify the /operator-function-id/ grammar in {{{sref(over.oper.general)}}}:
+Modify the /operator-function-id/ grammar in [[sref:over.oper.general]]:
 
 #+begin_quote
 #+begin_verse
@@ -495,12 +494,14 @@ Add after the grammar:
 
 #+begin_addedblock
 #+begin_quote
-{{{pnum(x)}}} An operator function whose /operator-function-id/ contains a
+#+begin_pnum x
+An operator function whose /operator-function-id/ contains a
 /user-operator/ is a /user-operator function/.
+#+end_pnum
 #+end_quote
 #+end_addedblock
 
-Modify the first sentence of {{{sref(over.oper.general)}}} paragraph 7:
+Modify the first sentence of [[sref:over.oper.general]] paragraph 7:
 
 #+begin_quote
 An operator function [[insert:][other than a user-operator function]] shall have at least
@@ -508,28 +509,28 @@ one function parameter or implicit object parameter whose type is a class, a
 reference to a class, an enumeration, or a reference to an enumeration.
 #+end_quote
 
-Modify {{{sref(over.oper.general)}}} paragraph 10:
+Modify [[sref:over.oper.general]] paragraph 10:
 
 #+begin_quote
 An operator function [[insert:][other than a user-operator function]] cannot have default
 arguments, except where explicitly stated below. Operator functions
 [[insert:][other than user-operator functions]] cannot have more or fewer parameters than
 the number required for the corresponding operator, as described in the rest
-of {{{sref(over.oper)}}}.
+of [[sref:over.oper]].
 #+end_quote
 
 ** [over.match.oper]
 
-Modify the first sentence of {{{sref(over.match.oper)}}} paragraph 1:
+Modify the first sentence of [[sref:over.match.oper]] paragraph 1:
 
 #+begin_quote
 [[insert:][Unless the operator is a /user-operator/, if]] [[delete:][If]] no operand of an operator
 in an expression has a type that is a class or an enumeration, the operator is
 assumed to be a built-in operator and interpreted according to
-{{{sref(expr.compound)}}}.
+[[sref:expr.compound]].
 #+end_quote
 
-Modify the first and last sentences of {{{sref(over.match.oper)}}} paragraph 2:
+Modify the first and last sentences of [[sref:over.match.oper]] paragraph 2:
 
 #+begin_quote
 If [[insert:][the operator is a /user-operator/ or]] either operand has a type that is a
@@ -541,7 +542,7 @@ convert the operand to a type that is appropriate for a built-in operator.
 in the order prescribed for the built-in operator.
 #+end_quote
 
-Modify the built-in-candidate bullet of {{{sref(over.match.oper)}}} paragraph 3:
+Modify the built-in-candidate bullet of [[sref:over.match.oper]] paragraph 3:
 
 #+begin_quote
 For the operator =,=, the unary operator =&=, [[delete:][or]] the operator =->=[[insert:][, or a /user-operator/]],
@@ -550,14 +551,14 @@ the built-in candidates set is empty.
 
 ** [over.unary] and [over.binary]
 
-In {{{sref(over.unary)}}}, extend the definition of a prefix unary operator
+In [[sref:over.unary]], extend the definition of a prefix unary operator
 function to include a function named by a /user-operator/ in the added
-/unary-expression/ production. In {{{sref(over.binary)}}}, extend the
+/unary-expression/ production. In [[sref:over.binary]], extend the
 definition of a binary operator function to include a function named by a
 /user-operator/ in a /user-infix-expression/. The existing transformations to
 member and non-member function-call notation then apply unchanged.
 
-Annex A ({{{sref(gram)}}}) is updated mechanically to match.
+Annex A ([[sref:gram]]) is updated mechanically to match.
 
 * References
 
