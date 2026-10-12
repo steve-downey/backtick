@@ -191,8 +191,10 @@ and a Status-log row so base-commit changes are not lost.
     paper, written from `docs/backtick-operator-design.md`.
   - `papers/unicode-mathematical-operators.md` — **P4345R0**, the Unicode
     paper, written from `docs/unicode-operators.md`.
-  - `make -C papers <basename>.html <basename>.pdf` builds either paper
-    from its **org** source with wg21org, vendored as a squashed git subtree
+  - `make papers` builds both papers as HTML and PDF and checks the
+    result (no external loads, no `Missing character`);
+    `make papers/<basename>.pdf` builds one, and `make -C papers help`
+    lists the rest. Either builds from the **org** source with wg21org, vendored as a squashed git subtree
     at `papers/wg21org/` (from `steve-downey/wg21org` `main` on GitHub —
     the same exporter `transcode` uses; **pull from GitHub, not from
     `~/src/wg21org`**, whose local `main` has lagged it and once cost this
@@ -202,7 +204,8 @@ and a Status-log row so base-commit changes are not lost.
     wg21org's own history carries the work address this repo was scrubbed
     of. The exporter refuses to run without its pinned org-transclusion
     submodule, registered here as `papers/wg21org/packages/org-transclusion`
-    — `git submodule update --init` it after a fresh clone.
+    — the papers Makefile checks it out on first use (`make -C papers
+    submodule`).
     `make -C papers check` re-exports both and fails on any external load.
     The R0 markdown papers still build through mpark/wg21 (`papers/wg21/`)
     with `make -C papers -f mpark.mk html pdf`, into `papers/generated/`.

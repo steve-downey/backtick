@@ -7,7 +7,8 @@
 # Makefile (steve-downey/expected) is therefore not here. What is here:
 #
 #   - the wg21 papers, papers/*.org, built by the vendored papers/wg21org
-#     exporter (`make papers`, or `make -C papers <name>.html <name>.pdf`);
+#     exporter (`make papers` for all of them, checked; `make
+#     papers/<name>.pdf` for one; `make -C papers help` for the rest);
 #     the R0 markdown papers are still built by papers/wg21 through
 #     papers/mpark.mk;
 #   - org-mode export of docs/*.org, driven by the Emacs configuration in
@@ -23,9 +24,21 @@ export
 default: org-html
 .PHONY: default
 
+# papers/Makefile holds the papers' dependencies -- the exporter, its
+# stylesheets and LaTeX prolog, the bibliography, the org-transclusion
+# submodule -- so these only recurse into it, every time, and let it decide
+# what is out of date.
 .PHONY: papers
-papers: ## Build the wg21 papers with wg21org, HTML and PDF
-	$(MAKE) -C papers html pdf
+papers: ## Build every wg21 paper as HTML and PDF, and check both
+	$(MAKE) -C papers verify
+
+# One paper: `make papers/<name>.pdf'. The shorter stem makes these beat the
+# docs `%.html : %.org' rule below, which would export a paper wrongly.
+papers/%.html papers/%.tex papers/%.pdf: FORCE
+	$(MAKE) -C papers $(notdir $@)
+
+.PHONY: FORCE
+FORCE:
 
 .PHONY: clean-papers
 clean-papers: ## Delete the generated papers
@@ -167,7 +180,7 @@ docs/%.md : docs/%.org
 -include $(wildcard $(BLOG_ORGFILES:.org=.md.deps))
 
 .PHONY: org-html
-org-html: $(ORGFILES:.org=.html) ## Export every docs/*.org and papers/*.org to HTML
+org-html: $(ORGFILES:.org=.html) ## Export every docs/*.org to HTML
 
 .PHONY: blog-md
 blog-md: $(BLOG_ORGFILES:.org=.md) ## Convert docs/*.org to GFM markdown
