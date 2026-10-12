@@ -1,0 +1,1806 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2026-10-11 Sun 23:59 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Extending C++ with Unicode Mathematical Operators</title>
+<meta name="author" content="Steve Downey" />
+<meta name="generator" content="Org Mode" />
+<style>
+/* wg21org.css */
+/* wg21org.css --- page style for WG21 papers exported by ox-wg21html.el
+ *
+ * The exporter embeds this file, and the code face stylesheets, in
+ * every paper, so it must not load anything: no imported sheets, web
+ * fonts, or images.  `make check' enforces that.  Code colours come
+ * from the face stylesheet; this file only lays code out.
+ */
+
+/** Tokens *******************************************************************/
+
+:root {
+    color-scheme: light dark;
+
+    --bg: #fcfcfa;
+    --text: #1b1b1b;
+    --muted: #5d6166;
+    --rule: #d6d5cf;
+    --subtle-bg: #f3f2ed;
+    --link: #0b57d0;
+    --link-visited: #6b3fa0;
+    --code-bg: #f3f2ed;
+    --ins-text: #0d5c20;
+    --ins-bg: #e2f4e4;
+    --del-text: #9f1a1f;
+    --del-bg: #fbe3e3;
+    --mark-bg: #fff29a;
+    --sidebar-bg: #f5f4ef;
+
+    --serif: "Iowan Old Style", "Charter", "Bitstream Charter", "Sitka Text",
+             Cambria, "Source Serif Pro", "Source Serif 4", Georgia, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", "Source Sans Pro",
+            "Noto Sans", "DejaVu Sans", sans-serif;
+    --mono: ui-monospace, "Source Code Pro", "Cascadia Mono", Menlo, Consolas,
+            "DejaVu Sans Mono", monospace;
+}
+
+/* Dark colours apply when the reader picks Dark in the page's Theme
+   switch, or when the system is dark and the reader has not picked
+   Light.  The switch is a set of radio buttons the exporter adds to the
+   metadata; :has() reads them, so it needs no script.  Screens only:
+   a printed page is light. */
+@media screen and (prefers-color-scheme: dark) {
+    :root:not(:has(#wg21-mode-light:checked)) {
+        --bg: #16171d;
+        --text: #e4e4e0;
+        --muted: #a2a4a8;
+        --rule: #3a3c46;
+        --subtle-bg: #1e2028;
+        --link: #8ab4f8;
+        --link-visited: #c3a6f0;
+        --code-bg: #1f2129;
+        --ins-text: #a3e6ad;
+        --ins-bg: #1b3322;
+        --del-text: #ffa4a4;
+        --del-bg: #3d1e21;
+        --mark-bg: #665b00;
+        --sidebar-bg: #1b1c23;
+    }
+}
+@media screen {
+    :root:has(#wg21-mode-dark:checked) {
+        --bg: #16171d;
+        --text: #e4e4e0;
+        --muted: #a2a4a8;
+        --rule: #3a3c46;
+        --subtle-bg: #1e2028;
+        --link: #8ab4f8;
+        --link-visited: #c3a6f0;
+        --code-bg: #1f2129;
+        --ins-text: #a3e6ad;
+        --ins-bg: #1b3322;
+        --del-text: #ffa4a4;
+        --del-bg: #3d1e21;
+        --mark-bg: #665b00;
+        --sidebar-bg: #1b1c23;
+    }
+}
+@media screen {
+    :root:has(#wg21-mode-light:checked) {
+        color-scheme: light;
+    }
+    :root:has(#wg21-mode-dark:checked) {
+        color-scheme: dark;
+    }
+}
+@media print {
+    :root {
+        color-scheme: light;
+    }
+}
+
+/** Page *********************************************************************/
+
+html {
+    background: var(--bg);
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--serif);
+    font-size: 1.0625rem;
+    line-height: 1.55;
+    text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
+}
+
+#content {
+    max-width: 50rem;
+    margin: 0 auto;
+    padding: 2.5rem 1.25rem 4rem;
+}
+
+a {
+    color: var(--link);
+    text-decoration-thickness: 1px;
+    text-underline-offset: .15em;
+}
+a:visited {
+    color: var(--link-visited);
+}
+
+mark {
+    color: inherit;
+    background: var(--mark-bg);
+    padding: 0 .08em;
+}
+
+p, ul, ol, dl, blockquote, figure {
+    margin: 0 0 1em;
+}
+
+ul, ol {
+    padding-left: 1.75em;
+}
+li > ul, li > ol, li > p {
+    margin-bottom: 0;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid var(--rule);
+    margin: 2em 0;
+}
+
+/** Title and metadata *******************************************************/
+
+h1.title {
+    font-family: var(--sans);
+    font-size: 2rem;
+    line-height: 1.2;
+    font-weight: 700;
+    margin: 0 0 1rem;
+}
+
+.subtitle {
+    font-family: var(--sans);
+    color: var(--muted);
+    margin: -.5rem 0 1rem;
+}
+
+div[data-fill-with="spec-metadata"] dl {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    column-gap: 1.25em;
+    row-gap: .15em;
+    margin: 0 0 2rem;
+    font-family: var(--sans);
+    font-size: .9rem;
+}
+div[data-fill-with="spec-metadata"] dt {
+    grid-column: 1;
+    color: var(--muted);
+}
+div[data-fill-with="spec-metadata"] dd {
+    grid-column: 2;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.abstract {
+    margin: 0 0 2rem;
+    padding: .75em 1em;
+    background: var(--subtle-bg);
+    border-left: 3px solid var(--rule);
+}
+.abstract > :last-child {
+    margin-bottom: 0;
+}
+
+/** Table of contents ********************************************************/
+
+#toc {
+    margin: 0 0 2.5rem;
+    padding: 1rem 0;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--sans);
+    font-size: .95rem;
+}
+#toc h2 {
+    font-size: .8rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 .5rem;
+}
+ul.toc {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+ul.toc ul.toc {
+    padding-left: 2.25em;
+}
+ul.toc li {
+    margin: .15em 0;
+}
+ul.toc a {
+    color: var(--text);
+    text-decoration: none;
+    display: flex;
+    gap: .5em;
+}
+ul.toc a:hover .content {
+    text-decoration: underline;
+}
+ul.toc .secno {
+    min-width: 1.75em;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Sidebar table of contents, when a paper includes toc-sidebar.html. */
+
+#toc-nav {
+    position: fixed;
+    z-index: 3;
+    bottom: 0;
+    left: 0;
+    margin: 0;
+    font-family: var(--sans);
+    font-size: .8rem;
+}
+#toc-nav > a {
+    display: block;
+    padding: .3em .6em;
+    background: var(--sidebar-bg);
+    color: var(--muted);
+    border: 1px solid var(--rule);
+    border-bottom: 0;
+    text-decoration: none;
+}
+#toc-nav > a:hover,
+#toc-nav > a:focus {
+    color: var(--text);
+}
+body.toc-sidebar #toc {
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 22rem;
+    max-width: 85vw;
+    margin: 0;
+    padding: 1.5rem 1.25rem 4rem;
+    overflow: auto;
+    background: var(--sidebar-bg);
+    border: 0;
+    border-right: 1px solid var(--rule);
+    font-size: .875rem;
+}
+body.toc-sidebar #toc-jump:not(:focus) {
+    display: none;
+}
+@media screen and (min-width: 78em) {
+    body.toc-sidebar {
+        padding-left: 22rem;
+        --cmptbl-width: min(100vw - 24rem, 72rem);
+    }
+}
+
+/** Sections *****************************************************************/
+
+h2, h3, h4, h5, h6 {
+    font-family: var(--sans);
+    font-weight: 650;
+    line-height: 1.3;
+    margin: 2em 0 .6em;
+}
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.2rem; }
+h4 { font-size: 1.05rem; }
+h5, h6 { font-size: 1rem; }
+
+.outline-2 {
+    margin-top: 2.5rem;
+}
+
+/* Generated wording uses explicit range and paragraph markers.  Counters
+   reset for every subclause, matching the working draft's paragraph numbers. */
+.wg21-wording,
+.wg21-wording [class^="outline-"] {
+    counter-reset: wg21-pnum wg21-note wg21-example;
+}
+.pnum {
+    position: relative;
+    counter-increment: wg21-pnum;
+}
+li:has(> .pnum-number) {
+    position: relative;
+}
+.pnum-number::before {
+    content: "[" attr(data-pnum) "]";
+    position: absolute;
+    right: calc(100% + .4em);
+    color: var(--muted);
+    font-size: .72em;
+    font-variant-numeric: tabular-nums;
+    text-decoration: none;
+}
+.pnum-explicit {
+    counter-increment: none;
+}
+
+.wg21-note, .wg21-example, .wg21-ednote, .wg21-draftnote {
+    display: block;
+    margin: .8em 1.5em;
+    font-size: .95em;
+}
+.wg21-wording .wg21-note:not(.unnumbered) { counter-increment: wg21-note; }
+.wg21-wording .wg21-example:not(.unnumbered) { counter-increment: wg21-example; }
+.wg21-note::before { content: "[ Note: "; font-style: italic; }
+.wg21-example::before { content: "[ Example: "; font-style: italic; }
+.wg21-wording .wg21-note:not(.unnumbered)::before {
+    content: "[ Note " counter(wg21-note) ": ";
+}
+.wg21-wording .wg21-example:not(.unnumbered)::before {
+    content: "[ Example " counter(wg21-example) ": ";
+}
+.wg21-note::after { content: " — end note ]"; font-style: italic; }
+.wg21-example::after { content: " — end example ]"; font-style: italic; }
+.wg21-ednote, .wg21-draftnote { color: #2456b3; }
+.wg21-ednote::before { content: "[ Editor's note: "; font-style: italic; }
+.wg21-draftnote::before { content: "[ Drafting note: "; font-style: italic; }
+.wg21-draftnote[data-audience]::before {
+    content: "[ Drafting note for " attr(data-audience) ": ";
+}
+.wg21-ednote::after, .wg21-draftnote::after { content: " ]"; }
+
+pre.grammar {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--sans);
+    font-style: italic;
+    white-space: pre-wrap;
+}
+pre.grammar code { font-style: normal; }
+pre.grammar .descr { font-family: var(--serif); font-style: normal; }
+pre.grammar sub.opt { font-size: 70%; }
+
+.heading [class^="section-number-"] {
+    margin-right: .35em;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* The section's own link and its link to the Org source show on hover
+   or focus, and stay faintly visible where there is no hover. */
+
+.heading .self-link,
+.heading .source-link {
+    margin-left: .5em;
+    color: var(--muted);
+    text-decoration: none;
+    font-weight: 400;
+    opacity: 0;
+    transition: opacity .15s;
+}
+.heading .self-link::before {
+    content: "§";
+}
+.heading .source-link {
+    font-size: .65em;
+    vertical-align: .15em;
+}
+.heading:hover .self-link,
+.heading:hover .source-link,
+.heading .self-link:focus,
+.heading .source-link:focus {
+    opacity: 1;
+}
+.heading .self-link:hover,
+.heading .source-link:hover {
+    color: var(--link);
+}
+@media (hover: none) {
+    .heading .self-link,
+    .heading .source-link {
+        opacity: .6;
+    }
+}
+
+/** Code *********************************************************************/
+
+code, kbd, samp, pre {
+    font-family: var(--mono);
+    font-size: .875em;
+    font-variant-ligatures: none;
+    hyphens: none;
+}
+
+code {
+    padding: .1em .3em;
+    border-radius: 3px;
+    background: var(--code-bg);
+}
+
+.org-src-container {
+    margin: 1em 0;
+}
+
+pre {
+    margin: 1em 0;
+    padding: .8em 1em;
+    overflow-x: auto;
+    line-height: 1.45;
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    tab-size: 4;
+}
+.org-src-container > pre {
+    margin: 0;
+}
+
+/* Org 9.8 wraps each code block as <pre><code>; the inline code look
+   above must not apply there, or every block collapses onto one line. */
+pre code {
+    white-space: inherit;
+    font-size: inherit;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+}
+
+.linenr {
+    color: var(--muted);
+    user-select: none;
+}
+
+/** Wording changes **********************************************************/
+
+/* Org's _underline_ has long meant inserted text in these papers. */
+ins, .underline, .addedblock {
+    color: var(--ins-text);
+    background: var(--ins-bg);
+    text-decoration: underline;
+}
+del, .removedblock {
+    color: var(--del-text);
+    background: var(--del-bg);
+    text-decoration: line-through;
+}
+ins code, del code, .underline code {
+    background: none;
+    color: inherit;
+}
+.addedblock, .removedblock {
+    display: block;
+    margin: 1em 0;
+    padding: .25em .75em;
+}
+.addedblock {
+    border-left: 3px solid var(--ins-text);
+}
+.wg21-addition {
+    color: var(--ins-text);
+    border-left: 3px solid var(--ins-text);
+    padding-left: .75em;
+}
+.removedblock {
+    border-left: 3px solid var(--del-text);
+}
+.addedblock > :last-child,
+.removedblock > :last-child {
+    margin-bottom: 0;
+}
+
+/* The Theme switch and the Hide deleted text checkbox, in the metadata. */
+.mode-toggle label + label {
+    margin-left: .75em;
+}
+.mode-toggle label,
+.diff-toggle label {
+    cursor: pointer;
+}
+
+/* Hide deleted text, from the checkbox the exporter adds to the
+   metadata of a paper that has some.  What is left reads as the final
+   wording, so insertions lose their marking too. */
+body:has(#wg21-hide-deleted:checked) :is(del, .removedblock) {
+    display: none;
+}
+body:has(#wg21-hide-deleted:checked) :is(ins, .underline, .addedblock) {
+    color: inherit;
+    background: none;
+    text-decoration: none;
+}
+body:has(#wg21-hide-deleted:checked) .addedblock {
+    border-left: 0;
+    padding-left: 0;
+}
+blockquote {
+    margin-left: 0;
+    padding-left: 1em;
+    border-left: 3px solid var(--rule);
+    color: var(--muted);
+}
+
+/** Tables *******************************************************************/
+
+table {
+    border-collapse: collapse;
+    margin: 1em 0;
+    font-size: .95em;
+}
+
+table.wg21-spec-table {
+    table-layout: fixed;
+    width: 100%;
+}
+caption {
+    caption-side: top;
+    text-align: left;
+    color: var(--muted);
+    margin-bottom: .5em;
+}
+th, td {
+    padding: .35em .75em;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+    text-align: left;
+}
+thead th {
+    border-bottom: 2px solid var(--rule);
+    font-family: var(--sans);
+    font-weight: 600;
+}
+.org-left   { text-align: left; }
+.org-right  { text-align: right; }
+.org-center { text-align: center; }
+
+/* Comparison tables: before and after columns of equal width.  Code
+   is what they are for, so it gets the room: each block fills its cell
+   with no frame of its own, and on wide screens the table grows past
+   the text column, centred, up to --cmptbl-width.  The fixed layout
+   keeps a line too long even for that scrolling inside its cell
+   instead of widening the table past the page. */
+:root {
+    --cmptbl-width: min(100vw - 2rem, 72rem);
+}
+table.cmptbl {
+    width: max(100%, var(--cmptbl-width));
+    margin: 1.5em calc((100% - max(100%, var(--cmptbl-width))) / 2);
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-size: inherit;
+}
+table.cmptbl tr > td,
+table.cmptbl tr > th {
+    padding: .5em 0;
+    border: 0;
+    border-top: 1px solid var(--rule);
+    vertical-align: top;
+    background: none;
+}
+table.cmptbl tr > td + td,
+table.cmptbl tr > th + th {
+    border-left: 1px solid var(--rule);
+}
+table.cmptbl thead tr > th {
+    border-top: 0;
+    border-bottom: 2px solid var(--rule);
+    padding: .3em .6em;
+    text-align: center;
+    font-family: var(--sans);
+}
+table.cmptbl th p {
+    margin: 0;
+}
+table.cmptbl td > :not(.org-src-container) {
+    margin: .5em .6em;
+}
+table.cmptbl .org-src-container {
+    margin: 0;
+}
+table.cmptbl pre {
+    margin: 0;
+    padding: .5em .6em;
+    border: 0;
+    border-radius: 0;
+}
+
+/** Figures, notes, references ***********************************************/
+
+figure {
+    text-align: center;
+}
+figcaption, .figure-number, .table-number, .listing-number {
+    font-family: var(--sans);
+    font-size: .9em;
+    color: var(--muted);
+}
+
+#footnotes {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--rule);
+    font-size: .9em;
+}
+#footnotes h2 {
+    font-size: 1rem;
+    margin-top: 0;
+}
+.footdef {
+    display: flex;
+    gap: .5em;
+    margin-bottom: .5em;
+}
+.footpara {
+    margin: 0;
+}
+
+.csl-bib-body {
+    font-size: .95em;
+}
+.csl-entry {
+    margin: 0 0 .5em 1.5em;
+    text-indent: -1.5em;
+    overflow-wrap: anywhere;
+}
+
+.todo, .done, .tag, .timestamp {
+    font-family: var(--mono);
+    font-size: .85em;
+}
+.todo { color: var(--del-text); }
+.done { color: var(--ins-text); }
+.tag  { color: var(--muted); }
+
+#postamble {
+    max-width: 50rem;
+    margin: 0 auto;
+    padding: 1rem 1.25rem 2rem;
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: .85rem;
+}
+
+/** Narrow screens ***********************************************************/
+
+@media screen and (max-width: 40em) {
+    body {
+        font-size: 1rem;
+    }
+    #content {
+        padding: 1.25rem 1rem 3rem;
+    }
+    h1.title {
+        font-size: 1.6rem;
+    }
+    div[data-fill-with="spec-metadata"] dl {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    div[data-fill-with="spec-metadata"] dt,
+    div[data-fill-with="spec-metadata"] dd {
+        grid-column: 1;
+    }
+    div[data-fill-with="spec-metadata"] dd {
+        margin-left: 1em;
+    }
+}
+
+/** Print ********************************************************************/
+
+@media print {
+    :root {
+        --bg: #fff;
+        --text: #000;
+        --link: #000;
+        --link-visited: #000;
+    }
+    body {
+        font-size: 10.5pt;
+    }
+    #content {
+        max-width: none;
+        padding: 0;
+    }
+    a {
+        text-decoration: none;
+    }
+    #toc-nav,
+    .mode-toggle,
+    .diff-toggle,
+    .heading .self-link,
+    .heading .source-link {
+        display: none;
+    }
+    body.toc-sidebar {
+        padding-left: 0;
+    }
+    body.toc-sidebar #toc {
+        position: static;
+        width: auto;
+        max-width: none;
+        background: none;
+        border: 0;
+        padding: 0;
+    }
+    pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+    h2, h3, h4, h5, h6 {
+        break-after: avoid;
+    }
+    pre, figure, table.cmptbl tr, .footdef {
+        break-inside: avoid;
+    }
+    table.cmptbl {
+        width: 100%;
+        margin: 1.5em 0;
+    }
+}
+
+</style>
+<style>
+/* modus-vivendi-tinted.css */
+pre.src {
+        color: #ffffff;
+        background-color: #0d0e1c;
+      }
+.org-comment {
+        /* font-lock-comment-face */
+        color: #ff9f80;
+        font-style: italic;
+      }
+.org-comment-delimiter {
+        /* font-lock-comment-delimiter-face */
+        color: #ff9f80;
+        font-style: italic;
+      }
+.org-function-name {
+        /* font-lock-function-name-face */
+        color: #feacd0;
+      }
+.org-keyword {
+        /* font-lock-keyword-face */
+        color: #b6a0ff;
+        font-weight: bold;
+      }
+.org-rainbow-delimiters-depth-1 {
+        /* rainbow-delimiters-depth-1-face */
+        color: #ffffff;
+      }
+.org-rainbow-delimiters-depth-2 {
+        /* rainbow-delimiters-depth-2-face */
+        color: #ff66ff;
+      }
+.org-rainbow-delimiters-depth-3 {
+        /* rainbow-delimiters-depth-3-face */
+        color: #00eff0;
+      }
+.org-rainbow-delimiters-depth-4 {
+        /* rainbow-delimiters-depth-4-face */
+        color: #ff6b55;
+      }
+.org-type {
+        /* font-lock-type-face */
+        color: #6ae4b9;
+        font-weight: bold;
+      }
+.org-variable-name {
+        /* font-lock-variable-name-face */
+        color: #00d3d0;
+      }
+pre.src a {
+        color: inherit;
+        background-color: inherit;
+        font: inherit;
+        text-decoration: inherit;
+      }
+pre.src a:hover {
+        text-decoration: underline;
+      }
+pre.src code { color: inherit; background: transparent; }
+</style>
+<style>
+/* modus-operandi-tinted.css */
+@media print {
+pre.src {
+        color: #000000;
+        background-color: #fbf7f0;
+      }
+.org-comment {
+        /* font-lock-comment-face */
+        color: #7f0000;
+        font-style: italic;
+      }
+.org-comment-delimiter {
+        /* font-lock-comment-delimiter-face */
+        color: #7f0000;
+        font-style: italic;
+      }
+.org-function-name {
+        /* font-lock-function-name-face */
+        color: #721045;
+      }
+.org-keyword {
+        /* font-lock-keyword-face */
+        color: #531ab6;
+        font-weight: bold;
+      }
+.org-rainbow-delimiters-depth-1 {
+        /* rainbow-delimiters-depth-1-face */
+        color: #000000;
+      }
+.org-rainbow-delimiters-depth-2 {
+        /* rainbow-delimiters-depth-2-face */
+        color: #dd22dd;
+      }
+.org-rainbow-delimiters-depth-3 {
+        /* rainbow-delimiters-depth-3-face */
+        color: #008899;
+      }
+.org-rainbow-delimiters-depth-4 {
+        /* rainbow-delimiters-depth-4-face */
+        color: #972500;
+      }
+.org-type {
+        /* font-lock-type-face */
+        color: #005f5f;
+        font-weight: bold;
+      }
+.org-variable-name {
+        /* font-lock-variable-name-face */
+        color: #005e8b;
+      }
+pre.src a {
+        color: inherit;
+        background-color: inherit;
+        font: inherit;
+        text-decoration: inherit;
+      }
+pre.src a:hover {
+        text-decoration: underline;
+      }
+pre.src code { color: inherit; background: transparent; }
+}
+@media screen and (prefers-color-scheme: dark) {
+:root:not(:has(#wg21-mode-light:checked)) pre.src {
+        color: #000000;
+        background-color: #fbf7f0;
+      }
+:root:not(:has(#wg21-mode-light:checked)) .org-comment {
+        /* font-lock-comment-face */
+        color: #7f0000;
+        font-style: italic;
+      }
+:root:not(:has(#wg21-mode-light:checked)) .org-comment-delimiter {
+        /* font-lock-comment-delimiter-face */
+        color: #7f0000;
+        font-style: italic;
+      }
+:root:not(:has(#wg21-mode-light:checked)) .org-function-name {
+        /* font-lock-function-name-face */
+        color: #721045;
+      }
+:root:not(:has(#wg21-mode-light:checked)) .org-keyword {
+        /* font-lock-keyword-face */
+        color: #531ab6;
+        font-weight: bold;
+      }
+:root:not(:has(#wg21-mode-light:checked)) .org-rainbow-delimiters-depth-1 {
+        /* rainbow-delimiters-depth-1-face */
+        color: #000000;
+      }
+:root:not(:has(#wg21-mode-light:checked)) .org-rainbow-delimiters-depth-2 {
+        /* rainbow-delimiters-depth-2-face */
+        color: #dd22dd;
+      }
+:root:not(:has(#wg21-mode-light:checked)) .org-rainbow-delimiters-depth-3 {
+        /* rainbow-delimiters-depth-3-face */
+        color: #008899;
+      }
+:root:not(:has(#wg21-mode-light:checked)) .org-rainbow-delimiters-depth-4 {
+        /* rainbow-delimiters-depth-4-face */
+        color: #972500;
+      }
+:root:not(:has(#wg21-mode-light:checked)) .org-type {
+        /* font-lock-type-face */
+        color: #005f5f;
+        font-weight: bold;
+      }
+:root:not(:has(#wg21-mode-light:checked)) .org-variable-name {
+        /* font-lock-variable-name-face */
+        color: #005e8b;
+      }
+:root:not(:has(#wg21-mode-light:checked)) pre.src a {
+        color: inherit;
+        background-color: inherit;
+        font: inherit;
+        text-decoration: inherit;
+      }
+:root:not(:has(#wg21-mode-light:checked)) pre.src a:hover {
+        text-decoration: underline;
+      }
+:root:not(:has(#wg21-mode-light:checked)) pre.src code { color: inherit; background: transparent; }
+}
+@media screen {
+:root:has(#wg21-mode-dark:checked) pre.src {
+        color: #000000;
+        background-color: #fbf7f0;
+      }
+:root:has(#wg21-mode-dark:checked) .org-comment {
+        /* font-lock-comment-face */
+        color: #7f0000;
+        font-style: italic;
+      }
+:root:has(#wg21-mode-dark:checked) .org-comment-delimiter {
+        /* font-lock-comment-delimiter-face */
+        color: #7f0000;
+        font-style: italic;
+      }
+:root:has(#wg21-mode-dark:checked) .org-function-name {
+        /* font-lock-function-name-face */
+        color: #721045;
+      }
+:root:has(#wg21-mode-dark:checked) .org-keyword {
+        /* font-lock-keyword-face */
+        color: #531ab6;
+        font-weight: bold;
+      }
+:root:has(#wg21-mode-dark:checked) .org-rainbow-delimiters-depth-1 {
+        /* rainbow-delimiters-depth-1-face */
+        color: #000000;
+      }
+:root:has(#wg21-mode-dark:checked) .org-rainbow-delimiters-depth-2 {
+        /* rainbow-delimiters-depth-2-face */
+        color: #dd22dd;
+      }
+:root:has(#wg21-mode-dark:checked) .org-rainbow-delimiters-depth-3 {
+        /* rainbow-delimiters-depth-3-face */
+        color: #008899;
+      }
+:root:has(#wg21-mode-dark:checked) .org-rainbow-delimiters-depth-4 {
+        /* rainbow-delimiters-depth-4-face */
+        color: #972500;
+      }
+:root:has(#wg21-mode-dark:checked) .org-type {
+        /* font-lock-type-face */
+        color: #005f5f;
+        font-weight: bold;
+      }
+:root:has(#wg21-mode-dark:checked) .org-variable-name {
+        /* font-lock-variable-name-face */
+        color: #005e8b;
+      }
+:root:has(#wg21-mode-dark:checked) pre.src a {
+        color: inherit;
+        background-color: inherit;
+        font: inherit;
+        text-decoration: inherit;
+      }
+:root:has(#wg21-mode-dark:checked) pre.src a:hover {
+        text-decoration: underline;
+      }
+:root:has(#wg21-mode-dark:checked) pre.src code { color: inherit; background: transparent; }
+}
+</style>
+<style>.csl-entry{text-indent: -1.5em; margin-left: 1.5em;}</style>
+</head>
+<body>
+<div id="content">
+<h1 class="title">Extending C++ with Unicode Mathematical Operators</h1>
+<div data-fill-with="spec-metadata">
+<dl>
+<dt>Document #:</dt><dd>D4345R1 [<a href="https://wg21.link/P4345">Latest</a>] [<a href="https://wg21.link/P4345/status">Status</a>]</dd>
+<dt>Date:</dt><dd>2026-10-11</dd>
+<dt>Project:</dt><dd>Programming Language C++</dd>
+<dt>Audience:</dt><dd>SG16, EWG</dd>
+<dt>Reply-to:</dt><dd><a class="p-name fn u-email email" href="mailto:sdowney@gmail.com">Steve Downey &lt;sdowney@gmail.com&gt;</a></dd>
+<dt>Source:</dt><dd><a href="https://github.com/steve-downey/backtick">https://github.com/steve-downey/backtick</a></dd><dd><a href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org">papers/unicode-mathematical-operators.org</a></dd><dd>heads/blank-slate-0-ge8520e6</dd>
+<dt class="mode-toggle">Theme:</dt><dd class="mode-toggle"><label><input type="radio" name="wg21-mode" id="wg21-mode-light"> Light</label><label><input type="radio" name="wg21-mode" id="wg21-mode-dark"> Dark</label><label><input type="radio" name="wg21-mode" id="wg21-mode-system" checked> System</label></dd>
+<dt class="diff-toggle">Wording:</dt><dd class="diff-toggle"><label><input type="checkbox" id="wg21-hide-deleted"> Hide deleted text</label></dd>
+</dl>
+</div>
+<div id="outline-container-abstract" class="outline-2">
+<h2 class="heading" id="abstract"><span class="section-number-2">1.</span> <span class="content">Abstract</span><a class="self-link" href="#abstract" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L103" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-1">
+<p>
+I propose adding the ability to declare user defined operators, such as operator⊞ , allowing users to write <code>a ⊞ b</code>. The list of allowed operators is drawn from the mathematical operators described in Unicode Technical Report #25, <i>Unicode Support for Mathematics</i> (<a href="https://www.unicode.org/reports/tr25/tr25-15.pdf" title="Beeton, Barbara, Asmus Freytag, and Murray Sargent III. 2017. “Unicode Technical Report #25: Unicode Support for Mathematics (Revision 15).” The Unicode Consortium. https://www.unicode.org/reports/tr25/tr25-15.pdf.">Beeton, Freytag, and Sargent III 2017</a>), with confusables removed. The operators are otherwise normal functions, found by ordinary lookup rules and ordinary overload resolution.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c++"><code><span class="org-keyword">constexpr</span> <span class="org-type">int</span> <span class="org-variable-name">operator</span>&#8862;<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">int</span> a, <span class="org-type">int</span> b<span class="org-rainbow-delimiters-depth-1">)</span> <span class="org-rainbow-delimiters-depth-1">{</span> <span class="org-keyword">return</span> a + b; <span class="org-rainbow-delimiters-depth-1">}</span>
+<span class="org-keyword">static_assert</span><span class="org-rainbow-delimiters-depth-1">(</span>5 &#8862; 7 == 12<span class="org-rainbow-delimiters-depth-1">)</span>;
+
+Matrix operator&#8855;<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">Matrix</span> <span class="org-keyword">const</span>&amp;, <span class="org-type">Matrix</span> <span class="org-keyword">const</span>&amp;<span class="org-rainbow-delimiters-depth-1">)</span>;
+a &#8855; b &#8855; c                               <span class="org-comment-delimiter">// </span><span class="org-comment">operator&#8855;(operator&#8855;(a, b), c)
+</span>
+Vec operator&#8854;<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">Vec</span> <span class="org-keyword">const</span>&amp;<span class="org-rainbow-delimiters-depth-1">)</span>;              <span class="org-comment-delimiter">// </span><span class="org-comment">one parameter: unary prefix
+</span>&#8854;v                                      <span class="org-comment-delimiter">// </span><span class="org-comment">operator&#8854;(v)</span>
+</code></pre>
+</div>
+</div>
+</div>
+<div id="outline-container-revision-history" class="outline-2">
+<h2 class="heading" id="revision-history"><span class="section-number-2">2.</span> <span class="content">Revision history</span><a class="self-link" href="#revision-history" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L117" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-2">
+</div>
+<div id="outline-container-r1" class="outline-3">
+<h3 class="heading" id="r1"><span class="section-number-3">2.1.</span> <span class="content">R1</span><a class="self-link" href="#r1" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L118" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-2-1">
+<p>
+Rewrite from scratch without technical change.
+</p>
+</div>
+</div>
+<div id="outline-container-r0" class="outline-3">
+<h3 class="heading" id="r0"><span class="section-number-3">2.2.</span> <span class="content">R0</span><a class="self-link" href="#r0" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L120" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-2-2">
+<p>
+Initial Paper
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-before--after" class="outline-2">
+<h2 class="heading" id="before--after"><span class="section-number-2">3.</span> <span class="content">Before / After</span><a class="self-link" href="#before--after" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L122" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-3">
+<table class="cmptbl">
+<thead>
+<tr><th class="cmptbl-before"><p>
+<b>Before</b>
+</p></th><th class="cmptbl-after"><p>
+<b>After</b>
+</p></th></tr>
+</thead>
+<tbody>
+<tr><td class="cmptbl-before"><div class="org-src-container">
+<pre class="src src-c++"><code><span class="org-type">Matrix</span> <span class="org-function-name">mul</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">Matrix</span> <span class="org-keyword">const</span>&amp;, <span class="org-type">Matrix</span> <span class="org-keyword">const</span>&amp;<span class="org-rainbow-delimiters-depth-1">)</span>;
+<span class="org-type">Matrix</span> <span class="org-function-name">kron</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">Matrix</span> <span class="org-keyword">const</span>&amp;, <span class="org-type">Matrix</span> <span class="org-keyword">const</span>&amp;<span class="org-rainbow-delimiters-depth-1">)</span>;
+
+<span class="org-keyword">auto</span> <span class="org-variable-name">r</span> = mul<span class="org-rainbow-delimiters-depth-1">(</span>kron<span class="org-rainbow-delimiters-depth-2">(</span>a, b<span class="org-rainbow-delimiters-depth-2">)</span>, mul<span class="org-rainbow-delimiters-depth-2">(</span>c, d<span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>;
+</code></pre>
+</div></td><td class="cmptbl-after"><div class="org-src-container">
+<pre class="src src-c++"><code>Matrix operator&#8855;<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">Matrix</span> <span class="org-keyword">const</span>&amp;, <span class="org-type">Matrix</span> <span class="org-keyword">const</span>&amp;<span class="org-rainbow-delimiters-depth-1">)</span>;
+Matrix operator&#8864;<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">Matrix</span> <span class="org-keyword">const</span>&amp;, <span class="org-type">Matrix</span> <span class="org-keyword">const</span>&amp;<span class="org-rainbow-delimiters-depth-1">)</span>;
+
+<span class="org-keyword">auto</span> <span class="org-variable-name">r</span> = <span class="org-rainbow-delimiters-depth-1">(</span>a &#8864; b<span class="org-rainbow-delimiters-depth-1">)</span> &#8855; <span class="org-rainbow-delimiters-depth-1">(</span>c &#8855; d<span class="org-rainbow-delimiters-depth-1">)</span>;
+</code></pre>
+</div></td></tr>
+<tr><td class="cmptbl-before"><div class="org-src-container">
+<pre class="src src-c++"><code><span class="org-type">Set</span> <span class="org-function-name">union_</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">Set</span> <span class="org-keyword">const</span>&amp;, <span class="org-type">Set</span> <span class="org-keyword">const</span>&amp;<span class="org-rainbow-delimiters-depth-1">)</span>;
+<span class="org-type">Set</span> <span class="org-function-name">inter</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">Set</span> <span class="org-keyword">const</span>&amp;, <span class="org-type">Set</span> <span class="org-keyword">const</span>&amp;<span class="org-rainbow-delimiters-depth-1">)</span>;
+
+<span class="org-keyword">auto</span> <span class="org-variable-name">s</span> = union_<span class="org-rainbow-delimiters-depth-1">(</span>inter<span class="org-rainbow-delimiters-depth-2">(</span>x, y<span class="org-rainbow-delimiters-depth-2">)</span>, z<span class="org-rainbow-delimiters-depth-1">)</span>;
+</code></pre>
+</div></td><td class="cmptbl-after"><div class="org-src-container">
+<pre class="src src-c++"><code>Set operator&#8746;<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">Set</span> <span class="org-keyword">const</span>&amp;, <span class="org-type">Set</span> <span class="org-keyword">const</span>&amp;<span class="org-rainbow-delimiters-depth-1">)</span>;
+Set operator&#8745;<span class="org-rainbow-delimiters-depth-1">(</span><span class="org-type">Set</span> <span class="org-keyword">const</span>&amp;, <span class="org-type">Set</span> <span class="org-keyword">const</span>&amp;<span class="org-rainbow-delimiters-depth-1">)</span>;
+
+<span class="org-keyword">auto</span> <span class="org-variable-name">s</span> = <span class="org-rainbow-delimiters-depth-1">(</span>x &#8745; y<span class="org-rainbow-delimiters-depth-1">)</span> &#8746; z;
+</code></pre>
+</div></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-the-design" class="outline-2">
+<h2 class="heading" id="the-design"><span class="section-number-2">4.</span> <span class="content">The design</span><a class="self-link" href="#the-design" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L165" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-4">
+<p>
+Recognize the mathematical symbols that are not identifier as possible C++ operators when they appear in operator position.
+Since they are disjoint from identifiers there is no ambiguity.
+Defer the meaning of the expression to name lookup and overload resolution.
+For the operators assign a fixed precedence and associativity so that parsing does not need to take into account declarations.
+</p>
+</div>
+<div id="outline-container-x--y-is-the-call" class="outline-3">
+<h3 class="heading" id="x--y-is-the-call"><span class="section-number-3">4.1.</span> <span class="content"><code>x ⊞ y</code> is the call</span><a class="self-link" href="#x--y-is-the-call" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L171" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-4-1">
+<p>
+The form <code>x ⊞ y</code> desugars to <code>operator ⊞(x,y)</code> and everything else follows from that.
+<code>x ⊞ y</code> <span class="underline">is</span>  <code>operator⊞(x, y)</code>
+<code>⊖x</code> <span class="underline">is</span> <code>operator⊖(x)</code>
+and the member forms are <code>x.operator⊞(y)</code> and <code>x.operator⊖()</code>.
+</p>
+</div>
+</div>
+<div id="outline-container-what-this-paper-changes" class="outline-3">
+<h3 class="heading" id="what-this-paper-changes"><span class="section-number-3">4.2.</span> <span class="content">What this paper changes</span><a class="self-link" href="#what-this-paper-changes" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L176" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-4-2">
+<p>
+An <i>operator-function-id</i> may be <code>operator</code> followed by a <b>user-operator
+token</b> &mdash; a single non-ASCII code point drawn from an enumerated set.
+Such a function is an ordinary free or member function.
+</p>
+
+<dl class="org-dl">
+<dt>One precedence level</dt><dd>A user-operator token after a complete operand is a
+binary operator at the <b>user-infix level</b> (the highest binary level,
+tighter than <code>*</code>, looser than the unary operators), left-associative, with
+cast-expression operands. Every user-introduced infix operator binds at that
+one strength, and there is no table.</dd>
+<dt>No fixity declarations</dt><dd>Precedence and associativity are fixed.</dd>
+<dt>Position decides fixity at the use</dt><dd>Operand position is prefix,
+post-operand is infix. No lookahead or whitespace rule.  No consultation of
+what declarations are visible during parsing.</dd>
+<dt>Arity decides the form at the declaration, and does not filter uses</dt><dd>Two
+parameters, or one as a member, is infix; one parameter, or none as a member,
+is prefix. The same convention as <code>operator-()</code>.</dd>
+<dt>No built-in candidates</dt><dd>There is no built-in meaning to protect, so
+nothing adds any. <code>p ⊞ n</code> on <code>int*</code> is a no-viable-overload error.</dd>
+<dt>Candidates are assembled as for an existing overloaded operator</dt><dd>member
+and non-member together in one set, with ADL.</dd>
+<dt>No postfix form, and no fold operator</dt><dd>Fold is not precluded, but not proposed. Postfix is unusual in math notation, and is also not proposed.</dd>
+</dl>
+</div>
+</div>
+<div id="outline-container-design-constraints" class="outline-3">
+<h3 class="heading" id="design-constraints"><span class="section-number-3">4.3.</span> <span class="content">Design Constraints</span><a class="self-link" href="#design-constraints" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L199" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-4-3">
+<ol class="org-ol">
+<li>The operator set is disjoint from the identfier character set.</li>
+<li>The list is derived from Unicode recommendations.</li>
+</ol>
+</div>
+</div>
+<div id="outline-container-relation-to-p4307r0" class="outline-3">
+<h3 class="heading" id="relation-to-p4307r0"><span class="section-number-3">4.4.</span> <span class="content">Relation to P4307R0</span><a class="self-link" href="#relation-to-p4307r0" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L203" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-4-4">
+<p>
+Infix named operators are a disjoint proposal. The only shared bit is the proposed <i>user-infix level</i> for precedence.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-the-token-set" class="outline-2">
+<h2 class="heading" id="the-token-set"><span class="section-number-2">5.</span> <span class="content">The token set</span><a class="self-link" href="#the-token-set" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L206" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-5">
+</div>
+<div id="outline-container-deriving-it" class="outline-3">
+<h3 class="heading" id="deriving-it"><span class="section-number-3">5.1.</span> <span class="content">Deriving it</span><a class="self-link" href="#deriving-it" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L208" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-5-1">
+<p>
+UAX #31 defines <b>R3c, "Operator Identifiers"</b> — introduced by §4.2.1,
+"User-Defined Operators" — as operator syntax over the characters with the
+Pattern_Syntax property. C++23 already references UAX #31 normatively for
+identifiers (<a href="https://wg21.link/p1949r7" title="Downey, Steve, Zach Laine, Tom Honermann, Peter Bindels, and Jens Maurer. 2021. “C++ Identifier Syntax Using Unicode Standard Annex 31.” WG21. https://wg21.link/p1949r7.">Downey et al. 2021</a>), so the citation is the same shape to the same
+document.
+</p>
+
+<p>
+This paper pins UAX #31 at <b>revision 43</b> (<a href="https://www.unicode.org/reports/tr31/tr31-43.html" title="Davis, Mark, and Robin Leroy. 2025. “Unicode Standard Annex #31: Unicode Identifiers and Syntax (Revision 43).” The Unicode Consortium. https://www.unicode.org/reports/tr31/tr31-43.html.">Davis and Leroy 2025</a>), the revision that goes
+with Unicode 17.0, and the derivation below runs against UCD 17.0 (<a href="https://www.unicode.org/Public/17.0.0/ucd/" title="The Unicode Consortium. 2025. “Unicode Character Database, Version 17.0.0.” https://www.unicode.org/Public/17.0.0/ucd/.">The Unicode Consortium 2025</a>).
+Revision 45 (<a href="https://www.unicode.org/reports/tr31/tr31-45.html" title="———. 2026. “Unicode Standard Annex #31: Unicode Identifiers and Syntax (Revision 45).” The Unicode Consortium. https://www.unicode.org/reports/tr31/tr31-45.html.">Davis and Leroy 2026</a>), for Unicode 18.0, was published on 2026-09-01, while I was working on this paper. There is no particular reason not to adopt Unicode 18, but because code points can be added to the set we must set a baseline for portable code.
+</p>
+
+<p>
+R3c does not hand us a usable set directly. Pattern_Syntax includes the ASCII
+operator characters, every one of which is already a token, a token prefix, or
+blocked by adjacency. The usable pool is Pattern_Syntax minus ASCII.
+</p>
+
+<p>
+A code point is a user-operator token if all of:
+</p>
+
+<ol class="org-ol">
+<li>it has Pattern_Syntax;</li>
+<li>it is outside ASCII;</li>
+<li>it lies in the mathematical and arrow blocks (U+2190–21FF, U+2200–22FF,
+U+2300–23FF, U+27C0–27EF, U+27F0–27FF, U+2900–297F, U+2980–29FF,
+U+2A00–2AFF, U+2B00–2BFF);</li>
+<li>its General_Category is Sm or So, which excludes the paired brackets
+(Ps/Pe) as delimiters worth leaving unspent;</li>
+<li>it is not on the exclusion list below.</li>
+</ol>
+
+<p>
+Applied once against UCD 17.0, that yields <b>1,381 code points in 32
+contiguous ranges</b>. The lexer's table is 256 bytes and one binary search,
+on the non-ASCII path both compilers already walk for extended identifiers.
+The cost is very small.
+</p>
+
+<p>
+This paper proposes to list the allowed code point table explicitly with the algorithm as non-normative.
+</p>
+</div>
+</div>
+<div id="outline-container-immutable-is-not-closed" class="outline-3">
+<h3 class="heading" id="immutable-is-not-closed"><span class="section-number-3">5.2.</span> <span class="content">Immutable is not closed</span><a class="self-link" href="#immutable-is-not-closed" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L240" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-5-2">
+<p>
+An immutable property in Unicode means that an assigned code point will neve gain or lose that property. However, that does not mean that newly asinged code points could not be given the property.
+In particular this means that confusability analysis can not be carried out in advance and must be performed after code point assignment. This is the reason not to just apply the algorithm blindly.
+</p>
+</div>
+</div>
+<div id="outline-container-the-exclusion-sets" class="outline-3">
+<h3 class="heading" id="the-exclusion-sets"><span class="section-number-3">5.3.</span> <span class="content">The exclusion sets</span><a class="self-link" href="#the-exclusion-sets" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L243" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-5-3">
+</div>
+<div id="outline-container-identifier-characters" class="outline-4">
+<h4 class="heading" id="identifier-characters"><span class="section-number-4">5.3.1.</span> <span class="content">Identifier Characters</span><a class="self-link" href="#identifier-characters" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L244" title="This section in the Org source">source</a></h4>
+<div class="outline-text-4" id="text-5-3-1">
+<p>
+ TR31 §7.1's mathematical profile earmarks <code>∂</code>, <code>∇</code> and <code>∞</code> as <i>identifier</i>
+characters, and its companion syntax profile removes them from syntactic use.
+</p>
+</div>
+</div>
+<div id="outline-container-confusable-with-an-existing-token" class="outline-4">
+<h4 class="heading" id="confusable-with-an-existing-token"><span class="section-number-4">5.3.2.</span> <span class="content">Confusable with an existing token</span><a class="self-link" href="#confusable-with-an-existing-token" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L247" title="This section in the Org source">source</a></h4>
+<div class="outline-text-4" id="text-5-3-2">
+<p>
+A character that looks like <code>-</code> and is not <code>-</code> should fail to lex.
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">&nbsp;</th>
+<th scope="col" class="org-left">&nbsp;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>−</code></td>
+<td class="org-left">U+2212 (<code>-</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>∕</code></td>
+<td class="org-left">U+2215 and ⁄ U+2044 (<code>/</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>∗</code></td>
+<td class="org-left">U+2217 (<code>*</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>∣</code></td>
+<td class="org-left">U+2223 (<code>∣</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>∶</code></td>
+<td class="org-left">U+2236 (<code>:</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>∙</code></td>
+<td class="org-left">U+2219 and <code>⋅</code> U+22C5 (<code>.</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>≤</code></td>
+<td class="org-left">U+2264 and <code>⇐</code> U+21D0 (<code>&lt;=</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>≥</code></td>
+<td class="org-left">U+2265 (<code>&gt;=</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>⇒</code></td>
+<td class="org-left">U+21D2 (<code>=&gt;</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>⇔</code></td>
+<td class="org-left">U+21D4 (<code>&lt;=&gt;</code>)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-emoji-presentation" class="outline-4">
+<h4 class="heading" id="emoji-presentation"><span class="section-number-4">5.3.3.</span> <span class="content">Emoji Presentation</span><a class="self-link" href="#emoji-presentation" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L263" title="This section in the Org source">source</a></h4>
+<div class="outline-text-4" id="text-5-3-3">
+<p>
+The code points inside the blocks that TR31 §7.2's emoji profile carves out:
+U+231A, U+231B, U+23E9 through U+23EC, U+23F0, U+23F3, U+2B1B, U+2B1C, U+2B50
+and U+2B55 &mdash; watches, hourglasses, media-control triangles, large squares, a
+star and a circle. They are named by code point here because I could not get
+them to render consistently.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-spelling-the-glyph-and-the-ucn" class="outline-3">
+<h3 class="heading" id="spelling-the-glyph-and-the-ucn"><span class="section-number-3">5.4.</span> <span class="content">Spelling: the glyph and the UCN</span><a class="self-link" href="#spelling-the-glyph-and-the-ucn" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L270" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-5-4">
+<p>
+A universal-character-name designating a user-operator code point (including
+the C++23 named form) forms that operator token. <code>operator⊞</code>, <code>operator\u229E</code>
+and <code>operator\N{SQUARED PLUS}</code> are the same declaration. Declare with one,
+define with another, use with a third, they are emitted identically.
+<code>a \N{CIRCLED TIMES} b</code> <i>is</i> <code>a ⊗ b</code>.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-placement-in-grammar" class="outline-2">
+<h2 class="heading" id="placement-in-grammar"><span class="section-number-2">6.</span> <span class="content">Placement in Grammar</span><a class="self-link" href="#placement-in-grammar" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L278" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-6">
+</div>
+<div id="outline-container-one-level-for-all-user-introduced-infix" class="outline-3">
+<h3 class="heading" id="one-level-for-all-user-introduced-infix"><span class="section-number-3">6.1.</span> <span class="content">One level for all user-introduced infix</span><a class="self-link" href="#one-level-for-all-user-introduced-infix" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L280" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-6-1">
+<div class="grammar"><pre class="grammar">user-infix-expression:
+    cast-expression
+    user-infix-expression user-operator cast-expression
+
+unary-expression:
+    <span class="descr">...</span>
+    user-operator cast-expression</pre></div>
+
+<p>
+Binary user operators occupy one precedence level: the highest binary level,
+tighter than <code>*</code> and looser than the unary operators, left-associative, with
+cast-expression operands. That is the <i>user-infix level</i>, and it is meant to
+serve all user-introduced infix syntax: it is the same level P4307R0 introduces
+for the backtick operator.
+</p>
+
+<p>
+The precedence rules mean that  <code>-a ⊞ -b</code> is <code>operator⊞(-a, -b)</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c++"><code>-a &#8862; -b            <span class="org-comment-delimiter">// </span><span class="org-comment">operator&#8862;(-a, -b)
+</span>a * b &#8862; c          <span class="org-comment-delimiter">// </span><span class="org-comment">a * operator&#8862;(b, c)
+</span>a &#8862; b &#8855; c          <span class="org-comment-delimiter">// </span><span class="org-comment">operator&#8855;(operator&#8862;(a, b), c)
+</span>a &#8862; &#8854;b             <span class="org-comment-delimiter">// </span><span class="org-comment">operator&#8862;(a, operator&#8854;(b))
+</span>&#8854;a &#8862; 2 * &#8854;b        <span class="org-comment-delimiter">// </span><span class="org-comment">(operator&#8854;(a) &#8862; 2) * operator&#8854;(b)</span>
+</code></pre>
+</div>
+</div>
+</div>
+<div id="outline-container-prefix-and-how-position-decides" class="outline-3">
+<h3 class="heading" id="prefix-and-how-position-decides"><span class="section-number-3">6.2.</span> <span class="content">Prefix, and how position decides</span><a class="self-link" href="#prefix-and-how-position-decides" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L306" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-6-2">
+<p>
+Arity determines at the declaraion. In use, it is purely positional. Post-operand is infix, in operand position it is prefix. There is no lookahead or whitespace sensitivity.
+</p>
+</div>
+</div>
+<div id="outline-container-postfix-and-why-not" class="outline-3">
+<h3 class="heading" id="postfix-and-why-not"><span class="section-number-3">6.3.</span> <span class="content">Postfix, and why not</span><a class="self-link" href="#postfix-and-why-not" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L309" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-6-3">
+<p>
+<code>operator++</code> in prefix form is parsed as a cast-expression, in postfix in postfix-suffix, and <code>++</code> has no infix form. This restriction is not available for user defined operators without somehow pre-classifying them, which would mean assinging meaning to them. That is not possible as different fields have already ambiguated them.
+</p>
+</div>
+</div>
+<div id="outline-container-fold-expressions" class="outline-3">
+<h3 class="heading" id="fold-expressions"><span class="section-number-3">6.4.</span> <span class="content">Fold expressions</span><a class="self-link" href="#fold-expressions" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L312" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-6-4">
+<p>
+A user operator is not a fold operator: <code>(... ⊞ N)</code> is ill-formed.
+</p>
+
+<p>
+This is primarily because the existing implementations do not provide a mechanism to extend the fold-expression node beyond the current fixed and closed set. Adding the capability is certainly possible if there is real demand, but should be a separate paper, possibly considering other monoidal operations.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-declaring-looking-up-desugaring" class="outline-2">
+<h2 class="heading" id="declaring-looking-up-desugaring"><span class="section-number-2">7.</span> <span class="content">Declaring, looking up, desugaring</span><a class="self-link" href="#declaring-looking-up-desugaring" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L317" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-7">
+</div>
+<div id="outline-container-restrictions-on-operators" class="outline-3">
+<h3 class="heading" id="restrictions-on-operators"><span class="section-number-3">7.1.</span> <span class="content">Restrictions on Operators</span><a class="self-link" href="#restrictions-on-operators" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L319" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-7-1">
+<p>
+<a class="sref" href="https://eel.is/c++draft/over.oper.general">[over.oper.general]</a> imposes five restrictions on an operator function.
+A user operator inherits only one of them.
+</p>
+
+<dl class="org-dl">
+<dt>class-or-enum parameter</dt><dd>does not apply. The rule protects a built-in
+meaning, and there is none. <code>constexpr int operator⊞(int, int)</code> is legal, and
+<code>5 ⊞ 7</code> finding it is the motivating case.</dd>
+<dt>no default arguments</dt><dd>does not apply.</dd>
+<dt>not variadic</dt><dd>does not apply, likewise.</dd>
+<dt>the fixed arity table</dt><dd>has no entry to consult, so the prefix/infix
+rule is written out.</dd>
+<dt>not a static member</dt><dd><p>
+kept, and kept as a <i>choice</i>, because the arity rule
+does not exclude it.
+</p>
+
+<p>
+That rule counts operands, so <code>static S operator⊞(S, S)</code> has two and would be
+ accepted; an implementation must reject it deliberately. The reason is the
+ desugaring: <code>x ⊞ y</code> is defined to mean exactly one of two spellings,
+ <code>operator⊞(x, y)</code> or <code>x.operator⊞(y)</code>, and a static member names neither. On
+ a static member, <code>x.operator⊞(y)</code> is legal C++ but discards the object
+ expression and passes one argument to a two-parameter function.
+</p></dd>
+</dl>
+
+<p>
+Everything else is ordinary: templates, <code>constexpr</code>, <code>= delete</code>, member and
+non-member, explicit object parameters.
+</p>
+
+<p>
+Dropping <a class="sref" href="https://eel.is/c++draft/over.oper.general">[over.oper.general]</a> paragraph 10 has a visible consequence. Given only
+<code>constexpr int operator⊟(int a, int b = 1)</code>, the prefix use <code>⊟5</code> is accepted
+and calls it through the default argument, and adding a genuine prefix overload
+makes <code>⊟5</code> ambiguous in the ordinary way. Filtering candidates by declared
+arity would fix it. However, it would break the desugaring equivalence below,
+on which the whole design rests: <code>⊟5</code> <i>is</i> <code>operator⊟(5)</code>. So arity selects the
+form for <i>declarations</i>, and does not filter <i>uses</i>.
+</p>
+</div>
+</div>
+<div id="outline-container-one-candidate-set-and-no-built-in-candidates" class="outline-3">
+<h3 class="heading" id="one-candidate-set-and-no-built-in-candidates"><span class="section-number-3">7.2.</span> <span class="content">One candidate set, and no built-in candidates</span><a class="self-link" href="#one-candidate-set-and-no-built-in-candidates" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L351" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-7-2">
+<p>
+<code>x ⊞ y</code> assembles member candidates from the left operand's class and
+non-member candidates from unqualified lookup and ADL, ranked together in one
+set.
+</p>
+
+<p>
+The normative requirement is that the operator form finds what the explicit
+call finds:
+</p>
+<div class="org-src-container">
+<pre class="src src-c++"><code><span class="org-keyword">static_assert</span><span class="org-rainbow-delimiters-depth-1">(</span>__is_same<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">decltype</span><span class="org-rainbow-delimiters-depth-3">(</span>x &#8856; y<span class="org-rainbow-delimiters-depth-3">)</span>, <span class="org-keyword">decltype</span><span class="org-rainbow-delimiters-depth-3">(</span>operator&#8856;<span class="org-rainbow-delimiters-depth-4">(</span>x, y<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span><span class="org-rainbow-delimiters-depth-1">)</span>;
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-one-level-and-no-fixity-declarations" class="outline-2">
+<h2 class="heading" id="one-level-and-no-fixity-declarations"><span class="section-number-2">8.</span> <span class="content">One level, and no fixity declarations</span><a class="self-link" href="#one-level-and-no-fixity-declarations" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L363" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-8">
+<p>
+Precedence and associativity are fixed by this paper, at one level, and
+neither can be declared. Of the rules fixed above this is the one most likely
+to be argued, so the two alternatives are answered here: a declared fixity is
+an ODR factory, and a derived one has nothing in Unicode to derive from.
+</p>
+
+<p>
+A declared precedence is a semantic property that must travel with the name
+across headers, modules and translation units. Two translation units
+disagreeing about <code>a ⊕ b ⊗ c</code> is an ODR factory, and the parse of an expression
+comes to depend on which imports are visible: Haskell's fixity-import problem,
+and Swift's <code>precedencegroup</code> conflicts (<a href="https://docs.swift.org/swift-book/documentation/the-swift-programming-language/advancedoperators/" title="“The Swift Programming Language: Advanced Operators.” n.d. https://docs.swift.org/swift-book/documentation/the-swift-programming-language/advancedoperators/.">“The Swift Programming Language: Advanced Operators,” n.d.</a>). With fixity settled
+by the standard, the <i>parse</i> of an expression depends on nothing but the
+expression. Only the <i>meaning</i> of <code>operator⊞</code> travels, and that is ordinary
+lookup.
+</p>
+</div>
+</div>
+<div id="outline-container-implementation-experience" class="outline-2">
+<h2 class="heading" id="implementation-experience"><span class="section-number-2">9.</span> <span class="content">Implementation experience</span><a class="self-link" href="#implementation-experience" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L378" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-9">
+<p>
+This proposal has been implemented in Clang against 23 and the changes ported forward to trunk. There were no particular surprises or difficulty once a new expression node was added.
+</p>
+</div>
+<div id="outline-container-volume" class="outline-3">
+<h3 class="heading" id="volume"><span class="section-number-3">9.1.</span> <span class="content">Volume</span><a class="self-link" href="#volume" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L380" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-9-1">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">&nbsp;</th>
+<th scope="col" class="org-right">files</th>
+<th scope="col" class="org-left">lines</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Compiler proper</td>
+<td class="org-right">86</td>
+<td class="org-left">+2035 / −18</td>
+</tr>
+
+<tr>
+<td class="org-left">Tests</td>
+<td class="org-right">34</td>
+<td class="org-left">+5416</td>
+</tr>
+
+<tr>
+<td class="org-left">Total</td>
+<td class="org-right">120</td>
+<td class="org-left">+7451 / −18</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-mangling-and-abi" class="outline-3">
+<h3 class="heading" id="mangling-and-abi"><span class="section-number-3">9.2.</span> <span class="content">Mangling and ABI</span><a class="self-link" href="#mangling-and-abi" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L388" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-9-2">
+<p>
+The prototype mangles through the Itanium ABI's existing vendor-extended
+operator production, which works today, demangles with existing tools, and
+needs no ABI change. However, it would be better to have the Itanium ABI group
+provide first-class production keyed by code point and carrying a fixity
+marker.
+</p>
+
+<p>
+The Microsoft ABI has no production for such operators at all, and I declined
+to invent one at let it escape.
+</p>
+</div>
+</div>
+<div id="outline-container-formatting" class="outline-3">
+<h3 class="heading" id="formatting"><span class="section-number-3">9.3.</span> <span class="content">Formatting</span><a class="self-link" href="#formatting" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L398" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-9-3">
+<p>
+<code>clang-format</code> required about forty lines across three files: no new token
+type, no annotator state, no custom spacing rule, no custom break rule and no
+style option. A user operator is annotated as a binary or unary operator by
+position, with no delimiter pairing and no break-suppression rules, and the
+existing overloaded-operator handling rewrites the annotation after <code>operator</code>
+with no new rule, so <code>operator ⊞</code> canonicalizes to <code>operator⊞</code> under the same
+option that governs <code>operator +</code>. It also honours <code>BreakBeforeBinaryOperators</code>,
+which a delimiter-pair syntax structurally cannot.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-wording" class="outline-2">
+<h2 class="heading" id="wording"><span class="section-number-2">10.</span> <span class="content">Wording</span><a class="self-link" href="#wording" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L409" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-10">
+<p>
+The following wording is pro forma. It is intended to make the grammar change
+concrete; it is not offered as final CWG wording. Wording is relative to the
+current working draft.
+</p>
+</div>
+<div id="outline-container-lexoperators" class="outline-3">
+<h3 class="heading" id="lexoperators"><span class="section-number-3">10.1.</span> <span class="content">[lex.operators]</span><a class="self-link" href="#lexoperators" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L415" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-10-1">
+<p>
+Add <i>user-operator</i> as an alternative of <i>operator-or-punctuator</i> in
+<a class="sref" href="https://eel.is/c++draft/lex.operators">[lex.operators]</a>:
+</p>
+
+<div class="addedblock" id="org49e0c10">
+<blockquote>
+<div class="grammar"><pre class="grammar">user-operator:
+    <span class="descr">one of the characters in Table X, User-operator characters</span></pre></div>
+</blockquote>
+
+</div>
+
+<div class="wg21-note"><p>
+Table X will contain the frozen enumeration of 1,381 code points described in
+<a href="#the-token-set">5</a>. A <i>universal-character-name</i> designating one of those
+characters forms the same token by the existing translation rules.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-exprunarygeneral" class="outline-3">
+<h3 class="heading" id="exprunarygeneral"><span class="section-number-3">10.2.</span> <span class="content">[expr.unary.general]</span><a class="self-link" href="#exprunarygeneral" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L435" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-10-2">
+<p>
+Add an alternative to <i>unary-expression</i> in <a class="sref" href="https://eel.is/c++draft/expr.unary.general">[expr.unary.general]</a>:
+</p>
+
+<div class="addedblock" id="org40e244b">
+<blockquote>
+<div class="grammar"><pre class="grammar">unary-expression:
+    <span class="descr">...</span>
+    user-operator cast-expression</pre></div>
+</blockquote>
+
+</div>
+</div>
+</div>
+<div id="outline-container-exprmptroper" class="outline-3">
+<h3 class="heading" id="exprmptroper"><span class="section-number-3">10.3.</span> <span class="content">[expr.mptr.oper]</span><a class="self-link" href="#exprmptroper" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L449" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-10-3">
+<p>
+Modify the grammar of <a class="sref" href="https://eel.is/c++draft/expr.mptr.oper">[expr.mptr.oper]</a> paragraph 1:
+</p>
+
+<blockquote>
+<div class="grammar"><pre class="grammar">pm-expression:
+    <del>cast-expression</del> <ins>user-infix-expression</ins>
+    pm-expression <code>.*</code> <del>cast-expression</del> <ins>user-infix-expression</ins>
+    pm-expression <code>-&gt;*</code> <del>cast-expression</del> <ins>user-infix-expression</ins></pre></div>
+</blockquote>
+</div>
+</div>
+<div id="outline-container-expruser-new-subclause" class="outline-3">
+<h3 class="heading" id="expruser-new-subclause"><span class="section-number-3">10.4.</span> <span class="content">[expr.user] (new subclause)</span><a class="self-link" href="#expruser-new-subclause" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L462" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-10-4">
+<p>
+Insert a new subclause between <a class="sref" href="https://eel.is/c++draft/expr.cast">[expr.cast]</a> and
+<a class="sref" href="https://eel.is/c++draft/expr.mptr.oper">[expr.mptr.oper]</a>:
+</p>
+</div>
+<div id="outline-container-expr.user" class="outline-4 wg21-wording wg21-addition">
+<h4 class="heading" id="expr.user"><span class="content">User-defined operators [expr.user]</span><a class="self-link" href="#expr.user" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L467" title="This section in the Org source">source</a></h4>
+<div class="outline-text-4" id="text-expr.user">
+<div class="grammar"><pre class="grammar">user-infix-expression:
+    cast-expression
+    user-infix-expression user-operator cast-expression</pre></div>
+</div>
+</div>
+</div>
+<div id="outline-container-overopergeneral" class="outline-3">
+<h3 class="heading" id="overopergeneral"><span class="section-number-3">10.5.</span> <span class="content">[over.oper.general]</span><a class="self-link" href="#overopergeneral" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L481" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-10-5">
+<p>
+Modify the <i>operator-function-id</i> grammar in <a class="sref" href="https://eel.is/c++draft/over.oper.general">[over.oper.general]</a>:
+</p>
+
+<blockquote>
+<div class="grammar"><pre class="grammar">operator-function-id:
+    <code>operator</code> operator
+    <ins><code>operator</code> user-operator</ins></pre></div>
+</blockquote>
+
+<p>
+Add after the grammar:
+</p>
+
+<div class="addedblock" id="orgf0d75d8">
+<blockquote>
+<div class="pnum pnum-explicit"><a class="pnum-number" id="pnum-1" href="#pnum-1" data-pnum="x" aria-label="Paragraph x"></a><p>
+An operator function whose <i>operator-function-id</i> contains a
+<i>user-operator</i> is a <i>user-operator function</i>.
+</p>
+</div>
+</blockquote>
+
+</div>
+
+<p>
+Modify the first sentence of <a class="sref" href="https://eel.is/c++draft/over.oper.general">[over.oper.general]</a> paragraph 7:
+</p>
+
+<blockquote>
+<p>
+An operator function <ins>other than a user-operator function</ins> shall have at least
+one function parameter or implicit object parameter whose type is a class, a
+reference to a class, an enumeration, or a reference to an enumeration.
+</p>
+</blockquote>
+
+<p>
+Modify <a class="sref" href="https://eel.is/c++draft/over.oper.general">[over.oper.general]</a> paragraph 10:
+</p>
+
+<blockquote>
+<p>
+An operator function <ins>other than a user-operator function</ins> cannot have default
+arguments, except where explicitly stated below. Operator functions
+<ins>other than user-operator functions</ins> cannot have more or fewer parameters than
+the number required for the corresponding operator, as described in the rest
+of <a class="sref" href="https://eel.is/c++draft/over.oper">[over.oper]</a>.
+</p>
+</blockquote>
+</div>
+</div>
+<div id="outline-container-overmatchoper" class="outline-3">
+<h3 class="heading" id="overmatchoper"><span class="section-number-3">10.6.</span> <span class="content">[over.match.oper]</span><a class="self-link" href="#overmatchoper" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L522" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-10-6">
+<p>
+Modify the first sentence of <a class="sref" href="https://eel.is/c++draft/over.match.oper">[over.match.oper]</a> paragraph 1:
+</p>
+
+<blockquote>
+<p>
+<ins>Unless the operator is a <i>user-operator</i>, if</ins> <del>If</del> no operand of an operator
+in an expression has a type that is a class or an enumeration, the operator is
+assumed to be a built-in operator and interpreted according to
+<a class="sref" href="https://eel.is/c++draft/expr.compound">[expr.compound]</a>.
+</p>
+</blockquote>
+
+<p>
+Modify the first and last sentences of <a class="sref" href="https://eel.is/c++draft/over.match.oper">[over.match.oper]</a> paragraph 2:
+</p>
+
+<blockquote>
+<p>
+If <ins>the operator is a <i>user-operator</i> or</ins> either operand has a type that is a
+class or an enumeration, a user-defined operator function can be declared that
+implements this operator or a user-defined conversion can be necessary to
+convert the operand to a type that is appropriate for a built-in operator.
+[&hellip;] <ins>For a <i>user-operator</i>, the evaluations are sequenced as specified for the selected function call. Otherwise,</ins>
+<del>However,</del> the operands are sequenced
+in the order prescribed for the built-in operator.
+</p>
+</blockquote>
+
+<p>
+Modify the built-in-candidate bullet of <a class="sref" href="https://eel.is/c++draft/over.match.oper">[over.match.oper]</a> paragraph 3:
+</p>
+
+<blockquote>
+<p>
+For the operator <code>,</code>, the unary operator <code>&amp;</code>, <del>or</del> the operator <code>-&gt;</code><ins>, or a <i>user-operator</i></ins>,
+the built-in candidates set is empty.
+</p>
+</blockquote>
+</div>
+</div>
+<div id="outline-container-overunary-and-overbinary" class="outline-3">
+<h3 class="heading" id="overunary-and-overbinary"><span class="section-number-3">10.7.</span> <span class="content">[over.unary] and [over.binary]</span><a class="self-link" href="#overunary-and-overbinary" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L552" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-10-7">
+<p>
+In <a class="sref" href="https://eel.is/c++draft/over.unary">[over.unary]</a>, extend the definition of a prefix unary operator
+function to include a function named by a <i>user-operator</i> in the added
+<i>unary-expression</i> production. In <a class="sref" href="https://eel.is/c++draft/over.binary">[over.binary]</a>, extend the
+definition of a binary operator function to include a function named by a
+<i>user-operator</i> in a <i>user-infix-expression</i>. The existing transformations to
+member and non-member function-call notation then apply unchanged.
+</p>
+
+<p>
+Annex A (<a class="sref" href="https://eel.is/c++draft/gram">[gram]</a>) is updated mechanically to match.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-references" class="outline-2">
+<h2 class="heading" id="references"><span class="section-number-2">11.</span> <span class="content">References</span><a class="self-link" href="#references" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/e8520e66fb6605aef74100cf0e20873261606e2b/papers/unicode-mathematical-operators.org?plain=1#L563" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-11">
+<div class="csl-bib-body">
+  <div class="csl-entry"><a id="citeproc_bib_item_1"></a>Beeton, Barbara, Asmus Freytag, and Murray Sargent III. 2017. “Unicode Technical Report #25: Unicode Support for Mathematics (Revision 15).” The Unicode Consortium. <a href="https://www.unicode.org/reports/tr25/tr25-15.pdf">https://www.unicode.org/reports/tr25/tr25-15.pdf</a>.</div>
+  <div class="csl-entry"><a id="citeproc_bib_item_2"></a>Davis, Mark, and Robin Leroy. 2025. “Unicode Standard Annex #31: Unicode Identifiers and Syntax (Revision 43).” The Unicode Consortium. <a href="https://www.unicode.org/reports/tr31/tr31-43.html">https://www.unicode.org/reports/tr31/tr31-43.html</a>.</div>
+  <div class="csl-entry"><a id="citeproc_bib_item_3"></a>———. 2026. “Unicode Standard Annex #31: Unicode Identifiers and Syntax (Revision 45).” The Unicode Consortium. <a href="https://www.unicode.org/reports/tr31/tr31-45.html">https://www.unicode.org/reports/tr31/tr31-45.html</a>.</div>
+  <div class="csl-entry"><a id="citeproc_bib_item_4"></a>Downey, Steve, Zach Laine, Tom Honermann, Peter Bindels, and Jens Maurer. 2021. “C++ Identifier Syntax Using Unicode Standard Annex 31.” WG21. <a href="https://wg21.link/p1949r7">https://wg21.link/p1949r7</a>.</div>
+  <div class="csl-entry"><a id="citeproc_bib_item_5"></a>“The Swift Programming Language: Advanced Operators.” n.d. <a href="https://docs.swift.org/swift-book/documentation/the-swift-programming-language/advancedoperators/">https://docs.swift.org/swift-book/documentation/the-swift-programming-language/advancedoperators/</a>.</div>
+  <div class="csl-entry"><a id="citeproc_bib_item_6"></a>The Unicode Consortium. 2025. “Unicode Character Database, Version 17.0.0.” <a href="https://www.unicode.org/Public/17.0.0/ucd/">https://www.unicode.org/Public/17.0.0/ucd/</a>.</div>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>
