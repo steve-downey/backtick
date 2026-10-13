@@ -247,18 +247,22 @@ characters, and its companion syntax profile removes them from syntactic use.
 *** Confusable with an existing token
  A character that looks like ~-~ and is not ~-~ should fail to lex.
 
-|      |                               |
-|------+-------------------------------|
-| ~−~  | U+2212 (~-~)                  |
-| ~∕~   | U+2215 and ⁄ U+2044 (~/~)     |
-| ~∗~  | U+2217 (~*~)                  |
-| ~∣~  | U+2223 (~∣~)                  |
-| ~∶~  | U+2236 (~:~)                  |
-| ~∙~  | U+2219 and ~⋅~ U+22C5 (~.~)    |
-| ~≤~  | U+2264 and ~⇐~ U+21D0 (~<=~) |
-| ~≥~  | U+2265 (~>=~)                 |
-| ~⇒~ | U+21D2 (~=>~)                 |
-| ~⇔~ | U+21D4 (~<=>~)                |
+|             |         |
+|-------------+---------|
+| ~−~ U+2212  | (~-~)   |
+| ~∕~  U+2215  | (~/~)   |
+| ~⁄~ U+2044  | (~/~)   |
+| ~∗~ U+2217  | (~*~)   |
+| ~∣~ U+2223  | (~∣~)   |
+| ~∶~ U+2236  | (~:~)   |
+| ~∙~ U+2219  | (~.~)   |
+| ~⋅~ U+22C5   | (~.~)   |
+| ~≤~ U+2264  | (~<=~)  |
+| ~⇐~ U+21D0 | (~<=~)  |
+| ~≥~ U+2265  | (~>=~)  |
+| ~⇒~ U+21D2 | (~=>~)  |
+| ~⇔~ U+21D4 | (~<=>~) |
+|             |         |
 
 *** Emoji Presentation
 The code points inside the blocks that TR31 §7.2's emoji profile carves out:

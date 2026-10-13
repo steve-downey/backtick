@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2026-10-13 Tue 07:15 -->
+<!-- 2026-10-13 Tue 07:28 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Extending C++ with Unicode Mathematical Operators</title>
@@ -1014,13 +1014,13 @@ pre.src code { color: inherit; background: transparent; }
 <dt>Project:</dt><dd>Programming Language C++</dd>
 <dt>Audience:</dt><dd>SG16, EWG</dd>
 <dt>Reply-to:</dt><dd><a class="p-name fn u-email email" href="mailto:sdowney@gmail.com">Steve Downey &lt;sdowney@gmail.com&gt;</a></dd>
-<dt>Source:</dt><dd><a href="https://github.com/steve-downey/backtick">https://github.com/steve-downey/backtick</a></dd><dd><a href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org">papers/unicode-mathematical-operators.org</a></dd><dd>heads/blank-slate-0-g4e91cc5-dirty</dd>
+<dt>Source:</dt><dd><a href="https://github.com/steve-downey/backtick">https://github.com/steve-downey/backtick</a></dd><dd><a href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org">papers/unicode-mathematical-operators.org</a></dd><dd>heads/blank-slate-0-g5d677f8-dirty</dd>
 <dt class="mode-toggle">Theme:</dt><dd class="mode-toggle"><label><input type="radio" name="wg21-mode" id="wg21-mode-light"> Light</label><label><input type="radio" name="wg21-mode" id="wg21-mode-dark"> Dark</label><label><input type="radio" name="wg21-mode" id="wg21-mode-system" checked> System</label></dd>
 <dt class="diff-toggle">Wording:</dt><dd class="diff-toggle"><label><input type="checkbox" id="wg21-hide-deleted"> Hide deleted text</label></dd>
 </dl>
 </div>
 <div id="outline-container-abstract" class="outline-2">
-<h2 class="heading" id="abstract"><span class="section-number-2">1.</span> <span class="content">Abstract</span><a class="self-link" href="#abstract" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L103" title="This section in the Org source">source</a></h2>
+<h2 class="heading" id="abstract"><span class="section-number-2">1.</span> <span class="content">Abstract</span><a class="self-link" href="#abstract" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L103" title="This section in the Org source">source</a></h2>
 <div class="outline-text-2" id="text-1">
 <p>
 I propose adding the ability to declare user defined operators, such as operator⊞ , allowing users to write <code>a ⊞ b</code>. The list of allowed operators is drawn from the mathematical operators described in Unicode Technical Report #25, <i>Unicode Support for Mathematics</i> (<a href="https://www.unicode.org/reports/tr25/tr25-15.pdf" title="Beeton, Barbara, Asmus Freytag, and Murray Sargent III. 2017. “Unicode Technical Report #25: Unicode Support for Mathematics (Revision 15).” The Unicode Consortium. https://www.unicode.org/reports/tr25/tr25-15.pdf.">Beeton, Freytag, and Sargent III 2017</a>), with confusables removed. The operators are otherwise normal functions, found by ordinary lookup rules and ordinary overload resolution.
@@ -1040,11 +1040,11 @@ Vec operator&#8854;<span class="org-rainbow-delimiters-depth-1">(</span><span cl
 </div>
 </div>
 <div id="outline-container-revision-history" class="outline-2">
-<h2 class="heading" id="revision-history"><span class="section-number-2">2.</span> <span class="content">Revision history</span><a class="self-link" href="#revision-history" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L117" title="This section in the Org source">source</a></h2>
+<h2 class="heading" id="revision-history"><span class="section-number-2">2.</span> <span class="content">Revision history</span><a class="self-link" href="#revision-history" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L117" title="This section in the Org source">source</a></h2>
 <div class="outline-text-2" id="text-2">
 </div>
 <div id="outline-container-r1" class="outline-3">
-<h3 class="heading" id="r1"><span class="section-number-3">2.1.</span> <span class="content">R1</span><a class="self-link" href="#r1" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L118" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="r1"><span class="section-number-3">2.1.</span> <span class="content">R1</span><a class="self-link" href="#r1" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L118" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
 Rewrite from scratch without technical change.
@@ -1052,7 +1052,7 @@ Rewrite from scratch without technical change.
 </div>
 </div>
 <div id="outline-container-r0" class="outline-3">
-<h3 class="heading" id="r0"><span class="section-number-3">2.2.</span> <span class="content">R0</span><a class="self-link" href="#r0" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L120" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="r0"><span class="section-number-3">2.2.</span> <span class="content">R0</span><a class="self-link" href="#r0" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L120" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
 Initial Paper
@@ -1061,7 +1061,7 @@ Initial Paper
 </div>
 </div>
 <div id="outline-container-before--after" class="outline-2">
-<h2 class="heading" id="before--after"><span class="section-number-2">3.</span> <span class="content">Before / After</span><a class="self-link" href="#before--after" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L122" title="This section in the Org source">source</a></h2>
+<h2 class="heading" id="before--after"><span class="section-number-2">3.</span> <span class="content">Before / After</span><a class="self-link" href="#before--after" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L122" title="This section in the Org source">source</a></h2>
 <div class="outline-text-2" id="text-3">
 <table class="cmptbl">
 <thead>
@@ -1103,7 +1103,7 @@ Set operator&#8745;<span class="org-rainbow-delimiters-depth-1">(</span><span cl
 </div>
 </div>
 <div id="outline-container-the-design" class="outline-2">
-<h2 class="heading" id="the-design"><span class="section-number-2">4.</span> <span class="content">The design</span><a class="self-link" href="#the-design" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L165" title="This section in the Org source">source</a></h2>
+<h2 class="heading" id="the-design"><span class="section-number-2">4.</span> <span class="content">The design</span><a class="self-link" href="#the-design" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L165" title="This section in the Org source">source</a></h2>
 <div class="outline-text-2" id="text-4">
 <p>
 Recognize the mathematical symbols that are not identifier as possible C++ operators when they appear in operator position.
@@ -1113,7 +1113,7 @@ For the operators assign a fixed precedence and associativity so that parsing do
 </p>
 </div>
 <div id="outline-container-x--y-is-the-call" class="outline-3">
-<h3 class="heading" id="x--y-is-the-call"><span class="section-number-3">4.1.</span> <span class="content"><code>x ⊞ y</code> is the call</span><a class="self-link" href="#x--y-is-the-call" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L171" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="x--y-is-the-call"><span class="section-number-3">4.1.</span> <span class="content"><code>x ⊞ y</code> is the call</span><a class="self-link" href="#x--y-is-the-call" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L171" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-4-1">
 <p>
 The form <code>x ⊞ y</code> desugars to <code>operator ⊞(x,y)</code> and everything else follows from that.
@@ -1124,7 +1124,7 @@ and the member forms are <code>x.operator⊞(y)</code> and <code>x.operator⊖()
 </div>
 </div>
 <div id="outline-container-what-this-paper-changes" class="outline-3">
-<h3 class="heading" id="what-this-paper-changes"><span class="section-number-3">4.2.</span> <span class="content">What this paper changes</span><a class="self-link" href="#what-this-paper-changes" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L176" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="what-this-paper-changes"><span class="section-number-3">4.2.</span> <span class="content">What this paper changes</span><a class="self-link" href="#what-this-paper-changes" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L176" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-4-2">
 <p>
 An <i>operator-function-id</i> may be <code>operator</code> followed by a <b>user-operator
@@ -1154,7 +1154,7 @@ and non-member together in one set, with ADL.</dd>
 </div>
 </div>
 <div id="outline-container-design-constraints" class="outline-3">
-<h3 class="heading" id="design-constraints"><span class="section-number-3">4.3.</span> <span class="content">Design Constraints</span><a class="self-link" href="#design-constraints" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L199" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="design-constraints"><span class="section-number-3">4.3.</span> <span class="content">Design Constraints</span><a class="self-link" href="#design-constraints" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L199" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-4-3">
 <ol class="org-ol">
 <li>The operator set is disjoint from the identfier character set.</li>
@@ -1163,7 +1163,7 @@ and non-member together in one set, with ADL.</dd>
 </div>
 </div>
 <div id="outline-container-relation-to-p4307r0" class="outline-3">
-<h3 class="heading" id="relation-to-p4307r0"><span class="section-number-3">4.4.</span> <span class="content">Relation to P4307R0</span><a class="self-link" href="#relation-to-p4307r0" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L203" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="relation-to-p4307r0"><span class="section-number-3">4.4.</span> <span class="content">Relation to P4307R0</span><a class="self-link" href="#relation-to-p4307r0" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L203" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-4-4">
 <p>
 Infix named operators are a disjoint proposal. The only shared bit is the proposed <i>user-infix level</i> for precedence.
@@ -1172,11 +1172,11 @@ Infix named operators are a disjoint proposal. The only shared bit is the propos
 </div>
 </div>
 <div id="outline-container-the-token-set" class="outline-2">
-<h2 class="heading" id="the-token-set"><span class="section-number-2">5.</span> <span class="content">The token set</span><a class="self-link" href="#the-token-set" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L206" title="This section in the Org source">source</a></h2>
+<h2 class="heading" id="the-token-set"><span class="section-number-2">5.</span> <span class="content">The token set</span><a class="self-link" href="#the-token-set" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L206" title="This section in the Org source">source</a></h2>
 <div class="outline-text-2" id="text-5">
 </div>
 <div id="outline-container-deriving-it" class="outline-3">
-<h3 class="heading" id="deriving-it"><span class="section-number-3">5.1.</span> <span class="content">Deriving it</span><a class="self-link" href="#deriving-it" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L208" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="deriving-it"><span class="section-number-3">5.1.</span> <span class="content">Deriving it</span><a class="self-link" href="#deriving-it" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L208" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-5-1">
 <p>
 UAX #31 defines <b>R3c, "Operator Identifiers"</b> — introduced by §4.2.1,
@@ -1226,7 +1226,7 @@ This paper proposes to list the allowed code point table explicitly with the alg
 </div>
 </div>
 <div id="outline-container-immutable-is-not-closed" class="outline-3">
-<h3 class="heading" id="immutable-is-not-closed"><span class="section-number-3">5.2.</span> <span class="content">Immutable is not closed</span><a class="self-link" href="#immutable-is-not-closed" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L240" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="immutable-is-not-closed"><span class="section-number-3">5.2.</span> <span class="content">Immutable is not closed</span><a class="self-link" href="#immutable-is-not-closed" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L240" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-5-2">
 <p>
 An immutable property in Unicode means that an assigned code point will neve gain or lose that property. However, that does not mean that newly asinged code points could not be given the property.
@@ -1235,11 +1235,11 @@ In particular this means that confusability analysis can not be carried out in a
 </div>
 </div>
 <div id="outline-container-the-exclusion-sets" class="outline-3">
-<h3 class="heading" id="the-exclusion-sets"><span class="section-number-3">5.3.</span> <span class="content">The exclusion sets</span><a class="self-link" href="#the-exclusion-sets" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L243" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="the-exclusion-sets"><span class="section-number-3">5.3.</span> <span class="content">The exclusion sets</span><a class="self-link" href="#the-exclusion-sets" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L243" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-5-3">
 </div>
 <div id="outline-container-identifier-characters" class="outline-4">
-<h4 class="heading" id="identifier-characters"><span class="section-number-4">5.3.1.</span> <span class="content">Identifier Characters</span><a class="self-link" href="#identifier-characters" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L244" title="This section in the Org source">source</a></h4>
+<h4 class="heading" id="identifier-characters"><span class="section-number-4">5.3.1.</span> <span class="content">Identifier Characters</span><a class="self-link" href="#identifier-characters" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L244" title="This section in the Org source">source</a></h4>
 <div class="outline-text-4" id="text-5-3-1">
 <p>
  TR31 §7.1's mathematical profile earmarks <code>∂</code>, <code>∇</code> and <code>∞</code> as <i>identifier</i>
@@ -1248,7 +1248,7 @@ characters, and its companion syntax profile removes them from syntactic use.
 </div>
 </div>
 <div id="outline-container-confusable-with-an-existing-token" class="outline-4">
-<h4 class="heading" id="confusable-with-an-existing-token"><span class="section-number-4">5.3.2.</span> <span class="content">Confusable with an existing token</span><a class="self-link" href="#confusable-with-an-existing-token" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L247" title="This section in the Org source">source</a></h4>
+<h4 class="heading" id="confusable-with-an-existing-token"><span class="section-number-4">5.3.2.</span> <span class="content">Confusable with an existing token</span><a class="self-link" href="#confusable-with-an-existing-token" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L247" title="This section in the Org source">source</a></h4>
 <div class="outline-text-4" id="text-5-3-2">
 <p>
 A character that looks like <code>-</code> and is not <code>-</code> should fail to lex.
@@ -1270,60 +1270,80 @@ A character that looks like <code>-</code> and is not <code>-</code> should fail
 </thead>
 <tbody>
 <tr>
-<td class="org-left"><code>−</code></td>
-<td class="org-left">U+2212 (<code>-</code>)</td>
+<td class="org-left"><code>−</code> U+2212</td>
+<td class="org-left">(<code>-</code>)</td>
 </tr>
 
 <tr>
-<td class="org-left"><code>∕</code></td>
-<td class="org-left">U+2215 and ⁄ U+2044 (<code>/</code>)</td>
+<td class="org-left"><code>∕</code>  U+2215</td>
+<td class="org-left">(<code>/</code>)</td>
 </tr>
 
 <tr>
-<td class="org-left"><code>∗</code></td>
-<td class="org-left">U+2217 (<code>*</code>)</td>
+<td class="org-left"><code>⁄</code> U+2044</td>
+<td class="org-left">(<code>/</code>)</td>
 </tr>
 
 <tr>
-<td class="org-left"><code>∣</code></td>
-<td class="org-left">U+2223 (<code>∣</code>)</td>
+<td class="org-left"><code>∗</code> U+2217</td>
+<td class="org-left">(<code>*</code>)</td>
 </tr>
 
 <tr>
-<td class="org-left"><code>∶</code></td>
-<td class="org-left">U+2236 (<code>:</code>)</td>
+<td class="org-left"><code>∣</code> U+2223</td>
+<td class="org-left">(<code>∣</code>)</td>
 </tr>
 
 <tr>
-<td class="org-left"><code>∙</code></td>
-<td class="org-left">U+2219 and <code>⋅</code> U+22C5 (<code>.</code>)</td>
+<td class="org-left"><code>∶</code> U+2236</td>
+<td class="org-left">(<code>:</code>)</td>
 </tr>
 
 <tr>
-<td class="org-left"><code>≤</code></td>
-<td class="org-left">U+2264 and <code>⇐</code> U+21D0 (<code>&lt;=</code>)</td>
+<td class="org-left"><code>∙</code> U+2219</td>
+<td class="org-left">(<code>.</code>)</td>
 </tr>
 
 <tr>
-<td class="org-left"><code>≥</code></td>
-<td class="org-left">U+2265 (<code>&gt;=</code>)</td>
+<td class="org-left"><code>⋅</code> U+22C5</td>
+<td class="org-left">(<code>.</code>)</td>
 </tr>
 
 <tr>
-<td class="org-left"><code>⇒</code></td>
-<td class="org-left">U+21D2 (<code>=&gt;</code>)</td>
+<td class="org-left"><code>≤</code> U+2264</td>
+<td class="org-left">(<code>&lt;=</code>)</td>
 </tr>
 
 <tr>
-<td class="org-left"><code>⇔</code></td>
-<td class="org-left">U+21D4 (<code>&lt;=&gt;</code>)</td>
+<td class="org-left"><code>⇐</code> U+21D0</td>
+<td class="org-left">(<code>&lt;=</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>≥</code> U+2265</td>
+<td class="org-left">(<code>&gt;=</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>⇒</code> U+21D2</td>
+<td class="org-left">(<code>=&gt;</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>⇔</code> U+21D4</td>
+<td class="org-left">(<code>&lt;=&gt;</code>)</td>
+</tr>
+
+<tr>
+<td class="org-left">&nbsp;</td>
+<td class="org-left">&nbsp;</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 <div id="outline-container-emoji-presentation" class="outline-4">
-<h4 class="heading" id="emoji-presentation"><span class="section-number-4">5.3.3.</span> <span class="content">Emoji Presentation</span><a class="self-link" href="#emoji-presentation" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L263" title="This section in the Org source">source</a></h4>
+<h4 class="heading" id="emoji-presentation"><span class="section-number-4">5.3.3.</span> <span class="content">Emoji Presentation</span><a class="self-link" href="#emoji-presentation" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L263" title="This section in the Org source">source</a></h4>
 <div class="outline-text-4" id="text-5-3-3">
 <p>
 The code points inside the blocks that TR31 §7.2's emoji profile carves out:
@@ -1336,7 +1356,7 @@ them to render consistently.
 </div>
 </div>
 <div id="outline-container-spelling-the-glyph-and-the-ucn" class="outline-3">
-<h3 class="heading" id="spelling-the-glyph-and-the-ucn"><span class="section-number-3">5.4.</span> <span class="content">Spelling: the glyph and the UCN</span><a class="self-link" href="#spelling-the-glyph-and-the-ucn" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L270" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="spelling-the-glyph-and-the-ucn"><span class="section-number-3">5.4.</span> <span class="content">Spelling: the glyph and the UCN</span><a class="self-link" href="#spelling-the-glyph-and-the-ucn" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L270" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-5-4">
 <p>
 A universal-character-name designating a user-operator code point (including
@@ -1349,11 +1369,11 @@ define with another, use with a third, they are emitted identically.
 </div>
 </div>
 <div id="outline-container-placement-in-grammar" class="outline-2">
-<h2 class="heading" id="placement-in-grammar"><span class="section-number-2">6.</span> <span class="content">Placement in Grammar</span><a class="self-link" href="#placement-in-grammar" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L278" title="This section in the Org source">source</a></h2>
+<h2 class="heading" id="placement-in-grammar"><span class="section-number-2">6.</span> <span class="content">Placement in Grammar</span><a class="self-link" href="#placement-in-grammar" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L278" title="This section in the Org source">source</a></h2>
 <div class="outline-text-2" id="text-6">
 </div>
 <div id="outline-container-one-level-for-all-user-introduced-infix" class="outline-3">
-<h3 class="heading" id="one-level-for-all-user-introduced-infix"><span class="section-number-3">6.1.</span> <span class="content">One level for all user-introduced infix</span><a class="self-link" href="#one-level-for-all-user-introduced-infix" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L280" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="one-level-for-all-user-introduced-infix"><span class="section-number-3">6.1.</span> <span class="content">One level for all user-introduced infix</span><a class="self-link" href="#one-level-for-all-user-introduced-infix" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L280" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-6-1">
 <div class="grammar"><pre class="grammar">user-infix-expression:
     cast-expression
@@ -1386,7 +1406,7 @@ The precedence rules mean that  <code>-a ⊞ -b</code> is <code>operator⊞(-a, 
 </div>
 </div>
 <div id="outline-container-prefix-and-how-position-decides" class="outline-3">
-<h3 class="heading" id="prefix-and-how-position-decides"><span class="section-number-3">6.2.</span> <span class="content">Prefix, and how position decides</span><a class="self-link" href="#prefix-and-how-position-decides" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L306" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="prefix-and-how-position-decides"><span class="section-number-3">6.2.</span> <span class="content">Prefix, and how position decides</span><a class="self-link" href="#prefix-and-how-position-decides" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L306" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-6-2">
 <p>
 Arity determines at the declaraion. In use, it is purely positional. Post-operand is infix, in operand position it is prefix. There is no lookahead or whitespace sensitivity.
@@ -1394,7 +1414,7 @@ Arity determines at the declaraion. In use, it is purely positional. Post-operan
 </div>
 </div>
 <div id="outline-container-postfix-and-why-not" class="outline-3">
-<h3 class="heading" id="postfix-and-why-not"><span class="section-number-3">6.3.</span> <span class="content">Postfix, and why not</span><a class="self-link" href="#postfix-and-why-not" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L309" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="postfix-and-why-not"><span class="section-number-3">6.3.</span> <span class="content">Postfix, and why not</span><a class="self-link" href="#postfix-and-why-not" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L309" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-6-3">
 <p>
 <code>operator++</code> in prefix form is parsed as a cast-expression, in postfix in postfix-suffix, and <code>++</code> has no infix form. This restriction is not available for user defined operators without somehow pre-classifying them, which would mean assinging meaning to them. That is not possible as different fields have already ambiguated them.
@@ -1402,7 +1422,7 @@ Arity determines at the declaraion. In use, it is purely positional. Post-operan
 </div>
 </div>
 <div id="outline-container-fold-expressions" class="outline-3">
-<h3 class="heading" id="fold-expressions"><span class="section-number-3">6.4.</span> <span class="content">Fold expressions</span><a class="self-link" href="#fold-expressions" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L312" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="fold-expressions"><span class="section-number-3">6.4.</span> <span class="content">Fold expressions</span><a class="self-link" href="#fold-expressions" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L312" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-6-4">
 <p>
 A user operator is not a fold operator: <code>(... ⊞ N)</code> is ill-formed.
@@ -1415,11 +1435,11 @@ This is primarily because the existing implementations do not provide a mechanis
 </div>
 </div>
 <div id="outline-container-declaring-looking-up-desugaring" class="outline-2">
-<h2 class="heading" id="declaring-looking-up-desugaring"><span class="section-number-2">7.</span> <span class="content">Declaring, looking up, desugaring</span><a class="self-link" href="#declaring-looking-up-desugaring" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L317" title="This section in the Org source">source</a></h2>
+<h2 class="heading" id="declaring-looking-up-desugaring"><span class="section-number-2">7.</span> <span class="content">Declaring, looking up, desugaring</span><a class="self-link" href="#declaring-looking-up-desugaring" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L317" title="This section in the Org source">source</a></h2>
 <div class="outline-text-2" id="text-7">
 </div>
 <div id="outline-container-restrictions-on-operators" class="outline-3">
-<h3 class="heading" id="restrictions-on-operators"><span class="section-number-3">7.1.</span> <span class="content">Restrictions on Operators</span><a class="self-link" href="#restrictions-on-operators" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L319" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="restrictions-on-operators"><span class="section-number-3">7.1.</span> <span class="content">Restrictions on Operators</span><a class="self-link" href="#restrictions-on-operators" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L319" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-7-1">
 <p>
 <a class="sref" href="https://eel.is/c++draft/over.oper.general">[over.oper.general]</a> imposes five restrictions on an operator function.
@@ -1466,7 +1486,7 @@ form for <i>declarations</i>, and does not filter <i>uses</i>.
 </div>
 </div>
 <div id="outline-container-one-candidate-set-and-no-built-in-candidates" class="outline-3">
-<h3 class="heading" id="one-candidate-set-and-no-built-in-candidates"><span class="section-number-3">7.2.</span> <span class="content">One candidate set, and no built-in candidates</span><a class="self-link" href="#one-candidate-set-and-no-built-in-candidates" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L351" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="one-candidate-set-and-no-built-in-candidates"><span class="section-number-3">7.2.</span> <span class="content">One candidate set, and no built-in candidates</span><a class="self-link" href="#one-candidate-set-and-no-built-in-candidates" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L351" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-7-2">
 <p>
 <code>x ⊞ y</code> assembles member candidates from the left operand's class and
@@ -1486,7 +1506,7 @@ call finds:
 </div>
 </div>
 <div id="outline-container-one-level-and-no-fixity-declarations" class="outline-2">
-<h2 class="heading" id="one-level-and-no-fixity-declarations"><span class="section-number-2">8.</span> <span class="content">One level, and no fixity declarations</span><a class="self-link" href="#one-level-and-no-fixity-declarations" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L363" title="This section in the Org source">source</a></h2>
+<h2 class="heading" id="one-level-and-no-fixity-declarations"><span class="section-number-2">8.</span> <span class="content">One level, and no fixity declarations</span><a class="self-link" href="#one-level-and-no-fixity-declarations" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L363" title="This section in the Org source">source</a></h2>
 <div class="outline-text-2" id="text-8">
 <p>
 Precedence and associativity are fixed by this paper, at one level, and
@@ -1508,14 +1528,14 @@ lookup.
 </div>
 </div>
 <div id="outline-container-implementation-experience" class="outline-2">
-<h2 class="heading" id="implementation-experience"><span class="section-number-2">9.</span> <span class="content">Implementation experience</span><a class="self-link" href="#implementation-experience" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L378" title="This section in the Org source">source</a></h2>
+<h2 class="heading" id="implementation-experience"><span class="section-number-2">9.</span> <span class="content">Implementation experience</span><a class="self-link" href="#implementation-experience" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L378" title="This section in the Org source">source</a></h2>
 <div class="outline-text-2" id="text-9">
 <p>
 This proposal has been implemented in Clang against 23 and the changes ported forward to trunk. There were no particular surprises or difficulty once a new expression node was added.
 </p>
 </div>
 <div id="outline-container-volume" class="outline-3">
-<h3 class="heading" id="volume"><span class="section-number-3">9.1.</span> <span class="content">Volume</span><a class="self-link" href="#volume" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L380" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="volume"><span class="section-number-3">9.1.</span> <span class="content">Volume</span><a class="self-link" href="#volume" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L380" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-9-1">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -1557,7 +1577,7 @@ This proposal has been implemented in Clang against 23 and the changes ported fo
 </div>
 </div>
 <div id="outline-container-mangling-and-abi" class="outline-3">
-<h3 class="heading" id="mangling-and-abi"><span class="section-number-3">9.2.</span> <span class="content">Mangling and ABI</span><a class="self-link" href="#mangling-and-abi" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L388" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="mangling-and-abi"><span class="section-number-3">9.2.</span> <span class="content">Mangling and ABI</span><a class="self-link" href="#mangling-and-abi" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L388" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-9-2">
 <p>
 The prototype mangles through the Itanium ABI's existing vendor-extended
@@ -1574,7 +1594,7 @@ to invent one at let it escape.
 </div>
 </div>
 <div id="outline-container-formatting" class="outline-3">
-<h3 class="heading" id="formatting"><span class="section-number-3">9.3.</span> <span class="content">Formatting</span><a class="self-link" href="#formatting" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L398" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="formatting"><span class="section-number-3">9.3.</span> <span class="content">Formatting</span><a class="self-link" href="#formatting" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L398" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-9-3">
 <p>
 <code>clang-format</code> required about forty lines across three files: no new token
@@ -1590,7 +1610,7 @@ which a delimiter-pair syntax structurally cannot.
 </div>
 </div>
 <div id="outline-container-wording" class="outline-2">
-<h2 class="heading" id="wording"><span class="section-number-2">10.</span> <span class="content">Wording</span><a class="self-link" href="#wording" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L409" title="This section in the Org source">source</a></h2>
+<h2 class="heading" id="wording"><span class="section-number-2">10.</span> <span class="content">Wording</span><a class="self-link" href="#wording" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L409" title="This section in the Org source">source</a></h2>
 <div class="outline-text-2" id="text-10">
 <p>
 The following wording is pro forma. It is intended to make the grammar change
@@ -1599,14 +1619,14 @@ current working draft.
 </p>
 </div>
 <div id="outline-container-lexoperators" class="outline-3">
-<h3 class="heading" id="lexoperators"><span class="section-number-3">10.1.</span> <span class="content">[lex.operators]</span><a class="self-link" href="#lexoperators" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L415" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="lexoperators"><span class="section-number-3">10.1.</span> <span class="content">[lex.operators]</span><a class="self-link" href="#lexoperators" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L415" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-10-1">
 <p>
 Add <i>user-operator</i> as an alternative of <i>operator-or-punctuator</i> in
 <a class="sref" href="https://eel.is/c++draft/lex.operators">[lex.operators]</a>:
 </p>
 
-<div class="addedblock" id="orgcbca29d">
+<div class="addedblock" id="org02528f3">
 <blockquote>
 <div class="grammar"><pre class="grammar">user-operator:
     <span class="descr">one of the characters in Table X, User-operator characters</span></pre></div>
@@ -1623,13 +1643,13 @@ characters forms the same token by the existing translation rules.
 </div>
 </div>
 <div id="outline-container-exprunarygeneral" class="outline-3">
-<h3 class="heading" id="exprunarygeneral"><span class="section-number-3">10.2.</span> <span class="content">[expr.unary.general]</span><a class="self-link" href="#exprunarygeneral" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L435" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="exprunarygeneral"><span class="section-number-3">10.2.</span> <span class="content">[expr.unary.general]</span><a class="self-link" href="#exprunarygeneral" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L435" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-10-2">
 <p>
 Add an alternative to <i>unary-expression</i> in <a class="sref" href="https://eel.is/c++draft/expr.unary.general">[expr.unary.general]</a>:
 </p>
 
-<div class="addedblock" id="orgc6e1cc6">
+<div class="addedblock" id="org2d2f230">
 <blockquote>
 <div class="grammar"><pre class="grammar">unary-expression:
     <span class="descr">...</span>
@@ -1640,7 +1660,7 @@ Add an alternative to <i>unary-expression</i> in <a class="sref" href="https://e
 </div>
 </div>
 <div id="outline-container-exprmptroper" class="outline-3">
-<h3 class="heading" id="exprmptroper"><span class="section-number-3">10.3.</span> <span class="content">[expr.mptr.oper]</span><a class="self-link" href="#exprmptroper" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L449" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="exprmptroper"><span class="section-number-3">10.3.</span> <span class="content">[expr.mptr.oper]</span><a class="self-link" href="#exprmptroper" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L449" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-10-3">
 <p>
 Modify the grammar of <a class="sref" href="https://eel.is/c++draft/expr.mptr.oper">[expr.mptr.oper]</a> paragraph 1:
@@ -1655,7 +1675,7 @@ Modify the grammar of <a class="sref" href="https://eel.is/c++draft/expr.mptr.op
 </div>
 </div>
 <div id="outline-container-expruser-new-subclause" class="outline-3">
-<h3 class="heading" id="expruser-new-subclause"><span class="section-number-3">10.4.</span> <span class="content">[expr.user] (new subclause)</span><a class="self-link" href="#expruser-new-subclause" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L462" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="expruser-new-subclause"><span class="section-number-3">10.4.</span> <span class="content">[expr.user] (new subclause)</span><a class="self-link" href="#expruser-new-subclause" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L462" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-10-4">
 <p>
 Insert a new subclause between <a class="sref" href="https://eel.is/c++draft/expr.cast">[expr.cast]</a> and
@@ -1663,7 +1683,7 @@ Insert a new subclause between <a class="sref" href="https://eel.is/c++draft/exp
 </p>
 </div>
 <div id="outline-container-expr.user" class="outline-4 wg21-wording wg21-addition">
-<h4 class="heading" id="expr.user"><span class="content">User-defined operators [expr.user]</span><a class="self-link" href="#expr.user" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L467" title="This section in the Org source">source</a></h4>
+<h4 class="heading" id="expr.user"><span class="content">User-defined operators [expr.user]</span><a class="self-link" href="#expr.user" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L467" title="This section in the Org source">source</a></h4>
 <div class="outline-text-4" id="text-expr.user">
 <div class="grammar"><pre class="grammar">user-infix-expression:
     cast-expression
@@ -1672,7 +1692,7 @@ Insert a new subclause between <a class="sref" href="https://eel.is/c++draft/exp
 </div>
 </div>
 <div id="outline-container-overopergeneral" class="outline-3">
-<h3 class="heading" id="overopergeneral"><span class="section-number-3">10.5.</span> <span class="content">[over.oper.general]</span><a class="self-link" href="#overopergeneral" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L481" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="overopergeneral"><span class="section-number-3">10.5.</span> <span class="content">[over.oper.general]</span><a class="self-link" href="#overopergeneral" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L481" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-10-5">
 <p>
 Modify the <i>operator-function-id</i> grammar in <a class="sref" href="https://eel.is/c++draft/over.oper.general">[over.oper.general]</a>:
@@ -1688,7 +1708,7 @@ Modify the <i>operator-function-id</i> grammar in <a class="sref" href="https://
 Add after the grammar:
 </p>
 
-<div class="addedblock" id="org4470a06">
+<div class="addedblock" id="org64fe881">
 <blockquote>
 <div class="pnum pnum-explicit"><a class="pnum-number" id="pnum-1" href="#pnum-1" data-pnum="x" aria-label="Paragraph x"></a><p>
 An operator function whose <i>operator-function-id</i> contains a
@@ -1727,7 +1747,7 @@ of <a class="sref" href="https://eel.is/c++draft/over.oper">[over.oper]</a>.
 </div>
 </div>
 <div id="outline-container-overmatchoper" class="outline-3">
-<h3 class="heading" id="overmatchoper"><span class="section-number-3">10.6.</span> <span class="content">[over.match.oper]</span><a class="self-link" href="#overmatchoper" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L522" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="overmatchoper"><span class="section-number-3">10.6.</span> <span class="content">[over.match.oper]</span><a class="self-link" href="#overmatchoper" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L522" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-10-6">
 <p>
 Modify the first sentence of <a class="sref" href="https://eel.is/c++draft/over.match.oper">[over.match.oper]</a> paragraph 1:
@@ -1771,7 +1791,7 @@ the built-in candidates set is empty.
 </div>
 </div>
 <div id="outline-container-overunary-and-overbinary" class="outline-3">
-<h3 class="heading" id="overunary-and-overbinary"><span class="section-number-3">10.7.</span> <span class="content">[over.unary] and [over.binary]</span><a class="self-link" href="#overunary-and-overbinary" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L552" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="overunary-and-overbinary"><span class="section-number-3">10.7.</span> <span class="content">[over.unary] and [over.binary]</span><a class="self-link" href="#overunary-and-overbinary" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L552" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-10-7">
 <p>
 In <a class="sref" href="https://eel.is/c++draft/over.unary">[over.unary]</a>, extend the definition of a prefix unary operator
@@ -1789,7 +1809,7 @@ Annex A (<a class="sref" href="https://eel.is/c++draft/gram">[gram]</a>) is upda
 </div>
 </div>
 <div id="outline-container-references" class="outline-2">
-<h2 class="heading" id="references"><span class="section-number-2">11.</span> <span class="content">References</span><a class="self-link" href="#references" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/4e91cc5a7fbf7b0856bc01fa4e8dcc56591090ab/papers/unicode-mathematical-operators.org?plain=1#L563" title="This section in the Org source">source</a></h2>
+<h2 class="heading" id="references"><span class="section-number-2">11.</span> <span class="content">References</span><a class="self-link" href="#references" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/5d677f8ee663944ecc121a66276240c6b180ef1a/papers/unicode-mathematical-operators.org?plain=1#L563" title="This section in the Org source">source</a></h2>
 <div class="outline-text-2" id="text-11">
 <div class="csl-bib-body">
   <div class="csl-entry"><a id="citeproc_bib_item_1"></a>Beeton, Barbara, Asmus Freytag, and Murray Sargent III. 2017. “Unicode Technical Report #25: Unicode Support for Mathematics (Revision 15).” The Unicode Consortium. <a href="https://www.unicode.org/reports/tr25/tr25-15.pdf">https://www.unicode.org/reports/tr25/tr25-15.pdf</a>.</div>
