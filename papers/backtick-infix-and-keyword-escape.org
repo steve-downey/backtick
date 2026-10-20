@@ -109,7 +109,84 @@
 Blank slate rewrite of prose.
 ** R0
 
+Before / After
+#+begin_cmptbl
+#+begin_cmptblcell before
+*Before*
+#+end_cmptblcell
+#+begin_cmptblcell after
+*After*
+#+end_cmptblcell
+#+begin_cmptblcell before src c++
+Matrix mul(Matrix const&, Matrix const&);
+Matrix kron(Matrix const&, Matrix const&);
+
+auto r = mul(kron(a, b), mul(c, d));
+#+end_cmptblcell
+#+begin_cmptblcell after src c++
+Matrix operator⊗(Matrix const&, Matrix const&);
+Matrix operator⊠(Matrix const&, Matrix const&);
+
+auto r = (a ⊠ b) ⊗ (c ⊗ d);
+#+end_cmptblcell
+#+begin_cmptblcell before src c++
+Set union_(Set const&, Set const&);
+Set inter(Set const&, Set const&);
+
+auto s = union_(inter(x, y), z);
+#+end_cmptblcell
+#+begin_cmptblcell after src c++
+Set operator∪(Set const&, Set const&);
+Set operator∩(Set const&, Set const&);
+
+auto s = (x ∩ y) ∪ z;
+#+end_cmptblcell
+#+end_cmptbl
+
+
 * Before / After
+
+#+begin_cmptbl
+#+begin_cmptblcell before
+*Before*
+#+end_cmptblcell
+#+begin_cmptblcell after
+*After*
+#+end_cmptblcell
+#+begin_cmptblcell before src c++
+if (approx_equal(dot(u, v), 0.0))
+    reject(u, v);
+#+end_cmptblcell
+#+begin_cmptblcell after src c++
+if (u `dot` v `approx_equal` 0.0)
+    reject(u, v);
+#+end_cmptblcell
+#+begin_cmptblcell before src c++
+auto d = std::gcd(std::gcd(a, b), c);
+#+end_cmptblcell
+#+begin_cmptblcell after src c++
+auto d = a `std::gcd` b `std::gcd` c;
+#+end_cmptblcell
+#+begin_cmptblcell before src c++
+if (intersects(a, b) && !contains(a, b))
+    handle_partial_overlap(a, b);
+#+end_cmptblcell
+#+begin_cmptblcell after src c++
+if (a `intersects` b && !(a `contains` b))
+    handle_partial_overlap(a, b);
+#+end_cmptblcell
+#+begin_cmptblcell before src c++
+// evaluation inverts reading order:
+// innermost call is the first stage
+store(validate(parse(s)));
+#+end_cmptblcell
+#+begin_cmptblcell after src c++
+// with a two-line pipe helper,
+// stages read left to right
+s `pipe` parse `pipe` validate `pipe` store;
+#+end_cmptblcell
+#+end_cmptbl
+
 
 ** The infix operator
 
