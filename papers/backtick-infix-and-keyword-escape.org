@@ -109,42 +109,10 @@
 Blank slate rewrite of prose.
 ** R0
 
-Before / After
-#+begin_cmptbl
-#+begin_cmptblcell before
-*Before*
-#+end_cmptblcell
-#+begin_cmptblcell after
-*After*
-#+end_cmptblcell
-#+begin_cmptblcell before src c++
-Matrix mul(Matrix const&, Matrix const&);
-Matrix kron(Matrix const&, Matrix const&);
-
-auto r = mul(kron(a, b), mul(c, d));
-#+end_cmptblcell
-#+begin_cmptblcell after src c++
-Matrix operator⊗(Matrix const&, Matrix const&);
-Matrix operator⊠(Matrix const&, Matrix const&);
-
-auto r = (a ⊠ b) ⊗ (c ⊗ d);
-#+end_cmptblcell
-#+begin_cmptblcell before src c++
-Set union_(Set const&, Set const&);
-Set inter(Set const&, Set const&);
-
-auto s = union_(inter(x, y), z);
-#+end_cmptblcell
-#+begin_cmptblcell after src c++
-Set operator∪(Set const&, Set const&);
-Set operator∩(Set const&, Set const&);
-
-auto s = (x ∩ y) ∪ z;
-#+end_cmptblcell
-#+end_cmptbl
-
 
 * Before / After
+
+** The infix operator
 
 #+begin_cmptbl
 #+begin_cmptblcell before
@@ -188,39 +156,148 @@ s `pipe` parse `pipe` validate `pipe` store;
 #+end_cmptbl
 
 
-** The infix operator
-
-*** Before
-
-*** After
-
 ** The keyword escape
 
-*** Before
+#+begin_cmptbl
+#+begin_cmptblcell before
+*Before*
+#+end_cmptblcell
+#+begin_cmptblcell after
+*After*
+#+end_cmptblcell
+#+begin_cmptblcell before src c++
+// C++17: fine.  C++20: ill-formed —
+// 'requires' became a keyword.
+bool requires(const License& l);
 
-*** After
+if (requires(user.license))
+    admit(user);
+#+end_cmptblcell
+#+begin_cmptblcell after src c++
+// declares and calls an ordinary
+// function whose name is "requires"
+bool `requires`(const License& l);
+
+if (`requires`(user.license))
+    admit(user);
+#+end_cmptblcell
+#+end_cmptbl
 
 * The proposal
+Two features, one token, one paper.
+
+*The infix operator.* `` x `f` y `` is sugar for `f(x, y)` (equivalently
+`(f)(x, y)`), where the operator slot between the backticks is an arbitrary
+expression parsed as an _assignment-expression_, or a type-name, which
+constructs. The value, type, and semantics are exactly those of the
+corresponding call. The operator is left-associative and binds tighter than
+any other binary operator, looser than the unary and postfix operators.
+
+*The keyword escape.* In any position where the grammar expects a name (a
+_declarator-id_, a class, enumeration or namespace name, a template
+parameter's name, a label, an operand, after `.`, `->`, or `::`), a backtick
+pair wrapping a word spelled as an identifier denotes an ordinary identifier
+whose spelling is that word. Keywords are the case the feature is named for,
+and the rule is not restricted to them: `` `foobar` `` and `foobar` are the
+same identifier, so a declaration may use one spelling and its uses the other.
+It is purely a source-level construct; the resulting identifier participates
+in lookup, mangling, and linkage exactly as if the word had never been a
+keyword.
 
 * Motivation, beyond readability
 
 ** Short-circuiting returns to user code
+C++ reserves non-strict evaluation to a fixed set of built-ins: `&&`, `||`
+and `?:`. The comma operator is the near neighbor, and is not one of them: it
+evaluates both of its operands, and what it fixes is the *sequencing*.
+Overloading does not get non-strict evaluation back: an overloaded `operator&&`
+evaluates both operands, which is the trap everyone has been bitten by, and
+the reason the standing advice is: don't. Non-strict evaluation has been
+closed to user code since C++98.
+
+A backtick helper whose right operand is a *callable* reopens it, because the
+helper decides whether (and when) that operand runs:
+
+#+begin_src C++
+// short-circuiting logical implication:  p => q  ≡  !p || q
+inline constexpr auto implies =
+    [](bool p, auto&& q) -> bool { return !p || q(); };
+
+p `implies` [&]{ return expensive(); }   // runs only when p holds
+#+end_src
+
+The same shape gives lazy defaults (``opt `or_else` [&]{ return costly();
+}``), guarded effects, and bespoke control operators. Any binary operation
+that must not evaluate its right side unconditionally is in reach. Chaining
+fallible steps is the zero-ceremony special case: the stages are already
+functions, so no thunk is written and the short-circuit falls out:
+
+#+begin_src C++
+inline constexpr auto mbind =
+    [](auto&& m, auto&& f)
+    { return std::forward<decltype(m)>(m)
+                 .and_then(std::forward<decltype(f)>(f)); };
+
+parse(s) `mbind` validate `mbind` store;   // stops at the first error
+#+end_src
+
 
 ** One helper makes it a pipeline, and the ranges closures already fit
+#+begin_src c++
+inline constexpr auto pipe =
+    [](auto&& x, auto&& f) -> decltype(auto)
+    { return std::invoke(std::forward<decltype(f)>(f),
+                         std::forward<decltype(x)>(x)); };
 
-** Stages with extra arguments: the honest gap
+x `pipe` f `pipe` g `pipe` h        // h(g(f(x))) — data-flow order
+#+end_src
+
+This drives the existing range adaptor closures
+unchanged. `views::filter(pred)` and `views::transform(fn)` are already unary
+callables (`c | a` is defined as `a(c)`), so `pipe` feeds them directly:
+
+#+begin_src C++
+r `pipe` views::filter(pred) `pipe` views::transform(fn)
+// identical result and laziness to:
+r | views::filter(pred) | views::transform(fn)
+#+end_src
+
+Same closure objects, same lazy views, verified identical output on the
+built compiler. The per-library `operator|` overloads exist only to choose
+the `|`*syntax; the closures themselves need nothing, so they work under
+backtick for free.
 
 ** Reusable, point-free composition
+Compose stages into a named pipeline once, apply it many times:
 
-** Motivation, not a library proposal
+#+begin_src c++
+inline constexpr auto then =
+    [](auto f, auto g)
+    { return [=](auto&&... a) -> decltype(auto)
+        { return g(f(std::forward<decltype(a)>(a)...)); }; };
 
-* Neither replaces the other: P2011's ~|>~
+auto clean = trim `then` lower `then` dedup;   // a reusable callable
+clean(s);
+#+end_src
+
+Left association gives left-to-right composition, mirroring a reusable
+adaptor chain.
+
+** These are motivation, not proposals
+This is not a library paper, no library facilities are proposed.
 
 * Prior art
 
 ** Infix application of named callables
+Haskell, PureScript, and other Haskell descendents have backtick for infixing. Kotlin has an ~infix~ keyword. R has ~%op%~ operators. Fortress has named operators.
 
 ** Escaping keywords as identifiers
+C# @-verbatim.
+F# double backtick names.
+Nim backtick stropping.
+Kotlin backtick identifiers.
+Swift ~`class`~ .
+Rust raw identifiers.
 
 * Design choices and decisions
 
@@ -247,6 +324,16 @@ s `pipe` parse `pipe` validate `pipe` store;
 * Anticipated objections
 
 ** "Define ~*~ on a type instead"
+The objection: named binary operations do not need an infix spelling, because
+C++ already has one, which is to overload an operator on a type. Saturating
+multiplication does not need   ~a `mul_sat` b~ ; it needs a
+~Saturating<double>~ whose ~operator*~ saturates.
+
+Anyone having tried this knows all the problems.
+
+You can't overload for ~operator*(double, double)~, you need a Saturating<double> in play. This is why we already added ~std::mul_sat~. We, rightly, did not ship a ~Saturating<T>~.
+
+The scope is too broad, and it is painfully easy to use saturating math in places you did not expect to. The ergonomics of a single ~*~ operator make different behavior depending on the argument types a trap.
 
 * Fitting the grammar, without collision
 
