@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2026-10-22 Thu 16:34 -->
+<!-- 2026-10-23 Fri 10:43 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>An Infix Operator and a Keyword Escape for C++</title>
@@ -800,6 +800,18 @@ pre.src {
         /* rainbow-delimiters-depth-3-face */
         color: #00eff0;
       }
+.org-rainbow-delimiters-depth-4 {
+        /* rainbow-delimiters-depth-4-face */
+        color: #ff6b55;
+      }
+.org-rainbow-delimiters-depth-5 {
+        /* rainbow-delimiters-depth-5-face */
+        color: #efef00;
+      }
+.org-rainbow-delimiters-depth-6 {
+        /* rainbow-delimiters-depth-6-face */
+        color: #b6a0ff;
+      }
 .org-type {
         /* font-lock-type-face */
         color: #6ae4b9;
@@ -863,6 +875,18 @@ pre.src {
         /* rainbow-delimiters-depth-3-face */
         color: #008899;
       }
+.org-rainbow-delimiters-depth-4 {
+        /* rainbow-delimiters-depth-4-face */
+        color: #972500;
+      }
+.org-rainbow-delimiters-depth-5 {
+        /* rainbow-delimiters-depth-5-face */
+        color: #808000;
+      }
+.org-rainbow-delimiters-depth-6 {
+        /* rainbow-delimiters-depth-6-face */
+        color: #531ab6;
+      }
 .org-type {
         /* font-lock-type-face */
         color: #005f5f;
@@ -923,6 +947,18 @@ pre.src code { color: inherit; background: transparent; }
 :root:not(:has(#wg21-mode-light:checked)) .org-rainbow-delimiters-depth-3 {
         /* rainbow-delimiters-depth-3-face */
         color: #008899;
+      }
+:root:not(:has(#wg21-mode-light:checked)) .org-rainbow-delimiters-depth-4 {
+        /* rainbow-delimiters-depth-4-face */
+        color: #972500;
+      }
+:root:not(:has(#wg21-mode-light:checked)) .org-rainbow-delimiters-depth-5 {
+        /* rainbow-delimiters-depth-5-face */
+        color: #808000;
+      }
+:root:not(:has(#wg21-mode-light:checked)) .org-rainbow-delimiters-depth-6 {
+        /* rainbow-delimiters-depth-6-face */
+        color: #531ab6;
       }
 :root:not(:has(#wg21-mode-light:checked)) .org-type {
         /* font-lock-type-face */
@@ -985,6 +1021,18 @@ pre.src code { color: inherit; background: transparent; }
         /* rainbow-delimiters-depth-3-face */
         color: #008899;
       }
+:root:has(#wg21-mode-dark:checked) .org-rainbow-delimiters-depth-4 {
+        /* rainbow-delimiters-depth-4-face */
+        color: #972500;
+      }
+:root:has(#wg21-mode-dark:checked) .org-rainbow-delimiters-depth-5 {
+        /* rainbow-delimiters-depth-5-face */
+        color: #808000;
+      }
+:root:has(#wg21-mode-dark:checked) .org-rainbow-delimiters-depth-6 {
+        /* rainbow-delimiters-depth-6-face */
+        color: #531ab6;
+      }
 :root:has(#wg21-mode-dark:checked) .org-type {
         /* font-lock-type-face */
         color: #005f5f;
@@ -1006,6 +1054,7 @@ pre.src code { color: inherit; background: transparent; }
 :root:has(#wg21-mode-dark:checked) pre.src code { color: inherit; background: transparent; }
 }
 </style>
+<style>.csl-entry{text-indent: -1.5em; margin-left: 1.5em;}</style>
 </head>
 <body>
 <div id="content">
@@ -1013,25 +1062,25 @@ pre.src code { color: inherit; background: transparent; }
 <div data-fill-with="spec-metadata">
 <dl>
 <dt>Document #:</dt><dd>D4307R1 [<a href="https://wg21.link/P4307">Latest</a>] [<a href="https://wg21.link/P4307/status">Status</a>]</dd>
-<dt>Date:</dt><dd>2026-10-20</dd>
+<dt>Date:</dt><dd>2026-10-22</dd>
 <dt>Project:</dt><dd>Programming Language C++</dd>
 <dt>Audience:</dt><dd>EWG</dd>
 <dt>Reply-to:</dt><dd><a class="p-name fn u-email email" href="mailto:sdowney@gmail.com">Steve Downey &lt;sdowney@gmail.com&gt;</a></dd>
-<dt>Source:</dt><dd><a href="https://github.com/steve-downey/backtick">https://github.com/steve-downey/backtick</a></dd><dd><a href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org">papers/backtick-infix-and-keyword-escape.org</a></dd><dd>heads/blank-slate-0-g3aaa47c-dirty</dd>
+<dt>Source:</dt><dd><a href="https://github.com/steve-downey/backtick">https://github.com/steve-downey/backtick</a></dd><dd><a href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org">papers/backtick-infix-and-keyword-escape.org</a></dd><dd>heads/blank-slate-0-gfdeaeb0-dirty</dd>
 <dt class="mode-toggle">Theme:</dt><dd class="mode-toggle"><label><input type="radio" name="wg21-mode" id="wg21-mode-light"> Light</label><label><input type="radio" name="wg21-mode" id="wg21-mode-dark"> Dark</label><label><input type="radio" name="wg21-mode" id="wg21-mode-system" checked> System</label></dd>
 <dt class="diff-toggle">Wording:</dt><dd class="diff-toggle"><label><input type="checkbox" id="wg21-hide-deleted"> Hide deleted text</label></dd>
 </dl>
 </div>
 <div id="outline-container-abstract" class="outline-2">
-<h2 class="heading" id="abstract"><span class="section-number-2">1.</span> <span class="content">Abstract</span><a class="self-link" href="#abstract" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L104" title="This section in the Org source">source</a></h2>
+<h2 class="heading" id="abstract"><span class="section-number-2">1.</span> <span class="content">Abstract</span><a class="self-link" href="#abstract" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L104" title="This section in the Org source">source</a></h2>
 </div>
 
 <div id="outline-container-revision-history" class="outline-2">
-<h2 class="heading" id="revision-history"><span class="section-number-2">2.</span> <span class="content">Revision history</span><a class="self-link" href="#revision-history" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L106" title="This section in the Org source">source</a></h2>
+<h2 class="heading" id="revision-history"><span class="section-number-2">2.</span> <span class="content">Revision history</span><a class="self-link" href="#revision-history" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L106" title="This section in the Org source">source</a></h2>
 <div class="outline-text-2" id="text-2">
 </div>
 <div id="outline-container-r1" class="outline-3">
-<h3 class="heading" id="r1"><span class="section-number-3">2.1.</span> <span class="content">R1</span><a class="self-link" href="#r1" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L108" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="r1"><span class="section-number-3">2.1.</span> <span class="content">R1</span><a class="self-link" href="#r1" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L108" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
 Blank slate rewrite of prose.
@@ -1039,15 +1088,15 @@ Blank slate rewrite of prose.
 </div>
 </div>
 <div id="outline-container-r0" class="outline-3">
-<h3 class="heading" id="r0"><span class="section-number-3">2.2.</span> <span class="content">R0</span><a class="self-link" href="#r0" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L110" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="r0"><span class="section-number-3">2.2.</span> <span class="content">R0</span><a class="self-link" href="#r0" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L110" title="This section in the Org source">source</a></h3>
 </div>
 </div>
 <div id="outline-container-before--after" class="outline-2">
-<h2 class="heading" id="before--after"><span class="section-number-2">3.</span> <span class="content">Before / After</span><a class="self-link" href="#before--after" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L147" title="This section in the Org source">source</a></h2>
+<h2 class="heading" id="before--after"><span class="section-number-2">3.</span> <span class="content">Before / After</span><a class="self-link" href="#before--after" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L113" title="This section in the Org source">source</a></h2>
 <div class="outline-text-2" id="text-3">
 </div>
 <div id="outline-container-the-infix-operator" class="outline-3">
-<h3 class="heading" id="the-infix-operator"><span class="section-number-3">3.1.</span> <span class="content">The infix operator</span><a class="self-link" href="#the-infix-operator" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L191" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="the-infix-operator"><span class="section-number-3">3.1.</span> <span class="content">The infix operator</span><a class="self-link" href="#the-infix-operator" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L115" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-3-1">
 <table class="cmptbl">
 <thead>
@@ -1099,7 +1148,7 @@ Blank slate rewrite of prose.
 </div>
 </div>
 <div id="outline-container-the-keyword-escape" class="outline-3">
-<h3 class="heading" id="the-keyword-escape"><span class="section-number-3">3.2.</span> <span class="content">The keyword escape</span><a class="self-link" href="#the-keyword-escape" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L197" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="the-keyword-escape"><span class="section-number-3">3.2.</span> <span class="content">The keyword escape</span><a class="self-link" href="#the-keyword-escape" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L159" title="This section in the Org source">source</a></h3>
 <div class="outline-text-3" id="text-3-2">
 <table class="cmptbl">
 <thead>
@@ -1133,164 +1182,511 @@ Blank slate rewrite of prose.
 </div>
 </div>
 <div id="outline-container-the-proposal" class="outline-2">
-<h2 class="heading" id="the-proposal"><span class="section-number-2">4.</span> <span class="content">The proposal</span><a class="self-link" href="#the-proposal" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L203" title="This section in the Org source">source</a></h2>
-</div>
+<h2 class="heading" id="the-proposal"><span class="section-number-2">4.</span> <span class="content">The proposal</span><a class="self-link" href="#the-proposal" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L186" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-4">
+<p>
+Two features, one token, one paper.
+</p>
 
+<p>
+<b>The infix operator.</b> `` x `f` y `` is sugar for `f(x, y)` (equivalently
+`(f)(x, y)`), where the operator slot between the backticks is an arbitrary
+expression parsed as an <span class="underline">assignment-expression</span>, or a type-name, which
+constructs. The value, type, and semantics are exactly those of the
+corresponding call. The operator is left-associative and binds tighter than
+any other binary operator, looser than the unary and postfix operators.
+</p>
+
+<p>
+<b>The keyword escape.</b> In any position where the grammar expects a name (a
+<span class="underline">declarator-id</span>, a class, enumeration or namespace name, a template
+parameter's name, a label, an operand, after `.`, `-&gt;`, or `::`), a backtick
+pair wrapping a word spelled as an identifier denotes an ordinary identifier
+whose spelling is that word. Keywords are the case the feature is named for,
+and the rule is not restricted to them: `` `foobar` `` and `foobar` are the
+same identifier, so a declaration may use one spelling and its uses the other.
+It is purely a source-level construct; the resulting identifier participates
+in lookup, mangling, and linkage exactly as if the word had never been a
+keyword.
+</p>
+</div>
+</div>
 <div id="outline-container-motivation-beyond-readability" class="outline-2">
-<h2 class="heading" id="motivation-beyond-readability"><span class="section-number-2">5.</span> <span class="content">Motivation, beyond readability</span><a class="self-link" href="#motivation-beyond-readability" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L205" title="This section in the Org source">source</a></h2>
+<h2 class="heading" id="motivation-beyond-readability"><span class="section-number-2">5.</span> <span class="content">Motivation, beyond readability</span><a class="self-link" href="#motivation-beyond-readability" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L207" title="This section in the Org source">source</a></h2>
 <div class="outline-text-2" id="text-5">
 </div>
 <div id="outline-container-short-circuiting-returns-to-user-code" class="outline-3">
-<h3 class="heading" id="short-circuiting-returns-to-user-code"><span class="section-number-3">5.1.</span> <span class="content">Short-circuiting returns to user code</span><a class="self-link" href="#short-circuiting-returns-to-user-code" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L207" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="short-circuiting-returns-to-user-code"><span class="section-number-3">5.1.</span> <span class="content">Short-circuiting returns to user code</span><a class="self-link" href="#short-circuiting-returns-to-user-code" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L209" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-5-1">
+<p>
+C++ reserves non-strict evaluation to a fixed set of built-ins: `&amp;&amp;`, `||`
+and `?:`. The comma operator is the near neighbor, and is not one of them: it
+evaluates both of its operands, and what it fixes is the <b>sequencing</b>.
+Overloading does not get non-strict evaluation back: an overloaded `operator&amp;&amp;`
+evaluates both operands, which is the trap everyone has been bitten by, and
+the reason the standing advice is: don't. Non-strict evaluation has been
+closed to user code since C++98.
+</p>
+
+<p>
+A backtick helper whose right operand is a <b>callable</b> reopens it, because the
+helper decides whether (and when) that operand runs:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><code><span class="org-comment-delimiter">// </span><span class="org-comment">short-circuiting logical implication:  p =&gt; q  &#8801;  !p || q
+</span><span class="org-keyword">inline</span> <span class="org-keyword">constexpr</span> <span class="org-keyword">auto</span> <span class="org-variable-name">implies</span> =
+    <span class="org-rainbow-delimiters-depth-1">[](</span><span class="org-type">bool</span> <span class="org-variable-name">p</span>, <span class="org-keyword">auto</span>&amp;&amp; <span class="org-variable-name">q</span><span class="org-rainbow-delimiters-depth-1">)</span> -&gt; <span class="org-type">bool</span> <span class="org-rainbow-delimiters-depth-1">{</span> <span class="org-keyword">return</span> <span class="org-negation-char">!</span>p || q<span class="org-rainbow-delimiters-depth-2">()</span>; <span class="org-rainbow-delimiters-depth-1">}</span>;
+
+p `implies` <span class="org-rainbow-delimiters-depth-1">[</span>&amp;<span class="org-rainbow-delimiters-depth-1">]{</span> <span class="org-keyword">return</span> expensive<span class="org-rainbow-delimiters-depth-2">()</span>; <span class="org-rainbow-delimiters-depth-1">}</span>   <span class="org-comment-delimiter">// </span><span class="org-comment">runs only when p holds</span>
+</code></pre>
 </div>
 
+<p>
+The same shape gives lazy defaults (``opt `or_else` [&amp;]{ return costly();
+}``), guarded effects, and bespoke control operators. Any binary operation
+that must not evaluate its right side unconditionally is in reach. Chaining
+fallible steps is the zero-ceremony special case: the stages are already
+functions, so no thunk is written and the short-circuit falls out:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><code><span class="org-keyword">inline</span> <span class="org-keyword">constexpr</span> <span class="org-keyword">auto</span> <span class="org-variable-name">mbind</span> =
+    <span class="org-rainbow-delimiters-depth-1">[](</span><span class="org-keyword">auto</span>&amp;&amp; <span class="org-variable-name">m</span>, <span class="org-keyword">auto</span>&amp;&amp; <span class="org-variable-name">f</span><span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-rainbow-delimiters-depth-1">{</span> <span class="org-keyword">return</span> <span class="org-constant">std</span>::forward<span class="org-rainbow-delimiters-depth-2">&lt;</span><span class="org-keyword">decltype</span><span class="org-rainbow-delimiters-depth-3">(</span>m<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">&gt;(</span>m<span class="org-rainbow-delimiters-depth-2">)</span>
+                 .and_then<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-constant">std</span>::forward<span class="org-rainbow-delimiters-depth-3">&lt;</span><span class="org-keyword">decltype</span><span class="org-rainbow-delimiters-depth-4">(</span>f<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">&gt;(</span>f<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>; <span class="org-rainbow-delimiters-depth-1">}</span>;
+
+parse<span class="org-rainbow-delimiters-depth-1">(</span>s<span class="org-rainbow-delimiters-depth-1">)</span> `mbind` validate `mbind` store;   <span class="org-comment-delimiter">// </span><span class="org-comment">stops at the first error</span>
+</code></pre>
+</div>
+</div>
+</div>
 <div id="outline-container-one-helper-makes-it-a-pipeline-and-the-ranges-closures-already-fit" class="outline-3">
-<h3 class="heading" id="one-helper-makes-it-a-pipeline-and-the-ranges-closures-already-fit"><span class="section-number-3">5.2.</span> <span class="content">One helper makes it a pipeline, and the ranges closures already fit</span><a class="self-link" href="#one-helper-makes-it-a-pipeline-and-the-ranges-closures-already-fit" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L209" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="one-helper-makes-it-a-pipeline-and-the-ranges-closures-already-fit"><span class="section-number-3">5.2.</span> <span class="content">One helper makes it a pipeline, and the ranges closures already fit</span><a class="self-link" href="#one-helper-makes-it-a-pipeline-and-the-ranges-closures-already-fit" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L245" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-5-2">
+<div class="org-src-container">
+<pre class="src src-c++"><code><span class="org-keyword">inline</span> <span class="org-keyword">constexpr</span> <span class="org-keyword">auto</span> <span class="org-variable-name">pipe</span> =
+    <span class="org-rainbow-delimiters-depth-1">[](</span><span class="org-keyword">auto</span>&amp;&amp; <span class="org-variable-name">x</span>, <span class="org-keyword">auto</span>&amp;&amp; <span class="org-variable-name">f</span><span class="org-rainbow-delimiters-depth-1">)</span> -&gt; <span class="org-keyword">decltype</span><span class="org-rainbow-delimiters-depth-1">(</span><span class="org-keyword">auto</span><span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-rainbow-delimiters-depth-1">{</span> <span class="org-keyword">return</span> <span class="org-constant">std</span>::invoke<span class="org-rainbow-delimiters-depth-2">(</span><span class="org-constant">std</span>::forward<span class="org-rainbow-delimiters-depth-3">&lt;</span><span class="org-keyword">decltype</span><span class="org-rainbow-delimiters-depth-4">(</span>f<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">&gt;(</span>f<span class="org-rainbow-delimiters-depth-3">)</span>,
+                         <span class="org-constant">std</span>::forward<span class="org-rainbow-delimiters-depth-3">&lt;</span><span class="org-keyword">decltype</span><span class="org-rainbow-delimiters-depth-4">(</span>x<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">&gt;(</span>x<span class="org-rainbow-delimiters-depth-3">)</span><span class="org-rainbow-delimiters-depth-2">)</span>; <span class="org-rainbow-delimiters-depth-1">}</span>;
+
+x `pipe` f `pipe` g `pipe` h        <span class="org-comment-delimiter">// </span><span class="org-comment">h(g(f(x))) &#8212; data-flow order</span>
+</code></pre>
 </div>
 
-<div id="outline-container-stages-with-extra-arguments-the-honest-gap" class="outline-3">
-<h3 class="heading" id="stages-with-extra-arguments-the-honest-gap"><span class="section-number-3">5.3.</span> <span class="content">Stages with extra arguments: the honest gap</span><a class="self-link" href="#stages-with-extra-arguments-the-honest-gap" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L211" title="This section in the Org source">source</a></h3>
+<p>
+This drives the existing range adaptor closures
+unchanged. `views::filter(pred)` and `views::transform(fn)` are already unary
+callables (`c | a` is defined as `a(c)`), so `pipe` feeds them directly:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><code>r `pipe` <span class="org-constant">views</span>::filter<span class="org-rainbow-delimiters-depth-1">(</span>pred<span class="org-rainbow-delimiters-depth-1">)</span> `pipe` <span class="org-constant">views</span>::transform<span class="org-rainbow-delimiters-depth-1">(</span>fn<span class="org-rainbow-delimiters-depth-1">)</span>
+<span class="org-comment-delimiter">// </span><span class="org-comment">identical result and laziness to:
+</span>r | <span class="org-constant">views</span>::filter<span class="org-rainbow-delimiters-depth-1">(</span>pred<span class="org-rainbow-delimiters-depth-1">)</span> | <span class="org-constant">views</span>::transform<span class="org-rainbow-delimiters-depth-1">(</span>fn<span class="org-rainbow-delimiters-depth-1">)</span>
+</code></pre>
 </div>
 
+<p>
+Same closure objects, same lazy views, verified identical output on the
+built compiler. The per-library `operator|` overloads exist only to choose
+the `|`*syntax; the closures themselves need nothing, so they work under
+backtick for free.
+</p>
+</div>
+</div>
 <div id="outline-container-reusable-point-free-composition" class="outline-3">
-<h3 class="heading" id="reusable-point-free-composition"><span class="section-number-3">5.4.</span> <span class="content">Reusable, point-free composition</span><a class="self-link" href="#reusable-point-free-composition" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L213" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="reusable-point-free-composition"><span class="section-number-3">5.3.</span> <span class="content">Reusable, point-free composition</span><a class="self-link" href="#reusable-point-free-composition" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L270" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-5-3">
+<p>
+Compose stages into a named pipeline once, apply it many times:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c++"><code><span class="org-keyword">inline</span> <span class="org-keyword">constexpr</span> <span class="org-keyword">auto</span> <span class="org-variable-name">then</span> =
+    <span class="org-rainbow-delimiters-depth-1">[](</span><span class="org-keyword">auto</span> <span class="org-variable-name">f</span>, <span class="org-keyword">auto</span> <span class="org-variable-name">g</span><span class="org-rainbow-delimiters-depth-1">)</span>
+    <span class="org-rainbow-delimiters-depth-1">{</span> <span class="org-keyword">return</span> <span class="org-rainbow-delimiters-depth-2">[</span>=<span class="org-rainbow-delimiters-depth-2">](</span><span class="org-keyword">auto</span>&amp;&amp;... <span class="org-variable-name">a</span><span class="org-rainbow-delimiters-depth-2">)</span> -&gt; <span class="org-keyword">decltype</span><span class="org-rainbow-delimiters-depth-2">(</span><span class="org-keyword">auto</span><span class="org-rainbow-delimiters-depth-2">)</span>
+        <span class="org-rainbow-delimiters-depth-2">{</span> <span class="org-keyword">return</span> g<span class="org-rainbow-delimiters-depth-3">(</span>f<span class="org-rainbow-delimiters-depth-4">(</span><span class="org-constant">std</span>::forward<span class="org-rainbow-delimiters-depth-5">&lt;</span><span class="org-keyword">decltype</span><span class="org-rainbow-delimiters-depth-6">(</span>a<span class="org-rainbow-delimiters-depth-6">)</span><span class="org-rainbow-delimiters-depth-5">&gt;(</span>a<span class="org-rainbow-delimiters-depth-5">)</span>...<span class="org-rainbow-delimiters-depth-4">)</span><span class="org-rainbow-delimiters-depth-3">)</span>; <span class="org-rainbow-delimiters-depth-2">}</span>; <span class="org-rainbow-delimiters-depth-1">}</span>;
+
+<span class="org-keyword">auto</span> <span class="org-variable-name">clean</span> = trim `then` lower `then` dedup;   <span class="org-comment-delimiter">// </span><span class="org-comment">a reusable callable
+</span>clean<span class="org-rainbow-delimiters-depth-1">(</span>s<span class="org-rainbow-delimiters-depth-1">)</span>;
+</code></pre>
 </div>
 
-<div id="outline-container-motivation-not-a-library-proposal" class="outline-3">
-<h3 class="heading" id="motivation-not-a-library-proposal"><span class="section-number-3">5.5.</span> <span class="content">Motivation, not a library proposal</span><a class="self-link" href="#motivation-not-a-library-proposal" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L215" title="This section in the Org source">source</a></h3>
+<p>
+Left association gives left-to-right composition, mirroring a reusable
+adaptor chain.
+</p>
 </div>
 </div>
-<div id="outline-container-neither-replaces-the-other-p2011s" class="outline-2">
-<h2 class="heading" id="neither-replaces-the-other-p2011s"><span class="section-number-2">6.</span> <span class="content">Neither replaces the other: P2011's <code>|&gt;</code></span><a class="self-link" href="#neither-replaces-the-other-p2011s" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L217" title="This section in the Org source">source</a></h2>
+<div id="outline-container-these-are-motivation-not-proposals" class="outline-3">
+<h3 class="heading" id="these-are-motivation-not-proposals"><span class="section-number-3">5.4.</span> <span class="content">These are motivation, not proposals</span><a class="self-link" href="#these-are-motivation-not-proposals" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L286" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-5-4">
+<p>
+This is not a library paper, no library facilities are proposed.
+</p>
 </div>
-
+</div>
+</div>
 <div id="outline-container-prior-art" class="outline-2">
-<h2 class="heading" id="prior-art"><span class="section-number-2">7.</span> <span class="content">Prior art</span><a class="self-link" href="#prior-art" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L219" title="This section in the Org source">source</a></h2>
-<div class="outline-text-2" id="text-7">
+<h2 class="heading" id="prior-art"><span class="section-number-2">6.</span> <span class="content">Prior art</span><a class="self-link" href="#prior-art" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L289" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-6">
 </div>
 <div id="outline-container-infix-application-of-named-callables" class="outline-3">
-<h3 class="heading" id="infix-application-of-named-callables"><span class="section-number-3">7.1.</span> <span class="content">Infix application of named callables</span><a class="self-link" href="#infix-application-of-named-callables" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L221" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="infix-application-of-named-callables"><span class="section-number-3">6.1.</span> <span class="content">Infix application of named callables</span><a class="self-link" href="#infix-application-of-named-callables" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L291" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-6-1">
+<ul class="org-ul">
+<li>Haskell, PureScript, and other Haskell descendents have backtick for infixing.</li>
+<li>Kotlin has an <code>infix</code> keyword.</li>
+<li>R has <code>%op%</code> operators.</li>
+<li>Fortress has named operators.</li>
+</ul>
 </div>
-
+</div>
 <div id="outline-container-escaping-keywords-as-identifiers" class="outline-3">
-<h3 class="heading" id="escaping-keywords-as-identifiers"><span class="section-number-3">7.2.</span> <span class="content">Escaping keywords as identifiers</span><a class="self-link" href="#escaping-keywords-as-identifiers" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L223" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="escaping-keywords-as-identifiers"><span class="section-number-3">6.2.</span> <span class="content">Escaping keywords as identifiers</span><a class="self-link" href="#escaping-keywords-as-identifiers" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L294" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-6-2">
+<ul class="org-ul">
+<li>C# @-verbatim.</li>
+<li>F# double backtick names.</li>
+<li>Nim backtick stropping.</li>
+<li>Kotlin backtick identifiers.</li>
+<li>Swift <code>`class`</code> .</li>
+<li>Rust raw identifiers.</li>
+</ul>
+</div>
 </div>
 </div>
 <div id="outline-container-design-choices-and-decisions" class="outline-2">
-<h2 class="heading" id="design-choices-and-decisions"><span class="section-number-2">8.</span> <span class="content">Design choices and decisions</span><a class="self-link" href="#design-choices-and-decisions" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L225" title="This section in the Org source">source</a></h2>
-<div class="outline-text-2" id="text-8">
+<h2 class="heading" id="design-choices-and-decisions"><span class="section-number-2">7.</span> <span class="content">Design choices and decisions</span><a class="self-link" href="#design-choices-and-decisions" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L302" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-7">
 </div>
 <div id="outline-container-it-desugars-to-the-call-and-that-is-the-whole-design" class="outline-3">
-<h3 class="heading" id="it-desugars-to-the-call-and-that-is-the-whole-design"><span class="section-number-3">8.1.</span> <span class="content">It desugars to the call, and that is the whole design</span><a class="self-link" href="#it-desugars-to-the-call-and-that-is-the-whole-design" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L227" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="it-desugars-to-the-call-and-that-is-the-whole-design"><span class="section-number-3">7.1.</span> <span class="content">It desugars to the call, and that is the whole design</span><a class="self-link" href="#it-desugars-to-the-call-and-that-is-the-whole-design" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L304" title="This section in the Org source">source</a></h3>
 </div>
 
 <div id="outline-container-precedence-the-highest-binary-operator-and-why-not-higher" class="outline-3">
-<h3 class="heading" id="precedence-the-highest-binary-operator-and-why-not-higher"><span class="section-number-3">8.2.</span> <span class="content">Precedence: the highest binary operator, and why not higher</span><a class="self-link" href="#precedence-the-highest-binary-operator-and-why-not-higher" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L229" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="precedence-the-highest-binary-operator-and-why-not-higher"><span class="section-number-3">7.2.</span> <span class="content">Precedence: the highest binary operator, and why not higher</span><a class="self-link" href="#precedence-the-highest-binary-operator-and-why-not-higher" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L306" title="This section in the Org source">source</a></h3>
 </div>
 
 <div id="outline-container-left-associative" class="outline-3">
-<h3 class="heading" id="left-associative"><span class="section-number-3">8.3.</span> <span class="content">Left-associative</span><a class="self-link" href="#left-associative" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L231" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="left-associative"><span class="section-number-3">7.3.</span> <span class="content">Left-associative</span><a class="self-link" href="#left-associative" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L308" title="This section in the Org source">source</a></h3>
 </div>
 
 <div id="outline-container-the-operator-slot-is-an-assignment-expression" class="outline-3">
-<h3 class="heading" id="the-operator-slot-is-an-assignment-expression"><span class="section-number-3">8.4.</span> <span class="content">The operator slot is an assignment-expression</span><a class="self-link" href="#the-operator-slot-is-an-assignment-expression" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L233" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="the-operator-slot-is-an-assignment-expression"><span class="section-number-3">7.4.</span> <span class="content">The operator slot is an assignment-expression</span><a class="self-link" href="#the-operator-slot-is-an-assignment-expression" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L310" title="This section in the Org source">source</a></h3>
 </div>
 
 <div id="outline-container-bare-nesting-is-chaining-real-nesting-takes-parentheses" class="outline-3">
-<h3 class="heading" id="bare-nesting-is-chaining-real-nesting-takes-parentheses"><span class="section-number-3">8.5.</span> <span class="content">Bare nesting is chaining; real nesting takes parentheses</span><a class="self-link" href="#bare-nesting-is-chaining-real-nesting-takes-parentheses" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L235" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="bare-nesting-is-chaining-real-nesting-takes-parentheses"><span class="section-number-3">7.5.</span> <span class="content">Bare nesting is chaining; real nesting takes parentheses</span><a class="self-link" href="#bare-nesting-is-chaining-real-nesting-takes-parentheses" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L312" title="This section in the Org source">source</a></h3>
 </div>
 
 <div id="outline-container-evaluation-order-is-the-calls" class="outline-3">
-<h3 class="heading" id="evaluation-order-is-the-calls"><span class="section-number-3">8.6.</span> <span class="content">Evaluation order is the call's</span><a class="self-link" href="#evaluation-order-is-the-calls" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L237" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="evaluation-order-is-the-calls"><span class="section-number-3">7.6.</span> <span class="content">Evaluation order is the call's</span><a class="self-link" href="#evaluation-order-is-the-calls" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L314" title="This section in the Org source">source</a></h3>
 </div>
 
 <div id="outline-container-a-type-name-in-the-slot-constructs" class="outline-3">
-<h3 class="heading" id="a-type-name-in-the-slot-constructs"><span class="section-number-3">8.7.</span> <span class="content">A type name in the slot constructs</span><a class="self-link" href="#a-type-name-in-the-slot-constructs" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L239" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="a-type-name-in-the-slot-constructs"><span class="section-number-3">7.7.</span> <span class="content">A type name in the slot constructs</span><a class="self-link" href="#a-type-name-in-the-slot-constructs" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L316" title="This section in the Org source">source</a></h3>
 </div>
 
 <div id="outline-container-the-escape-yields-an-ordinary-identifier" class="outline-3">
-<h3 class="heading" id="the-escape-yields-an-ordinary-identifier"><span class="section-number-3">8.8.</span> <span class="content">The escape yields an ordinary identifier</span><a class="self-link" href="#the-escape-yields-an-ordinary-identifier" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L241" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="the-escape-yields-an-ordinary-identifier"><span class="section-number-3">7.8.</span> <span class="content">The escape yields an ordinary identifier</span><a class="self-link" href="#the-escape-yields-an-ordinary-identifier" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L318" title="This section in the Org source">source</a></h3>
 </div>
 
 <div id="outline-container-one-spelling" class="outline-3">
-<h3 class="heading" id="one-spelling"><span class="section-number-3">8.9.</span> <span class="content">One spelling</span><a class="self-link" href="#one-spelling" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L243" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="one-spelling"><span class="section-number-3">7.9.</span> <span class="content">One spelling</span><a class="self-link" href="#one-spelling" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L320" title="This section in the Org source">source</a></h3>
 </div>
 
 <div id="outline-container-two-uses-one-paper-no-library" class="outline-3">
-<h3 class="heading" id="two-uses-one-paper-no-library"><span class="section-number-3">8.10.</span> <span class="content">Two uses, one paper; no library</span><a class="self-link" href="#two-uses-one-paper-no-library" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L245" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="two-uses-one-paper-no-library"><span class="section-number-3">7.10.</span> <span class="content">Two uses, one paper; no library</span><a class="self-link" href="#two-uses-one-paper-no-library" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L322" title="This section in the Org source">source</a></h3>
 </div>
 </div>
 <div id="outline-container-anticipated-objections" class="outline-2">
-<h2 class="heading" id="anticipated-objections"><span class="section-number-2">9.</span> <span class="content">Anticipated objections</span><a class="self-link" href="#anticipated-objections" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L247" title="This section in the Org source">source</a></h2>
-<div class="outline-text-2" id="text-9">
+<h2 class="heading" id="anticipated-objections"><span class="section-number-2">8.</span> <span class="content">Anticipated objections</span><a class="self-link" href="#anticipated-objections" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L324" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-8">
 </div>
 <div id="outline-container-define--on-a-type-instead" class="outline-3">
-<h3 class="heading" id="define--on-a-type-instead"><span class="section-number-3">9.1.</span> <span class="content">"Define <code>*</code> on a type instead"</span><a class="self-link" href="#define--on-a-type-instead" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L249" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="define--on-a-type-instead"><span class="section-number-3">8.1.</span> <span class="content">"Define <code>*</code> on a type instead"</span><a class="self-link" href="#define--on-a-type-instead" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L326" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-8-1">
+<p>
+The objection: named binary operations do not need an infix spelling, because
+C++ already has one, which is to overload an operator on a type. Saturating
+multiplication does not need   <code>a `mul_sat` b</code> ; it needs a
+<code>Saturating&lt;double&gt;</code> whose <code>operator*</code> saturates.
+</p>
+
+<p>
+Anyone having tried this knows all the problems.
+</p>
+
+<p>
+You can't overload for <code>operator*(double, double)</code>, you need a Saturating&lt;double&gt; in play. This is why we already added <code>std::mul_sat</code>. We, rightly, did not ship a <code>Saturating&lt;T&gt;</code>.
+</p>
+
+<p>
+The scope is too broad, and it is painfully easy to use saturating math in places you did not expect to. The ergonomics of a single <code>*</code> operator make different behavior depending on the argument types a trap.
+</p>
+</div>
 </div>
 </div>
 <div id="outline-container-fitting-the-grammar-without-collision" class="outline-2">
-<h2 class="heading" id="fitting-the-grammar-without-collision"><span class="section-number-2">10.</span> <span class="content">Fitting the grammar, without collision</span><a class="self-link" href="#fitting-the-grammar-without-collision" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L251" title="This section in the Org source">source</a></h2>
-<div class="outline-text-2" id="text-10">
+<h2 class="heading" id="fitting-the-grammar-without-collision"><span class="section-number-2">9.</span> <span class="content">Fitting the grammar, without collision</span><a class="self-link" href="#fitting-the-grammar-without-collision" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L338" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-9">
 </div>
 <div id="outline-container-the-token-is-free" class="outline-3">
-<h3 class="heading" id="the-token-is-free"><span class="section-number-3">10.1.</span> <span class="content">The token is free</span><a class="self-link" href="#the-token-is-free" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L253" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="the-token-is-free"><span class="section-number-3">9.1.</span> <span class="content">The token is free</span><a class="self-link" href="#the-token-is-free" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L340" title="This section in the Org source">source</a></h3>
 </div>
 
 <div id="outline-container-the-productions" class="outline-3">
-<h3 class="heading" id="the-productions"><span class="section-number-3">10.2.</span> <span class="content">The productions</span><a class="self-link" href="#the-productions" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L255" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="the-productions"><span class="section-number-3">9.2.</span> <span class="content">The productions</span><a class="self-link" href="#the-productions" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L342" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-9-2">
+<div class="org-src-container">
+<pre class="src src-ebnf"><code>user-infix-expression:
+    cast-expression
+    user-infix-expression ` backtick-operator ` cast-expression
+
+backtick-operator:
+    assignment-expression
+    simple-type-specifier
+    typename-specifier
+</code></pre>
 </div>
 
+<p>
+The second and third alternatives are the type slot, and the type reading
+wins exactly when lookup finds a type or a class template. The rule does not
+follow from the expression slot: a bare type-name is not an <i>assignment-expression</i>,
+so a grammar with only the first alternative would contradict the section
+above rather than imply it.
+</p>
+
+<p>
+<i>user-infix-expression</i> slots between <i>cast-expression</i> and <i>pm-expression</i>:
+the pointer-to-member productions consume a <i>user-infix-expression</i> where they
+consumed a <i>cast-expression</i>, and everything above them is unchanged. In
+implementation terms this is one new top level in each compiler's binary
+operator precedence table. The left recursion gives left associativity; the
+<i>cast-expression</i> operands give the symmetric prefix binding argued for above.
+</p>
+
+<p>
+The new level is <b>not</b> a <i>fold-operator</i>: <code>(... `f` N)</code> is
+ill-formed. Both implementations reject it, each with an ordinary parse error
+that says nothing about why, which is the reason for stating the exclusion
+here: nothing else would say it was chosen. Excluding costs one clause in the
+predicate that already decides which operators may be folded over; admitting
+would require a fold-expression node that can hold an arbitrary slot
+expression, which today's cannot. Nothing is foreclosed; every program a later
+revision would newly accept is one this proposal rejects.
+</p>
+
+<p>
+The keyword escape is a new <i>identifier</i> alternative in name positions:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bnf"><code>escaped-identifier:
+    ` identifier `
+</code></pre>
+</div>
+
+<p>
+yielding an identifier token whose spelling is the word between the backticks.
+The <i>identifier</i> in that production is the lexical one, the production in
+[lex.name], which every keyword matches; [lex.key] is what makes a keyword out
+of one of those matches, and inside an escape it does not apply. So the escape
+admits any word spelled as an identifier, and what it yields is an ordinary
+identifier. It may appear wherever the grammar uses <i>identifier</i> as a
+terminal, and nowhere else: a
+<i>declarator-id</i>, a <i>class-head-name</i>, an <i>enum-name</i>, an enumerator, a
+<i>namespace-name</i>, a template parameter's name, a <i>mem-initializer</i>, a label,
+a <i>primary-expression</i>, an <i>id-expression</i> after <code>.</code>, <code>-&gt;</code> or <code>::</code>.
+</p>
+</div>
+</div>
 <div id="outline-container-the-same-delimiter-problem" class="outline-3">
-<h3 class="heading" id="the-same-delimiter-problem"><span class="section-number-3">10.3.</span> <span class="content">The same-delimiter problem</span><a class="self-link" href="#the-same-delimiter-problem" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L257" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="the-same-delimiter-problem"><span class="section-number-3">9.3.</span> <span class="content">The same-delimiter problem</span><a class="self-link" href="#the-same-delimiter-problem" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L344" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-9-3">
+<p>
+The open and close delimiter are the same token, so while parsing the operator
+slot, a naive expression parser would take the closing backtick as the start
+of a second, nested backtick operator. C++ has, of course, been here before:
+<code>&gt;</code> inside a template-argument list is a closer, not an operator, and
+<code>vector&lt;vector&lt;int&gt;&gt;</code> is handled by a parser flag — Clang's
+<code>GreaterThanIsOperator</code>, GCC's <code>greater_than_is_operator_p</code> — that turns the
+operator meaning off in that context. We do the same thing: a
+<code>BacktickIsOperator</code> flag, false while parsing the slot, restored inside any
+nested parentheses or brackets so that parenthesized nesting works. Both
+implementations are modeled line-for-line on their compiler's existing <code>&gt;</code>
+handling.
+</p>
 </div>
-
+</div>
 <div id="outline-container-operator-and-escape-never-meet" class="outline-3">
-<h3 class="heading" id="operator-and-escape-never-meet"><span class="section-number-3">10.4.</span> <span class="content">Operator and escape never meet</span><a class="self-link" href="#operator-and-escape-never-meet" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L259" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="operator-and-escape-never-meet"><span class="section-number-3">9.4.</span> <span class="content">Operator and escape never meet</span><a class="self-link" href="#operator-and-escape-never-meet" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L346" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-9-4">
+<p>
+C++ expression grammar strictly alternates between wanting an operand and
+wanting an operator. The escape lives exclusively in operand positions; the
+infix operator lives exclusively in the post-operand position. The positions
+are mutually exclusive, so one lexical token serves both uses with no
+lookahead and no ambiguity, the same strategy the language already uses to
+give <code>*</code>, <code>&amp;</code>, and <code>&lt;</code> their multiple readings.
+</p>
+
+<p>
+```cpp
+int `new`(int, int);  <i>/ declarator-id  -&gt; escaped identifier "new"
+`new`(a, b);         /</i> primary        -&gt; call to the function named "new"
+obj.`delete`();      <i>/ after '.'      -&gt; member named "delete"
+x `f` y;             /</i> post-operand   -&gt; infix: f(x, y)
+x `(`new`)` y;       // escaped callee -&gt; (`new`)(x, y), parenthesized slot
+```
+</p>
+
+<p>
+There might seem to be a second, independent signal here: that an escape
+wraps a keyword, which is never a valid callee expression, and a slot wraps an
+expression, which is never a bare keyword. Since the escape wraps any
+identifier, that signal does not exist. The design does not rest on it, and
+the case where the two token sequences coincide shows why. Read as an escape
+and read as a slot,  <code>`f`</code> names the same
+thing, <code>f</code> the two readings differ only over whether <code>f</code> is an operand or a
+callee, and that is precisely what the position states. Position alone
+suffices, as it does for <code>*</code>, <code>&amp;</code>, and <code>&lt;</code>.
+</p>
+
+<p>
+Because the escape yields an ordinary identifier, nothing downstream of the
+parser changes: no new lookup rules, no mangling scheme, no ABI surface.
+<code>void `new`();</code> links as a function named <code>new</code>.
+</p>
+</div>
 </div>
 </div>
 <div id="outline-container-implementation-experience" class="outline-2">
-<h2 class="heading" id="implementation-experience"><span class="section-number-2">11.</span> <span class="content">Implementation experience</span><a class="self-link" href="#implementation-experience" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L261" title="This section in the Org source">source</a></h2>
-<div class="outline-text-2" id="text-11">
+<h2 class="heading" id="implementation-experience"><span class="section-number-2">10.</span> <span class="content">Implementation experience</span><a class="self-link" href="#implementation-experience" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L348" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-10">
+<p>
+Implemented in both GCC and Clang. There were no particular implementation difficulties for either. Implementing both did partly dictate the implementation strategy for the identifier escape, but did not make it unmanagably more complicated.
+</p>
 </div>
 <div id="outline-container-the-forks" class="outline-3">
-<h3 class="heading" id="the-forks"><span class="section-number-3">11.1.</span> <span class="content">The forks</span><a class="self-link" href="#the-forks" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L263" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="the-forks"><span class="section-number-3">10.1.</span> <span class="content">The forks</span><a class="self-link" href="#the-forks" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L350" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-10-1">
+<ul class="org-ul">
+<li><b>Clang</b>, two branches carrying the same feature diff, one on the LLVM 23
+release branch
+(<a href="https://github.com/steve-downey/llvm-project/tree/backtick-23">steve-downey/llvm-project @ backtick-23</a>)
+and one on trunk
+(<a href="https://github.com/steve-downey/llvm-project/tree/backtick-trunk">@ backtick-trunk</a>):
+lexer token, the new binary precedence level, a parser branch modeled on the
+ternary operator (the closest existing delimited-middle operator), Sema
+desugaring to a <code>CallExpr</code>, the driver flag, a transparent AST wrapper so
+<code>-ast-print</code> round-trips the surface syntax, and clang-format support for
+both uses (canonical spacing, and a break policy that hard-forbids a break
+next to either backtick). A bare unqualified name in the slot reaches the
+call builder unresolved, as an <code>UnresolvedLookupExpr</code>, so ADL is the call's.
+Tests live under <code>clang/test/</code> (the <code>backtick-*</code> files in <code>Parser/</code>,
+<code>Lexer/</code>, <code>SemaCXX/</code>, <code>AST/</code>, <code>Analysis/</code> and <code>CIR/CodeGen/</code>, plus <code>Driver/</code>
+and the Format unit tests), and the full <code>check-clang</code> regression gate stays
+green with the flag off and on.</li>
+<li><b>GCC</b>
+(<a href="https://github.com/steve-downey/gcc/tree/backtick">steve-downey/gcc @ backtick</a>):
+<code>libcpp</code> token (replacing today's <code>stray '`' in program</code> diagnostic), parser
+precedence level and slot handling, desugaring via <code>finish_call_expr</code>, the
+same flag, and ADL on the slot for both unqualified forms, a plain name and
+a template-id. Tests live under <code>gcc/testsuite/g++.dg/backtick/</code>, with a
+module pair under <code>g++.dg/modules/</code> checking that an escaped name streams
+through a compiled module interface and mangles as the ordinary
+module-attached name it is.</li>
+</ul>
 </div>
-
-<div id="outline-container-escape-coverage-four-sweeps" class="outline-3">
-<h3 class="heading" id="escape-coverage-four-sweeps"><span class="section-number-3">11.2.</span> <span class="content">Escape coverage: four sweeps</span><a class="self-link" href="#escape-coverage-four-sweeps" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L265" title="This section in the Org source">source</a></h3>
-</div>
-
-<div id="outline-container-the-type-name-slot-in-one-compiler" class="outline-3">
-<h3 class="heading" id="the-type-name-slot-in-one-compiler"><span class="section-number-3">11.3.</span> <span class="content">The type-name slot, in one compiler</span><a class="self-link" href="#the-type-name-slot-in-one-compiler" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L267" title="This section in the Org source">source</a></h3>
-</div>
-
-<div id="outline-container-printing-which-surfaces-name-an-entity" class="outline-3">
-<h3 class="heading" id="printing-which-surfaces-name-an-entity"><span class="section-number-3">11.4.</span> <span class="content">Printing: which surfaces name an entity</span><a class="self-link" href="#printing-which-surfaces-name-an-entity" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L269" title="This section in the Org source">source</a></h3>
-</div>
-
-<div id="outline-container-argument-dependent-lookup-which-both-implementations-got-wrong" class="outline-3">
-<h3 class="heading" id="argument-dependent-lookup-which-both-implementations-got-wrong"><span class="section-number-3">11.5.</span> <span class="content">Argument-dependent lookup, which both implementations got wrong</span><a class="self-link" href="#argument-dependent-lookup-which-both-implementations-got-wrong" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L271" title="This section in the Org source">source</a></h3>
-</div>
-
-<div id="outline-container-what-the-ast-node-costs-and-which-compiler-pays-it" class="outline-3">
-<h3 class="heading" id="what-the-ast-node-costs-and-which-compiler-pays-it"><span class="section-number-3">11.6.</span> <span class="content">What the AST node costs, and which compiler pays it</span><a class="self-link" href="#what-the-ast-node-costs-and-which-compiler-pays-it" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L273" title="This section in the Org source">source</a></h3>
-</div>
-
-<div id="outline-container-the-gate-fails-quietly" class="outline-3">
-<h3 class="heading" id="the-gate-fails-quietly"><span class="section-number-3">11.7.</span> <span class="content">The gate fails quietly</span><a class="self-link" href="#the-gate-fails-quietly" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L275" title="This section in the Org source">source</a></h3>
-</div>
-
-<div id="outline-container-what-the-parsers-confirmed" class="outline-3">
-<h3 class="heading" id="what-the-parsers-confirmed"><span class="section-number-3">11.8.</span> <span class="content">What the parsers confirmed</span><a class="self-link" href="#what-the-parsers-confirmed" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L277" title="This section in the Org source">source</a></h3>
 </div>
 </div>
 <div id="outline-container-the-design-in-one-place" class="outline-2">
-<h2 class="heading" id="the-design-in-one-place"><span class="section-number-2">12.</span> <span class="content">The design, in one place</span><a class="self-link" href="#the-design-in-one-place" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L279" title="This section in the Org source">source</a></h2>
-</div>
+<h2 class="heading" id="the-design-in-one-place"><span class="section-number-2">11.</span> <span class="content">The design, in one place</span><a class="self-link" href="#the-design-in-one-place" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L366" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-11">
+<p>
+Everything argued above reduces to the following, and the wording that
+follows says no more than this. Every item is decided, and every item is
+implemented in both compilers except where noted.
+</p>
 
+<p>
+<b>The infix operator.</b>
+</p>
+
+<ul class="org-ul">
+<li><code>x `f` y</code> is <code>f(x, y)</code>. It is desugared in the front end, before
+overload resolution, to the call node the compiler would have built for
+the call; overload resolution, ADL, templates, <code>constexpr</code>, conversions,
+value categories and code generation are the call's. ADL fidelity is
+normative: the slot reaches the call builder unresolved.</li>
+<li>The slot is an <i>assignment-expression</i>, or a <i>simple-type-specifier</i> or
+<i>typename-specifier</i>, in which case <code>x `T` y</code> is <code>T(x, y)</code> and CTAD
+applies. The type reading wins when lookup finds a type or a class
+template. (Clang implements the type slot; GCC does not yet.)</li>
+<li>Precedence is the highest binary level: tighter than <code>*</code>, looser than the
+unary and postfix operators. Operands are <i>cast-expressions</i>, so a prefix
+operator binds to its own operand and <code>-a `f` -b</code> is <code>f(-a, -b)</code>.</li>
+<li>Left-associative: <code>a `f` b `g` c</code> is <code>g(f(a, b), c)</code>. Fixity is fixed,
+not declared per name and not derived from a spelling.</li>
+<li>Bare nesting is chaining, because the token stream is the same. To nest,
+parenthesize the slot. Neither compiler diagnoses the bare form, and
+neither can without rejecting legal chains.</li>
+<li>Evaluation order is the call's: the slot is sequenced before both operands,
+the operands are unsequenced with respect to each other.</li>
+<li>Operands exclude braced-init-lists. The operator is not a <i>fold-operator</i>.</li>
+<li>One spelling. No digraph, no alternative token.</li>
+</ul>
+
+<p>
+<b>The keyword escape.</b>
+</p>
+
+<ul class="org-ul">
+<li><code>`kw`</code>, wherever the grammar uses <i>identifier</i> as a terminal, is an
+ordinary identifier spelled <code>kw</code>. Lookup, overload resolution, mangling,
+linkage and ABI are untouched; <code>void `new`();</code> links as a function
+named <code>new</code>.</li>
+<li>The escape is spelling and not identity. A printer that names the entity
+restores the backticks; the AST dump keeps the bare word.</li>
+<li>The positions are enumerated in the grammar section and swept in both
+compilers: every declaring position, every using position, and either or
+both ends of a qualified name.</li>
+</ul>
+
+<p>
+<b>Shared.</b>
+</p>
+
+<ul class="org-ul">
+<li>One token, two grammatical positions, no lookahead: operand and name
+position is the escape, post-operand position is the operator. They never
+meet, and neither use depends on the other for its disambiguation.</li>
+<li>Both are gated behind an opt-in flag for the proposal period. Flag off,
+every existing program is untouched, byte for byte.</li>
+<li>No library. <code>pipe</code>, <code>then</code>, <code>mbind</code> and <code>implies</code> are motivation, each a
+few lines of user code, and any that deserve standardizing arrive in a
+later paper with usage behind them.</li>
+<li>Two uses, one paper, because they share the token and the committee.</li>
+</ul>
+
+<p>
+<b>Separately pollable.</b> One question: whether the escape is restricted to
+words that are keywords, so that <code>`foo`</code> is ill-formed rather than a
+second spelling of <code>foo</code>. The proposal is the unrestricted rule, for the
+reason §"The escape yields an ordinary identifier" gives — a restricted
+escape cannot be written until the standard that takes the word has shipped,
+so it can repair a break and can never prevent one. Both implementations
+support either answer, so EWG can still poll it.
+</p>
+</div>
+</div>
 <div id="outline-container-wording" class="outline-2">
-<h2 class="heading" id="wording"><span class="section-number-2">13.</span> <span class="content">Wording</span><a class="self-link" href="#wording" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L281" title="This section in the Org source">source</a></h2>
-<div class="outline-text-2" id="text-13">
+<h2 class="heading" id="wording"><span class="section-number-2">12.</span> <span class="content">Wording</span><a class="self-link" href="#wording" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L368" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-12">
 <p>
 The following wording is pro forma. It is intended to make the grammar change
 concrete; it is not offered as final CWG wording. Wording is relative to the
@@ -1298,8 +1694,8 @@ current working draft.
 </p>
 </div>
 <div id="outline-container-lexoperators" class="outline-3">
-<h3 class="heading" id="lexoperators"><span class="section-number-3">13.1.</span> <span class="content">[lex.operators]</span><a class="self-link" href="#lexoperators" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L287" title="This section in the Org source">source</a></h3>
-<div class="outline-text-3" id="text-13-1">
+<h3 class="heading" id="lexoperators"><span class="section-number-3">12.1.</span> <span class="content">[lex.operators]</span><a class="self-link" href="#lexoperators" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L374" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-12-1">
 <p>
 Modify the <i>operator-or-punctuator</i> grammar in <a class="sref" href="https://eel.is/c++draft/lex.operators">[lex.operators]</a>
 paragraph 1 by adding <code>`</code>:
@@ -1319,13 +1715,13 @@ The row shown is [lex.operators]'s third; only the trailing <code>`</code> is ad
 </div>
 </div>
 <div id="outline-container-lexname" class="outline-3">
-<h3 class="heading" id="lexname"><span class="section-number-3">13.2.</span> <span class="content">[lex.name]</span><a class="self-link" href="#lexname" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L305" title="This section in the Org source">source</a></h3>
-<div class="outline-text-3" id="text-13-2">
+<h3 class="heading" id="lexname"><span class="section-number-3">12.2.</span> <span class="content">[lex.name]</span><a class="self-link" href="#lexname" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L392" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-12-2">
 <p>
 Add to <a class="sref" href="https://eel.is/c++draft/lex.name">[lex.name]</a>, after the paragraphs defining <i>identifier</i>:
 </p>
 
-<div class="addedblock" id="orgbba549a">
+<div class="addedblock" id="org3e20022">
 <blockquote>
 <div class="grammar"><pre class="grammar">escaped-identifier:
     <code>`</code> identifier <code>`</code></pre></div>
@@ -1354,8 +1750,8 @@ are not part of the identifier. An <i>escaped-identifier</i> and an unescaped
 </div>
 </div>
 <div id="outline-container-exprmptroper" class="outline-3">
-<h3 class="heading" id="exprmptroper"><span class="section-number-3">13.3.</span> <span class="content">[expr.mptr.oper]</span><a class="self-link" href="#exprmptroper" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L337" title="This section in the Org source">source</a></h3>
-<div class="outline-text-3" id="text-13-3">
+<h3 class="heading" id="exprmptroper"><span class="section-number-3">12.3.</span> <span class="content">[expr.mptr.oper]</span><a class="self-link" href="#exprmptroper" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L424" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-12-3">
 <p>
 Modify the grammar of <a class="sref" href="https://eel.is/c++draft/expr.mptr.oper">[expr.mptr.oper]</a> paragraph 1:
 </p>
@@ -1369,8 +1765,8 @@ Modify the grammar of <a class="sref" href="https://eel.is/c++draft/expr.mptr.op
 </div>
 </div>
 <div id="outline-container-exprbacktick-new-subclause" class="outline-3">
-<h3 class="heading" id="exprbacktick-new-subclause"><span class="section-number-3">13.4.</span> <span class="content">[expr.backtick] (new subclause)</span><a class="self-link" href="#exprbacktick-new-subclause" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L350" title="This section in the Org source">source</a></h3>
-<div class="outline-text-3" id="text-13-4">
+<h3 class="heading" id="exprbacktick-new-subclause"><span class="section-number-3">12.4.</span> <span class="content">[expr.backtick] (new subclause)</span><a class="self-link" href="#exprbacktick-new-subclause" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L437" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-12-4">
 <p>
 Annex A (<a class="sref" href="https://eel.is/c++draft/gram">[gram]</a>) is updated mechanically to match.
 </p>
@@ -1381,7 +1777,7 @@ Insert a new subclause between <a class="sref" href="https://eel.is/c++draft/exp
 </p>
 </div>
 <div id="outline-container-expr.backtick" class="outline-4 wg21-wording wg21-addition">
-<h4 class="heading" id="expr.backtick"><span class="content">Backtick operator [expr.backtick]</span><a class="self-link" href="#expr.backtick" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L357" title="This section in the Org source">source</a></h4>
+<h4 class="heading" id="expr.backtick"><span class="content">Backtick operator [expr.backtick]</span><a class="self-link" href="#expr.backtick" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L444" title="This section in the Org source">source</a></h4>
 <div class="outline-text-4" id="text-expr.backtick">
 <div class="grammar"><pre class="grammar">user-infix-expression:
     cast-expression
@@ -1420,35 +1816,289 @@ delimiter of a nested <i>user-infix-expression</i>.
 </div>
 </div>
 <div id="outline-container-appendix-a-alternative-spellings-and-the-lexical-inventory" class="outline-2">
-<h2 class="heading" id="appendix-a-alternative-spellings-and-the-lexical-inventory"><span class="section-number-2">14.</span> <span class="content">Appendix A: alternative spellings, and the lexical inventory</span><a class="self-link" href="#appendix-a-alternative-spellings-and-the-lexical-inventory" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L398" title="This section in the Org source">source</a></h2>
-<div class="outline-text-2" id="text-14">
+<h2 class="heading" id="appendix-a-alternative-spellings-and-the-lexical-inventory"><span class="section-number-2">13.</span> <span class="content">Appendix A: alternative spellings, and the lexical inventory</span><a class="self-link" href="#appendix-a-alternative-spellings-and-the-lexical-inventory" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L485" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-13">
+<p>
+Backtick is the sole proposed spelling. This appendix carries the analysis
+behind that decision: why alternatives get raised, the lexical filter any
+candidate must pass, the candidates themselves, and the wider inventory of
+what ASCII actually remains, so that if the spelling question is raised it can
+be settled against this record in this paper instead of reopened in a future
+one.
+</p>
 </div>
 <div id="outline-container-a1-why-alternatives-get-raised" class="outline-3">
-<h3 class="heading" id="a1-why-alternatives-get-raised"><span class="section-number-3">14.1.</span> <span class="content">A.1 Why alternatives get raised</span><a class="self-link" href="#a1-why-alternatives-get-raised" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L400" title="This section in the Org source">source</a></h3>
-</div>
+<h3 class="heading" id="a1-why-alternatives-get-raised"><span class="section-number-3">13.1.</span> <span class="content">A.1 Why alternatives get raised</span><a class="self-link" href="#a1-why-alternatives-get-raised" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L487" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-13-1">
+<p>
+Two reasons, both real, both minor. A single backtick is Markdown's
+inline-code delimiter, so <code>x `f` y</code> in running prose fights the markup.
+And backtick is a dead key or awkward on some non-US keyboard layouts; it was
+one of the ISO-646-variant characters, alongside <code># [ ] { } | ~ ^ \</code>.
+</p>
 
+<p>
+The Markdown objection is on the record in WG21, made against this exact
+character by seven authors. P3381R0 (<a href="https://wg21.link/p3381r0" title="Revzin, Barry, Wyatt Childers, Peter Dimov, Andrew Sutton, Faisal Vali, Daveed Vandevoorde, and Dan Katz. 2024. “Syntax for Reflection.” WG21. https://wg21.link/p3381r0.">Revzin et al. 2024</a>) evaluated twelve
+single-character spellings for the reflection operator, and four
+multi-character ones, the backtick among them, and rejected it:
+</p>
+
+<blockquote>
+<p>
+The backtick has the advantage that it's pretty small, even smaller than
+<code>^</code>. But it has the disadvantage that backtick is used by Markdown
+everywhere inline code blocks, and not all Markdown implementations properly
+give you mechanisms to escape it. While not necessarily a show-stopper, we
+also just don't think it's good enough to reasonably pursue.
+</p>
+</blockquote>
+
+<p>
+The objection is granted, and the reasoning is right for the operator it was
+reasoning about. However, that operator is not this one. A reflection operator
+is written once per reflection and sits inside dense expression text, where a
+backtick operator is written where the name of an operation would go; the
+CommonMark cost falls on different text, at a different density, and the
+same span form handles it either way.
+</p>
+
+<p>
+Neither is a capability gap. CommonMark's multi-backtick spans already delimit
+code containing backticks (writing <code>`` x `f` y ``</code> renders as <code>x `f` y</code>),
+and fenced blocks, the dominant case for code, are unaffected entirely.
+The span form renders correctly on GitHub and on Mattermost, the committee's
+own chat server (author-verified). In the very forum where the operator would
+most often be typed in running text, the friction is a solved problem. What an
+alternative spelling offers is ergonomics for the minority case, inline prose.
+</p>
+
+<p>
+The fix is the one CommonMark already supplies, and its cost is small and
+bounded. In running prose the operator is written as a multi-backtick span:
+doubled delimiters with a padding space at each end, so <code>x `f` y</code> renders with
+its backticks intact. Each inline example pays those extra delimiters and the
+padding, and nothing else does. A document whose every other line infixes a
+backtick is the worst case the objection can construct, and the span form
+carries even that.
+</p>
+</div>
+</div>
 <div id="outline-container-a2-the-filter-a-candidate-must-pass" class="outline-3">
-<h3 class="heading" id="a2-the-filter-a-candidate-must-pass"><span class="section-number-3">14.2.</span> <span class="content">A.2 The filter a candidate must pass</span><a class="self-link" href="#a2-the-filter-a-candidate-must-pass" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L402" title="This section in the Org source">source</a></h3>
-</div>
+<h3 class="heading" id="a2-the-filter-a-candidate-must-pass"><span class="section-number-3">13.2.</span> <span class="content">A.2 The filter a candidate must pass</span><a class="self-link" href="#a2-the-filter-a-candidate-must-pass" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L489" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-13-2">
+<p>
+An alternative spelling is an additional token lexed by maximal munch, like
+the existing digraphs. To be viable, the sequence must never appear
+adjacent in a valid current program. Three traps, each of which has bitten
+a real token before:
+</p>
 
+<ol class="org-ol">
+<li><b>Maximal-munch theft.</b> After a binary operator or <code>&lt;</code>, a
+unary-capable character is already valid: <code>a &lt; -b</code>, <code>a * *p</code>, <code>!!x</code>.
+Minting the two-character form silently changes meaning.</li>
+<li><b>The <code>::</code> neighborhood.</b> <code>a&lt;:b</code> needed the <code>&lt;::</code> carve-out in
+<a class="sref" href="https://eel.is/c++draft/lex.pptoken">[lex.pptoken]</a> because <code>vector&lt;::std::string&gt;</code> broke. Any new
+<code>&lt;</code>-prefixed token lives next to that scar.</li>
+<li><b>Universal-character-name munch.</b> <code>\uXXXX</code> can begin an identifier, so a
+candidate whose second character is <code>\</code> can split a UCN, a non-obvious
+break.</li>
+</ol>
+</div>
+</div>
 <div id="outline-container-a3-the-candidates" class="outline-3">
-<h3 class="heading" id="a3-the-candidates"><span class="section-number-3">14.3.</span> <span class="content">A.3 The candidates</span><a class="self-link" href="#a3-the-candidates" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L404" title="This section in the Org source">source</a></h3>
-</div>
+<h3 class="heading" id="a3-the-candidates"><span class="section-number-3">13.3.</span> <span class="content">A.3 The candidates</span><a class="self-link" href="#a3-the-candidates" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L491" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-13-3">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Spelling</th>
+<th scope="col" class="org-left">Lexically clean?</th>
+<th scope="col" class="org-left">Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left"><code>\&lt; … \&gt;</code></td>
+<td class="org-left">yes — <code>\</code> is no token today, and <code>\&lt;</code> cannot start a UCN</td>
+<td class="org-left">front-runner, if ever forced (A.4)</td>
+</tr>
+
+<tr>
+<td class="org-left">&lt;&vert; … &vert;&gt;</td>
+<td class="org-left">yes</td>
+<td class="org-left">blocked socially: &vert;&gt; is P2011's operator, and it reads as "pipe"</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>&lt;\ … \&gt;</code></td>
+<td class="org-left">no — UCN munch (trap 3)</td>
+<td class="org-left">inferior twin of <code>\&lt; … \&gt;</code>; reject</td>
+</tr>
+
+<tr>
+<td class="org-left">(&vert; … &vert;)</td>
+<td class="org-left">yes</td>
+<td class="org-left">heavy; Haskell "banana bracket" connotation; reads worse than backtick</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>x \op\ y</code></td>
+<td class="org-left">yes</td>
+<td class="org-left">visually too light; symmetric, so it keeps the same-delimiter rule</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>$ … $</code></td>
+<td class="org-left">no — <code>$</code> is an identifier character under default-on <code>-fdollars-in-identifiers</code></td>
+<td class="org-left">reject</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>@ … @</code></td>
+<td class="org-left">clean in C++</td>
+<td class="org-left">the Objective-C sigil, in a lexer Clang shares; reject</td>
+</tr>
+
+<tr>
+<td class="org-left"><code>&lt;: :&gt;</code> <code>&lt;% %&gt;</code></td>
+<td class="org-left">—</td>
+<td class="org-left">already digraphs for brackets and braces</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <div id="outline-container-a4-the-front-runner-is-not-an-alias" class="outline-3">
-<h3 class="heading" id="a4-the-front-runner-is-not-an-alias"><span class="section-number-3">14.4.</span> <span class="content">A.4 The front-runner is not an alias</span><a class="self-link" href="#a4-the-front-runner-is-not-an-alias" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L406" title="This section in the Org source">source</a></h3>
-</div>
+<h3 class="heading" id="a4-the-front-runner-is-not-an-alias"><span class="section-number-3">13.4.</span> <span class="content">A.4 The front-runner is not an alias</span><a class="self-link" href="#a4-the-front-runner-is-not-an-alias" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L493" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-13-4">
+<p>
+One candidate is different: <code>\&lt; … \&gt;</code> is lexically bulletproof <i>and</i>
+asymmetric. Distinct open and close tokens would eliminate the same-delimiter
+problem outright (no <code>BacktickIsOperator</code> flag) and with it the nesting rule,
+since <code>x \&lt;f \&lt;g\&gt; h\&gt; y</code> parses unambiguously with no parentheses. That is,
+on engineering grounds, a better-designed operator than the backtick.
+</p>
 
+<p>
+However, adopting it would mean choosing a <i>different primary spelling</i>, a
+different operator with a different feel and none of the Haskell lineage. It
+would not be an alias. The
+decision taken here is backtick as the single spelling. We considered the
+better-engineered stranger and chose the familiar borrowed spelling, on
+purpose.
+</p>
+</div>
+</div>
 <div id="outline-container-a5-the-rebuttals-pre-loaded" class="outline-3">
-<h3 class="heading" id="a5-the-rebuttals-pre-loaded"><span class="section-number-3">14.5.</span> <span class="content">A.5 The rebuttals, pre-loaded</span><a class="self-link" href="#a5-the-rebuttals-pre-loaded" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L408" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="a5-the-rebuttals-pre-loaded"><span class="section-number-3">13.5.</span> <span class="content">A.5 The rebuttals, pre-loaded</span><a class="self-link" href="#a5-the-rebuttals-pre-loaded" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L495" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-13-5">
+<ol class="org-ol">
+<li><b>It is ergonomics and not capability.</b> Inline prose works today via
+CommonMark spans (A.1); fenced blocks cover code.</li>
+<li><b>Two spellings is a permanent tax.</b> Teaching doubles; clang-format must
+pick a canonical form and normalize to it; <code>-ast-print</code> must choose; grep,
+linters, and tooling grow a second case, forever, for a cosmetic win.</li>
+<li><b>Direction of travel.</b> Trigraphs were removed in C++17; digraphs are
+vestigial and periodically floated for removal. A new alternative token
+invites "and will you deprecate this one too?"</li>
+<li><b>It fragments the spelling.</b> The readability case rests on one
+recognizable form; two camps undercut it.</li>
+<li><b>None reads better.</b> Backtick is the established infix-quote idiom. The
+alternatives carry foreign connotations: pipe, escape, banana.</li>
+<li><b>If the markup clash warranted a change, it would argue against the
+primary and not for a second spelling.</b> We weighed that and chose
+backtick-primary anyway. An alias is the worst of both worlds.</li>
+<li><b>"Add it later if needed" is not a cheap option.</b> A follow-up spelling
+costs its own paper, an EWG poll, CWG wording, and a ballot cycle, and
+risks shipping the operator first and bolting a second spelling on after.
+Deferral buys no option value. The question is settled here.</li>
+</ol>
 </div>
-
+</div>
 <div id="outline-container-a6-the-wider-inventory-what-ascii-actually-remains" class="outline-3">
-<h3 class="heading" id="a6-the-wider-inventory-what-ascii-actually-remains"><span class="section-number-3">14.6.</span> <span class="content">A.6 The wider inventory: what ASCII actually remains</span><a class="self-link" href="#a6-the-wider-inventory-what-ascii-actually-remains" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L410" title="This section in the Org source">source</a></h3>
-</div>
+<h3 class="heading" id="a6-the-wider-inventory-what-ascii-actually-remains"><span class="section-number-3">13.6.</span> <span class="content">A.6 The wider inventory: what ASCII actually remains</span><a class="self-link" href="#a6-the-wider-inventory-what-ascii-actually-remains" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L497" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-13-6">
+<p>
+The same availability analysis generalizes, and it gets asked in the room. A
+sequence <code>XY</code> is mintable only if <code>XY</code> is not a
+token or token-prefix today <i>and</i> <code>Y</code> cannot validly follow <code>X</code> in a current
+program. The second clause is the surprising one: after any binary operator or
+<code>&lt;</code>, the unary-capable characters <code>- + * &amp; ~ !</code> are already legal, so <code>&lt;-</code>,
+<code>&lt;+</code>, <code>&lt;*</code>, <code>**</code>, <code>!!</code>, <code>~~</code> are all blocked; <code>a * *p</code> and <code>!!x</code> are the
+cautionary cases. <code>&lt;|</code> survives only because <code>|</code> is the one bar with no unary
+form.
+</p>
 
+<p>
+Free standalone characters: exactly three, as noted in the grammar section.
+They are the backtick (claimed by this proposal) and <code>@</code> and <code>$</code>, compromised
+by Objective-C and <code>-fdollars-in-identifiers</code> respectively. There is a fourth
+character, <code>\</code>, which is free as a <i>token</i> and is not counted among the
+three: it is the line-continuation marker and the universal-character-name
+lead-in, so it is usable only with care.
+</p>
+
+<p>
+Clean two-or-more-character sequences of note: <code>==&gt;</code>, <code>&lt;==</code>, <code>&lt;==&gt;</code>, <code>&lt;|</code>,
+<code>~&gt;</code>, and <code>%%</code> are mintable today; <code>=&gt;</code> and <code>|&gt;</code> are lexically clean but
+spoken for, by P2971's implication operator and P2011's pipeline respectively;
+<code>&lt;=&gt;</code> is spaceship; and <code>^^</code> — available by the same analysis until recently —
+was claimed by reflection (<a href="https://wg21.link/p2996r13" title="———. 2025. “Reflection for C++26.” WG21. https://wg21.link/p2996r13.">Revzin et al. 2025</a>). Reflection moved from a single <code>^</code> to
+<code>^^</code> in P3381R0 (<a href="https://wg21.link/p3381r0" title="Revzin, Barry, Wyatt Childers, Peter Dimov, Andrew Sutton, Faisal Vali, Daveed Vandevoorde, and Dan Katz. 2024. “Syntax for Reflection.” WG21. https://wg21.link/p3381r0.">Revzin et al. 2024</a>), after running this exercise, and that
+paper's candidate table reaches this section's count independently: it calls
+the backtick the third character recently added to the basic character set,
+after <code>$</code> and <code>@</code>. The lesson from that precedent: doubling an operator with
+no unary form is the reliable way to find clean real estate, and doubling one
+that has a unary form never is.
+</p>
+</div>
+</div>
 <div id="outline-container-a7-why-the-demand-for-that-inventory-evaporates" class="outline-3">
-<h3 class="heading" id="a7-why-the-demand-for-that-inventory-evaporates"><span class="section-number-3">14.7.</span> <span class="content">A.7 Why the demand for that inventory evaporates</span><a class="self-link" href="#a7-why-the-demand-for-that-inventory-evaporates" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/3aaa47cb0a33bcd5e5db0dd776161e509635345e/papers/backtick-infix-and-keyword-escape.org?plain=1#L412" title="This section in the Org source">source</a></h3>
+<h3 class="heading" id="a7-why-the-demand-for-that-inventory-evaporates"><span class="section-number-3">13.7.</span> <span class="content">A.7 Why the demand for that inventory evaporates</span><a class="self-link" href="#a7-why-the-demand-for-that-inventory-evaporates" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L499" title="This section in the Org source">source</a></h3>
+<div class="outline-text-3" id="text-13-7">
+<p>
+This proposal is, in effect, a general infix-operator facility: any named
+binary operation is <code>x `op` y</code> with no new punctuator. So the standing
+demand for new operator tokens, which is what previously justified spending
+scarce lexical real estate, largely evaporates. <code>x `implies` y</code>, <code>x `pow` y</code>,
+<code>x `dot` y</code> all work today under the feature, and the table in
+A.6 can stay unspent.
+</p>
+
+<p>
+The residual cases where a dedicated punctuator is still worth minting are the
+ones a desugar-to-call cannot express: non-strict evaluation with a
+bare-expression right operand (Walter Brown's short-circuiting <code>=&gt;</code>
+implication (<a href="https://wg21.link/p2971r3" title="Brown, Walter E. 2025. “Implication for C++.” WG21. https://wg21.link/p2971r3.">Brown 2025</a>); though the motivation section shows a thunk recovers
+the capability, so the dedicated operator is an ergonomic win), custom
+precedence or associativity outside the single backtick
+level, and operations frequent enough that even <code>`op`</code> is too much
+ceremony, a high bar. Everything else is a backtick call. The inventory above
+is what remains technically possible; this proposal removes most of the
+motivation to spend it.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-references" class="outline-2">
+<h2 class="heading" id="references"><span class="section-number-2">14.</span> <span class="content">References</span><a class="self-link" href="#references" aria-label="Link to this section"></a><a class="source-link" href="https://github.com/steve-downey/backtick/blob/fdeaeb031c5a153be1693a89624b90f39471cbf0/papers/backtick-infix-and-keyword-escape.org?plain=1#L501" title="This section in the Org source">source</a></h2>
+<div class="outline-text-2" id="text-14">
+<div class="csl-bib-body">
+  <div class="csl-entry"><a id="citeproc_bib_item_1"></a>Brown, Walter E. 2025. “Implication for C++.” WG21. <a href="https://wg21.link/p2971r3">https://wg21.link/p2971r3</a>.</div>
+  <div class="csl-entry"><a id="citeproc_bib_item_2"></a>Revzin, Barry, Wyatt Childers, Peter Dimov, Andrew Sutton, Faisal Vali, Daveed Vandevoorde, and Dan Katz. 2024. “Syntax for Reflection.” WG21. <a href="https://wg21.link/p3381r0">https://wg21.link/p3381r0</a>.</div>
+  <div class="csl-entry"><a id="citeproc_bib_item_3"></a>———. 2025. “Reflection for C++26.” WG21. <a href="https://wg21.link/p2996r13">https://wg21.link/p2996r13</a>.</div>
+</div>
 </div>
 </div>
 <div id="footnotes">
