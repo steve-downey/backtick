@@ -186,20 +186,20 @@ if (`requires`(user.license))
 * The proposal
 Two features, one token, one paper.
 
-*The infix operator.* `` x `f` y `` is sugar for `f(x, y)` (equivalently
-`(f)(x, y)`), where the operator slot between the backticks is an arbitrary
-expression parsed as an _assignment-expression_, or a type-name, which
+*The infix operator.* ~x `f` y~ is sugar for ~f(x, y)~ (equivalently
+~(f)(x, y)~), where the operator slot between the backticks is an arbitrary
+expression parsed as an /assignment-expression/, or a type-name, which
 constructs. The value, type, and semantics are exactly those of the
 corresponding call. The operator is left-associative and binds tighter than
 any other binary operator, looser than the unary and postfix operators.
 
 *The keyword escape.* In any position where the grammar expects a name (a
-_declarator-id_, a class, enumeration or namespace name, a template
-parameter's name, a label, an operand, after `.`, `->`, or `::`), a backtick
+/declarator-id/, a class, enumeration or namespace name, a template
+parameter's name, a label, an operand, after ~.~, ~->~, or ~::~), a backtick
 pair wrapping a word spelled as an identifier denotes an ordinary identifier
 whose spelling is that word. Keywords are the case the feature is named for,
-and the rule is not restricted to them: `` `foobar` `` and `foobar` are the
-same identifier, so a declaration may use one spelling and its uses the other.
+and the rule is not restricted to them: ~`foobar`~ and ~foobar~ are the
+same identifier, so a declaration and its uses need not share a spelling.
 It is purely a source-level construct; the resulting identifier participates
 in lookup, mangling, and linkage exactly as if the word had never been a
 keyword.
@@ -207,10 +207,10 @@ keyword.
 * Motivation, beyond readability
 
 ** Short-circuiting returns to user code
-C++ reserves non-strict evaluation to a fixed set of built-ins: `&&`, `||`
-and `?:`. The comma operator is the near neighbor, and is not one of them: it
-evaluates both of its operands, and what it fixes is the *sequencing*.
-Overloading does not get non-strict evaluation back: an overloaded `operator&&`
+C++ reserves non-strict evaluation to a fixed set of built-ins: ~&&~, ~||~
+and ~?:~. The comma operator is the near neighbor, and is not one of them: it
+evaluates both of its operands, and what it fixes is the /sequencing/.
+Overloading does not get non-strict evaluation back: an overloaded ~operator&&~
 evaluates both operands, which is the trap everyone has been bitten by, and
 the reason the standing advice is: don't. Non-strict evaluation has been
 closed to user code since C++98.
@@ -226,8 +226,8 @@ inline constexpr auto implies =
 p `implies` [&]{ return expensive(); }   // runs only when p holds
 #+end_src
 
-The same shape gives lazy defaults (``opt `or_else` [&]{ return costly();
-}``), guarded effects, and bespoke control operators. Any binary operation
+The same shape gives lazy defaults (~opt `or_else` [&]{ return costly(); }~),
+guarded effects, and bespoke control operators. Any binary operation
 that must not evaluate its right side unconditionally is in reach. Chaining
 fallible steps is the zero-ceremony special case: the stages are already
 functions, so no thunk is written and the short-circuit falls out:
@@ -253,8 +253,8 @@ x `pipe` f `pipe` g `pipe` h        // h(g(f(x))) — data-flow order
 #+end_src
 
 This drives the existing range adaptor closures
-unchanged. `views::filter(pred)` and `views::transform(fn)` are already unary
-callables (`c | a` is defined as `a(c)`), so `pipe` feeds them directly:
+unchanged. ~views::filter(pred)~ and ~views::transform(fn)~ are already unary
+callables (~c | a~ is defined as ~a(c)~), so ~pipe~ feeds them directly:
 
 #+begin_src C++
 r `pipe` views::filter(pred) `pipe` views::transform(fn)
@@ -263,8 +263,8 @@ r | views::filter(pred) | views::transform(fn)
 #+end_src
 
 Same closure objects, same lazy views, verified identical output on the
-built compiler. The per-library `operator|` overloads exist only to choose
-the `|`*syntax; the closures themselves need nothing, so they work under
+built compiler. The per-library ~operator|~ overloads exist only to choose
+the ~|~ syntax; the closures themselves need nothing, so they work under
 backtick for free.
 
 ** Reusable, point-free composition
@@ -289,7 +289,7 @@ This is not a library paper, no library facilities are proposed.
 * Prior art
 
 ** Infix application of named callables
-- Haskell, PureScript, and other Haskell descendents have backtick for infixing.
+- Haskell, PureScript, and other Haskell descendants have backtick for infixing.
 - Kotlin has an ~infix~ keyword.
 - R has ~%op%~ operators.
 - Fortress has named operators.
@@ -329,14 +329,14 @@ This is not a library paper, no library facilities are proposed.
 ** "Define ~*~ on a type instead"
 The objection: named binary operations do not need an infix spelling, because
 C++ already has one, which is to overload an operator on a type. Saturating
-multiplication does not need   ~a `mul_sat` b~ ; it needs a
+multiplication does not need ~a `mul_sat` b~; it needs a
 ~Saturating<double>~ whose ~operator*~ saturates.
 
-Anyone having tried this knows all the problems.
+Anyone who has tried this knows the problems.
 
-You can't overload for ~operator*(double, double)~, you need a Saturating<double> in play. This is why we already added ~std::mul_sat~. We, rightly, did not ship a ~Saturating<T>~.
+You can't overload ~operator*(double, double)~; you need a ~Saturating<double>~ in play. This is why we already added ~std::mul_sat~. We, rightly, did not ship a ~Saturating<T>~.
 
-The scope is too broad, and it is painfully easy to use saturating math in places you did not expect to. The ergonomics of a single ~*~ operator make different behavior depending on the argument types a trap.
+The scope is too broad, and it is painfully easy to use saturating math in places you did not expect to. A single ~*~ operator whose behavior changes with the argument types is a trap.
 
 * Fitting the grammar, without collision
 
@@ -415,30 +415,29 @@ are mutually exclusive, so one lexical token serves both uses with no
 lookahead and no ambiguity, the same strategy the language already uses to
 give ~*~, ~&~, and ~<~ their multiple readings.
 
-```cpp
+#+begin_src cpp
 int `new`(int, int);  // declarator-id  -> escaped identifier "new"
 `new`(a, b);         // primary        -> call to the function named "new"
 obj.`delete`();      // after '.'      -> member named "delete"
 x `f` y;             // post-operand   -> infix: f(x, y)
 x `(`new`)` y;       // escaped callee -> (`new`)(x, y), parenthesized slot
-```
+#+end_src
 
 There might seem to be a second, independent signal here: that an escape
 wraps a keyword, which is never a valid callee expression, and a slot wraps an
 expression, which is never a bare keyword. Since the escape wraps any
 identifier, that signal does not exist. The design does not rest on it, and
 the case where the two token sequences coincide shows why. Read as an escape
-and read as a slot,  ~`f`~ names the same
-thing, ~f~ the two readings differ only over whether ~f~ is an operand or a
-callee, and that is precisely what the position states. Position alone
-suffices, as it does for ~*~, ~&~, and ~<~.
+and read as a slot, ~`f`~ names the same thing ~f~; the two readings differ
+only over whether ~f~ is an operand or a callee, and that is what the position
+states. Position alone suffices, as it does for ~*~, ~&~, and ~<~.
 
 Because the escape yields an ordinary identifier, nothing downstream of the
 parser changes: no new lookup rules, no mangling scheme, no ABI surface.
 ~void `new`();~ links as a function named ~new~.
 
 * Implementation experience
-Implemented in both GCC and Clang. There were no particular implementation difficulties for either. Implementing both did partly dictate the implementation strategy for the identifier escape, but did not make it unmanagably more complicated.
+Implemented in both GCC and Clang. There were no particular difficulties in either. Implementing both did partly dictate the strategy for the identifier escape, but did not make it unmanageably more complicated.
 
 ** The forks
 - *Clang*, two branches carrying the same feature diff, one on the LLVM 23
