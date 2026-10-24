@@ -805,7 +805,10 @@ and port.
   ([paper-bundling](#paper-bundling)). **The mailed R1 does not carry it**:
   its grammar names *user-infix-expression*, but its prose does not name a
   user-infix level, and it neither cites P4345 nor has a future-directions
-  appendix.
+  appendix. **D4307R2 carries it (2026-10-24):** "The productions" names
+  the user-infix level, and Appendix B, informative, shows P4345R1's
+  operators as a second alternative of *user-infix-expression*, with
+  mixed chains checked on `unicode-operators-experiment`.
 - **Both papers, while they were split** ([paper-bundling](#paper-bundling);
   superseded by the mailed R1, which is one paper again): each states the parse-not-lex invariant from
   [keyword-escape-coexistence](#keyword-escape-coexistence) in its own

@@ -276,6 +276,8 @@ entry used to have.
 
 2026-10-24 — **and it was revised back.** The mailed D4307R1 carries the infix operator and the keyword escape in one paper again, so "bundle within a committee" holds for the two backtick uses once more. This entry still does not depend on it. The companion obligation falls on D4307R1 as mailed, which does not yet carry it.
 
+2026-10-24 — **the condition is met in D4307R2.** Its "The productions" names the *user-infix level*, and a new informative Appendix B, "future direction, one level for user-defined infix", cites P4345R1, shows `user-infix-expression user-operator cast-expression` as a third alternative beside the backtick one, and says the two papers' fates are separate except for the choice of level. Its mixed-chain examples (`` a ⊞ b `f` c `` is `f(operator⊞(a, b), c)`; `` x `f` y ⊞ z `` is `operator⊞(f(x, y), z)`; `-a ⊞ -b` beside `` -a `f` -b ``) were checked with `static_assert` on `unicode-operators-experiment` (`48620c9ae2b8`), with a wrong grouping as the negative control. The mirror note in P4345 still cites P4307R0.
+
 ---
 
 ## 3. What transfers from backtick

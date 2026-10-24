@@ -18,17 +18,15 @@ The implementation work that produced this is finished. The step-by-step
 plans, handoffs, and deviation ledgers it ran on were transient and have been
 removed; git history still has them. What is still open:
 
-- **`backtick-paper-companion`** — the backtick paper must name its
-  precedence level the **user-infix level** and carry a short informative
-  future-directions appendix pointing at the Unicode paper, the condition
-  [`paper-separation`](docs/unicode-operators.md#paper-separation) split the
-  papers under. The mailed D4307R1 does not: its grammar names
-  *user-infix-expression*, but it never cites P4345. For R2.
 - The blog post (`docs/infix-backtick-operator.org`) does not mention that
   the escape reaches module names
   ([`escape-module-names`](docs/backtick-operator-design.md#escape-module-names));
   D4307R2 carries the wording and the line-start collision. Whether the post
   should is undecided.
+- The Unicode paper's "Relation to P4307R0" note and its grammar section
+  still cite P4307R0; D4307R2 now carries the mirror appendix
+  ([`paper-separation`](docs/unicode-operators.md#paper-separation)). For
+  P4345's next revision.
 - One printer gap, not affecting acceptance: Clang's `-ast-dump` prints a
   declaration's name bare and the same name inside a type escaped. (GCC's
   opposite split was

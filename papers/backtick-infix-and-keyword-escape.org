@@ -387,8 +387,10 @@ above rather than imply it.
 the pointer-to-member productions consume a /user-infix-expression/ where they
 consumed a /cast-expression/, and everything above them is unchanged. In
 implementation terms this is one new top level in each compiler's binary
-operator precedence table. The left recursion gives left associativity; the
-/cast-expression/ operands give the symmetric prefix binding argued for above.
+operator precedence table. This is the /user-infix level/; Appendix B shows
+the second operator meant to share it. The left recursion gives left
+associativity; the /cast-expression/ operands give the symmetric prefix
+binding argued for above.
 
 The new level is *not* a /fold-operator/: ~(... `f` N)~ is
 ill-formed. Both implementations reject it, each with an ordinary parse error
@@ -984,6 +986,45 @@ level, and operations frequent enough that even ~`op`~ is too much
 ceremony, a high bar. Everything else is a backtick call. The inventory above
 is what remains technically possible; this proposal removes most of the
 motivation to spend it.
+
+* Appendix B: future direction, one level for user-defined infix
+This appendix is informative. It proposes nothing.
+
+The level this paper adds is meant to be the /user-infix level/: one level
+for every infix operator whose meaning a user supplies, not a level for the
+backtick alone. P4345 [cite:@P4345R1] proposes the second such operator:
+declarable operators spelled with Unicode mathematical symbols, such as
+~operator⊞~, so that ~a ⊞ b~ is a call to ~operator⊞(a, b)~. It places them
+on the same level, as one more alternative of the same production:
+
+#+begin_src ebnf
+user-infix-expression:
+    cast-expression
+    user-infix-expression ` backtick-operator ` cast-expression
+    user-infix-expression user-operator cast-expression
+#+end_src
+
+The second alternative is this paper's; the third is P4345's. The two mix the
+way any two operators on one level mix, left to right:
+
+#+begin_src cpp
+a ⊞ b `f` c     // f(operator⊞(a, b), c)
+x `f` y ⊞ z     // operator⊞(f(x, y), z)
+-a ⊞ -b         // operator⊞(-a, -b), as -a `f` -b is f(-a, -b)
+#+end_src
+
+The decisions this paper asks of EWG about the level are that there is one,
+where it sits, that it is left-associative, and that its fixity is fixed
+rather than declared. P4345 needs the same decisions and adopts the same
+answers. Taking them here, with the second user in view, means they are made
+once.
+
+Otherwise the papers are independent. P4345 has its own questions (the
+character set, declaring and looking up ~operator⊞~, mangling) and goes to
+SG16 for them. Nothing in this paper depends on its answers, and if P4345
+does not advance, nothing here changes. The one thing that would change this
+paper is a different choice of level: if EWG, knowing the level is meant to
+be shared, would place it elsewhere, this is the paper in which to say so.
 
 * References
 
