@@ -26,10 +26,12 @@ removed; git history still has them. What is still open:
 - **`escape-module-names`** — the escape does not reach module names in
   either compiler (`` export module acme.`class`.util; ``,
   `` import `std`; ``), because module and import declarations are
-  recognized during preprocessing. The author wants it fixed; the mechanism
-  and its one collision with the infix operator are in
+  recognized during preprocessing. The author has ruled the mechanism
+  (2026-10-24): `` ` `` joins the tokens that may follow `module`/`import`,
+  and each component admits the escape, the one collision with the infix
+  operator accepted; see
   [`escape-module-names`](docs/backtick-operator-design.md#escape-module-names).
-  The escape paper records it as open.
+  Not yet built; the escape paper records it as open.
 - One printer gap, not affecting acceptance: Clang's `-ast-dump` prints a
   declaration's name bare and the same name inside a type escaped. (GCC's
   opposite split was
