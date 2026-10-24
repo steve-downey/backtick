@@ -216,10 +216,13 @@ evaluates both of its operands, and what it fixes is the /sequencing/.
 Overloading does not get non-strict evaluation back: an overloaded ~operator&&~
 evaluates both operands, which is the trap everyone has been bitten by, and
 the reason the standing advice is: don't. Non-strict evaluation has been
-closed to user code since C++98.
+closed to user-defined operators since C++98.
 
-A backtick helper whose right operand is a *callable* reopens it, because the
-helper decides whether (and when) that operand runs:
+A function that takes a /callable/ has always been able to decide whether,
+and when, its argument runs: ~implies(p, [&]{ return expensive(); })~
+short-circuits in C++11. What it could not do is read as an operator. A
+backtick helper does, and the deferral stays visible at the call site, which
+is exactly what an overloaded ~operator&&~ hides:
 
 #+begin_src C++
 // short-circuiting logical implication:  p => q  ≡  !p || q
@@ -243,6 +246,23 @@ inline constexpr auto mbind =
 
 parse(s) `mbind` validate `mbind` store;   // stops at the first error
 #+end_src
+
+The lambda is what this costs. P0927 [cite:@P0927R2] proposed parameters
+declared lazy, whose arguments the caller writes as plain expressions; under
+it, a function ~implies~ could declare its right operand ~[] -> bool~, and
+the call would read ~p `implies` expensive()~. P0927 deliberately leaves such
+a call site unmarked, so the visible deferral above would go; that is its
+trade to argue, not this paper's. Nothing here depends on lazy parameters,
+and nothing here is in their way.
+
+P0917 [cite:@P0917R4] works the neighboring problem from the other side. It
+makes ~operator?:~ overloadable, so a user-defined numeric type or a SIMD mask
+keeps the conditional operator's spelling. A user-written overload evaluates
+both branches, which a blend needs, and P0917 leaves general laziness to a
+separate facility. Backtick does not compete with it. The operator is binary,
+so it has no natural ternary, and a named helper is not the drop-in spelling
+generic code wants when one expression must work for ~int~ and for a
+user-defined type alike.
 
 
 ** One helper makes it a pipeline, and the ranges closures already fit
