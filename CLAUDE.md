@@ -18,9 +18,6 @@ The implementation work that produced this is finished. The step-by-step
 plans, handoffs, and deviation ledgers it ran on were transient and have been
 removed; git history still has them. What is still open:
 
-- **[`gcc-type-slot-parity`](docs/backtick-operator-design.md#gcc-type-slot-parity)**
-  — GCC has no type-name slot, so `` 1 `Pt` 2 `` is accepted by Clang and
-  rejected by GCC. §17.3 and the infix paper say so.
 - **`backtick-paper-companion`** — the infix paper must name its precedence
   level the **user-infix level** and carry a short informative
   future-directions appendix pointing at the Unicode paper, the condition

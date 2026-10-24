@@ -499,9 +499,10 @@ have caught it anyway, because a test that never finishes doesn't fail, it
 hangs. What caught it was running the error cases under =timeout=, which is
 now the third script in the probe directory.
 
-The type-name slot is Clang-only: GCC parses its slot as an expression, so =1
-`Pt` 2= is rejected there. That's the only kind of program the two compilers
-treat differently under the flag, and the escape isn't in it.
+The type-name slot was Clang-only for a long time: GCC parsed its slot as an
+expression, so =1 `Pt` 2= was rejected there. It has one now, built from the
+bit of GCC's parser that already recognizes =T(= as a functional cast, so the
+two compilers no longer treat any program differently under the flag.
 
 The escape used to be on that list twice, and getting it off was more
 interesting than getting it on. GCC binds =int= and =char= and the rest at

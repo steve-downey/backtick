@@ -431,17 +431,19 @@ The switch is `PrintingPolicy::BacktickKeywordEscape`, initialised from `LangOpt
 
 **Question.** Does GCC implement the type-name slot of [type-name-slot](#type-name-slot)?
 
-**Status.** **OPEN** — a GCC prototype gap.
+**Status.** **Resolved** — built in the GCC prototype, 2026-10-24.
 
-**Decision.** Not yet built. The design is settled in [type-name-slot](#type-name-slot) and §17.3; Clang implements it.
+**Decision.** Yes, now. The design is settled in [type-name-slot](#type-name-slot) and §17.3; both compilers implement it.
 
-**Why.** GCC parses the slot as an expression only. It is the one place where the two compilers accept different programs under the flag, and it leaves §17.3 with single-compiler evidence.
+**Why.** GCC parsed the slot as an expression only. It is the one place where the two compilers accept different programs under the flag, and it leaves §17.3 with single-compiler evidence.
 
 **Decided by.** Observation.
 
 **Log.** 2026-10-24 — given an entry. Measured on `24d3c38b653`: `` 1 `Pt` 2 `` is *no match for call to '(Pt) (int, int)'*, because the bare-name path finds the `TYPE_DECL` and calls an object of that type; `` 1 `Pr` 2.0 `` with `Pr` a class template is the same; `` 1 `n::Q` 2 `` is *expected primary-expression before '`'*.
 
 2026-10-24 — the diagnostics changed with [gcc-dependent-slot-lookup](#gcc-dependent-slot-lookup)'s fix, which parses a bare-name slot as a primary-expression: `` 1 `Pt` 2 `` is now *expected primary-expression before '`'* and `` 1 `Pr` 2.0 `` *missing template arguments before '`'*. Still rejected; the type arm has to come before that parse.
+
+2026-10-24 — **built** on the GCC fork, `f94c1a62035`. `cp_parser_backtick_type_slot` is the functional-cast arm of `cp_parser_postfix_expression` with the closing backtick where the `(` stands: a tentative *simple-type-specifier* (or `typename` and an elaborated specifier) that must be followed by the close. `cp_parser_backtick_call` builds a type slot with `build_functional_cast`, so CTAD, parenthesized aggregate initialization and dependent construction are the cast's. Lookup inside the type parse supplies the disambiguation rule unaided: a function hiding a class of the same name leaves the slot a call. One ordering constraint, found in the design rather than by a failure: the template-id arm must run first, because a failed tentative type parse of `f<…>` folds the tokens into a `CPP_TEMPLATE_ID` that arm no longer recognizes, and the slot would have lost its ADL. `g++.dg/backtick/infix-type-slot.C` carries the cases of Clang's `Parser/backtick-infix.cpp` with `constexpr` values; Clang accepts it unchanged. A builtin, `` 1 `int` 2 ``, is ill-formed in both as `int(1, 2)` is, each with its own diagnostic. Gate: 152/152 in `g++.dg/backtick`; the three probes unchanged.
 
 ### gcc-type-name-printing
 
@@ -1129,8 +1131,8 @@ measured and unowned. The ABI evidence survives it: the bare name is still in
 the column the paragraph points at.
 
 **The ruling is delivered on declaration names by both compilers and on
-*type* names by Clang alone**, which is the same shape as §17.3's
-single-compiler evidence and is stated here rather than left for a reader to
+*type* names by Clang alone**, which is the shape §17.3's type slot had
+until 2026-10-24, and is stated here rather than left for a reader to
 find. GCC escapes a name that reaches `dump_decl_name`, its one funnel for the
 name of a declaration; a class or enum *type* is printed by a different
 routine, so `` struct `union` { }; `` produces *"'struct union' has no member
@@ -1844,19 +1846,20 @@ keyword-escape use of backtick (§12) occupies operand/declarator position, not
 the post-operand infix position, so there is no collision.
 (type-slot-cost)
 
-**Implementation status: one compiler, and that is a claim the paper has to
-make carefully.** Clang implements it — a bare name is looked up as a type
-with a CTAD placeholder, a qualified one via a tentative scope parse, a
-builtin through the functional-cast machinery, and all three route to the
-`T(x, y)` build path. **GCC does not**: its slot is parsed as an expression,
-so `` 1 `P` 2 `` is rejected there, and under `-fbacktick` the two compilers
-accept different programs
-([gcc-type-slot-parity](#gcc-type-slot-parity)). This
-is the one place where the two implementations disagree about what is
-well-formed, and it is a gap rather than a design consequence — nothing about
-GCC's parser-level desugaring prevents the type arm, it simply has not been
-written. Until it is, the implementation-experience section must say that
-this section has **single-compiler evidence**, and say which compiler.
+**Implementation status: both compilers, since 2026-10-24.** Clang looks a
+bare name up as a type with a CTAD placeholder, a qualified one via a
+tentative scope parse, and a builtin through the functional-cast machinery,
+and all three route to the `T(x, y)` build path. GCC tries the slot as a
+*simple-type-specifier* or *typename-specifier* before it tries it as an
+expression, reusing its postfix parser's functional-cast arm with the closing
+backtick where the `(` stands, and builds the result with
+`build_functional_cast`
+([gcc-type-slot-parity](#gcc-type-slot-parity)). Until then GCC parsed the
+slot as an expression, so `` 1 `P` 2 `` was rejected there and this section
+had single-compiler evidence. It was a gap rather than a design consequence,
+as this paragraph used to say: nothing about GCC's parser-level desugaring
+prevented the type arm, and when it was written it reused a parser arm GCC
+already had.
 
 ### 17.4 ADL is normative (cross-compiler note)
 
@@ -2181,11 +2184,14 @@ Keep that separate from the places where the two implementations genuinely
 disagree, which are gaps and not consequences. This section said *one* until
 2026-09-07, then two kinds and four programs on the same day, then two kinds
 again after [escape-name-positions](open-decisions.md#escape-name-positions)
-was answered and built; as of 2026-09-08 it is back to **one, and it is not
-about the escape at all**: **GCC has no type-name slot** (§17.3), so under the
-flag `` 1 `Pt` 2 `` compiles in one compiler and not the other. **There is no
-program the two compilers treat differently on account of the keyword
-escape.**
+was answered and built; as of 2026-09-08 it was back to **one, and not
+about the escape at all**: GCC had no type-name slot (§17.3), so under the
+flag `` 1 `Pt` 2 `` compiled in one compiler and not the other. As of
+2026-10-24 it is **none**: GCC has the type slot
+([gcc-type-slot-parity](#gcc-type-slot-parity)), and inside a template it
+now keeps the slot's ordinary lookup
+([gcc-dependent-slot-lookup](#gcc-dependent-slot-lookup)). **There is no
+program the two compilers treat differently under the flag.**
 
 **Everything else this paragraph has ever carried is gone, and how each one
 went is the more useful fact — there have been three, and every one was found

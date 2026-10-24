@@ -732,11 +732,11 @@ because the compilers demanded them.
   of the design rather than an expected consequence of it.
 - *The type-name slot is its own production.* A bare type-name is not an
   *assignment-expression*, so the grammar carries the two type productions
-  rather than implying them. It is also where the two compilers still differ.
+  rather than implying them. It was also the last place the two compilers
+  differed.
 
 **What went wrong.** Four defects, all found after the prototypes were
-finished, none of them a design question, and all fixed except where the next
-paragraph marks them open:
+finished, none of them a design question, and all fixed:
 
 1. *ADL.* Clang's slot had no ADL at all; GCC's had it for a bare name but not
    for a template-id, and inside a template had nothing else, losing the
@@ -756,9 +756,9 @@ paragraph marks them open:
    the AST matchers, and every one of those sites is quiet when it is wrong.
    GCC desugars in the parser and needs none of it.
 
-**Still open.** One set of programs is treated differently by the two
-compilers under the flag. GCC does not implement the type-name slot, so
-`` 1 `Pt` 2 `` is rejected there and accepted by Clang.
+**What is left.** Nothing the two compilers disagree about: under the flag
+they accept and reject the same programs. The type-name slot was the last
+difference, and is described next.
 
 ## The forks
 
@@ -794,14 +794,19 @@ came across unchanged, with no conflict. Nothing the feature touches had moved
 under it. For a design whose whole claim is *desugar and inherit*, that is the
 number that matters: a diff of this shape has very little to catch on.
 
-## The type-name slot, in one compiler
+## The type-name slot
 
-The type-name slot has single-compiler evidence. Clang implements it: a bare
-name looked up as a type
-with a deduction placeholder, a qualified one through a tentative parse, a
-builtin through the functional-cast path, all three routed to the `T(x, y)`
-build, which is where CTAD and temporaries come back for free. However, GCC
-parses its slot as an expression, so `` 1 `Pt` 2 `` is rejected there.
+Both compilers implement the type-name slot, and both build a type slot as
+the functional cast `T(x, y)`, which is where CTAD, temporaries and aggregate
+initialization come back for free. Clang looks a bare name up as a type with
+a deduction placeholder, a qualified one through a tentative parse, and a
+builtin through the functional-cast path. GCC reuses the part of its
+expression parser that recognizes `T(` as a functional cast, with the closing
+backtick standing where the parenthesis stands there. Lookup inside that
+parse is what makes the type reading win exactly when lookup finds a type or
+a class template, so a function that hides a class of the same name leaves
+the slot a call in both. GCC's arm came well after Clang's, and until it was
+written `` 1 `Pt` 2 `` was rejected there and accepted by Clang.
 
 ## Printing the operator
 
@@ -975,7 +980,7 @@ on the same closure objects.
 
 Everything argued above reduces to the following, and the wording that
 follows says no more than this. Every item is decided, and every item is
-implemented in both compilers except where noted.
+implemented in both compilers.
 
 - `` x `f` y `` is `f(x, y)`. It is desugared in the front end, before
   overload resolution, to the call node the compiler would have built for
@@ -985,7 +990,7 @@ implemented in both compilers except where noted.
 - The slot is an *assignment-expression*, or a *simple-type-specifier* or
   *typename-specifier*, in which case `` x `T` y `` is `T(x, y)` and CTAD
   applies. The type reading wins when lookup finds a type or a class
-  template. (Clang implements the type slot; GCC does not yet.)
+  template.
 - Precedence is the highest binary level: tighter than `*`, looser than the
   unary and postfix operators. Operands are *cast-expressions*, so a prefix
   operator binds to its own operand and `` -a `f` -b `` is `f(-a, -b)`.
