@@ -51,26 +51,72 @@ paper must carry, not only the decision logs.
 - `docs/unicode-operators.md` — the Unicode design doc, the counterpart of the
   one above: decisions log (§2), token set, grammar, implementation sketch,
   ABI (§9), open questions. The Unicode paper is written from it.
+- `docs/unicode-operators-r1-material.md` — what the 2026-09-23 SG16 review of
+  P4345R0 asked for, and the measurements it prompted, as material for a clean
+  R1. Seven sections: the MathClass inclusion predicate (with sizes for four
+  variants), floor-and-grow and the one-line stabilization ask to Unicode, the
+  confusables measurement (only 5 of 12 exclusions are derivable from UTS #39,
+  which is why the list stays enumerated), postfix, Scala prior art, the
+  citation gaps, and the reversibility principle. **Reverses `token-set`'s
+  "settled direction: enumerate".** Each claim is marked *Measured*,
+  *Recommended* or *Decided*. The fixity objections from the same review are
+  not here — they are in
+  [`user-declared-fixity`](docs/unicode-operators.md#user-declared-fixity)'s
+  log under 2026-09-23.
 - `docs/open-decisions.md` — the questions the implementation measured and
   only the author could settle, one slug-headed page each, with the dated
   answers. All are answered.
-- `papers/` — the three WG21 papers, **named by name and not by number**: the
+- `papers/` — the WG21 papers, **named by name and not by number**: the
   number lives in the front matter and in the prose, because the upload
   system renames whatever is uploaded.
-  - `papers/backtick-infix-operator.md` — **D4307R1**, the infix operator
-    (P4307R0 published, and proposed the escape too).
-  - `papers/backtick-keyword-escape.md` — **DxxxxR0**, the keyword escape,
-    split out on 2026-09-23 (number not yet assigned). The split and the one
-    invariant both papers must keep (the escape is parsed, not lexed) are in
-    [`paper-bundling`](docs/backtick-operator-design.md#paper-bundling).
-  - `papers/unicode-mathematical-operators.md` — **D4345R1** (P4345R0
-    published).
-  - `make -C papers <basename>.html <basename>.pdf` builds either. **Build the
-    PDF, not only the HTML**, and read the log: a wg21 paper can exit 0 with
-    its content wrong. A `header-includes` key in the front matter silently
-    replaces the wg21 LaTeX preamble (`\pnum` then undefined), and Latin
-    Modern carries none of the Unicode operator glyphs, so both papers set
-    `monofont`.
+  - `papers/backtick-infix-and-keyword-escape.org` — **D4307R1** as mailed:
+    the infix operator and the keyword escape in one paper, rewritten for
+    the committee, without the implementation detail and history.
+  - `papers/unicode-mathematical-operators.org` — **D4345R1** as mailed
+    (P4345R0 published).
+  - The markdown papers are the pre-mailing drafts:
+    `papers/backtick-infix-operator.md` (D4307R1, infix only),
+    `papers/backtick-keyword-escape.md` (DxxxxR0, the escape split out on
+    2026-09-23 under
+    [`paper-bundling`](docs/backtick-operator-design.md#paper-bundling)), and
+    `papers/unicode-mathematical-operators.md`. They still build through
+    mpark/wg21 (`papers/wg21/`) with `make -C papers -f mpark.mk html pdf`,
+    into `papers/generated/`.
+  - `make papers` builds the org papers as HTML and PDF and checks the
+    result (no external loads, no `Missing character`);
+    `make papers/<basename>.pdf` builds one, and `make -C papers help`
+    lists the rest. They build with wg21org, vendored as a squashed git
+    subtree at `papers/wg21org/` (from `steve-downey/wg21org` `main` on
+    GitHub — the same exporter `transcode` uses; **pull from GitHub, not from
+    `~/src/wg21org`**, whose local `main` has lagged it and once cost this
+    repo the whole pnum/wording vocabulary). The exporter finds its CSS,
+    prolog and preamble next to itself, so the subtree carries no local
+    edits. **Always `git subtree pull --squash`**: wg21org's own history
+    carries the work address this repo was scrubbed of. The exporter refuses
+    to run without its pinned org-transclusion submodule, registered here as
+    `papers/wg21org/packages/org-transclusion` — the papers Makefile checks
+    it out on first use (`make -C papers submodule`). `make -C papers check`
+    re-exports both and fails on any external load.
+  - **Build the PDF, not only the HTML**, and read the log: a paper can exit
+    0 with its content wrong. The Unicode operator glyphs are the live trap —
+    Latin Modern has none of them, so both org papers set
+    `#+LATEX_COMPILER: lualatex` with a Noto Sans Math / DejaVu fallback and
+    DejaVu Sans Mono; grep the `.log` for `Missing character`. (Under mpark
+    the matching traps were a `header-includes` key replacing the preamble,
+    and `monofont`.)
+  - The org papers are in wg21org's own markup
+    (`papers/wg21org/AUTHORING.md` is the reference, including its
+    "Converting from mpark/wg21 markdown" list): front matter `#+DOCNUMBER` /
+    `#+AUDIENCE`; references in `papers/references.bib` for org-cite with
+    `#+cite_export: csl`; `[[sref:]]`, `[[insert:]]` / `[[delete:]]`,
+    `#+begin_pnum`, `#+begin_grammar` (keywords as `~kw~`),
+    `#+begin_wgexample`, and a `:WG21_CHANGE: add` heading for a new
+    subclause. Inline code is `~code~`. The `#+bind:` preludes are honoured
+    by wg21org's export itself.
+  - **The committee papers carry no implementation detail and no
+    implementation history**; early feedback was that both were for the
+    wrong audience. That material lives in the design docs and the blog
+    posts.
 - `docs/infix-backtick-operator.org`, `docs/unicode-infix-operators.org`
   (each + a `.meta`) — the blog-post version of each paper, org-mode with a
   Nikola sidecar, in the informal register. Prefer the `voice` skill when
@@ -90,6 +136,43 @@ paper must carry, not only the decision logs.
   `clang-trunk-backticks` selects an `~/install/` prefix and adds
   `-fbacktick`; see `examples/etc/*-backticks-toolchain.cmake`. Change it
   upstream and `git subtree pull --prefix=examples`.
+- **Slide decks** — `make slides`, exported to reveal.js by org-re-reveal, the
+  machinery carried over from `steve-downey/cppnow26`'s `trees/`. A deck is
+  any org file under `talks/`, **and any `docs/*-talk.org`** — a deck that
+  transcludes from a design doc stays next to what it transcludes. A deck
+  exports to its own name (`docs/foo-talk.org` → `docs/foo-talk.html`), not to
+  a `-slides` suffix: which rule builds a `.html` is decided by whether the
+  source is in the Makefile's `DECK_ORGFILES`, not by the output's name. Decks
+  are filtered out of `ORGFILES` and `BLOG_ORGFILES`, so `org-html` and
+  `blog-md` stay about prose. **A new deck that comes out as a plain XHTML
+  article is one that matched neither pattern, or that is missing
+  `#+SETUPFILE: ../etc/deck.setup`.**
+  - `etc/deck.setup` carries everything common to all decks — reveal root,
+    version, `reveal_single_file`, theme, CSS. Its paths are `../`-relative
+    and every deck sits one level under the root, which is what lets one file
+    serve both `talks/` and `docs/`. A deck sets only what it differs on.
+  - `make slides` clones reveal.js 6.0.1 into `.tools/` on first use; both
+    that directory and the built HTML are ignored by git. Because
+    `deck.setup` sets `#+OPTIONS: reveal_single_file:t`, the built HTML
+    inlines all of its CSS and JS and then needs neither `.tools/` nor a
+    network — check that by grepping the output for `src=`/`href=` and
+    finding only the deliberate hyperlinks.
+  - `etc/my_theme.css` is the reveal theme; `etc/modus-{vivendi,operandi}-tinted.css`
+    supply the syntax-highlighting classes that `org-html-htmlize-output-type
+    'css` emits. Those two are **bare CSS here and HTML `<style>` fragments in
+    cppnow26** — `#+REVEAL_EXTRA_CSS` inlines a file inside a `<style>`
+    element of its own, and a nested tag silently costs you the first rule.
+  - `etc/slide-footer.el` builds the per-slide footer from three variables a
+    deck sets in its own Local Variables block. All three are `org-`-prefixed
+    on purpose: the export runs in a *copy* of the deck's buffer, and
+    `org-element-copy-buffer` carries a buffer-local across only if its name
+    matches `^\(org-\|orgtbl-\)`. Under any other prefix the footer silently
+    comes out empty. Leaving all three blank emits no postamble at all, which
+    is also what keeps the jQuery CDN tag out of a single-file deck.
+  - The `.deps` recipes pipe through `xargs -r`. Without it GNU `xargs` runs
+    `printf` once on empty input and, since the format carries a `$(dir $<)`
+    prefix, writes the *directory* into the deps file as a prerequisite —
+    whereupon every file added to that directory rebuilds the deck.
 
 ## The implementation branches
 

@@ -1,15 +1,23 @@
 # backtick
 
-Design documents, papers, and implementation records for three WG21 proposals.
+Design documents, papers, and implementation records for two WG21 proposals.
 
 ## Papers
 
-- [D4307R1 — An Infix Operator for C++](papers/backtick-infix-operator.md)
-  (P4307R0, published, proposed the operator and the keyword escape together)
-- [DxxxxR0 — A Keyword Escape for C++](papers/backtick-keyword-escape.md)
-- [P4345R0 — Extending C++ with Unicode Mathematical Operators](papers/unicode-mathematical-operators.md)
+As mailed, in org-mode, built with the vendored wg21org exporter:
 
-Build with `make -C papers <name>.html <name>.pdf`.
+- [D4307R1 — An Infix Operator and a Keyword Escape for C++](papers/backtick-infix-and-keyword-escape.org)
+- [D4345R1 — Extending C++ with Unicode Mathematical Operators](papers/unicode-mathematical-operators.org)
+
+`make papers` builds both as HTML and PDF; `make -C papers help` lists the
+other targets.
+
+The markdown files beside them are the pre-mailing drafts, which still build
+with `make -C papers -f mpark.mk html pdf`:
+[the infix operator](papers/backtick-infix-operator.md),
+[the keyword escape](papers/backtick-keyword-escape.md) (split out for a
+while, and folded back in for the mailing), and
+[the Unicode operators](papers/unicode-mathematical-operators.md).
 
 ## Implementations
 

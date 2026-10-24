@@ -1,0 +1,183 @@
+% Shared bibliography for the two org-mode papers:
+%   papers/backtick-infix-and-keyword-escape.org   (P4307 / D4307R1)
+%   papers/unicode-mathematical-operators.org      (P4345 / D4345R1)
+% Keys match the wg21 markdown citation ids — WG21 papers are keyed by paper
+% number, so a markdown [@KEY] citation becomes an org [cite:@KEY] citation
+% unchanged. The markdown builds resolve WG21 papers from the wg21.link index
+% and carry the rest in `references:` front matter; org-cite has no such
+% fallback, so everything is carried here. org-cite's print_bibliography
+% emits only the entries a document cites, so sharing the file does not mix
+% the two papers' reference lists.
+
+% --- WG21 papers ---
+
+@misc{P0543R3,
+  author       = {Jens Maurer},
+  title        = {Saturation arithmetic},
+  year         = {2023},
+  month        = {7},
+  date         = {2023-07-19},
+  publisher    = {WG21},
+  url          = {https://wg21.link/p0543r3}
+}
+
+@misc{P1949R7,
+  author       = {Steve Downey and Zach Laine and Tom Honermann and Peter Bindels and Jens Maurer},
+  title        = {{C++} Identifier Syntax using Unicode Standard Annex 31},
+  year         = {2021},
+  month        = {4},
+  date         = {2021-04-15},
+  publisher    = {WG21},
+  url          = {https://wg21.link/p1949r7}
+}
+
+@misc{P2011R1,
+  author       = {Barry Revzin and Colby Pike},
+  title        = {A pipeline-rewrite operator},
+  year         = {2020},
+  month        = {4},
+  date         = {2020-04-16},
+  publisher    = {WG21},
+  url          = {https://wg21.link/p2011r1}
+}
+
+@misc{P2672R0,
+  author       = {Barry Revzin},
+  title        = {Exploring the Design Space for a Pipeline Operator},
+  year         = {2022},
+  month        = {10},
+  date         = {2022-10-14},
+  publisher    = {WG21},
+  url          = {https://wg21.link/p2672r0}
+}
+
+@misc{P2971R3,
+  author       = {Walter E. Brown},
+  title        = {Implication for {C++}},
+  year         = {2025},
+  month        = {1},
+  date         = {2025-01-13},
+  publisher    = {WG21},
+  url          = {https://wg21.link/p2971r3}
+}
+
+@misc{P2996R13,
+  author       = {Barry Revzin and Wyatt Childers and Peter Dimov and Andrew Sutton and Faisal Vali and Daveed Vandevoorde and Dan Katz},
+  title        = {Reflection for {C++26}},
+  year         = {2025},
+  month        = {6},
+  date         = {2025-06-20},
+  publisher    = {WG21},
+  url          = {https://wg21.link/p2996r13}
+}
+
+@misc{P3381R0,
+  author       = {Barry Revzin and Wyatt Childers and Peter Dimov and Andrew Sutton and Faisal Vali and Daveed Vandevoorde and Dan Katz},
+  title        = {Syntax for Reflection},
+  year         = {2024},
+  month        = {9},
+  date         = {2024-09-17},
+  publisher    = {WG21},
+  url          = {https://wg21.link/p3381r0}
+}
+
+@misc{P3658R1,
+  author       = {Robin Leroy},
+  title        = {Adjust identifier following new Unicode recommendations},
+  year         = {2025},
+  month        = {5},
+  date         = {2025-05-15},
+  publisher    = {WG21},
+  url          = {https://wg21.link/p3658r1}
+}
+
+@misc{P4307R0,
+  author       = {Steve Downey},
+  title        = {An Infix Operator and a Keyword Escape for {C++}},
+  year         = {2026},
+  publisher    = {WG21},
+  url          = {https://wg21.link/p4307r0}
+}
+
+% --- Unicode Consortium publications ---
+
+@misc{UAX31,
+  author       = {Mark Davis and Robin Leroy},
+  title        = {Unicode Standard Annex #31: Unicode Identifiers and Syntax (Revision 43)},
+  year         = {2025},
+  month        = {8},
+  date         = {2025-08-20},
+  publisher    = {The Unicode Consortium},
+  url          = {https://www.unicode.org/reports/tr31/tr31-43.html}
+}
+
+@misc{UAX31-45,
+  author       = {Mark Davis and Robin Leroy},
+  title        = {Unicode Standard Annex #31: Unicode Identifiers and Syntax (Revision 45)},
+  year         = {2026},
+  month        = {9},
+  date         = {2026-09-01},
+  publisher    = {The Unicode Consortium},
+  url          = {https://www.unicode.org/reports/tr31/tr31-45.html}
+}
+
+@misc{UTR25,
+  author       = {Beeton, Barbara and Freytag, Asmus and {Sargent III}, Murray},
+  title        = {Unicode Technical Report #25: Unicode Support for Mathematics (Revision 15)},
+  year         = {2017},
+  month        = {5},
+  date         = {2017-05-30},
+  publisher    = {The Unicode Consortium},
+  url          = {https://www.unicode.org/reports/tr25/tr25-15.pdf}
+}
+
+@misc{UCD17,
+  author       = {{The Unicode Consortium}},
+  title        = {Unicode Character Database, Version 17.0.0},
+  year         = {2025},
+  url          = {https://www.unicode.org/Public/17.0.0/ucd/}
+}
+
+% --- Implementations, ABIs, and other languages ---
+
+@misc{itanium-abi,
+  title        = {Itanium {C++} {ABI}},
+  url          = {https://itanium-cxx-abi.github.io/cxx-abi/abi.html}
+}
+
+@misc{D137051,
+  author       = {Corentin Jabot},
+  title        = {[{Clang}] Allow additional mathematical symbols in identifiers},
+  year         = {2022},
+  month        = {10},
+  date         = {2022-10-30},
+  howpublished = {LLVM Phabricator review D137051},
+  url          = {https://reviews.llvm.org/D137051}
+}
+
+@misc{gcc15,
+  author       = {{The GCC team}},
+  title        = {{GCC} 15 Release Series},
+  url          = {https://gcc.gnu.org/gcc-15/}
+}
+
+@misc{binutils,
+  author       = {{The GNU Project}},
+  title        = {{GNU} Binutils},
+  url          = {https://sourceware.org/binutils/}
+}
+
+@misc{julia-operators,
+  title        = {The {Julia} Manual: Operator Precedence and Associativity},
+  url          = {https://docs.julialang.org/en/v1/manual/mathematical-operations/}
+}
+
+@misc{ocaml-expr,
+  title        = {The {OCaml} Manual: Expressions},
+  url          = {https://ocaml.org/manual/5.3/expr.html}
+}
+
+@misc{swift-operators,
+  title        = {The {Swift} Programming Language: Advanced Operators},
+  url          = {https://docs.swift.org/swift-book/documentation/the-swift-programming-language/advancedoperators/}
+}

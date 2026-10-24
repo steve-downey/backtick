@@ -1,0 +1,87 @@
+#+TITLE: The Parse Examples, Transcluded
+#+SUBTITLE: Each annotated misparse, pulled live from the hazards catalog
+#+AUTHOR: Steve Downey
+#+options: toc:nil num:t ^:nil ':nil
+
+Every example here is transcluded from
+[[file:unicode-operator-parse-hazards.org][unicode-operator-parse-hazards.org]], which remains the single source: edit
+an example there and every composition of it follows. Each example block in
+the catalog is bracketed by a pair of UUID dedicated targets (=<<uuid>>= /
+=<<uuid end>>=; targets rather than comments because =org-link-search= only
+finds targets, names, and headlines in an org buffer), and each directive
+below pulls the lines between one pair — =:lines 2-= skips the opening
+marker, =:end= stops at the closing one. The
+annotation convention is the catalog's: =^= where the parse commits or
+breaks, =>= a token examined ahead, =<= a token examined behind.
+
+* The proposed rules
+
+Position decides, at the operator's own token — prefix in operand position,
+infix after a complete operand, and no look in either direction.
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::08bc53d9-d490-46f7-bc42-cbeba7739317]]  :lines 2- :end "08bc53d9-d490-46f7-bc42-cbeba7739317 end"
+
+A missing right operand keeps the ordinary diagnostic:
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::599d737f-2ade-41c9-986a-3c887ebb4544]]  :lines 2- :end "599d737f-2ade-41c9-986a-3c887ebb4544 end"
+
+A user operator is not a fold operator:
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::78b7c4cd-faaa-4f9d-8942-133b7fa981d2]]  :lines 2- :end "78b7c4cd-faaa-4f9d-8942-133b7fa981d2 end"
+
+And the one-level concession, uniform everywhere:
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::d19e6d00-bcce-442d-877b-47fadb71921f]]  :lines 2- :end "d19e6d00-bcce-442d-877b-47fadb71921f end"
+
+* ASCII multi-character operators
+
+Maximal munch silently reinterprets valid code — the ~&&~-versus-~&~
+problem:
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::d49fbfc6-a346-4b6a-83fb-6c38f31aa06e]]  :lines 2- :end "d49fbfc6-a346-4b6a-83fb-6c38f31aa06e end"
+
+Lexing precedes lookup, so no declaration can split or fuse a token:
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::c0f5b856-b9c3-47b7-99ac-c3779bfd283c]]  :lines 2- :end "c0f5b856-b9c3-47b7-99ac-c3779bfd283c end"
+
+After a binary operator a unary-capable character is already meaningful:
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::d912e4f1-2e44-4d46-8d9f-6d68e921bcdb]]  :lines 2- :end "d912e4f1-2e44-4d46-8d9f-6d68e921bcdb end"
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::85ff7c5a-9f47-4eaf-abd4-81dead9cfa27]]  :lines 2- :end "85ff7c5a-9f47-4eaf-abd4-81dead9cfa27 end"
+
+* Postfix, by the greedy-infix rule
+
+The lookahead witness set contains surprises:
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::f0ab2919-c9eb-436a-a1ef-38376bb56d1a]]  :lines 2- :end "f0ab2919-c9eb-436a-a1ef-38376bb56d1a end"
+
+Every missing-operand typo becomes a valid postfix parse:
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::6bc14230-6efe-49de-8e43-a5f4c76fd407]]  :lines 2- :end "6bc14230-6efe-49de-8e43-a5f4c76fd407 end"
+
+And fixity moves with the dialect flags:
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::6374716d-aac2-40df-9411-bf255972db35]]  :lines 2- :end "6374716d-aac2-40df-9411-bf255972db35 end"
+
+* Whitespace-sensitive fixity
+
+The Swift rule reads the spaces on both sides of the operator:
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::f3dc6082-dcd8-494b-a26a-ee92b89f0c49]]  :lines 2- :end "f3dc6082-dcd8-494b-a26a-ee92b89f0c49 end"
+
+So one inserted space is a different program:
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::a029339f-4bd6-466f-a80b-0739a564cf47]]  :lines 2- :end "a029339f-4bd6-466f-a80b-0739a564cf47 end"
+
+* Operator characters as identifiers
+
+The one true ambiguity, in operand position:
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::d09108ee-a9c2-43d0-99e2-4aa6c7536a96]]  :lines 2- :end "d09108ee-a9c2-43d0-99e2-4aa6c7536a96 end"
+
+* User-declared fixity
+
+The parse becomes a function of the visible imports, not of the expression:
+
+#+transclude: [[file:unicode-operator-parse-hazards.org::bc4e65ec-ec59-44d9-b1b6-a100b4acd0a5]]  :lines 2- :end "bc4e65ec-ec59-44d9-b1b6-a100b4acd0a5 end"

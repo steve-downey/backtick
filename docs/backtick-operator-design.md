@@ -946,7 +946,7 @@ to anything above the lexer. It printed bare, which does not re-parse, until
 the printer was taught to ask the preprocessor's question too
 (escape-alternative-token-spelling).
 
-**Module names are the exception — measured 2026-09-23, open**
+**Module names are the exception — measured 2026-09-23; mechanism ruled 2026-10-24, not built**
 ([escape-module-names](#escape-module-names)). Module and import
 declarations are recognized by the preprocessor before the escape exists, so
 neither compiler takes `` export module acme.`class`.util; `` or
