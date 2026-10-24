@@ -247,12 +247,12 @@ inline constexpr auto mbind =
 parse(s) `mbind` validate `mbind` store;   // stops at the first error
 #+end_src
 
-The lambda is what this costs. P0927 [cite:@P0927R2] proposed parameters
+The lambda has to be written at every call. P0927 [cite:@P0927R2] proposed parameters
 declared lazy, whose arguments the caller writes as plain expressions; under
 it, a function ~implies~ could declare its right operand ~[] -> bool~, and
 the call would read ~p `implies` expensive()~. P0927 deliberately leaves such
-a call site unmarked, so the visible deferral above would go; that is its
-trade to argue, not this paper's. Nothing here depends on lazy parameters,
+a call site unmarked, so the visible deferral above would go. P0927 argues
+for that; this paper takes no position on it. Nothing here depends on lazy parameters,
 and nothing here is in their way.
 
 P0917 [cite:@P0917R4] works the neighboring problem from the other side. It
@@ -395,7 +395,7 @@ binding argued for above.
 The new level is *not* a /fold-operator/: ~(... `f` N)~ is
 ill-formed. Both implementations reject it, each with an ordinary parse error
 that says nothing about why, which is the reason for stating the exclusion
-here: nothing else would say it was chosen. Excluding costs one clause in the
+here: nothing else would say it was chosen. Excluding takes one clause in the
 predicate that already decides which operators may be folded over; admitting
 would require a fold-expression node that can hold an arbitrary slot
 expression, which today's cannot. Nothing is foreclosed; every program a later
@@ -462,10 +462,10 @@ parser changes: no new lookup rules, no mangling scheme, no ABI surface.
 ~void `new`();~ links as a function named ~new~.
 
 ** One place they meet: a line that begins with ~module~
-The escape reaches module names, and that costs one collision with the infix
+The escape reaches module names, and that creates one collision with the infix
 operator: a line that begins ~module `f` y;~ is a module directive, not an
-expression. We accept it. It breaks no existing program, C++20 made the same
-trade for ~module x;~, and the escape is its own workaround.
+expression. We accept it. It breaks no existing program, C++20 made
+~module x;~ a directive the same way, and the escape is its own workaround.
 
 Module and import declarations are recognized before the parser runs. A line
 is a module directive when it begins with ~module~ followed by an identifier,
@@ -477,7 +477,7 @@ where it matters most: a module whose name contains a word the committee later
 makes a keyword breaks every importer, and a module name is the hardest name
 in a program to change.
 
-The cost is a line that begins with a variable named ~module~ and an infix
+The collision is a line that begins with a variable named ~module~ and an infix
 call:
 
 #+begin_src cpp
@@ -488,7 +488,7 @@ module `f` y;     // module directive, ill-formed
 
 Inside a function, the first line would otherwise be ~f(module, y)~. That is
 what C++20 did when ~module x;~ and ~import x;~ at the start of a line became
-directives, and this one costs less: no existing program contains a
+directives, and this one breaks nothing: no existing program contains a
 backtick, so no existing program changes meaning. Escaping the word, or
 parenthesizing it, keeps the expression.
 
@@ -496,8 +496,9 @@ A longer lookahead would avoid the collision: treat the line as a directive
 only when the escaped name is followed by ~.~, ~:~, ~;~ or ~[[~, none of
 which can begin an expression. We do not propose it. The directive rule looks
 one token past ~module~ and ~import~ so that a dependency scanner can find a
-translation unit's modules without parsing C++, and one spelling with a
-workaround is a smaller cost than a rule four tokens deep in every scanner.
+translation unit's modules without parsing C++, and a rule four tokens deep
+would complicate every scanner to save one spelling that already has a
+workaround.
 
 * Implementation experience
 Implemented in both GCC and Clang. There were no particular difficulties in either. Implementing both did partly dictate the strategy for the identifier escape, but did not make it unmanageably more complicated.
@@ -851,7 +852,7 @@ The objection is granted, and the reasoning is right for the operator it was
 reasoning about. However, that operator is not this one. A reflection operator
 is written once per reflection and sits inside dense expression text, where a
 backtick operator is written where the name of an operation would go; the
-CommonMark cost falls on different text, at a different density, and the
+CommonMark clash falls on different text, at a different density, and the
 same span form handles it either way.
 
 Neither is a capability gap. CommonMark's multi-backtick spans already delimit
@@ -862,10 +863,10 @@ own chat server (author-verified). In the very forum where the operator would
 most often be typed in running text, the friction is a solved problem. What an
 alternative spelling offers is ergonomics for the minority case, inline prose.
 
-The fix is the one CommonMark already supplies, and its cost is small and
+The fix is the one CommonMark already supplies, and it is small and
 bounded. In running prose the operator is written as a multi-backtick span:
 doubled delimiters with a padding space at each end, so ~x `f` y~ renders with
-its backticks intact. Each inline example pays those extra delimiters and the
+its backticks intact. Each inline example needs those extra delimiters and the
 padding, and nothing else does. A document whose every other line infixes a
 backtick is the worst case the objection can construct, and the span form
 carries even that.
@@ -932,10 +933,11 @@ purpose.
 6. *If the markup clash warranted a change, it would argue against the
    primary and not for a second spelling.* We weighed that and chose
    backtick-primary anyway. An alias is the worst of both worlds.
-7. *"Add it later if needed" is not a cheap option.* A follow-up spelling
-   costs its own paper, an EWG poll, CWG wording, and a ballot cycle, and
+7. *"Add it later if needed" is not a small step.* A follow-up spelling
+   needs its own paper, an EWG poll, CWG wording, and a ballot cycle, and
    risks shipping the operator first and bolting a second spelling on after.
-   Deferral buys no option value. The question is settled here.
+   Deferring keeps nothing open that is worth keeping open. The question is
+   settled here.
 
 ** A.6 The wider inventory: what ASCII actually remains
 
