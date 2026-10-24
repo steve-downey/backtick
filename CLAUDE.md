@@ -18,11 +18,15 @@ The implementation work that produced this is finished. The step-by-step
 plans, handoffs, and deviation ledgers it ran on were transient and have been
 removed; git history still has them. What is still open:
 
-- **`gcc-dependent-slot-lookup`** — a GCC prototype defect. GCC drops the
+- **[`gcc-dependent-slot-lookup`](docs/backtick-operator-design.md#gcc-dependent-slot-lookup)**
+  — a GCC prototype defect. GCC drops the
   definition-context ordinary lookup for every dependent slot and keeps only
   ADL, so `` t `pipe` inc `` is rejected inside a template where
   `pipe(t, inc)` compiles. Clang is the conforming side. §17.4 and the
   infix paper print the divergence; fixing it un-qualifies both.
+- **[`gcc-type-slot-parity`](docs/backtick-operator-design.md#gcc-type-slot-parity)**
+  — GCC has no type-name slot, so `` 1 `Pt` 2 `` is accepted by Clang and
+  rejected by GCC. §17.3 and the infix paper say so.
 - **`backtick-paper-companion`** — the infix paper must name its precedence
   level the **user-infix level** and carry a short informative
   future-directions appendix pointing at the Unicode paper, the condition
@@ -36,7 +40,8 @@ removed; git history still has them. What is still open:
   [`escape-module-names`](docs/backtick-operator-design.md#escape-module-names).
   The escape paper records it as open.
 - Two printer gaps, neither affecting acceptance: GCC escapes a
-  *declaration's* name but prints a *type's* name bare, and Clang's
+  *declaration's* name but prints a *type's* name bare
+  ([`gcc-type-name-printing`](docs/backtick-operator-design.md#gcc-type-name-printing)), and Clang's
   `-ast-dump` does the mirror image.
 
 When auditing for outstanding work, read the design docs' lists of what each

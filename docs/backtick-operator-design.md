@@ -411,6 +411,48 @@ The switch is `PrintingPolicy::BacktickKeywordEscape`, initialised from `LangOpt
 
 **Log.** 2026-09-06 — **"blessed as a consequence, not a special rule" is struck: it was false as grammar and the implementation proved it.** ~~The slot is any callable expression and a type-name is callable, so the meaning falls out for free.~~ A bare type-name is not an *assignment-expression*, which is all [slot-grammar](#slot-grammar) admits, so the "consequence" contradicted this proposal's own grammar while a normative example depended on it; the first implementation rejected all four type-slot shapes with three different diagnostics. The decision is unchanged and the wording is not. Priced in §17.3, and reconciled by reconcile-remainder from type-slot-cost. Struck rather than deleted, so the record of what was believed survives.
 
+### gcc-dependent-slot-lookup
+
+**Question.** Inside a template, does GCC give an unqualified slot the same lookup as the call it desugars to — ordinary lookup in the definition context, plus ADL at instantiation ([temp.dep.candidate])?
+
+**Status.** **OPEN** — a GCC prototype defect, not a design question.
+
+**Decision.** The design is not in question: [desugaring-target](#desugaring-target) and §17.4 already require the slot's lookup to be the call's. What is open is the GCC fix.
+
+**Why.** GCC's slot keeps a bare unqualified-id as an `IDENTIFIER_NODE` and runs `lookup_name` and `perform_koenig_lookup` only when no argument is type-dependent. When one is, the bare identifier reaches `finish_call_expr`, so instantiation sees a name with no ordinary-lookup result attached and can only do ADL. The plain-call path keeps the definition-context overload set and augments it at instantiation. In one translation unit `pipe(t, app::inc)` compiles where `` t `pipe` app::inc `` does not, with `pipe` brought in by a using-declaration and nothing in an argument's namespaces to find it. Clang is the conforming side.
+
+**Decided by.** Observation; the fix is the author's to accept.
+
+**Log.** 2026-10-24 — given an entry. Reproduced on the GCC fork at `24d3c38b653`: *'pipe' was not declared in this scope, and no declarations were found by argument-dependent lookup at the point of instantiation*. Clang trunk accepts. The same code passes `koenig_p=true` whatever lookup found, so a slot naming a variable or function object asks for ADL a call would not do.
+
+### gcc-type-slot-parity
+
+**Question.** Does GCC implement the type-name slot of [type-name-slot](#type-name-slot)?
+
+**Status.** **OPEN** — a GCC prototype gap.
+
+**Decision.** Not yet built. The design is settled in [type-name-slot](#type-name-slot) and §17.3; Clang implements it.
+
+**Why.** GCC parses the slot as an expression only. It is the one place where the two compilers accept different programs under the flag, and it leaves §17.3 with single-compiler evidence.
+
+**Decided by.** Observation.
+
+**Log.** 2026-10-24 — given an entry. Measured on `24d3c38b653`: `` 1 `Pt` 2 `` is *no match for call to '(Pt) (int, int)'*, because the bare-name path finds the `TYPE_DECL` and calls an object of that type; `` 1 `Pr` 2.0 `` with `Pr` a class template is the same; `` 1 `n::Q` 2 `` is *expected primary-expression before '`'*.
+
+### gcc-type-name-printing
+
+**Question.** Does GCC print a *type's* name escaped when the name is a keyword, as [keyword-escape-printing](#keyword-escape-printing) requires of a declaration's?
+
+**Status.** **OPEN** — a GCC printer gap; no program is accepted or rejected differently.
+
+**Decision.** It should; the decision is [keyword-escape-printing](#keyword-escape-printing)'s.
+
+**Why.** GCC applies the escape only in `dump_decl_name`. `dump_aggr_type` and the `TYPE_IDENTIFIER` printers in `error.cc` call `pp_cxx_tree_identifier` directly, so one diagnostic can name the same kind of entity two ways. Clang's `-ast-dump` has the mirror image, and that is Clang's item.
+
+**Decided by.** Observation.
+
+**Log.** 2026-10-24 — given an entry. Measured on `24d3c38b653`: `` struct `union` { int x; }; `` misused gives *'struct union' has no member named '`new`'*.
+
 
 ---
 
@@ -1805,7 +1847,7 @@ builtin through the functional-cast machinery, and all three route to the
 `T(x, y)` build path. **GCC does not**: its slot is parsed as an expression,
 so `` 1 `P` 2 `` is rejected there, and under `-fbacktick` the two compilers
 accept different programs
-(gcc-type-slot-parity). This
+([gcc-type-slot-parity](#gcc-type-slot-parity)). This
 is the one place where the two implementations disagree about what is
 well-formed, and it is a gap rather than a design consequence — nothing about
 GCC's parser-level desugaring prevents the type arm, it simply has not been
@@ -1828,7 +1870,7 @@ on its first attempt, with the same failure twice. They do not yet agree
 inside a template.** GCC drops the definition-context ordinary lookup for a
 dependent slot and keeps only the ADL result, so an unqualified slot naming
 something ADL cannot reach is rejected there and accepted by Clang
-(gcc-dependent-slot-lookup).
+([gcc-dependent-slot-lookup](#gcc-dependent-slot-lookup)).
 A function visible only through a using-declaration is rejected exactly as a
 variable is, and an ADL-reachable name is accepted, so what is lost is
 ordinary lookup itself rather than any narrower rule about what ADL may find.
@@ -2175,7 +2217,7 @@ ninety-eight programs are
 **2.0 seconds** to run against both compilers. The kind difference belongs in
 the argument; the gaps belong in the status table.
 (gcc-wrapper-parity,
-gcc-type-slot-parity,
+[gcc-type-slot-parity](#gcc-type-slot-parity),
 escape-alias-name-parity,
 escape-type-keyword-binding,
 escape-in-qualified-type-name)
