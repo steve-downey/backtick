@@ -449,15 +449,17 @@ The switch is `PrintingPolicy::BacktickKeywordEscape`, initialised from `LangOpt
 
 **Question.** Does GCC print a *type's* name escaped when the name is a keyword, as [keyword-escape-printing](#keyword-escape-printing) requires of a declaration's?
 
-**Status.** **OPEN** — a GCC printer gap; no program is accepted or rejected differently.
+**Status.** **Resolved** — fixed in the GCC prototype, 2026-10-24.
 
-**Decision.** It should; the decision is [keyword-escape-printing](#keyword-escape-printing)'s.
+**Decision.** Yes, now; the decision is [keyword-escape-printing](#keyword-escape-printing)'s.
 
-**Why.** GCC applies the escape only in `dump_decl_name`. `dump_aggr_type` and the `TYPE_IDENTIFIER` printers in `error.cc` call `pp_cxx_tree_identifier` directly, so one diagnostic can name the same kind of entity two ways. Clang's `-ast-dump` has the mirror image, and that is Clang's item.
+**Why.** GCC applied the escape only in `dump_decl_name`. `dump_aggr_type` and the `TYPE_IDENTIFIER` printers in `error.cc` call `pp_cxx_tree_identifier` directly, so one diagnostic can name the same kind of entity two ways. Clang's `-ast-dump` has the mirror image, and that is Clang's item.
 
 **Decided by.** Observation.
 
 **Log.** 2026-10-24 — given an entry. Measured on `24d3c38b653`: `` struct `union` { int x; }; `` misused gives *'struct union' has no member named '`new`'*.
+
+2026-10-24 — **fixed** on the GCC fork, `7dbea4f65c5`. Wider than the entry said: a template parameter, a namespace, a label and a pointer-to-member constant's member were printed bare as well, and the template parameter was the worst of them — `` template<class `int`> `` produced the note *In instantiation of 'int f(int) [with int = int]'*. The escape test moved out of `dump_decl_name` into `dump_name_identifier`, and every printer of an entity's name in `error.cc` calls it; the `cp_printing_raw_token` guard is unchanged. Left on `pp_cxx_tree_identifier`, because no program spells them: a `LANG_TYPE`'s internal name, a synthesized decl, an OpenMP mapper id, and `dump_type`'s raw `IDENTIFIER_NODE` arm. `escape-diag.C` gains seven cases. Gate: 176/176 in `g++.dg/backtick` (the file runs once per dialect), 15/15 for the `backtick-*` module tests; `flag-off-parity.sh` unchanged, so a program with no backtick prints what it printed before — the direction both earlier printer changes got wrong first. `escape-errors.sh` shows it too: `double-escape-undecl` now reads *in namespace '`namespace`'*. Clang's `-ast-dump` mirror image is untouched; it is Clang's.
 
 
 ---
@@ -1130,16 +1132,15 @@ ast-dump-type-name-spelling,
 measured and unowned. The ABI evidence survives it: the bare name is still in
 the column the paragraph points at.
 
-**The ruling is delivered on declaration names by both compilers and on
-*type* names by Clang alone**, which is the shape §17.3's type slot had
-until 2026-10-24, and is stated here rather than left for a reader to
-find. GCC escapes a name that reaches `dump_decl_name`, its one funnel for the
-name of a declaration; a class or enum *type* is printed by a different
-routine, so `` struct `union` { }; `` produces *"'struct union' has no member
-named '`new`'"* — one diagnostic printing the same feature both ways, because
-its two halves come from two printers. It accepts and rejects exactly the
-programs Clang does; only the text differs
-(escape-type-name-spelling).
+**The ruling is delivered on declaration names and on *type* names by both
+compilers.** Until 2026-10-24 GCC escaped only a name that reached
+`dump_decl_name`, its funnel for the name of a declaration; a class or enum
+*type* was printed by a different routine, so `` struct `union` { }; ``
+produced *"'struct union' has no member named '`new`'"* — one diagnostic
+printing the same feature both ways, because its two halves came from two
+printers. It accepted and rejected exactly the programs Clang did; only the
+text differed (escape-type-name-spelling,
+[gcc-type-name-printing](#gcc-type-name-printing)).
 
 **Costs.** Bounded added context-sensitivity: tentative
 declaration-vs-expression parsing (`TryParseDeclarator` and friends) must
@@ -2255,8 +2256,8 @@ raw keyword token to that funnel as though it were a name. Get that wrong in
 either direction and the flag changes what a program containing no backtick
 diagnoses; both compilers got it wrong once before getting it right.
 
-**It lasted one day for one half of the surface, and the other half is still
-open** — found on 2026-09-08 by reading the diagnostics from the error-path
+**It lasted one day for one half of the surface, and the other half stayed
+open until 2026-10-24** — found on 2026-09-08 by reading the diagnostics from the error-path
 sweep rather than only its exit codes. GCC's funnel is *the name of a
 declaration*; a class or enum **type** is printed somewhere else and comes out
 bare, so under the flag GCC will tell you that *'struct union' has no member
@@ -2265,10 +2266,11 @@ escapes both. This changes no program's acceptance, which is why §17.8's list
 above is still one; it is a defect in the deliverable the printing decision
 exists to protect, which is that text copied out of a diagnostic re-parses
 (escape-type-name-spelling).
-It is measured, unfixed and unowned, and the reason it was not taken here is
-the one the row gives: this is the third time the feature has touched GCC's
-error printer and the first build was wrong in the same direction both
-previous times.
+It was not taken then for the reason the row gave: that would be the third
+time the feature touched GCC's error printer, and the first build had been
+wrong in the same direction both previous times. When it was taken
+([gcc-type-name-printing](#gcc-type-name-printing)), the flag-off comparison
+was the first check run, and it was clean.
 
 ---
 

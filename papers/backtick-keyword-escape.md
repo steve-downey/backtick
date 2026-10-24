@@ -77,7 +77,7 @@ proposal targeting C++29.
   now describes all three cross-compiler divergences the escape sweeps found
   (P4307R0 announced three and described two), the escape-position sweep is
   linked in the public implementation record, and the GCC printing gap is
-  described once, under Printing.
+  described once, under Printing. It has since been closed.
 
 # Before / After
 
@@ -272,7 +272,7 @@ name really is an ordinary identifier and the backticks are how it is written.
 Since the escape keeps no record of how a name was written, an implementation
 has to decide *which printing surfaces name an entity*, and put the backticks
 back only there; §"Printing: which surfaces name an entity" gives what that
-took in both compilers, and where GCC still prints a name bare.
+took in both compilers, including the surfaces GCC reached late.
 
 The cost is bounded added context-sensitivity: tentative
 declaration-versus-expression parsing must recognize escapes, and tooling
@@ -426,8 +426,7 @@ consequence for the infix operator of P4307R0: a line beginning
 itself, `` `module` `f` y ``. A revision of this paper will carry the wording.
 
 Apart from module names, the two compilers accept and reject exactly the
-same escapes. One GCC diagnostic does still print an escaped declaration name
-beside a bare type name, a printing gap described under Printing.
+same escapes, and print them the same way in diagnostics.
 
 ## The forks
 
@@ -607,16 +606,20 @@ was a new printing surface as well, and each printed the bare keyword, which
 is source that does not re-parse, until it was routed through the one routine
 that puts the backticks back.
 
-One gap is left in a diagnostic, and it is GCC's. GCC's routine is *the name of a
-declaration*. A class or enum **type** is printed somewhere else, so a program
-that declares `` struct `union` { }; `` and then misuses it is told that
-*'struct union' has no member named '`new`'*: one sentence, two names, one of
-them escaped and the other not, because the two halves arrive from two
-printers. Clang escapes both. No program is accepted or rejected differently;
-what fails is the thing the decision exists to deliver, which is that text
-copied out of a diagnostic can be pasted back. Clang has the mirror image of
-the split in its AST dump, which shows a declaration's name bare and the same
-name inside a *type* escaped. Neither split is visible to a program. Deciding
+The last gap was in a diagnostic, and it was GCC's. GCC's routine was *the
+name of a declaration*. A class or enum **type** is printed somewhere else,
+so a program that declared `` struct `union` { }; `` and then misused it was
+told that *'struct union' has no member named '`new`'*: one sentence, two
+names, one of them escaped and the other not, because the two halves arrived
+from two printers. A template parameter was worse: one spelled `` `int` ``
+produced the note *'int f(int) [with int = int]'*. Clang escaped both. No
+program was accepted or rejected differently; what failed was the thing the
+decision exists to deliver, which is that text copied out of a diagnostic can
+be pasted back. GCC now makes the decision in one routine that every printer
+of an entity's name calls: types, template parameters and namespaces as well
+as declarations. Clang has the mirror image of the old split in its AST dump,
+which shows a declaration's name bare and the same name inside a *type*
+escaped. Neither split was ever visible to a program. Deciding
 which surfaces name an entity is the whole of the escape's printing work, and
 a compiler can get it right in one place and wrong in another without anything
 failing.

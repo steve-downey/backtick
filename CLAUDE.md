@@ -30,10 +30,11 @@ removed; git history still has them. What is still open:
   and its one collision with the infix operator are in
   [`escape-module-names`](docs/backtick-operator-design.md#escape-module-names).
   The escape paper records it as open.
-- Two printer gaps, neither affecting acceptance: GCC escapes a
-  *declaration's* name but prints a *type's* name bare
-  ([`gcc-type-name-printing`](docs/backtick-operator-design.md#gcc-type-name-printing)), and Clang's
-  `-ast-dump` does the mirror image.
+- One printer gap, not affecting acceptance: Clang's `-ast-dump` prints a
+  declaration's name bare and the same name inside a type escaped. (GCC's
+  opposite split was
+  [`gcc-type-name-printing`](docs/backtick-operator-design.md#gcc-type-name-printing),
+  now fixed.)
 
 When auditing for outstanding work, read the design docs' lists of what each
 paper must carry, not only the decision logs.

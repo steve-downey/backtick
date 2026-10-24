@@ -430,6 +430,13 @@ reading the output of the error-path probes rather than just their exit codes.
 A probe that only counts can't tell you that the answer was right and the
 sentence was wrong.
 
+It's fixed now, and it was wider than that one sentence. Template parameters
+and namespaces had the same problem, and a template parameter spelled
+=`int`= gave an instantiation note reading ='int f(int) [with int = int]'=.
+The test for whether to escape moved into one routine that everything printing
+the name of an entity calls, and the first thing I checked afterwards was the
+flag-off comparison, since that's the direction both earlier fixes broke.
+
 * What isn't done yet
 
 The escape now works in both compilers everywhere the grammar writes an
