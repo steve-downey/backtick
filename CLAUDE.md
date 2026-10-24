@@ -24,19 +24,11 @@ removed; git history still has them. What is still open:
   [`paper-separation`](docs/unicode-operators.md#paper-separation) split the
   papers under. The mailed D4307R1 does not: its grammar names
   *user-infix-expression*, but it never cites P4345. For R2.
-- **`escape-module-names`** — the escape reaches module names
-  (`` export module acme.`class`.util; ``, `` import `std`; ``) in both
-  compilers since 2026-10-24: the preprocessor takes a backtick after
-  `module`/`import`, each component admits the escape, and a line beginning
-  `` module `f` y `` is a module directive, as ruled in
-  [`escape-module-names`](docs/backtick-operator-design.md#escape-module-names).
-  The mailed D4307R1 does not mention module names; D4307R2 has the
-  [cpp.pre], [cpp.module] and [cpp.import] wording, and the paper's prose
-  still owes the collision.
-- The mailed D4307R1 says GCC does not yet implement the type-name slot;
-  it has since 2026-10-24
-  ([`gcc-type-slot-parity`](docs/backtick-operator-design.md#gcc-type-slot-parity)).
-  For R2.
+- The blog post (`docs/infix-backtick-operator.org`) does not mention that
+  the escape reaches module names
+  ([`escape-module-names`](docs/backtick-operator-design.md#escape-module-names));
+  D4307R2 carries the wording and the line-start collision. Whether the post
+  should is undecided.
 - One printer gap, not affecting acceptance: Clang's `-ast-dump` prints a
   declaration's name bare and the same name inside a type escaped. (GCC's
   opposite split was
