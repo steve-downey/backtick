@@ -79,7 +79,7 @@
 #+EMAIL: sdowney@gmail.com
 #+DATE: {{{modification-time(%Y-%m-%d, VC)}}}
 #+LANGUAGE: en
-#+DOCNUMBER: D4307R1
+#+DOCNUMBER: D4307R2
 #+AUDIENCE: EWG
 #+SELECT_TAGS: export
 #+EXCLUDE_TAGS: noexport
@@ -105,6 +105,9 @@
 
 * Revision history
 
+** R2
+Wording for module names: the escape reaches each component of a module name
+or partition, in a module declaration and in an import.
 ** R1
 Blank slate rewrite of prose.
 ** R0
@@ -645,6 +648,117 @@ When parsing a /backtick-operator/, the first non-nested
 braces is nested.] is taken as the ending delimiter, rather than as the first
 delimiter of a nested /user-infix-expression/.
 #+end_pnum
+
+** [cpp.pre]
+
+A module or import directive is recognized before phase 7, so the escape
+has to be visible to that recognition for a module name to begin with it.
+Modify the second and third bullets of [[sref:cpp.pre]] paragraph 2:
+
+#+begin_quote
+- an ~import~ preprocessing token immediately followed on the same logical
+  source line by a /header-name/, ~<~, /identifier/, [[insert:][~`~,]] or
+  ~:~ preprocessing token, or
+- a ~module~ preprocessing token immediately followed on the same logical
+  source line by an /identifier/, [[insert:][~`~,]] ~:~, or ~;~
+  preprocessing token, or
+#+end_quote
+
+Add to the example that follows:
+
+#+begin_quote
+#+begin_addedblock
+#+begin_src cpp
+export module acme.`class`.util; // preprocessing directive
+import `std`;                    // preprocessing directive
+module `f` y;                    // preprocessing directive (ill-formed)
+`module` `f` y;                  // not a preprocessing directive
+(module) `f` y;                  // not a preprocessing directive
+#+end_src
+#+end_addedblock
+#+end_quote
+
+The third line is the cost of this change. Without it, a line beginning
+~module `f` y~ is a /user-infix-expression/ whose left operand is a variable
+named ~module~; with it, the line is a malformed module directive, the same
+trade C++20 made for ~module x;~ and ~import x;~. No existing program is
+affected, because no existing program contains a ~`~. Escaping the first
+word, or parenthesizing it, keeps the expression.
+
+** [cpp.module]
+
+Modify the grammar in [[sref:cpp.module]] paragraph 1, and add a note after
+the sentence on object-like macros:
+
+#+begin_quote
+#+begin_grammar
+pp-module-name:
+    pp-module-name-qualifier_{opt} [[delete:][identifier]] [[insert:][pp-module-name-component]]
+
+pp-module-partition:
+    : pp-module-name-qualifier_{opt} [[delete:][identifier]] [[insert:][pp-module-name-component]]
+
+pp-module-name-qualifier:
+    [[delete:][identifier]] [[insert:][pp-module-name-component]] .
+    pp-module-name-qualifier [[delete:][identifier]] [[insert:][pp-module-name-component]] .
+#+end_grammar
+
+#+begin_addedblock
+#+begin_grammar
+pp-module-name-component:
+    identifier
+    ` identifier `
+#+end_grammar
+#+end_addedblock
+
+No /identifier/ in the /pp-module-name/ or /pp-module-partition/ shall
+currently be defined as an object-like macro or followed by ~(~ as the next
+preprocessing token at the start of phase 4 of translation
+([[sref:lex.phases]]).
+
+#+begin_addedblock
+#+begin_note
+An /identifier/ between ~`~ tokens is subject to this rule like any other.
+In phase 7 the component is an /escaped-identifier/ ([[sref:lex.name]]),
+and the module is named by its identifiers: ~acme.`class`.util~ is the
+module whose components are ~acme~, ~class~ and ~util~. The rule of [[sref:module.unit]] that excludes ~module~ and ~import~
+as components applies whether they are escaped or not.
+#+end_note
+#+end_addedblock
+#+end_quote
+
+Add an example at the end of [[sref:cpp.module]]:
+
+#+begin_quote
+#+begin_addedblock
+#+begin_wgexample
+#+begin_src cpp
+export module acme.`class`.util; // OK, the module acme.class.util
+export module `new`:`and`;       // OK, the partition and of the module new
+export module `module`;          // error: module is not a valid component
+#+end_src
+#+end_wgexample
+#+end_addedblock
+#+end_quote
+
+** [cpp.import]
+
+The named-module form of a /pp-import/ takes its /pp-tokens/ as normal text,
+so it needs no grammar change beyond the recognition rule in
+[[sref:cpp.pre]]. Add a
+note at the end of [[sref:cpp.import]] paragraph 1:
+
+#+begin_quote
+#+begin_addedblock
+#+begin_note
+The /pp-tokens/ of the last form can name a module or a module partition
+whose components are /escaped-identifiers/ ([[sref:lex.name]]), as in
+~import acme.`class`.util;~ or ~import :`and`;~. The /identifier/ between
+the ~`~ tokens is replaced if it names a macro, as it is wherever else it
+appears.
+#+end_note
+#+end_addedblock
+#+end_quote
 
 * Appendix A: alternative spellings, and the lexical inventory
 

@@ -30,9 +30,9 @@ removed; git history still has them. What is still open:
   `module`/`import`, each component admits the escape, and a line beginning
   `` module `f` y `` is a module directive, as ruled in
   [`escape-module-names`](docs/backtick-operator-design.md#escape-module-names).
-  Open only in the paper: the mailed D4307R1 does not mention module names,
-  so R2 owes the [lex.pptoken], [cpp.module] and [cpp.import] wording and the
-  collision.
+  The mailed D4307R1 does not mention module names; D4307R2 has the
+  [cpp.pre], [cpp.module] and [cpp.import] wording, and the paper's prose
+  still owes the collision.
 - The mailed D4307R1 says GCC does not yet implement the type-name slot;
   it has since 2026-10-24
   ([`gcc-type-slot-parity`](docs/backtick-operator-design.md#gcc-type-slot-parity)).
@@ -74,9 +74,10 @@ paper must carry, not only the decision logs.
 - `papers/` — the WG21 papers, **named by name and not by number**: the
   number lives in the front matter and in the prose, because the upload
   system renames whatever is uploaded.
-  - `papers/backtick-infix-and-keyword-escape.org` — **D4307R1** as mailed:
-    the infix operator and the keyword escape in one paper, rewritten for
-    the committee, without the implementation detail and history.
+  - `papers/backtick-infix-and-keyword-escape.org` — **D4307R2** in
+    progress: R1 as mailed, the infix operator and the keyword escape in one
+    paper, rewritten for the committee without the implementation detail and
+    history, plus the module-name wording.
   - `papers/unicode-mathematical-operators.org` — **D4345R1** as mailed
     (P4345R0 published).
   - The markdown papers are the pre-mailing drafts:
