@@ -315,6 +315,8 @@ Measured on both: `` acme.`class`.util `` is the module `acme.class.util` in its
 
 **Log.** 2026-10-24 — wording drafted in D4307R2, against the working draft of 2026-10-22. The directive-recognition rule is [cpp.pre] paragraph 2, not [lex.pptoken] as this entry first said; [lex.pptoken] needs no change, since `` ` `` is already a *preprocessing-op-or-punc* through [lex.operators] and is in the basic character set. The paper adds `` ` `` to the `import` and `module` bullets of [cpp.pre] and four lines to its example, the collision among them; replaces *identifier* in [cpp.module]'s three productions with a *pp-module-name-component* that is an *identifier* or `` ` identifier ` ``, keeping the object-like-macro rule for the word inside; and adds only a note to [cpp.import], whose named-module form takes its tokens as normal text, so the word inside an escape there is macro-replaced like any other.
 
+**Log.** 2026-10-24 — measured the claim in D4307R2's [cpp.import] note, that the word inside an escaped import is macro-replaced. With `#define util foo` and an interface `m.foo`, `` import m.`util`; `` and `` import `m`.`util`; `` import `m.foo` in both compilers, as the bare `import m.util;` does; without the macro, both fail to find `m.util`. The note holds.
+
 ### keyword-escape-printing
 
 **Question.** When an entity's name is spelled with a keyword, what does a printer — and what does a diagnostic — call it?

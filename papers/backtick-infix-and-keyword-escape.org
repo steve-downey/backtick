@@ -486,7 +486,7 @@ implemented in both compilers except where noted.
 - The slot is an /assignment-expression/, or a /simple-type-specifier/ or
   /typename-specifier/, in which case ~x `T` y~ is ~T(x, y)~ and CTAD
   applies. The type reading wins when lookup finds a type or a class
-  template. (Clang implements the type slot; GCC does not yet.)
+  template.
 - Precedence is the highest binary level: tighter than ~*~, looser than the
   unary and postfix operators. Operands are /cast-expressions/, so a prefix
   operator binds to its own operand and ~-a `f` -b~ is ~f(-a, -b)~.

@@ -387,10 +387,11 @@ changed in the design and what building it got wrong.
 because the compilers demanded them.
 
 - *The escape reaches every position the grammar writes an identifier in,
-  except a module name.* The first prototypes took it wherever their parsers happened to route the
-  token and refused it everywhere else. The position list in the wording is
-  what four sweeps of one program per position found. The sweep, with a
-  fifth group that varies the word instead, is ninety-eight programs, published
+  module names included.* The first prototypes took it wherever their parsers
+  happened to route the token and refused it everywhere else. The position
+  list in the wording is what five sweeps of one program per position found.
+  The sweep, with a group that varies the word instead, is a hundred and ten
+  programs, published
   as [`probes/escape-positions.sh`](https://github.com/steve-downey/backtick/blob/main/probes/escape-positions.sh).
 - *The escape is spelling and not identity, and printers put it back.* A
   pretty-printed declaration and a diagnostic name the entity `` `new` ``; the
@@ -409,24 +410,27 @@ finished, none of them a design question, and all fixed:
    unresolvable qualified escape and consumed nothing. A coverage sweep can
    not find that; running the error cases under a timeout did.
 
-**Still open.** Module names. Neither compiler accepts
-`` export module acme.`class`.util; `` or `` import `std`; ``, and the
-wording as written does not require them to. Module and import declarations
-are recognized during preprocessing, before the escape exists, and only when
+**Module names took the preprocessor.** Module and import declarations are
+recognized during preprocessing, before the escape exists, and only when
 `module` or `import` is followed by one of a short list of tokens; a backtick
-is not on it. That matters more here than anywhere else. A module name is a
+was not on it. That matters more here than anywhere else. A module name is a
 dotted sequence of identifiers, a keyword cannot be one of them, and a module
 whose name contains a word the committee later takes breaks every importer.
-Closing the gap needs a backtick added to that list and the escape admitted
-in each component of a module name, in [cpp.module]{.sref} and
-[cpp.import]{.sref}, and a matching change in both compilers. It has one
-consequence for the infix operator of P4307R0: a line beginning
-`` module `f` y; `` becomes a module directive. C++20 made the same trade for
-`module x;`, it breaks no existing code, and the workaround is the escape
-itself, `` `module` `f` y ``. A revision of this paper will carry the wording.
+Both compilers now take `` export module acme.`class`.util; `` and
+`` import `std`; ``: a backtick is added to that list in [cpp.pre]{.sref},
+and the escape is admitted in each component of a module name in
+[cpp.module]{.sref}. `` acme.`class`.util `` is the module `acme.class.util`,
+in its compiled interface, its mangling, and the name a build system is
+given for it. It has one consequence for the infix operator of P4307R0: a
+line beginning `` module `f` y; `` is a module directive. C++20 made the same
+trade for `module x;`, it breaks no existing code, and the workaround is the
+escape itself, `` `module` `f` y ``. The wording is in D4307R2, which folds
+this paper back into the operator's.
 
-Apart from module names, the two compilers accept and reject exactly the
-same escapes, and print them the same way in diagnostics.
+The two compilers accept and reject exactly the same escapes, and print them
+the same way in diagnostics. The one difference is GCC's and not the
+escape's: GCC recognizes no module directive without `-fmodules`, so without
+that flag a line beginning `` module `f` y `` stays an infix call.
 
 ## The forks
 
@@ -628,7 +632,7 @@ failing.
 
 Everything argued above reduces to the following, and the wording that
 follows says no more than this. Every item is decided, and every item is
-implemented in both compilers, except the module-name gap noted below.
+implemented in both compilers.
 
 - `` `kw` ``, wherever the grammar uses *identifier* as a terminal, is an
   ordinary identifier spelled `kw`. Lookup, overload resolution, mangling,
@@ -640,13 +644,13 @@ implemented in both compilers, except the module-name gap noted below.
 - The escape is spelling and not identity. A printer that names the entity
   restores the backticks; the AST dump keeps the bare word.
 - The positions are enumerated in the grammar section and swept in both
-  compilers: every declaring position, every using position, and either or
-  both ends of a qualified name. Module names are not yet reached; the
-  implementation section says what that needs.
+  compilers: every declaring position, every using position, either or
+  both ends of a qualified name, and each component of a module name.
 - The escape is parsed, not lexed. Backtick stays one punctuator, and the
   escape claims it only in name and operand positions, which leaves the
   post-operand position to P4307R0's infix operator, whether or not that is
-  adopted.
+  adopted. The preprocessor looks at it only to recognize a module or import
+  directive.
 - Gated behind an opt-in flag for the proposal period. Flag off, every
   existing program is untouched, byte for byte.
 
