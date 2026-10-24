@@ -343,7 +343,10 @@ ADL on the slot is the whole design in miniature. =x `f` y= must not have weaker
 lookup than =f(x, y)=, or the sugar isn't sugar. Both compilers got it wrong the
 same way. The name in the slot was resolved before the call builder ever saw
 it, and GCC took two goes at it, because the first fix recognised a bare name
-and left a slot with template arguments on the old path.
+and left a slot with template arguments on the old path. Templates took a
+third: GCC held on to the bare name until instantiation and then could only do
+ADL with it, so =t `pipe` inc= failed where =pipe(t, inc)= compiled, with =pipe=
+brought in by a using-declaration.
 
 Clang was worse: its slot went through the ordinary expression parser, so it had
 no ADL at all. A hidden friend in the slot was "use of undeclared identifier",
@@ -497,11 +500,8 @@ hangs. What caught it was running the error cases under =timeout=, which is
 now the third script in the probe directory.
 
 The type-name slot is Clang-only: GCC parses its slot as an expression, so =1
-`Pt` 2= is rejected there. And inside a template GCC still drops the
-definition-context half of a dependent slot's lookup, so =t `pipe` inc= is
-rejected where =pipe(t, inc)= compiles; that one is a GCC bug. Those are the
-only programs the two compilers treat differently under the flag, and the
-escape isn't in either.
+`Pt` 2= is rejected there. That's the only kind of program the two compilers
+treat differently under the flag, and the escape isn't in it.
 
 The escape used to be on that list twice, and getting it off was more
 interesting than getting it on. GCC binds =int= and =char= and the rest at

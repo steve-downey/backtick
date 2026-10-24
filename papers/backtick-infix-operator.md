@@ -739,7 +739,8 @@ finished, none of them a design question, and all fixed except where the next
 paragraph marks them open:
 
 1. *ADL.* Clang's slot had no ADL at all; GCC's had it for a bare name but not
-   for a template-id. The shape that catches this, a visible and viable
+   for a template-id, and inside a template had nothing else, losing the
+   ordinary lookup. The shape that catches this, a visible and viable
    candidate beaten by one reachable only through ADL, was in neither test
    suite.
 2. *Printing.* The operator printer lacked two arms: aggregate
@@ -755,13 +756,9 @@ paragraph marks them open:
    the AST matchers, and every one of those sites is quiet when it is wrong.
    GCC desugars in the parser and needs none of it.
 
-**Still open.** Two sets of programs are treated differently by the two
-compilers under the flag. GCC does not implement the type-name slot, so `` 1 `Pt` 2 `` is
-rejected there and accepted by Clang. And inside a template, GCC keeps only
-the ADL half of an unqualified slot's lookup at instantiation, discarding the
-definition-context lookup that [temp.dep.candidate]{.sref} requires, so
-`` t `pipe` inc `` is rejected where `pipe(t, inc)` compiles in the same
-translation unit. Clang has it right; the GCC prototype has a bug to fix.
+**Still open.** One set of programs is treated differently by the two
+compilers under the flag. GCC does not implement the type-name slot, so
+`` 1 `Pt` 2 `` is rejected there and accepted by Clang.
 
 ## The forks
 
@@ -845,11 +842,8 @@ exception above is all that is left.
 ADL fidelity is normative in this design: `` x `f` y `` must not have quietly
 weaker lookup than `f(x, y)`. Neither compiler delivered it on its first
 attempt, and the two failures were the same failure: the name in the slot was
-resolved before the call builder ever saw it. Both deliver it now outside a
-template. Inside one, GCC still does not: it discards the definition-context
-half of a dependent slot's lookup at instantiation, so a slot naming
-something only ordinary lookup finds is rejected where the plain call
-compiles.
+resolved before the call builder ever saw it. Both deliver it now, inside a
+template as well as outside one.
 
 GCC took two goes. Its first cut resolved a bare-name slot at parse time, so a
 call depending on pure ADL — the callee visible in no enclosing scope, only in
@@ -889,18 +883,23 @@ made observable in the result type. That is the only shape in which weaker
 lookup on the slot produces no diagnostic at all, and no implementation should
 be believed without it.
 
-The open case is this section's own rule failing on the other side. Inside a
-template, an unqualified slot naming something argument-dependent lookup
-cannot reach, a function brought in by a using-declaration for instance, is
-rejected by GCC and accepted by Clang. GCC re-runs the lookup at instantiation
-and keeps only the ADL result, discarding the ordinary lookup from the
-definition context that [temp.dep.candidate]{.sref} requires it to keep. A
-variable fails the same way, and an ADL-reachable name is accepted, so what is
-lost is ordinary lookup itself. What makes the reading unambiguous is that the plain call still
-compiles: in one translation unit, `pipe(t, inc)` is accepted where `` t
-`pipe` inc `` is not: the slot carries weaker lookup than the call it
-desugars to, which this section opened by ruling out. Clang is the
-conforming implementation and the GCC prototype has a defect to fix.
+GCC needed a third go, for templates, and it was this section's own rule
+failing on the other side. Inside a template, an unqualified slot naming
+something argument-dependent lookup cannot reach, a function brought in by a
+using-declaration for instance, was rejected by GCC and accepted by Clang.
+GCC kept the bare name until instantiation and then had only ADL to run on
+it, losing the ordinary lookup from the definition context that
+[temp.dep.candidate]{.sref} requires. A variable failed the same way, and an
+ADL-reachable name was accepted, so what was lost was ordinary lookup itself.
+The plain call compiled all along: in one translation unit, `pipe(t, inc)` was
+accepted where `` t `pipe` inc `` was not. The fix was to stop writing the
+slot's lookup by hand. GCC now parses a bare-name slot as it parses the name
+in a call, and builds the call under the same rules for when ADL applies, so
+a dependent argument no longer changes what the slot finds. The same change
+fixed a case no test had covered: outside a template, a variable in the slot
+that shared its name with a function ADL could reach crashed the compiler,
+because the slot asked for the ADL that a call naming a variable does not
+do.
 
 ## What the AST node costs, and which compiler pays it
 

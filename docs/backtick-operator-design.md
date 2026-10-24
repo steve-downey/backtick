@@ -415,15 +415,17 @@ The switch is `PrintingPolicy::BacktickKeywordEscape`, initialised from `LangOpt
 
 **Question.** Inside a template, does GCC give an unqualified slot the same lookup as the call it desugars to — ordinary lookup in the definition context, plus ADL at instantiation ([temp.dep.candidate])?
 
-**Status.** **OPEN** — a GCC prototype defect, not a design question.
+**Status.** **Resolved** — fixed in the GCC prototype, 2026-10-24.
 
-**Decision.** The design is not in question: [desugaring-target](#desugaring-target) and §17.4 already require the slot's lookup to be the call's. What is open is the GCC fix.
+**Decision.** Yes, now. The design was never in question: [desugaring-target](#desugaring-target) and §17.4 already required the slot's lookup to be the call's. GCC parses a bare-name slot as the primary-expression it is in a call and builds the call with `cp_parser_postfix_expression`'s Koenig rules (`cp_parser_backtick_call`).
 
-**Why.** GCC's slot keeps a bare unqualified-id as an `IDENTIFIER_NODE` and runs `lookup_name` and `perform_koenig_lookup` only when no argument is type-dependent. When one is, the bare identifier reaches `finish_call_expr`, so instantiation sees a name with no ordinary-lookup result attached and can only do ADL. The plain-call path keeps the definition-context overload set and augments it at instantiation. In one translation unit `pipe(t, app::inc)` compiles where `` t `pipe` app::inc `` does not, with `pipe` brought in by a using-declaration and nothing in an argument's namespaces to find it. Clang is the conforming side.
+**Why.** GCC's slot kept a bare unqualified-id as an `IDENTIFIER_NODE` and runs `lookup_name` and `perform_koenig_lookup` only when no argument is type-dependent. When one is, the bare identifier reaches `finish_call_expr`, so instantiation sees a name with no ordinary-lookup result attached and can only do ADL. The plain-call path keeps the definition-context overload set and augments it at instantiation. In one translation unit `pipe(t, app::inc)` compiles where `` t `pipe` app::inc `` does not, with `pipe` brought in by a using-declaration and nothing in an argument's namespaces to find it. Clang is the conforming side.
 
 **Decided by.** Observation; the fix is the author's to accept.
 
 **Log.** 2026-10-24 — given an entry. Reproduced on the GCC fork at `24d3c38b653`: *'pipe' was not declared in this scope, and no declarations were found by argument-dependent lookup at the point of instantiation*. Clang trunk accepts. The same code passes `koenig_p=true` whatever lookup found, so a slot naming a variable or function object asks for ADL a call would not do.
+
+2026-10-24 — **fixed** on the GCC fork, `15ce39024be`. The hand-rolled lookup is gone from both slot sites in `cp_parser_binary_expression`: `cp_parser_backtick_slot` parses a bare name with `cp_parser_primary_expression`, and `cp_parser_backtick_call` copies the postfix-expression Koenig block, so ADL is off when ordinary lookup finds a non-function, a member or a block-scope declaration, and deferred to instantiation when an argument is dependent. A qualified or parenthesized slot now gets `koenig_p=false`. `g++.dg/backtick/infix-adl-dependent.C` writes ten shapes as the call and as the operator, the choice observable in the result type; before the fix it failed thirteen ways and ended in an ICE (`add_function_candidate`, a variable slot sharing its name with an ADL-reachable function, outside any template). Clang trunk accepts the same file unchanged. Gate: 150/150 in `g++.dg/backtick`; `probes/flag-off-parity.sh`, `escape-errors.sh` and `escape-positions.sh` (98/98 both compilers) unchanged.
 
 ### gcc-type-slot-parity
 
@@ -438,6 +440,8 @@ The switch is `PrintingPolicy::BacktickKeywordEscape`, initialised from `LangOpt
 **Decided by.** Observation.
 
 **Log.** 2026-10-24 — given an entry. Measured on `24d3c38b653`: `` 1 `Pt` 2 `` is *no match for call to '(Pt) (int, int)'*, because the bare-name path finds the `TYPE_DECL` and calls an object of that type; `` 1 `Pr` 2.0 `` with `Pr` a class template is the same; `` 1 `n::Q` 2 `` is *expected primary-expression before '`'*.
+
+2026-10-24 — the diagnostics changed with [gcc-dependent-slot-lookup](#gcc-dependent-slot-lookup)'s fix, which parses a bare-name slot as a primary-expression: `` 1 `Pt` 2 `` is now *expected primary-expression before '`'* and `` 1 `Pr` 2.0 `` *missing template arguments before '`'*. Still rejected; the type arm has to come before that parse.
 
 ### gcc-type-name-printing
 
@@ -1865,27 +1869,21 @@ expression in the slot gets no ADL for the same reason the equivalent call
 gets none.
 
 Implementation status, for the implementation-experience section: **both
-compilers now deliver it in a non-dependent context, and neither of them did
-on its first attempt, with the same failure twice. They do not yet agree
-inside a template.** GCC drops the definition-context ordinary lookup for a
-dependent slot and keeps only the ADL result, so an unqualified slot naming
-something ADL cannot reach is rejected there and accepted by Clang
-([gcc-dependent-slot-lookup](#gcc-dependent-slot-lookup)).
-A function visible only through a using-declaration is rejected exactly as a
-variable is, and an ADL-reachable name is accepted, so what is lost is
-ordinary lookup itself rather than any narrower rule about what ADL may find.
-That is this section's own normative rule broken, and broken on the GCC side:
-in the same translation unit `pipe(t, inc)` compiles where `` t `pipe` inc ``
-does not, which is the slot having *strictly weaker lookup than the call it
-desugars to*. Clang is the conforming one. Until GCC is fixed, the paragraph
-above holds as the design and as Clang's behaviour, and the sentence a paper
-may write about two-compiler agreement stops at the template boundary. Clang parses a
+compilers now deliver it, inside a template as well as outside one, and
+neither of them did on its first attempt, with the same failure twice.**
+Until 2026-10-24 GCC lost the definition-context ordinary lookup for a
+dependent slot and kept only ADL, so in one translation unit `pipe(t, inc)`
+compiled where `` t `pipe` inc `` did not — the slot with *strictly weaker
+lookup than the call it desugars to*, on the GCC side
+([gcc-dependent-slot-lookup](#gcc-dependent-slot-lookup)). Clang parses a
 bare unqualified name in the slot as the callee it is, so the name reaches
 `Sema::BuildCallExpr` as an `UnresolvedLookupExpr`: in the slot, the closing
 backtick is the trailing `(` that `Sema::UseArgumentDependentLookup` insists
-on before it will consider ADL at all. GCC keeps a bare unqualified-id slot as
-an `IDENTIFIER_NODE` and a bare template-id slot as a `TEMPLATE_ID_EXPR` over
-one, and runs `perform_koenig_lookup` before `finish_call_expr`. In both, a
+on before it will consider ADL at all. GCC parses a bare unqualified-id slot
+with `cp_parser_primary_expression`, as it parses the callee of a call, keeps
+a bare template-id slot as a `TEMPLATE_ID_EXPR`, and builds the call in
+`cp_parser_backtick_call`, which copies `cp_parser_postfix_expression`'s
+rules for when ADL applies and when it is deferred to instantiation. In both, a
 qualified name, a member access or any other expression in the slot is parsed
 as an ordinary expression, which is the right answer for it — the equivalent
 call gets no ADL either.

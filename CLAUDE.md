@@ -18,12 +18,6 @@ The implementation work that produced this is finished. The step-by-step
 plans, handoffs, and deviation ledgers it ran on were transient and have been
 removed; git history still has them. What is still open:
 
-- **[`gcc-dependent-slot-lookup`](docs/backtick-operator-design.md#gcc-dependent-slot-lookup)**
-  — a GCC prototype defect. GCC drops the
-  definition-context ordinary lookup for every dependent slot and keeps only
-  ADL, so `` t `pipe` inc `` is rejected inside a template where
-  `pipe(t, inc)` compiles. Clang is the conforming side. §17.4 and the
-  infix paper print the divergence; fixing it un-qualifies both.
 - **[`gcc-type-slot-parity`](docs/backtick-operator-design.md#gcc-type-slot-parity)**
   — GCC has no type-name slot, so `` 1 `Pt` 2 `` is accepted by Clang and
   rejected by GCC. §17.3 and the infix paper say so.
@@ -247,5 +241,7 @@ CMake's `CLANG_EXECUTABLE_VERSION` with `-backtick` appended; the GCC one is
   ([escape-content](docs/backtick-operator-design.md#escape-content)):
   `` `foobar` `` *is* `foobar`. Built on all four branches.
 - **ADL is normative (§17.4):** the slot gets the same ADL as the plain call.
-  Clang carries it as an `UnresolvedLookupExpr`; GCC resolves a bare-name slot
-  with explicit `perform_koenig_lookup`.
+  Clang carries it as an `UnresolvedLookupExpr`; GCC parses a bare-name slot
+  as a call's callee and builds the call in `cp_parser_backtick_call`, a copy
+  of `cp_parser_postfix_expression`'s Koenig rules. Test any change inside a
+  template too: that is where GCC's first two fixes still failed.
