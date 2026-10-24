@@ -4,11 +4,11 @@ Design documents, papers, and implementation records for two WG21 proposals.
 
 ## Papers
 
-In org-mode, built with the vendored wg21org exporter; the Unicode paper as
-mailed, the backtick paper as mailed plus R2's wording for module names:
+In org-mode, built with the vendored wg21org exporter: each is its mailed R1
+plus the R2 changes in progress.
 
 - [D4307R2 — An Infix Operator and a Keyword Escape for C++](papers/backtick-infix-and-keyword-escape.org)
-- [D4345R1 — Extending C++ with Unicode Mathematical Operators](papers/unicode-mathematical-operators.org)
+- [D4345R2 — Extending C++ with Unicode Mathematical Operators](papers/unicode-mathematical-operators.org)
 
 `make papers` builds both as HTML and PDF; `make -C papers help` lists the
 other targets.

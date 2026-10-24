@@ -78,7 +78,7 @@
 #+EMAIL: sdowney@gmail.com
 #+DATE: {{{modification-time(%Y-%m-%d, VC)}}}
 #+LANGUAGE: en
-#+DOCNUMBER: D4345R1
+#+DOCNUMBER: D4345R2
 #+AUDIENCE: SG16, EWG
 #+SELECT_TAGS: export
 #+EXCLUDE_TAGS: noexport
@@ -115,6 +115,9 @@ Vec operator⊖(Vec const&);              // one parameter: unary prefix
 #+end_src
 
 * Revision history
+** R2
+Cite D4307R2, which names the shared /user-infix level/ and points back at this
+paper.
 ** R1
 Rewrite from scratch without technical change.
 ** R0
@@ -192,8 +195,8 @@ Such a function is an ordinary free or member function.
 1. The operator set is disjoint from the identfier character set.
 2. The list is derived from Unicode recommendations.
 
-** Relation to P4307R0
-Infix named operators are a disjoint proposal. The only shared bit is the proposed /user-infix level/ for precedence.
+** Relation to D4307R2
+Infix named operators [cite:@D4307R2] are a disjoint proposal. The only shared bit is the proposed /user-infix level/ for precedence.
 
 * The token set
 
@@ -287,7 +290,7 @@ unary-expression:
 Binary user operators occupy one precedence level: the highest binary level,
 tighter than ~*~ and looser than the unary operators, left-associative, with
 cast-expression operands. That is the /user-infix level/, and it is meant to
-serve all user-introduced infix syntax: it is the same level P4307R0 introduces
+serve all user-introduced infix syntax: it is the same level D4307R2 introduces
 for the backtick operator.
 
 The precedence rules mean that  ~-a ⊞ -b~ is ~operator⊞(-a, -b)~.

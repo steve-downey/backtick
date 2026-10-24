@@ -23,10 +23,6 @@ removed; git history still has them. What is still open:
   ([`escape-module-names`](docs/backtick-operator-design.md#escape-module-names));
   D4307R2 carries the wording and the line-start collision. Whether the post
   should is undecided.
-- The Unicode paper's "Relation to P4307R0" note and its grammar section
-  still cite P4307R0; D4307R2 now carries the mirror appendix
-  ([`paper-separation`](docs/unicode-operators.md#paper-separation)). For
-  P4345's next revision.
 - One printer gap, not affecting acceptance: Clang's `-ast-dump` prints a
   declaration's name bare and the same name inside a type escaped. (GCC's
   opposite split was
@@ -68,8 +64,9 @@ paper must carry, not only the decision logs.
     progress: R1 as mailed, the infix operator and the keyword escape in one
     paper, rewritten for the committee without the implementation detail and
     history, plus the module-name wording.
-  - `papers/unicode-mathematical-operators.org` — **D4345R1** as mailed
-    (P4345R0 published).
+  - `papers/unicode-mathematical-operators.org` — **D4345R2** in
+    progress: R1 as mailed (P4345R0 and P4345R1 published), citing D4307R2
+    for the shared user-infix level.
   - The markdown papers are the pre-mailing drafts:
     `papers/backtick-infix-operator.md` (D4307R1, infix only) and
     `papers/backtick-keyword-escape.md` (DxxxxR0), the two-paper split of
