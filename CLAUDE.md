@@ -18,11 +18,12 @@ The implementation work that produced this is finished. The step-by-step
 plans, handoffs, and deviation ledgers it ran on were transient and have been
 removed; git history still has them. What is still open:
 
-- **`backtick-paper-companion`** — the infix paper must name its precedence
-  level the **user-infix level** and carry a short informative
+- **`backtick-paper-companion`** — the backtick paper must name its
+  precedence level the **user-infix level** and carry a short informative
   future-directions appendix pointing at the Unicode paper, the condition
   [`paper-separation`](docs/unicode-operators.md#paper-separation) split the
-  papers under. It should land before the two papers go in together.
+  papers under. The mailed D4307R1 does not: its grammar names
+  *user-infix-expression*, but it never cites P4345. For R2.
 - **`escape-module-names`** — the escape does not reach module names in
   either compiler (`` export module acme.`class`.util; ``,
   `` import `std`; ``), because module and import declarations are
@@ -31,7 +32,11 @@ removed; git history still has them. What is still open:
   and each component admits the escape, the one collision with the infix
   operator accepted; see
   [`escape-module-names`](docs/backtick-operator-design.md#escape-module-names).
-  Not yet built; the escape paper records it as open.
+  Not yet built, and the mailed D4307R1 does not mention module names.
+- The mailed D4307R1 says GCC does not yet implement the type-name slot;
+  it has since 2026-10-24
+  ([`gcc-type-slot-parity`](docs/backtick-operator-design.md#gcc-type-slot-parity)).
+  For R2.
 - One printer gap, not affecting acceptance: Clang's `-ast-dump` prints a
   declaration's name bare and the same name inside a type escaped. (GCC's
   opposite split was
@@ -75,10 +80,10 @@ paper must carry, not only the decision logs.
   - `papers/unicode-mathematical-operators.org` — **D4345R1** as mailed
     (P4345R0 published).
   - The markdown papers are the pre-mailing drafts:
-    `papers/backtick-infix-operator.md` (D4307R1, infix only),
-    `papers/backtick-keyword-escape.md` (DxxxxR0, the escape split out on
-    2026-09-23 under
-    [`paper-bundling`](docs/backtick-operator-design.md#paper-bundling)), and
+    `papers/backtick-infix-operator.md` (D4307R1, infix only) and
+    `papers/backtick-keyword-escape.md` (DxxxxR0), the two-paper split of
+    2026-09-23 that the mailing folded back into one
+    ([`paper-bundling`](docs/backtick-operator-design.md#paper-bundling)), and
     `papers/unicode-mathematical-operators.md`. They still build through
     mpark/wg21 (`papers/wg21/`) with `make -C papers -f mpark.mk html pdf`,
     into `papers/generated/`.
@@ -126,8 +131,9 @@ paper must carry, not only the decision logs.
   one-line programs in five categories, both compilers); `escape-errors.sh`
   asks whether the error paths diagnose and *stop*, under `timeout`;
   `flag-off-parity.sh` asks whether the flag changes a program containing no
-  backtick. **Re-run them after touching the escape.** The escape paper
-  links `escape-positions.sh`.
+  backtick. **Re-run them after touching the escape.** The escape draft
+  (`papers/backtick-keyword-escape.md`) links `escape-positions.sh`; the
+  mailed paper does not.
 - `build/` — `configure-{clang23,clang-trunk,gcc-trunk}-backtick.sh`, the
   reproducible configure invocations (below).
 - `examples/` — a CMake project vendored by `git subtree` from

@@ -274,6 +274,8 @@ entry used to have.
 
 2026-09-23 — **the rule this entry cites was revised, and the answer stands.** [paper-bundling](backtick-operator-design.md#paper-bundling) reversed: the backtick paper split into an infix paper (P4307, from R1) and a keyword-escape paper, so "bundle within a committee" no longer holds even for the two backtick uses. This entry never depended on that half; it rests on "split across committees" and on the maturity and fate arguments, all unchanged. The companion obligation (user-infix level, future-directions appendix) now falls on the **infix** paper. P4345R0's citations of P4307R0 are to a published paper that does contain the operator, so they stay correct.
 
+2026-10-24 — **and it was revised back.** The mailed D4307R1 carries the infix operator and the keyword escape in one paper again, so "bundle within a committee" holds for the two backtick uses once more. This entry still does not depend on it. The companion obligation falls on D4307R1 as mailed, which does not yet carry it.
+
 ---
 
 ## 3. What transfers from backtick

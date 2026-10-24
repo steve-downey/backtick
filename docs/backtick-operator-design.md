@@ -224,6 +224,8 @@ entry used to have.
 
 2026-09-08 — **the answer holds, and two more categories of position had to be built before it was true.** The nineteen-position measurement, and the fifteen use positions added a day later, were all *unqualified* names. Sweeping the qualified ones found that Clang read the final component of a qualified **type** name in three parsers that had never seen the escape, so `` N::`new` `` worked and `` N::`union` `` did not — briefly making GCC the wider implementation, which had not happened before (escape-in-qualified-type-name). And the one surviving acceptance divergence, GCC's rejection of an escape whose keyword is a **type** keyword, turned out not to be a parser question at all but a name-table one, and to be fixable at three call sites (escape-type-keyword-binding). **Both compilers now take all seventy-nine programs in all four categories, and there is no acceptance divergence left in the escape.** The rule is unchanged; what changed each time is that somebody wrote programs for a category nobody had written programs for, which is why the sweep is now a script in the repository rather than a paragraph in a handoff.
 
+2026-10-24 — the mailed R1 carries both uses in one paper again ([paper-bundling](#paper-bundling)). The invariant now binds the paper's two halves rather than two papers, and the paper still shows the parenthesized escape in a slot.
+
 2026-09-23 — **now binds two papers rather than one.** With [paper-bundling](#paper-bundling) reversed, the parse-not-lex half of the Decision is what lets the escape paper and the infix paper share the token without either foreclosing the other. Both papers state it: the escape paper as a design choice made for the operator's sake, the infix paper as the thing it needs from the escape. The one seam (an escape inside a slot must be parenthesized) was re-measured on both built compilers the same day.
 
 ### escape-content
@@ -281,7 +283,7 @@ A fix needs two wording changes, and a matching change to each compiler's module
 
 The identity rule ([escape-content](#escape-content)) does the rest: `` acme.`class`.util `` is the module `acme.class.util`, and mangles as that name. For the same reason, `module` and `import` stay forbidden as module-name components ([module.unit]) whether escaped or not. The escape yields an ordinary identifier, and every other identifier rule still applies. (GCC accepts the unescaped `export module import;`. That is a GCC conformance bug, unrelated to the escape.)
 
-**One collision with the infix operator.** Step 1 changes the meaning of a line that begins `` module `f` y; ``. Today that is an infix call on a variable named `module`, and both compilers accept it inside a function body. After step 1 it is a malformed module directive. C++20 made the same trade for `module x;` and `import x;` at the start of a line. This one breaks no existing code, because backticks are new. The escape itself is the workaround: `` `module` `f` y `` begins with a backtick, so it is never a directive, and `(module) `f` y` also works. Whichever paper carries the fix must say so, and if the papers are separate the other one must say so too.
+**One collision with the infix operator.** Step 1 changes the meaning of a line that begins `` module `f` y; ``. Today that is an infix call on a variable named `module`, and both compilers accept it inside a function body. After step 1 it is a malformed module directive. C++20 made the same trade for `module x;` and `import x;` at the start of a line. This one breaks no existing code, because backticks are new. The escape itself is the workaround: `` `module` `f` y `` begins with a backtick, so it is never a directive, and `(module) `f` y` also works. The paper must say so; the mailed D4307R1 does not yet mention module names at all.
 
 **Cost.** This is the first time the escape touches the preprocessor. [keyword-escape-coexistence](#keyword-escape-coexistence)'s "parsed, not lexed" becomes "parsed, and recognized by the preprocessor only in module and import directives". The lexer still synthesizes no identifier. The probe sweep gains a module-name category, which includes the line-start collision case, on all four fork branches.
 
@@ -293,7 +295,7 @@ The identity rule ([escape-content](#escape-content)) does the rest: `` acme.`cl
 
 - The line-start collision arrives without any rule change: `` module `f` y; `` is `module` followed by an identifier token, so it is a directive. Avoiding it needs a longer lookahead in [lex.pptoken] — a directive only when the quoted name is followed by `.`, `:`, `;` or `[[`, none of which can begin an expression — which is exactly the kind of rule C++20 kept to one token so that scanners stay simple.
 - The lexer must settle what the parser settles today: whether `` ` class ` `` with spaces is one token, and where the munch stops in a bare nesting such as `` a `f `g` h` b `` ([nesting-vs-chaining](#nesting-vs-chaining)).
-- It replaces the invariant both papers state, "the escape is parsed, not lexed" ([paper-bundling](#paper-bundling)), and the infix paper's slot grammar gains a special token, so it reopens both papers and every compiler's lexer, not only the escape.
+- It replaces the invariant the paper states for its two uses, "the escape is parsed, not lexed" ([paper-bundling](#paper-bundling)), and the operator's slot grammar gains a special token, so it reopens the operator's design and every compiler's lexer, not only the escape.
 - Stringizing has to be decided: `#` applied to the token yields a string containing the backticks, which a parser-level escape gets for free, because there it is three tokens.
 
 **Decided by.** The design author: the direction on 2026-09-23, the mechanism on 2026-10-24.
@@ -382,15 +384,17 @@ The switch is `PrintingPolicy::BacktickKeywordEscape`, initialised from `LangOpt
 
 **Status.** **Resolved**
 
-**Decision.** **Two papers** (from 2026-09-23). The infix operator stays in P4307, from R1 (`papers/backtick-infix-operator.md`); the keyword escape is a new paper, DxxxxR0, number not yet assigned (`papers/backtick-keyword-escape.md`). Each paper states the one invariant that lets them share the token — **the escape is parsed, not lexed**: backtick stays one punctuator, the escape claims it only in operand/name position, the operator only in post-operand position ([keyword-escape-coexistence](#keyword-escape-coexistence)) — and each carries a drafting note that whichever is adopted second drops its [lex.operators] edit. *Until 2026-09-23:* both backtick usages proposed jointly, in one paper (P4307R0).
+**Decision.** **One paper**, again: D4307R1 as mailed (`papers/backtick-infix-and-keyword-escape.org`) carries the infix operator and the keyword escape together. It still states the one invariant that lets the two uses share the token — **the escape is parsed, not lexed** — and still shows that an escape inside a slot must be parenthesized. *From 2026-09-23 until the R1 mailing:* two papers. The infix operator stayed in P4307, from R1 (`papers/backtick-infix-operator.md`); the keyword escape is a new paper, DxxxxR0, number not yet assigned (`papers/backtick-keyword-escape.md`). Each paper states the one invariant that lets them share the token — **the escape is parsed, not lexed**: backtick stays one punctuator, the escape claims it only in operand/name position, the operator only in post-operand position ([keyword-escape-coexistence](#keyword-escape-coexistence)) — and each carries a drafting note that whichever is adopted second drops its [lex.operators] edit. *Until 2026-09-23:* both backtick usages proposed jointly, in one paper (P4307R0). The markdown drafts of the two-paper split remain in `papers/` as the record of it.
 
-**Why.** *Current:* reviewers of P4307R0 asked to consider the two uses separately, and with both implemented in the same forks the split could be checked rather than argued. Only three things are shared. The [lex.operators] edit is identical in both, so the second paper in drops it. The positions are disjoint, so adopting either leaves the other's position unused. And one real constraint: a lexer-synthesized escape would make `` `f` `` an identifier token and make `` x `f` y `` unwritable, which is exactly the "contradiction" the original rationale below guarded against. It is now a stated design choice in the escape paper rather than a consequence of co-authorship. An escape *inside* a slot must be parenthesized (`` x `(`new`)` y ``); that follows from the operator's closing-delimiter rule alone, and both built compilers reject `` x ``new`` y `` (measured 2026-09-23). The drift risk that remains is managed by one author holding both papers and one flag gating both in the forks. *Original (superseded):* Same lexical token ([keyword-escape-coexistence](#keyword-escape-coexistence)), same committee (EWG/CWG). Joint proposal *conserves EWG attention* — one "what does backtick mean" discussion, not two — and prevents the two uses being designed into *contradiction* if pursued independently (punctuator vs. lexer-synthesized identifier; divergent disambiguation). Consistent with [library-scope](#library-scope), not contrary to it: the rule is **bundle what shares a design surface within one committee; split what is separable across committees** — so the two language uses bundle, the library layer ([library-scope](#library-scope)) splits off to LEWG. Resolves the §10 scope question.
+**Why.** *Current:* the mailed paper gives its own reason — the two uses share the token and the committee — which is the original rationale below. It offers EWG one question to poll separately: whether the escape is restricted to words that are keywords. *2026-09-23 to the R1 mailing (superseded):* reviewers of P4307R0 asked to consider the two uses separately, and with both implemented in the same forks the split could be checked rather than argued. Only three things are shared. The [lex.operators] edit is identical in both, so the second paper in drops it. The positions are disjoint, so adopting either leaves the other's position unused. And one real constraint: a lexer-synthesized escape would make `` `f` `` an identifier token and make `` x `f` y `` unwritable, which is exactly the "contradiction" the original rationale below guarded against. It is now a stated design choice in the escape paper rather than a consequence of co-authorship. An escape *inside* a slot must be parenthesized (`` x `(`new`)` y ``); that follows from the operator's closing-delimiter rule alone, and both built compilers reject `` x ``new`` y `` (measured 2026-09-23). The drift risk that remains is managed by one author holding both papers and one flag gating both in the forks. *Original (superseded):* Same lexical token ([keyword-escape-coexistence](#keyword-escape-coexistence)), same committee (EWG/CWG). Joint proposal *conserves EWG attention* — one "what does backtick mean" discussion, not two — and prevents the two uses being designed into *contradiction* if pursued independently (punctuator vs. lexer-synthesized identifier; divergent disambiguation). Consistent with [library-scope](#library-scope), not contrary to it: the rule is **bundle what shares a design surface within one committee; split what is separable across committees** — so the two language uses bundle, the library layer ([library-scope](#library-scope)) splits off to LEWG. Resolves the §10 scope question.
 
-**Decided by.** The design author (both the original and the 2026-09-23 reversal).
+**Decided by.** The design author: the original, the 2026-09-23 reversal, and the return to one paper in the mailed R1.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
 2026-09-23 — **reversed: two papers.** Prompted by reviewer feedback on P4307R0. An audit of every shared surface (token, positions, slot content, flag, wording, the Unicode paper's citations) found one binding constraint, parse-not-lex, and no structural reason to keep the papers together. The papers were split the same day; the escape paper's number is still to be assigned. The "bundle within a committee" half of the rule below no longer governs this case; "split across committees" still governs [library-scope](#library-scope) and [paper-separation](unicode-operators.md#paper-separation).
+
+**Log.** 2026-10-24 — **back to one paper.** D4307R1 went into the mailing as *An Infix Operator and a Keyword Escape for C++*, one paper, rewritten for the committee without the implementation detail and history; it reached `main` with the merge of `blank-slate`. The drafting note about dropping a duplicated [lex.operators] edit is moot. The rule "bundle what shares a design surface within one committee" governs this case again.
 
 ### evaluation-order
 
@@ -785,12 +789,14 @@ and port.
   all**; tracked at last as
   backtick-paper-companion.
   Until that lands, this list is the only record of the obligation, which is
-  how it went missing. Since the 2026-09-23 split
-  ([paper-bundling](#paper-bundling)), this obligation belongs to the
-  **infix paper** (`papers/backtick-infix-operator.md`); the escape paper
-  has no Unicode connection.
-- **Both papers, since the split** ([paper-bundling](#paper-bundling)):
-  each states the parse-not-lex invariant from
+  how it went missing. It belongs to D4307R1
+  (`papers/backtick-infix-and-keyword-escape.org`), one paper again
+  ([paper-bundling](#paper-bundling)). **The mailed R1 does not carry it**:
+  its grammar names *user-infix-expression*, but its prose does not name a
+  user-infix level, and it neither cites P4345 nor has a future-directions
+  appendix.
+- **Both papers, while they were split** ([paper-bundling](#paper-bundling);
+  superseded by the mailed R1, which is one paper again): each states the parse-not-lex invariant from
   [keyword-escape-coexistence](#keyword-escape-coexistence) in its own
   design, each carries the drafting note that whichever is adopted second
   drops its [lex.operators] edit, and each says that an escape inside a
@@ -803,8 +809,8 @@ and port.
 
 ## 10. Open questions
 
-- **Scope — Resolved ([paper-bundling](#paper-bundling)): two papers, since 2026-09-23.** What follows is
-  the original reasoning for one paper, kept for the record; the entry has the reversal. The infix operator and the
+- **Scope — Resolved ([paper-bundling](#paper-bundling)): one paper, as mailed in D4307R1** (two papers from 2026-09-23 until that mailing). What follows is
+  the original reasoning for one paper, which the mailed paper's own reason matches. The infix operator and the
   keyword-escape share one lexical token ([keyword-escape-coexistence](#keyword-escape-coexistence)), so they are co-designed in a
   single paper — to conserve EWG attention (one backtick discussion, not two)
   and to keep two independent designs from contradicting each other. The
