@@ -439,6 +439,44 @@ Because the escape yields an ordinary identifier, nothing downstream of the
 parser changes: no new lookup rules, no mangling scheme, no ABI surface.
 ~void `new`();~ links as a function named ~new~.
 
+** One place they meet: a line that begins with ~module~
+The escape reaches module names, and that costs one collision with the infix
+operator: a line that begins ~module `f` y;~ is a module directive, not an
+expression. We accept it. It breaks no existing program, C++20 made the same
+trade for ~module x;~, and the escape is its own workaround.
+
+Module and import declarations are recognized before the parser runs. A line
+is a module directive when it begins with ~module~ followed by an identifier,
+~:~ or ~;~, and an import when it begins with ~import~ followed by a header
+name, ~<~, an identifier or ~:~. A backtick is on neither list, so without a
+change ~export module acme.`class`.util;~ is not a module declaration at all.
+Adding ~`~ to both lists is what lets the escape into module names, which is
+where it matters most: a module whose name contains a word the committee later
+makes a keyword breaks every importer, and a module name is the hardest name
+in a program to change.
+
+The cost is a line that begins with a variable named ~module~ and an infix
+call:
+
+#+begin_src cpp
+module `f` y;     // module directive, ill-formed
+`module` `f` y;   // f(module, y)
+(module) `f` y;   // f(module, y)
+#+end_src
+
+Inside a function, the first line would otherwise be ~f(module, y)~. That is
+what C++20 did when ~module x;~ and ~import x;~ at the start of a line became
+directives, and this one costs less: no existing program contains a
+backtick, so no existing program changes meaning. Escaping the word, or
+parenthesizing it, keeps the expression.
+
+A longer lookahead would avoid the collision: treat the line as a directive
+only when the escaped name is followed by ~.~, ~:~, ~;~ or ~[[~, none of
+which can begin an expression. We do not propose it. The directive rule looks
+one token past ~module~ and ~import~ so that a dependency scanner can find a
+translation unit's modules without parsing C++, and one spelling with a
+workaround is a smaller cost than a rule four tokens deep in every scanner.
+
 * Implementation experience
 Implemented in both GCC and Clang. There were no particular difficulties in either. Implementing both did partly dictate the strategy for the identifier escape, but did not make it unmanageably more complicated.
 
@@ -516,7 +554,9 @@ implemented in both compilers except where noted.
 
 - One token, two grammatical positions, no lookahead: operand and name
   position is the escape, post-operand position is the operator. They never
-  meet, and neither use depends on the other for its disambiguation.
+  meet in the grammar, and neither use depends on the other for its
+  disambiguation. The one place they meet is a line beginning with ~module~,
+  which is a module directive.
 - Both are gated behind an opt-in flag for the proposal period. Flag off,
   every existing program is untouched, byte for byte.
 - No library. ~pipe~, ~then~, ~mbind~ and ~implies~ are motivation, each a
@@ -678,12 +718,8 @@ module `f` y;                    // preprocessing directive (ill-formed)
 #+end_addedblock
 #+end_quote
 
-The third line is the cost of this change. Without it, a line beginning
-~module `f` y~ is a /user-infix-expression/ whose left operand is a variable
-named ~module~; with it, the line is a malformed module directive, the same
-trade C++20 made for ~module x;~ and ~import x;~. No existing program is
-affected, because no existing program contains a ~`~. Escaping the first
-word, or parenthesizing it, keeps the expression.
+The third line of the example is the collision described in §"One place
+they meet: a line that begins with ~module~".
 
 ** [cpp.module]
 
