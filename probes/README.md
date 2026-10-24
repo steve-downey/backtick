@@ -23,8 +23,8 @@ their contents into an interactive shell.
 
 | Script | Question | Failure mode it catches |
 |---|---|---|
-| [`escape-positions.sh`](escape-positions.sh) | Where does the escape reach? | A name position nobody thought of. Ninety-eight one-line programs in five categories — declaration, use, qualified, escapes whose keyword is a *type* keyword, and escapes of a word that is not a keyword at all — run against both compilers. Run it under `STD=c++17` as well as the default: category E must not move. |
-| [`escape-errors.sh`](escape-errors.sh) | Does a bad escape diagnose **and stop**? | A parser loop. Twenty-three malformed or unresolvable escapes, each under `timeout`; a timeout is a failure, not a slow test. |
+| [`escape-positions.sh`](escape-positions.sh) | Where does the escape reach? | A name position nobody thought of. A hundred and ten one-line programs in six categories — declaration, use, qualified, escapes whose keyword is a *type* keyword, escapes of a word that is not a keyword at all, and module names — run against both compilers. Run it under `STD=c++17` as well as the default: category E must not move. Category F runs GCC with `-fmodules`; under `STD=c++17` Clang has no modules and rejects it, which is expected. One of its rows, `mod-line-collision`, is meant to be rejected. |
+| [`escape-errors.sh`](escape-errors.sh) | Does a bad escape diagnose **and stop**? | A parser loop. Thirty malformed or unresolvable escapes, seven of them in module names, each under `timeout`; a timeout is a failure, not a slow test. |
 | [`flag-off-parity.sh`](flag-off-parity.sh) | Does the flag change a program containing no backtick? | A leaked flag gate. Byte-identical comparison of flag-on against flag-off, and of flag-off against a pristine upstream binary, over `-fsyntax-only`, `-ast-print`, `-ast-dump` and generated assembly. |
 
 Defaults point at `~/src/llvm/build-backtick-trunk` and

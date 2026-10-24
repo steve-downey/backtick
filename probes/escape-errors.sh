@@ -59,13 +59,26 @@ add value-used-as-type      'namespace N { int `new`; } N::`new` g;'
 add undeclared-ctor         'struct `union` { }; `union`::`nonexistent`() { }'
 add double-escape-undecl    'namespace `namespace` { } `namespace`::`union` g;'
 
+# Malformed escapes in a module name (escape-module-names).  These are read
+# by the preprocessor, not the parser, so they are a separate error path;
+# GCC needs -fmodules to see a module directive at all.
+declare -a MNAME=() MPROG=()
+addm() { MNAME+=("$1"); MPROG+=("$2"); }
+addm mod-unterminated     'export module acme.`class;'
+addm mod-not-a-word       'export module acme.`+`;'
+addm mod-empty            'export module acme.``;'
+addm mod-adjacent         'export module acme.`class` `util`;'
+addm mod-macro            $'#define util 3\nexport module acme.`util`;'
+addm mod-partition-open   'export module acme:`class'
+addm mod-import-open      'import `std'
+
 status=0
 run() { # $1 label, $2 program, $3 compiler, $4 extra args...
     local label=$1 prog=$2 cc=$3; shift 3
     printf '%s\n' "$prog" > "$TMP/e.cpp"
     local out rc
-    out=$(timeout "$TIMEOUT" "$cc" -std="$STD" -fbacktick -fsyntax-only "$@" \
-              "$TMP/e.cpp" 2>&1); rc=$?
+    out=$(cd "$TMP" && timeout "$TIMEOUT" "$cc" -std="$STD" -fbacktick \
+              -fsyntax-only "$@" "$TMP/e.cpp" 2>&1); rc=$?
     case $rc in
       0)   printf '  %-24s ACCEPTED (expected a diagnostic)\n' "$label"; status=1 ;;
       124) printf '  %-24s ** HUNG ** after %ss\n' "$label" "$TIMEOUT"; status=1 ;;
@@ -78,6 +91,10 @@ run() { # $1 label, $2 program, $3 compiler, $4 extra args...
 
 echo "clang   : $CLANG"
 for ((i = 0; i < ${#NAME[@]}; i++)); do run "${NAME[$i]}" "${PROG[$i]}" "$CLANG"; done
+for ((i = 0; i < ${#MNAME[@]}; i++)); do run "${MNAME[$i]}" "${MPROG[$i]}" "$CLANG"; done
 echo "cc1plus : $CC1PLUS"
 for ((i = 0; i < ${#NAME[@]}; i++)); do run "${NAME[$i]}" "${PROG[$i]}" "$CC1PLUS" -quiet; done
+for ((i = 0; i < ${#MNAME[@]}; i++)); do
+    run "${MNAME[$i]}" "${MPROG[$i]}" "$CC1PLUS" -quiet -fmodules
+done
 exit $status

@@ -24,15 +24,15 @@ removed; git history still has them. What is still open:
   [`paper-separation`](docs/unicode-operators.md#paper-separation) split the
   papers under. The mailed D4307R1 does not: its grammar names
   *user-infix-expression*, but it never cites P4345. For R2.
-- **`escape-module-names`** — the escape does not reach module names in
-  either compiler (`` export module acme.`class`.util; ``,
-  `` import `std`; ``), because module and import declarations are
-  recognized during preprocessing. The author has ruled the mechanism
-  (2026-10-24): `` ` `` joins the tokens that may follow `module`/`import`,
-  and each component admits the escape, the one collision with the infix
-  operator accepted; see
+- **`escape-module-names`** — the escape reaches module names
+  (`` export module acme.`class`.util; ``, `` import `std`; ``) in both
+  compilers since 2026-10-24: the preprocessor takes a backtick after
+  `module`/`import`, each component admits the escape, and a line beginning
+  `` module `f` y `` is a module directive, as ruled in
   [`escape-module-names`](docs/backtick-operator-design.md#escape-module-names).
-  Not yet built, and the mailed D4307R1 does not mention module names.
+  Open only in the paper: the mailed D4307R1 does not mention module names,
+  so R2 owes the [lex.pptoken], [cpp.module] and [cpp.import] wording and the
+  collision.
 - The mailed D4307R1 says GCC does not yet implement the type-name slot;
   it has since 2026-10-24
   ([`gcc-type-slot-parity`](docs/backtick-operator-design.md#gcc-type-slot-parity)).
@@ -127,8 +127,9 @@ paper must carry, not only the decision logs.
   Nikola sidecar, in the informal register. Prefer the `voice` skill when
   drafting or editing these or the papers.
 - `probes/` — sweeps, in `bash` because `zsh` does not word-split.
-  `escape-positions.sh` asks where the keyword escape reaches (ninety-eight
-  one-line programs in five categories, both compilers); `escape-errors.sh`
+  `escape-positions.sh` asks where the keyword escape reaches (a hundred and
+  ten one-line programs in six categories, module names the sixth, both
+  compilers); `escape-errors.sh`
   asks whether the error paths diagnose and *stop*, under `timeout`;
   `flag-off-parity.sh` asks whether the flag changes a program containing no
   backtick. **Re-run them after touching the escape.** The escape draft

@@ -4,7 +4,9 @@
 # One line per position: a complete C++ program that uses a backtick escape in
 # exactly one grammatical position, and nothing else interesting.  Categories
 # A–D escape a keyword; category E escapes a word that is not one, which is
-# what escape-content decided and what those four never varied.  Each is compiled with `-fbacktick -fsyntax-only`; the only
+# what escape-content decided and what those four never varied; category F is
+# the module-name components the preprocessor reads (escape-module-names).
+# Each is compiled with `-fbacktick -fsyntax-only`; the only
 # question asked is *accepts* or *rejects*.
 #
 # Run it under bash.  zsh does not word-split, which has cost this track
@@ -201,6 +203,37 @@ add_word word-altern-type     'struct `or` { int a; }; `or` v; int f() { return 
 add_word word-future-keyword  'bool `requires`(int); bool f(int x) { return `requires`(x); }'
 
 # ---------------------------------------------------------------------------
+# F. Module names — escape-module-names, ruled 2026-10-24.
+#    The preprocessor recognizes module and import directives before the
+#    parser ever sees a backtick, so these needed their own change and get
+#    their own row.  GCC needs -fmodules for any of it.  Each program is one
+#    translation unit, so only interface declarations appear; imports and
+#    implementation units need a compiled interface and are pinned in the
+#    compiler test suites instead (an escaped implementation unit fails here
+#    with "module 'new' not found", which is the escape working).
+#    The last three rows are the line-start collision: mod-line-collision is
+#    *meant* to be rejected -- a line beginning module `f` y is a module
+#    directive -- and the two after it are the workarounds, which must be
+#    accepted.
+# ---------------------------------------------------------------------------
+declare -a MOD_NAME=() MOD_PROG=()
+add_mod() { MOD_NAME+=("$1"); MOD_PROG+=("$2"); }
+
+add_mod mod-component          'export module acme.`class`.util;'
+add_mod mod-first              'export module `new`;'
+add_mod mod-last               'export module acme.`new`;'
+add_mod mod-every              'export module `class`.`new`.`union`;'
+add_mod mod-word               'export module `acme`.util;'
+add_mod mod-altern-token       'export module acme.`and`;'
+add_mod mod-partition          'export module acme:`class`;'
+add_mod mod-partition-first    'export module `new`:`and`;'
+add_mod mod-gmf                $'module;\nexport module `new`;'
+add_mod mod-line-collision     $'int fn(int a, int b) { return a + b; }\nint t() { int module = 1, y = 2;\nmodule `fn` y;\nreturn 0; }'
+add_mod mod-line-escaped       $'int fn(int a, int b) { return a + b; }\nint t() { int module = 1, y = 2;\n`module` `fn` y;\nreturn 0; }'
+add_mod mod-line-parenthesized $'int fn(int a, int b) { return a + b; }\nint t() { int module = 1, y = 2;\n(module) `fn` y;\nreturn 0; }'
+
+# ---------------------------------------------------------------------------
+GCC_EXTRA=()   # category F turns modules on; GCC runs in $TMP for gcm.cache
 run_one() {  # $1 program, $2 outfile-prefix; sets CLANG_R and GCC_R
     local prog=$1 pfx=$2
     printf '%s\n' "$prog" > "$TMP/$pfx.cpp"
@@ -209,7 +242,8 @@ run_one() {  # $1 program, $2 outfile-prefix; sets CLANG_R and GCC_R
                 > "$TMP/$pfx.clang" 2>&1; then CLANG_R=accepts; else CLANG_R=REJECTS; fi
     else CLANG_R=-; fi
     if [ -x "$CC1PLUS" ]; then
-        if "$CC1PLUS" -std="$STD" -fbacktick -fsyntax-only -quiet "$TMP/$pfx.cpp" \
+        if (cd "$TMP" && "$CC1PLUS" -std="$STD" -fbacktick ${GCC_EXTRA[@]+"${GCC_EXTRA[@]}"} \
+                -fsyntax-only -quiet "$TMP/$pfx.cpp") \
                 > "$TMP/$pfx.gcc" 2>&1; then GCC_R=accepts; else GCC_R=REJECTS; fi
     else GCC_R=-; fi
 }
@@ -245,5 +279,8 @@ sweep "B. Use positions"         USE_NAME  USE_PROG
 sweep "C. Qualified positions"   QUAL_NAME QUAL_PROG
 sweep "D. Type-keyword escapes"  TYPE_NAME TYPE_PROG
 sweep "E. Non-keyword words"     WORD_NAME WORD_PROG
+GCC_EXTRA=(-fmodules)
+sweep "F. Module names"          MOD_NAME  MOD_PROG
+GCC_EXTRA=()
 echo
 printf '%-26s %-8s %-8s\n' "ALL" "$TOT_C/$TOT_N" "$TOT_G/$TOT_N"

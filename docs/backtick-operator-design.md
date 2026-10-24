@@ -266,7 +266,7 @@ entry used to have.
 
 **Question.** Does the keyword escape reach the identifiers in a *module-name* and a *module-partition*, both where a module is declared and where it is imported?
 
-**Status.** **Resolved (mechanism)** — ruled 2026-10-24; not yet built.
+**Status.** **Resolved** — ruled and built 2026-10-24, in both compilers. The mailed D4307R1 does not yet carry it.
 
 **Decision.** The escape reaches every component of a module name and a partition name, by the mechanism below: `` ` `` joins the tokens that may follow `module` or `import` when [lex.pptoken] recognizes those directives, and [cpp.module] and [cpp.import] admit an *escaped-identifier* for each component. The line-start collision is accepted, with the escape itself as the workaround, and the paper carrying the fix calls out the complications that come with it. The ruling, from the author on 2026-10-24: this paper wants both uses of the backtick, and this is the mechanism that keeps both. The direction, from the author on 2026-09-23: an escape hatch that does not handle module names would be *"very unfortunate"*. A module name is a dotted sequence of identifiers ([module.unit]), and a keyword cannot be one of them. So a module whose name contains a word the committee later takes breaks every importer and every name attached to the module. Those are the least renameable names a program has.
 
@@ -305,6 +305,13 @@ The identity rule ([escape-content](#escape-content)) does the rest: `` acme.`cl
 **Log.** 2026-10-24 — two alternatives recorded for the ruling: keyword components with no escape, and the escape lexed as one preprocessing token. Neither is built or measured. The author's stated preference is that *identifier* in the grammar always admits the escaped form, which the first does not meet on its own.
 
 **Log.** 2026-10-24 — mechanism ruled: the one-token extension of [lex.pptoken] and an *escaped-identifier* per component, collision accepted. Also weighed and not chosen: a longer lookahead in [lex.pptoken] (a directive only when the escaped name is followed by `.`, `:`, `;` or `[[`), which avoids the collision at the price of a four-token recognition rule for scanners. Keyword components alone do not admit the escape; one quoted-name token reopens the invariant both papers state.
+
+**Log.** 2026-10-24 — **built, in both compilers, the same day.** Each compiler had three places to teach, not the two the Why paragraph names: directive recognition, the module-name reader, and a third reader that names the module for the build system.
+
+- *GCC* (`b832cc816e3`): cpplib's `cpp_maybe_module_directive` takes a backtick after `module` or `import`, and its P3034 scan steps over an escaped component, applying the bare component's object-like-macro rule to the word; `cp_parser_module_name` reads the component through `cp_parser_backtick_escaped_identifier`, which also gives the malformed cases the escape's own diagnostics; and the module token filter in `cp/lex.cc`, which names the module for the mapper and for `-E`, `-M` and P1689 output, reads an escaped component, an alternative token included.
+- *Clang* (`42399a666503` on `backtick-trunk`): `HandleModuleContextualKeyword` takes the backtick, and `LexModuleNameContinue` reads the component, with a new diagnostic for an unterminated escape. The dependency directives scanner behind `clang-scan-deps` lexes without the flag, so it accepts a backtick where a module directive may start and after `import :`, and the replay of its tokens turns the unknown token back into the punctuator.
+
+Measured on both: `` acme.`class`.util `` is the module `acme.class.util` in its compiled interface, its mangling (`_ZW4acmeW5classW4util1fv`) and its P1689 `logical-name`; `` `new`:`and` `` is `new:and`; escaped and bare spellings of one name may be mixed across importers. **One divergence, and it is GCC's, not the escape's:** GCC recognizes no module directive without `-fmodules`, so there a line beginning `` module `f` y `` stays an infix call; under `-fmodules`, and in Clang from C++20, it is a directive, as ruled. Both workarounds compile in both. Gates: GCC `g++.dg/backtick` plus the backtick module tests 255/255 and the whole of `modules.exp` with no failures; Clang `check-clang` with no failures on `backtick-trunk` and on `unicode-operators-experiment` after the merge (`48620c9ae2b8`), and on `backtick-23` (`d08b95a8f465`, a clean cherry-pick) with only its known `Format/dump-config-objc-stdin.m` failure. The probe sweep gained category F, module names (twelve programs), and the error probe seven malformed module names, all diagnosed in both compilers.
 
 ### keyword-escape-printing
 
@@ -952,11 +959,12 @@ to anything above the lexer. It printed bare, which does not re-parse, until
 the printer was taught to ask the preprocessor's question too
 (escape-alternative-token-spelling).
 
-**Module names are the exception — measured 2026-09-23; mechanism ruled 2026-10-24, not built**
+**Module names took a preprocessor change — measured 2026-09-23, built 2026-10-24**
 ([escape-module-names](#escape-module-names)). Module and import
-declarations are recognized by the preprocessor before the escape exists, so
-neither compiler takes `` export module acme.`class`.util; `` or
-`` import `std`; ``, and the wording as written does not make them. Every
+declarations are recognized by the preprocessor before the parser runs, so
+neither compiler took `` export module acme.`class`.util; `` or
+`` import `std`; `` until each preprocessor was taught to, and the wording
+needs the matching [lex.pptoken], [cpp.module] and [cpp.import] edits. Every
 position below is a phase-7 position.
 
 **Which positions the escape reaches — decided 2026-09-07, built 2026-09-08.** The
@@ -1069,6 +1077,12 @@ script printed them:
 | escapes of a word that is not a keyword ([escape-content](#escape-content)) | 19 | 19 | 19 | 19 | 19 |
 | **total** | **98** | **98** | **98** | **96** | **96** |
 
+A sixth category joined on 2026-10-24: module names
+([escape-module-names](#escape-module-names)), twelve programs, 11/12 in both
+compilers under C++20. The twelfth is `mod-line-collision`, which is meant
+to be rejected. Under C++17 Clang has no modules and takes three of the
+twelve; GCC, whose `-fmodules` is independent of the dialect, takes eleven.
+
 The two C++17 rejections are the same two programs in both compilers,
 `decl-concept` and `use-type-constraint`: concepts are C++20, and neither is a
 failure of the escape. **The fifth row is the one that does not move with the
@@ -1117,9 +1131,11 @@ now been demonstrated four times.** Every one of the four categories above was
 found by writing one-line programs and running them, and three of the four
 were found *after* somebody had written down that the coverage was complete.
 The sweep is therefore in the repository rather than in a handoff:
-[`probes/escape-positions.sh`](../probes/escape-positions.sh) is
+[`probes/escape-positions.sh`](../probes/escape-positions.sh) was
 ninety-eight one-line programs in five categories, run against both compilers
-in **2.0 seconds** (best of three, 2026-09-17), and
+in **2.0 seconds** (best of three, 2026-09-17) — a hundred and ten in six
+since module names joined it on 2026-10-24
+([escape-module-names](#escape-module-names)) — and
 [`probes/flag-off-parity.sh`](../probes/flag-off-parity.sh) is the
 other half of the claim — that a program containing no backtick compiles and
 diagnoses identically with the flag on and off.
@@ -2238,9 +2254,9 @@ and three other parsers read it when it names a type
 (escape-in-qualified-type-name).
 **A list of divergences is only as good as the programs it was measured
 with**, and a list this short is worth re-deriving rather than reading: the
-ninety-eight programs are
-[`probes/escape-positions.sh`](../probes/escape-positions.sh) and take
-**2.0 seconds** to run against both compilers. The kind difference belongs in
+programs are
+[`probes/escape-positions.sh`](../probes/escape-positions.sh), a hundred and
+ten of them since 2026-10-24, and run against both compilers in seconds. The kind difference belongs in
 the argument; the gaps belong in the status table.
 (gcc-wrapper-parity,
 [gcc-type-slot-parity](#gcc-type-slot-parity),
