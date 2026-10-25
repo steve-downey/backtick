@@ -198,9 +198,9 @@ branch itself is untouched at its old base. The Unicode work is two
 commits, `[unicode][gcc] operator-token` (libcpp, c-family) and
 `[unicode][gcc] user-operators` (the C++ front end), and
 `docs/unicode-operators.md` §8 records what the GCC build measured. It is
-pushed to `origin` (GitHub) and installed at
+pushed to `origin` (GitHub) and the `ceridwen` mirror, and installed at
 `~/install/gcc-trunk-backticks-and-uniops` as `g++-17-backticks-and-uniops`
-(2026-10-24); the `ceridwen` mirror has not received it.
+(2026-10-24).
 
 Clang tests: `clang/test/**/backtick-*.cpp`, `clang/test/Driver/fbacktick.c`,
 `clang/unittests/Format/`. GCC tests: `gcc/testsuite/g++.dg/backtick/*.C`,
