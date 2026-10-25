@@ -182,12 +182,22 @@ paper must carry, not only the decision logs.
 | Clang | `backtick-trunk` | LLVM `main` | `~/src/llvm/backtick-trunk` | `~/src/llvm/build-backtick-trunk` |
 | Clang | `unicode-operators-experiment` | `backtick-trunk` | `~/src/llvm/unicode` | |
 | Clang | `unicode-operators-upstream` | LLVM `main`, no backtick | `~/src/llvm/unicode-upstream` | |
+| Clang | `backticks-and-uniops` | LLVM `main` `7e2f1c5914cf` (2026-10-24) | `~/src/llvm/backticks-and-uniops` | `~/src/llvm/build-backticks-and-uniops` |
 | GCC   | `backtick` | GCC trunk `4df5e1e9b152` | `~/bld/gcc/gcc-backtick` | `~/bld/gcc/gcc-backtick-build` |
 | GCC   | `backticks-and-uniops` | GCC trunk `e8d104ba967` (2026-10-24) | `~/bld/gcc/gcc-backticks-and-uniops` | `~/bld/gcc/gcc-backticks-and-uniops-build` |
 
 The LLVM branches are on `steve-downey/llvm-project`, the GCC ones on
 `steve-downey/gcc`. The directory `~/src/llvm/backtick` holds branch
 **`backtick-23`**; there is no branch named plain `backtick` on the LLVM fork.
+
+**The Clang `backticks-and-uniops`** is `unicode-operators-experiment`
+(left untouched) rebased onto LLVM `main`, plus two `[unicode]
+rebase-onto-trunk` commits that follow upstream API and test changes. It
+passes `check-clang` apart from an environmental `DirectoryWatcherTest`
+(below), and is pushed to `origin` and `ceridwen` and installed at
+`~/install/clang-trunk-backtick-and-uniops` (2026-10-25). Its build
+directory's `CLANG_EXECUTABLE_VERSION` is left at plain `24` for the gate; set
+it to `24-backtick-uniops` again before reinstalling.
 
 **`backticks-and-uniops` is the GCC counterpart of the Clang branch of the
 same name: one compiler carrying both features**, so that one Godbolt
@@ -250,7 +260,11 @@ Known failures, and nothing else is acceptable:
   Do not budget it elsewhere, and do not "fix" it by touching that file.
 - `DirectoryWatcherTest.*` is **not** a known failure. It used to fail when
   the machine ran out of inotify watches; `fs.inotify.max_user_watches` is now
-  524288. If it fails again, check that sysctl before suspecting your diff.
+  524288. If it fails again, check that sysctl before suspecting your diff,
+  and if the sysctl is right, check which process holds the watches (count
+  the `inotify` lines in each `/proc/<pid>/fdinfo/*`): on 2026-10-25 a
+  cloud-drive daemon held 520,231 of them and the test failed with `No space
+  left on device`.
 - If `Analysis/scan-build/cxx-name.test` or `Driver/hip-gz-options.hip`
   fails, check the build dir's `CLANG_EXECUTABLE_VERSION` first; a
   `-backtick` suffix there breaks both.
@@ -283,6 +297,7 @@ so all of them and any vanilla toolchain can coexist on `PATH`:
 |-------|--------|-------------|----------|
 | Clang 23 | `~/install/clang-23-backtick` | `clang-23-backtick` | `clang`, `clang++` → it |
 | Clang trunk | `~/install/clang-trunk-backtick` | `clang-24-backtick` (trunk's current major) | `clang`, `clang++` → it |
+| Clang trunk, both features | `~/install/clang-trunk-backtick-and-uniops` | `clang-24-backtick-uniops` | `clang`, `clang++` → it |
 | GCC trunk | `~/install/gcc-trunk-backtick` | `gcc-17-backtick`, `g++-17-backtick`, ... | none needed |
 | GCC trunk, both features | `~/install/gcc-trunk-backticks-and-uniops` | `gcc-17-backticks-and-uniops`, `g++-17-backticks-and-uniops`, ... | none needed |
 
