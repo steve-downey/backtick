@@ -33,6 +33,13 @@ to stderr):
     python3 docs/pattern-syntax-audit.py <ucd-dir> --emit-header \\
         > ~/src/llvm/unicode/clang/lib/Lex/UnicodeOperatorCharSets.h
 
+With `--emit-libcpp-header`, the same tables in the shape GCC's libcpp
+expects (plain C structs over cppchar_t, the exclusion reasons as the
+enum cpplib.h declares):
+
+    python3 docs/pattern-syntax-audit.py <ucd-dir> --emit-libcpp-header \\
+        > ~/bld/gcc/gcc-backticks-and-uniops/libcpp/unicode-operators.h
+
 The five inputs are not in this repo. `docs/ucd-17.0.0.sha256` records their
 version-pinned URLs and SHA-256 hashes, and `--verify-manifest` refuses to
 derive anything from an input that does not match one. `--emit-header`
@@ -48,14 +55,16 @@ from collections import defaultdict
 from pathlib import Path
 
 EMIT_HEADER = "--emit-header" in sys.argv[1:]
+EMIT_LIBCPP_HEADER = "--emit-libcpp-header" in sys.argv[1:]
 NO_VERIFY = "--no-verify-manifest" in sys.argv[1:]
-VERIFY = not NO_VERIFY and ("--verify-manifest" in sys.argv[1:] or EMIT_HEADER)
+VERIFY = not NO_VERIFY and ("--verify-manifest" in sys.argv[1:] or EMIT_HEADER
+                            or EMIT_LIBCPP_HEADER)
 _args = [a for a in sys.argv[1:] if not a.startswith("--")]
 D = Path(_args[0]) if _args else Path(".")
 
 MANIFEST = Path(__file__).resolve().parent / "ucd-17.0.0.sha256"
 
-if EMIT_HEADER:
+if EMIT_HEADER or EMIT_LIBCPP_HEADER:
     # In header mode stdout carries the generated C++ and nothing else; the
     # audit narrative still runs, on stderr, so a generator run documents
     # itself.
@@ -438,5 +447,105 @@ static inline UserOperatorExclusionReason getExclusionReason(uint32_t C) {
 #endif // LLVM_CLANG_LIB_LEX_UNICODEOPERATORCHARSETS_H""")
 
 
+# --- --emit-libcpp-header: the same tables as GCC's libcpp wants them -------
+
+LIBCPP_REASON = {"IdentifierProfile": "CPP_UOP_IDENTIFIER_PROFILE",
+                 "ConfusableWith": "CPP_UOP_CONFUSABLE",
+                 "EmojiPresentation": "CPP_UOP_EMOJI"}
+
+
+def emit_libcpp_header(w):
+    version, date = ucd_version_and_date()
+    excl = sorted(NAMED_EXCLUSIONS) + [c for c in emoji_in_blocks
+                                       if c not in NAMED_EXCLUSIONS]
+    excl.sort()
+    u1 = set(u1_final)
+    assert not (u1 & set(excl)), "exclusion listed but present in U1 set"
+
+    def reason_of(cp):
+        return NAMED_EXCLUSIONS.get(cp, (EMOJI_PRESENTATION, None))
+
+    w(f"""\
+/* Unicode user-defined operator code points for -funicode-operators.
+   Copyright (C) 2026 Free Software Foundation, Inc.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation; either version 3, or (at your option) any
+later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
+
+/* GENERATED TABLES -- the same derivation as Clang's
+   clang/lib/Lex/UnicodeOperatorCharSets.h, from the five UCD {version} data
+   files (PropList.txt, DerivedAge.txt, UnicodeData.txt,
+   DerivedCoreProperties.txt, emoji/emoji-data.txt), by the backtick
+   repository's docs/pattern-syntax-audit.py.  UCD version {version},
+   DerivedAge.txt dated {date}.
+
+   Derivation (unicode-operators.md section 5, predicates 1-5): a code
+   point is a user-operator token iff it has Pattern_Syntax, is outside
+   ASCII, lies in the mathematical and arrow blocks (U+2190-21FF,
+   U+2200-22FF, U+2300-23FF, U+27C0-27EF, U+27F0-27FF, U+2900-297F,
+   U+2980-29FF, U+2A00-2AFF, U+2B00-2BFF), has General_Category Sm or So,
+   and is not one of the named exclusions below.  The predicates are
+   derivation inputs applied once, offline: the enumeration is frozen at
+   UCD {version} by fiat, so these tables do not track later UCD versions.
+
+   Result: {len(u1_final)} code points in {len(rgs)} contiguous ranges.  */
+
+#ifndef LIBCPP_UNICODE_OPERATORS_H
+#define LIBCPP_UNICODE_OPERATORS_H
+
+/* The frozen user-operator set: sorted, non-overlapping, inclusive
+   ranges.  */
+struct user_operator_range
+{{
+  cppchar_t first;
+  cppchar_t last;
+}};
+
+static const struct user_operator_range user_operator_ranges[] = {{""")
+    for i in range(0, len(rgs), 3):
+        w("  " + " ".join(f"{{ 0x{a:04X}, 0x{b:04X} }}," for a, b in rgs[i:i + 3]))
+    w(f"""\
+}};
+
+/* Why a code point a reader might expect to be a user operator is not one.
+   The exclusions exist for the reader's protection, so the lexer says which
+   class a code point was excluded under rather than giving the generic
+   stray-character error.  CONFUSABLE carries the ASCII token the code point
+   apes; it is a curated editorial judgement (the token a reader is most
+   likely to mistake the character for), not a derivation from UTS #39.  */
+struct user_operator_exclusion
+{{
+  cppchar_t code_point;
+  enum cpp_user_operator_exclusion reason;
+  const char *confusable;
+}};
+
+/* The named exclusions of section 5 predicate 5 ({len(NAMED_EXCLUSIONS)}) plus the {len(emoji_in_blocks)}
+   emoji-presentation code points inside the blocks.  Sorted by code
+   point.  */
+static const struct user_operator_exclusion user_operator_exclusions[] = {{""")
+    for cp in excl:
+        reason, conf = reason_of(cp)
+        c = f'"{conf}"' if conf else "NULL"
+        w(f"  /* {chr(cp)} U+{cp:04X} {name.get(cp, '?')} */")
+        w(f"  {{ 0x{cp:04X}, {LIBCPP_REASON[reason]}, {c} }},")
+    w("};")
+    w("")
+    w("#endif /* LIBCPP_UNICODE_OPERATORS_H */")
+
+
 if EMIT_HEADER:
     emit_header(lambda s="": _stdout_print(s))
+if EMIT_LIBCPP_HEADER:
+    emit_libcpp_header(lambda s="": _stdout_print(s))

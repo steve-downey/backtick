@@ -21,6 +21,14 @@
 #
 # Override the source tree or install prefix if needed:
 #   GCC_TRUNK_BACKTICK_PREFIX=/somewhere/else configure-gcc-trunk-backtick.sh /path/to/gcc-backtick
+#
+# The combined track (branch backticks-and-uniops, worktree
+# ~/bld/gcc/gcc-backticks-and-uniops, both -fbacktick and -funicode-operators)
+# uses the same invocation with its own prefix and program suffix:
+#   mkdir -p ~/bld/gcc/gcc-backticks-and-uniops-build && cd $_
+#   GCC_TRUNK_BACKTICK_PREFIX=$HOME/install/gcc-trunk-backticks-and-uniops \
+#   GCC_PROGRAM_SUFFIX=-17-backticks-and-uniops \
+#     ~/src/backtick/build/configure-gcc-trunk-backtick.sh ~/bld/gcc/gcc-backticks-and-uniops
 set -euo pipefail
 
 SRC_DIR="${1:-$HOME/bld/gcc/gcc-backtick}"
@@ -31,6 +39,7 @@ if [ -z "$GCC_MAJOR" ]; then
   echo "error: could not determine GCC major version from $SRC_DIR/gcc/BASE-VER" >&2
   exit 1
 fi
+PROGRAM_SUFFIX="${GCC_PROGRAM_SUFFIX:--${GCC_MAJOR}-backtick}"
 
 set -x
 exec "$SRC_DIR/configure" \
@@ -38,4 +47,4 @@ exec "$SRC_DIR/configure" \
   --enable-languages=c,c++ \
   --disable-bootstrap \
   --disable-multilib \
-  --program-suffix="-${GCC_MAJOR}-backtick"
+  --program-suffix="$PROGRAM_SUFFIX"

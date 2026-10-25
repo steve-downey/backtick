@@ -19,6 +19,12 @@
 #   CLANG=... PRISTINE_CLANG=... CC1PLUS=... PRISTINE_CC1PLUS=... \
 #     probes/flag-off-parity.sh
 #
+# A binary that carries -funicode-operators as well takes it in the flag-on
+# run through CLANG_FLAGS / GCC_FLAGS, which default to -fbacktick alone:
+#
+#   CC1PLUS=~/bld/gcc/gcc-backticks-and-uniops-build/gcc/cc1plus \
+#     GCC_FLAGS="-fbacktick -funicode-operators" probes/flag-off-parity.sh
+#
 # -ast-dump is compared with 0x[0-9a-f]+ normalized: those are allocation
 # addresses and differ run to run.  Run it under bash.
 
@@ -28,6 +34,8 @@ PRISTINE_CLANG=${PRISTINE_CLANG:-$HOME/src/llvm/build-main/bin/clang++}
 CC1PLUS=${CC1PLUS:-$HOME/bld/gcc/gcc-backtick-build/gcc/cc1plus}
 PRISTINE_CC1PLUS=${PRISTINE_CC1PLUS:-$HOME/bld/gcc/build-trunk/gcc/cc1plus}
 STD=${STD:-c++20}
+CLANG_FLAGS=${CLANG_FLAGS:--fbacktick}
+GCC_FLAGS=${GCC_FLAGS:--fbacktick}
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
 
 cat > "$TMP/ok.cpp" <<'EOF'
@@ -114,7 +122,7 @@ report() { # $1 label, $2 on-file, $3 off-file, $4 pristine-file(or "")
   fi
 }
 
-echo "clang    : $CLANG"
+echo "clang    : $CLANG  ($CLANG_FLAGS)"
 echo "pristine : $PRISTINE_CLANG"
 for spec in "ok.cpp|-fsyntax-only|-fsyntax-only, well-formed" \
             "bad.cpp|-fsyntax-only|-fsyntax-only, ill-formed" \
@@ -122,7 +130,7 @@ for spec in "ok.cpp|-fsyntax-only|-fsyntax-only, well-formed" \
             "ok.cpp|-fsyntax-only -Xclang -ast-dump|-ast-dump"; do
   IFS='|' read -r file args label <<< "$spec"
   # shellcheck disable=SC2086
-  "$CLANG" -std="$STD" -fbacktick $args "$TMP/$file" > "$TMP/on" 2>&1
+  "$CLANG" -std="$STD" $CLANG_FLAGS $args "$TMP/$file" > "$TMP/on" 2>&1
   # shellcheck disable=SC2086
   "$CLANG" -std="$STD"            $args "$TMP/$file" > "$TMP/off" 2>&1
   pri=""
@@ -133,14 +141,14 @@ for spec in "ok.cpp|-fsyntax-only|-fsyntax-only, well-formed" \
   report "$label" "$TMP/on" "$TMP/off" "$pri"
 done
 
-echo "cc1plus  : $CC1PLUS"
+echo "cc1plus  : $CC1PLUS  ($GCC_FLAGS)"
 echo "pristine : $PRISTINE_CC1PLUS"
 for spec in "ok.cpp|-fsyntax-only|-fsyntax-only, well-formed" \
             "bad.cpp|-fsyntax-only|-fsyntax-only, ill-formed" \
             "ok.cpp|-o /dev/stdout|generated assembly"; do
   IFS='|' read -r file args label <<< "$spec"
   # shellcheck disable=SC2086
-  "$CC1PLUS" -std="$STD" -quiet -fbacktick $args "$TMP/$file" > "$TMP/on" 2>&1
+  "$CC1PLUS" -std="$STD" -quiet $GCC_FLAGS $args "$TMP/$file" > "$TMP/on" 2>&1
   # shellcheck disable=SC2086
   "$CC1PLUS" -std="$STD" -quiet            $args "$TMP/$file" > "$TMP/off" 2>&1
   pri=""

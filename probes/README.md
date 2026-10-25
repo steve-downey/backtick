@@ -30,7 +30,15 @@ their contents into an interactive shell.
 Defaults point at `~/src/llvm/build-backtick-trunk` and
 `~/bld/gcc/gcc-backtick-build`; override with `CLANG`, `CC1PLUS`,
 `PRISTINE_CLANG`, `PRISTINE_CC1PLUS`, `STD`, `TIMEOUT`. GCC's dev build has no
-working `xg++`, so `cc1plus` is the entry point.
+working `xg++`, so `cc1plus` is the entry point. `flag-off-parity.sh` turns on
+`-fbacktick` alone by default; a binary that also carries
+`-funicode-operators` takes both through `GCC_FLAGS` or `CLANG_FLAGS`, so the
+Unicode flag's gate is checked by the same byte-identity:
+
+```bash
+CC1PLUS=~/bld/gcc/gcc-backticks-and-uniops-build/gcc/cc1plus \
+  GCC_FLAGS="-fbacktick -funicode-operators" probes/flag-off-parity.sh
+```
 
 ```bash
 probes/escape-positions.sh              # the coverage table
