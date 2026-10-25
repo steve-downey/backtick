@@ -165,6 +165,8 @@ entry used to have.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
+**Log.** 2026-10-24 — **measured on GCC** (`backticks-and-uniops`): the one-set ranking holds there too — `MN{} ⊘ 0` picks the non-member and `MN{} ⊘ 0L` the member — and so do ADL from the instantiation context, hidden friends, and member candidates surviving a dependent use. Two cross-compiler divergences, both GCC's existing treatment of `operator+` carried over rather than anything this feature adds: (1) a candidate viable only through a *bad* conversion is accepted and the conversion diagnosed — `p ⊞ n` on an `int *` and a `long`, with only `operator⊞(int, int)` visible, is "invalid conversion from 'int*' to 'int'" rather than Clang's "no matching function" — and (2) a member and a non-member whose conversion sequences are incomparable draw GCC's "ISO C++ says that these are ambiguous, even though the worst conversion for the first is better than the worst conversion for the second" warning and a choice, where Clang reports an ambiguity error. Neither changes which programs are well-formed under the standard; both are what a user of GCC already gets from the built-in-spelled operators. One rule was deliberately *not* carried over: GCC implements [over.match.oper]/3.2's enumeration filter as a pass over the non-member candidates, and a user operator skips it, because the filter protects the built-in candidates this operator does not have and would otherwise reject `5 ⊞ 7`.
+
 **Log.** 2026-09-06 — three clauses of this decision are now measured rather than asserted, and U§7 "Using" carries them (reconcile-declaring-using). (1) The three candidate sources are **one set ranked together**: with a member `operator⊘(long)` and a non-member `operator⊘(MN, int)` both visible, `MN{} ⊘ 0` picks the non-member and `MN{} ⊘ 0L` the member, so the wording now says "one set" — a member-first fallback is a different design and this distinguishes them. (2) **ADL is inherited by not writing code**: the callee is a name, never a parsed expression, and it reaches candidate assembly unresolved. (3) **"No built-in candidates" is a non-mechanism** — nothing assembles a built-in set, so there is nothing to suppress. A consequence this entry did not anticipate is recorded in U§7 "Desugaring": since the operands are the selected call's arguments, **which overload wins decides the sequencing**, and that is asked as a CWG question rather than settled here.
 
 ### unicode-feature-gating
@@ -183,6 +185,8 @@ entry used to have.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
+**Log.** 2026-10-24 — **measured on GCC**: `probes/flag-off-parity.sh` with `GCC_FLAGS="-fbacktick -funicode-operators"` finds flag-on and flag-off byte-identical over `-fsyntax-only` on a well-formed and an ill-formed program and over generated assembly, and flag-off identical to pristine trunk apart from the `.ident` date; the flag is C++-only in `c.opt` and so inert in C with the usual "valid for C++ but not for C" warning. The two flags compose: the mixed chains of U§12 hold under both.
+
 ### operator-mangling
 
 **Formerly:** `U8`.
@@ -198,6 +202,8 @@ entry used to have.
 **Decided by.** The design author, 2026-09-06, on [abi-production-request](#abi-production-request) — the *ask* is settled. The entry as a whole stays Proposed on the same terms as the rest of the log: it is polled with the paper.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged. 2026-09-06 — mangling-abi wrote U§9 out as three named subsections and put the open half in [abi-production-request](#abi-production-request) with options, costs and a recommendation; the `v`-production derivation and the Microsoft position are settled there and no longer open. 2026-09-06 — **the author answered [abi-production-request](#abi-production-request), accepting the recommendation as written**: describe the vendor-extended form as the fallback needing no ABI action *and* ask for a first-class production, as a request rather than as wording, with a fixity marker and `s` reserved so postfix stays takeable. Two facts from the ABI's prose carried the argument and are recorded there — §5.1.3 scopes `v` to vendor builtins, and the same table already spends four codes distinguishing unary from binary forms of one symbol.
+
+**Log.** 2026-10-24 — **measured on GCC**: [mangling-derivation-rule](#mangling-derivation-rule) implemented in `write_user_operator_name`, and every symbol the Clang prototype pins — `_Zv28op_u229E1SS_`, `_Zv18op_u22961S`, `_ZNK1Tv28op_u229EES_`, `_ZNK1Tv18op_u2296Ev`, `_ZNH1Ev28op_u2297ES_S_`, `_Zv28op_u22A0IiEiT_S0_`, `_ZN1Nv28op_u229FE1SS0_`, both ends of the range — is emitted identically, so the two prototypes agree on the ABI they share. A module-attached operator takes the `_ZW` prefix as any exported function does, and a dependent use in a signature mangles as the vendor operator applied to its operands (`DTv28op_u229Efp_fp0_E`). The one arity GCC cannot know is a bare operator-function-id as a dependent name, which is written `v2`.
 
 ### user-declared-fixity
 
@@ -236,6 +242,8 @@ entry used to have.
 **Log.** 2026-09-06 — **the reword is written, and the reason above is corrected.** [dependent-template-operator-id](open-decisions.md#dependent-template-operator-id) was re-answered (a), *reword only, no upstream report*: the literal-operator reproducer is **correctly** rejected, because [over.literal]/1 means a literal operator can never be a class member and so no valid program contains the construct. **The gap is therefore this feature's own and is not inherited from anything** — the clause "a limitation user-defined literal operators have had since C++11", which the entry above used, is false and must not be written into U§7.1 or either paper. The accurate reason, and the one U§7.1 now gives, is that Clang's dependent-template storage holds an identifier or a built-in operator kind and nothing else: the same closure-over-a-fixed-operator-table cost as the name tables and candidate assembly (U§8), reaching a third data structure. The disjointness argument is unaffected, which was the point of rewording rather than defending. Also strengthened here: the disjointness claim itself is now verified at **two** Unicode versions — the frozen 17.0 token set against identifier tables labelled 18.0 — which is the version-skew case an implementation actually faces (U§4, U§7.1).
 
 
+**Log.** 2026-10-24 — **measured on GCC**: ∂ ∇ ∞ are identifier characters there too (`int ∂(int)` compiles at `-std=c++23` without a diagnostic), so the identifier-profile asymmetry U§8 describes is a property of the profile and not of one compiler's extension, and both prototypes attach the note in the same place. Disjointness also does load-bearing work inside GCC: with all eight identifier kinds taken, `operator⊞` is recognized by *spelling*, and the predicate is exact only because no identifier can begin `operator` and continue with an operator code point.
+
 ### ucn-spellings
 
 **Formerly:** `U11`.
@@ -251,6 +259,8 @@ entry used to have.
 **Decided by.** Undecided — the whole log is Proposed until the paper is polled.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
+
+**Log.** 2026-10-24 — **measured on GCC** (`backticks-and-uniops`): declared with `\N{SQUARED PLUS}`, defined with the glyph, called with `\u229E`, `\U0000229E` and `\u{229E}` — one entity, one symbol `_Zv28op_u229E1SS_`, and the same for a UCN-spelled *token* in infix and prefix position. The canonicalization sits in libcpp: the `CPP_USER_OPERATOR` token's node is the canonical UTF-8 of the code point whatever the source spelled, so the front end never meets a spelling and the "one place" this entry asks for is the lexer rather than the name builder. `-E` writes the token as a UCN, as it writes every extended character, and the output re-lexes identically.
 
 **Log.** 2026-09-06 — **the equivalence this entry claims is an equivalence of *entities*, not of tokens, and that changes how it must be tested.** A reviewer's natural acceptance criterion — the spellings produce identical token streams — passes on an implementation that classifies UCNs correctly and then derives the operator's identity from the raw spelling, giving two entities with two mangled symbols that happen to print alike. The criterion has to be stated at declaration-and-use level instead: declare with `\N{SQUARED PLUS}`, define with the glyph, use with `\u229E`, and assert one entity and one mangled symbol. Recorded by reconcile-remainder; measured on `unicode-operators-upstream` @ `c0e07f78e679`, where those three spellings emit the single symbol `_Zv28op_u229E1SS_`. See ucn-operator-spellings.
 
@@ -1242,21 +1252,95 @@ the Clang deviation ledger.
   one no axis reaches
   ([dispatch-obligation-taxonomy](#dispatch-obligation-taxonomy)).
 
-**GCC.**
+**GCC — built 2026-10-24 on the `backticks-and-uniops` branch, one compiler
+carrying both features.** This section used to name three GCC work items;
+the build needed six, and the two it did not name are the same two the Clang
+account found, in GCC's own shapes. About 940 lines across 22 files, in two
+commits (`[unicode][gcc] operator-token`, `[unicode][gcc] user-operators`),
+with fifteen test files mirroring the Clang suite file for file plus a
+module pair.
 
-- *libcpp:* a new token type carrying the code point, gated on
-  `flag_unicode_operators`; UTF-8 identifier lexing again provides the
-  decoding machinery.
-- *Parser:* a new case alongside the backtick level in
-  `cp_parser_binary_expression`'s precedence table, plus the prefix case; no
-  `backtick_is_operator_p` analogue needed.
-- *The hard part —* `ansi_opname` *:* GCC's operator identifiers live in a
-  fixed-size table indexed by tree code. The precedent is again literal
-  operators: `cp_literal_operator_id` synthesizes an identifier
-  (`operator""_suffix`) outside that table. A `cp_user_operator_id` doing the
-  same for `operator⊞`, resolved through the ordinary
-  `perform_koenig_lookup`-inclusive call path (the gcc-slot-adl correction made
-  this path honest), is the parallel move.
+- *libcpp:* `CPP_USER_OPERATOR`, an identifier-shaped token whose node is the
+  canonical UTF-8 of the code point and whose spelling node is the text as
+  written, gated on `cpp_opts->unicode_operators`. The token is **the one
+  canonicalization point** the Clang account asked for: the front end builds
+  the operator's name from the node and never sees a spelling, so
+  `operator⊞`, `operator\u229E` and `operator\N{SQUARED PLUS}` are one node
+  before any name exists. The sketch's "UTF-8 identifier lexing provides the
+  decoding machinery" held, with a correction in the other direction: that
+  machinery had to be *stopped*, not merely reused. GCC absorbs a non-identifier
+  extended character into the identifier with an error, so `a⊞b` was one bad
+  token; the two validators (`_cpp_valid_utf8`, `_cpp_valid_ucn`) now end an
+  identifier at an operator code point or a named exclusion, and the
+  stray-character path forms the token. So GCC too has exactly two
+  classification points, the identifier boundary and token formation. A
+  confusable or emoji exclusion is diagnosed at classification, in both
+  spellings, and becomes one flagged stray token so the front end adds no
+  second error. `-E` writes the token back as a UCN, as it writes every
+  extended character, and the output re-lexes to the same tokens.
+- *The identifier profile, measured the same way:* GCC admits ∂ ∇ ∞ as
+  identifier characters at `-std=c++23` with no diagnostic, exactly as Clang
+  does, so the asymmetry argument above holds for both compilers and the note
+  is attached in the same place — where the conversion-function-id fallback
+  for `operator ∂` has already failed.
+- *The name:* the `cp_user_operator_id` move held exactly, and it carries
+  GCC's version of Clang's packed-enum finding. The identifier-kind field
+  is three bits and **all eight values are taken** (`cik_trait` took the last
+  one), so the new name cannot be a kind; it is recognized by spelling, as
+  `UDLIT_OPER_P` recognizes `operator""_suffix`, and the predicate is exact
+  only because [operator-identifier-disjointness](#operator-identifier-disjointness)
+  says no identifier can be spelled `operator` followed by an operator code
+  point. Two compilers, two different bit-packings, one closed name space.
+- *Declaration checking:* `grok_op_properties` dispatches to a sibling,
+  `grok_user_op_properties`, before touching `ovl_op_info`: arity (counting
+  the implicit object parameter) and the static-member rejection, nothing
+  else; one more row for [closed-table-sibling-pattern](#closed-table-sibling-pattern).
+- *Using:* the parser bullet held — one arm beside backtick's, one prefix
+  arm in operand position — and the measurement is that the two backtick
+  arms in `cp_parser_binary_expression` collapsed into one helper that takes
+  either token, so the shared level is shared by construction rather than by
+  agreement. **The sketch's resolution path was wrong in the way the Clang
+  account predicted.** "The ordinary `perform_koenig_lookup`-inclusive call
+  path" keeps ADL and loses member candidates; what was built is a sibling of
+  `build_new_op`, `build_new_user_op`: member candidates from the left
+  operand's class, non-member candidates from the name's unqualified lookup
+  augmented by `lookup_arg_dependent`, one set, `tourney`, `build_over_call`.
+  Two things `build_new_op` does are left out: there are no built-in
+  candidates, and there is **no [over.match.oper]/3.2 enumeration filter** —
+  GCC implements that rule as a pass that *removes* non-member candidates when
+  no operand has class type unless one has a matching enumeration type, and
+  applied to a user operator it would reject the motivating `5 ⊞ 7`. The
+  filter exists to keep built-in candidates apart from a user's; with no
+  built-in candidates there is nothing to keep apart.
+- *The node:* GCC needs it, and needs it only for dependent uses. GCC keeps no
+  source-fidelity wrapper for its own overloaded operators — a non-dependent
+  `a + b` on class operands *is* the `CALL_EXPR`, marked
+  `CALL_EXPR_OPERATOR_SYNTAX` — so parity with GCC's own operators is a bare
+  call for a non-dependent use and a template-only node, `USER_OPERATOR_EXPR`,
+  in the `MODOP_EXPR` mould for a dependent one: the operator-function-id,
+  the operands, and a `DEPENDENT_OPERATOR_TYPE` carrying the phase 1 lookup,
+  rebuilt at instantiation as an operator so that member candidates survive.
+  Ten sites, found by walking `MODOP_EXPR`'s: `cp-tree.def`,
+  `cp-objcp-common.cc`'s `MARK_TS_EXP`, `tsubst_expr`,
+  `value_dependent_expression_p`, `for_each_template_parm_r`,
+  `potential_constant_expression_1`, the constant evaluator's template-only
+  list, `dump_expr`, the pretty printer, and `write_expression`. **None of
+  them is forced by the toolchain** — GCC's switches over tree codes end in
+  `default:` arms, not `gcc_unreachable`, so the count came from reading a
+  sibling's site list, which is the taxonomy's "nothing at all" row in its
+  entirety. The mangler site is what makes a `decltype(a ⊞ b)` in a signature
+  work: `_Z1fI1SEDTv28op_u229Efp_fp0_ET_S2_`.
+- *Mangling:* every symbol the Clang prototype pins — free and member, prefix
+  and infix, explicit object parameter, template instantiation, namespace
+  scope, both ends of the range — comes out identical, and a module-attached
+  operator takes the `_ZW` prefix (`_ZW5uniopv28op_u229ES_1WS0_`).
+- *Two GCC-shaped divergences,* both inherited from how GCC treats
+  `operator+` and recorded in [candidate-assembly](#candidate-assembly)'s log:
+  a candidate viable only through a bad conversion is accepted with "invalid
+  conversion", so `p ⊞ n` on an `int *` says that rather than "no match"; and
+  a member against a non-member with incomparable conversion sequences is
+  GCC's "ISO C++ says that these are ambiguous" warning rather than Clang's
+  error.
 
 Both implementations stay behind their flag ([unicode-feature-gating](#unicode-feature-gating)); a default build lexes these
 code points exactly as today (an error outside literals), byte-identical to

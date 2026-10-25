@@ -1,7 +1,8 @@
 # UCD 17.0.0 — input manifest for docs/pattern-syntax-audit.py
 #
 # The generated character tables (clang/lib/Lex/UnicodeOperatorCharSets.h on
-# the Unicode branches) are derived from these five files and from nothing
+# the Unicode branches, libcpp/unicode-operators.h on GCC's
+# backticks-and-uniops) are derived from these five files and from nothing
 # else. Neither this repo nor the LLVM worktrees carry the files themselves —
 # they are ~3.6 MB of upstream data with a stable published home — so this
 # manifest is what makes the derivation reproducible: fetch the five URLs

@@ -114,6 +114,11 @@ paper must carry, not only the decision logs.
   (each + a `.meta`) — the blog-post version of each paper, org-mode with a
   Nikola sidecar, in the informal register. Prefer the `voice` skill when
   drafting or editing these or the papers.
+- `docs/pattern-syntax-audit.py` — derives the frozen operator set from the
+  five UCD 17.0.0 files (`docs/ucd-17.0.0.sha256` pins them; they are not in
+  the repo) and emits it as Clang's `UnicodeOperatorCharSets.h`
+  (`--emit-header`) or libcpp's `unicode-operators.h`
+  (`--emit-libcpp-header`). Both committed headers regenerate byte for byte.
 - `probes/` — sweeps, in `bash` because `zsh` does not word-split.
   `escape-positions.sh` asks where the keyword escape reaches (a hundred and
   ten one-line programs in six categories, module names the sixth, both
@@ -178,13 +183,29 @@ paper must carry, not only the decision logs.
 | Clang | `unicode-operators-experiment` | `backtick-trunk` | `~/src/llvm/unicode` | |
 | Clang | `unicode-operators-upstream` | LLVM `main`, no backtick | `~/src/llvm/unicode-upstream` | |
 | GCC   | `backtick` | GCC trunk `4df5e1e9b152` | `~/bld/gcc/gcc-backtick` | `~/bld/gcc/gcc-backtick-build` |
+| GCC   | `backticks-and-uniops` | GCC trunk `e8d104ba967` (2026-10-24) | `~/bld/gcc/gcc-backticks-and-uniops` | `~/bld/gcc/gcc-backticks-and-uniops-build` |
 
-The LLVM branches are on `steve-downey/llvm-project`, the GCC one on
+The LLVM branches are on `steve-downey/llvm-project`, the GCC ones on
 `steve-downey/gcc`. The directory `~/src/llvm/backtick` holds branch
 **`backtick-23`**; there is no branch named plain `backtick` on the LLVM fork.
 
+**`backticks-and-uniops` is the GCC counterpart of the Clang branch of the
+same name: one compiler carrying both features**, so that one Godbolt
+install serves both papers. It is the 21 `backtick` commits rebased onto
+current trunk (one conflict, `duplicate_decls`, both sides kept) plus the
+Unicode operators, `-funicode-operators`, built on top; the `backtick`
+branch itself is untouched at its old base. The Unicode work is two
+commits, `[unicode][gcc] operator-token` (libcpp, c-family) and
+`[unicode][gcc] user-operators` (the C++ front end), and
+`docs/unicode-operators.md` §8 records what the GCC build measured. Nothing
+has been pushed or installed from it yet (2026-10-24).
+
 Clang tests: `clang/test/**/backtick-*.cpp`, `clang/test/Driver/fbacktick.c`,
-`clang/unittests/Format/`. GCC tests: `gcc/testsuite/g++.dg/backtick/*.C`.
+`clang/unittests/Format/`. GCC tests: `gcc/testsuite/g++.dg/backtick/*.C`,
+and on `backticks-and-uniops` also `gcc/testsuite/g++.dg/unicode-operators/*.C`
+(mirroring the Clang suite file for file) and `g++.dg/modules/uniop-*.C`.
+**Give each `.exp` one pattern per invocation**: `RUNTESTFLAGS="dg.exp=A/*.C
+B/*.C"` silently runs only one of the two directories.
 
 **A change to the Clang backtick implementation goes on both backtick
 branches.** Do it on one, pass its gate, cherry-pick, and pass the gate again
@@ -232,14 +253,24 @@ Known failures, and nothing else is acceptable:
   fails, check the build dir's `CLANG_EXECUTABLE_VERSION` first; a
   `-backtick` suffix there breaks both.
 
-GCC (dev build is `--disable-bootstrap --enable-languages=c,c++`):
+GCC (dev build is `--disable-bootstrap --enable-languages=c,c++`;
+substitute `gcc-backticks-and-uniops-build` for the combined branch):
 ```bash
 cd ~/bld/gcc/gcc-backtick-build && make -j18 all-gcc      # build cc1plus
 # quick syntax check — use cc1plus directly; xg++ fails (no liblto_plugin.so / cc1 in dev build):
 ~/bld/gcc/gcc-backtick-build/gcc/cc1plus -fbacktick -std=c++23 -fsyntax-only file.cc
-# regression gate (dejagnu), one dir or one file:
+~/bld/gcc/gcc-backticks-and-uniops-build/gcc/cc1plus -fbacktick -funicode-operators -std=c++23 -fsyntax-only file.cc
+# regression gate (dejagnu), one dir or one file -- one pattern per .exp:
 make -C gcc check-c++ RUNTESTFLAGS="dg.exp=g++.dg/backtick/*.C"
+make -C gcc check-c++ RUNTESTFLAGS="dg.exp=g++.dg/unicode-operators/*.C"
+make -C gcc check-c++ RUNTESTFLAGS="modules.exp=backtick* uniop*"
+# the dejagnu run is in the C locale: a name with a non-ASCII character
+# prints as a UCN (`operator\U0000229e`) in front-end diagnostics, while
+# libcpp's lexer messages print the source bytes; write dg-error patterns
+# accordingly, and never `.*` across what may be several lines of output.
 ```
+Note `xg++ -B<build>/gcc/ -S` does work (it is what dejagnu runs), and is
+the way to compile a module interface by hand.
 
 ### Installing a track's compiler
 
@@ -279,11 +310,15 @@ CMake's `CLANG_EXECUTABLE_VERSION` with `-backtick` appended; the GCC one is
 
 - **Everything is gated behind the flag.** New behavior sits behind
   `-fbacktick` (Clang `LangOptions` `Backtick`; GCC `flag_backtick` /
-  `OPT_fbacktick`), or `-funicode-operators` for the Unicode work. With the
-  flag off, a build must behave exactly as upstream.
+  `OPT_fbacktick`), or `-funicode-operators` for the Unicode work (GCC
+  `flag_unicode_operators`, and `cpp_opts->unicode_operators` in libcpp).
+  With the flag off, a build must behave exactly as upstream;
+  `probes/flag-off-parity.sh` checks that byte for byte, and takes
+  `GCC_FLAGS="-fbacktick -funicode-operators"` for the combined binary.
 - **Commit messages:** `[backtick] <slug>: <title>` on the Clang branches,
-  `[backtick][gcc] <slug>: <title>` on the GCC branch, `docs: …` or
-  `papers: …` here.
+  `[backtick][gcc] <slug>: <title>` on the GCC branches, `[unicode] <slug>:
+  <title>` for the Unicode work on Clang and `[unicode][gcc] <slug>:
+  <title>` for it on GCC, `docs: …` or `papers: …` here.
 - **Name things by slug, never by serial number.** A serial number says
   nothing about what it names and shifts when a list is reordered; a slug
   named for the question survives its answer changing. Decisions in the
