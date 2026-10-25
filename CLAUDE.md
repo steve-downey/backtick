@@ -197,8 +197,10 @@ Unicode operators, `-funicode-operators`, built on top; the `backtick`
 branch itself is untouched at its old base. The Unicode work is two
 commits, `[unicode][gcc] operator-token` (libcpp, c-family) and
 `[unicode][gcc] user-operators` (the C++ front end), and
-`docs/unicode-operators.md` §8 records what the GCC build measured. Nothing
-has been pushed or installed from it yet (2026-10-24).
+`docs/unicode-operators.md` §8 records what the GCC build measured. It is
+pushed to `origin` (GitHub) and installed at
+`~/install/gcc-trunk-backticks-and-uniops` as `g++-17-backticks-and-uniops`
+(2026-10-24); the `ceridwen` mirror has not received it.
 
 Clang tests: `clang/test/**/backtick-*.cpp`, `clang/test/Driver/fbacktick.c`,
 `clang/unittests/Format/`. GCC tests: `gcc/testsuite/g++.dg/backtick/*.C`,
@@ -282,6 +284,7 @@ so all of them and any vanilla toolchain can coexist on `PATH`:
 | Clang 23 | `~/install/clang-23-backtick` | `clang-23-backtick` | `clang`, `clang++` → it |
 | Clang trunk | `~/install/clang-trunk-backtick` | `clang-24-backtick` (trunk's current major) | `clang`, `clang++` → it |
 | GCC trunk | `~/install/gcc-trunk-backtick` | `gcc-17-backtick`, `g++-17-backtick`, ... | none needed |
+| GCC trunk, both features | `~/install/gcc-trunk-backticks-and-uniops` | `gcc-17-backticks-and-uniops`, `g++-17-backticks-and-uniops`, ... | none needed |
 
 `build/configure-*.sh` hold the configure invocations, so they live somewhere
 other than a build directory's cache. Each is safe to re-run in an existing
@@ -295,6 +298,12 @@ ninja install
 
 # GCC: from a fresh build dir
 cd ~/bld/gcc/gcc-backtick-build && ~/src/backtick/build/configure-gcc-trunk-backtick.sh
+make -j18 all && make -j18 install
+# the combined track: same script, its own prefix and suffix
+cd ~/bld/gcc/gcc-backticks-and-uniops-build && \
+  GCC_TRUNK_BACKTICK_PREFIX=$HOME/install/gcc-trunk-backticks-and-uniops \
+  GCC_PROGRAM_SUFFIX=-17-backticks-and-uniops \
+  ~/src/backtick/build/configure-gcc-trunk-backtick.sh ~/bld/gcc/gcc-backticks-and-uniops
 make -j18 all && make -j18 install
 ```
 
