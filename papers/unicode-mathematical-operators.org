@@ -118,6 +118,8 @@ Vec operator⊖(Vec const&);              // one parameter: unary prefix
 ** R2
 Cite D4307R2, which names the shared /user-infix level/ and points back at this
 paper.
+Wording rebased onto P4176R2, adopted at Buzios, which retired "function call"
+as a defined term.
 ** R1
 Rewrite from scratch without technical change.
 ** R0
@@ -409,7 +411,7 @@ which a delimiter-pair syntax structurally cannot.
 
 The following wording is pro forma. It is intended to make the grammar change
 concrete; it is not offered as final CWG wording. Wording is relative to the
-current working draft.
+current working draft, which includes P4176R2 [cite:@P4176R2].
 
 ** [lex.operators]
 
@@ -536,7 +538,7 @@ If [[insert:][the operator is a /user-operator/ or]] either operand has a type t
 class or an enumeration, a user-defined operator function can be declared that
 implements this operator or a user-defined conversion can be necessary to
 convert the operand to a type that is appropriate for a built-in operator.
-[...] [[insert:][For a /user-operator/, the evaluations are sequenced as specified for the selected function call. Otherwise,]]
+[...] [[insert:][For a /user-operator/, the evaluations are sequenced as specified for the /function-call-expression/ of the equivalent function-call notation ([[sref:expr.call]]). Otherwise,]]
 [[delete:][However,]] the operands are sequenced
 in the order prescribed for the built-in operator.
 #+end_quote

@@ -148,6 +148,8 @@ entry used to have.
 
 **Log.** 2026-09-05 — retired the serial number in favour of this slug; wording unchanged.
 
+**Log.** 2026-11-24 — **D4307R2's wording rebased onto P4176R2** (Grammar non-terminals for postfix-expressions, adopted at Buzios 2026-11). P4176 names each form of *postfix-expression* and respells the rules the operator inherits in those terms: ADL ([basic.lookup.argdep]/1) and dependent calls ([temp.dep.general]/2) apply when "the *postfix-expression* of a *function-call-expression* is an *unqualified-id*". So the rewrite has to say which *function-call-expression* it produces, and that exposed a latent defect in R1's ``E1 `O` E2`` ≡ `O(E1, E2)`: the slot is an *assignment-expression* ([slot-grammar](#slot-grammar)), and a non-postfix slot does not survive token substitution — `` x `*p` y `` would read `*p(x, y)`, i.e. `*(p(x, y))`. [expr.backtick] p1 now reads `O(E1, E2)` if `O` is a *postfix-expression* and `(O)(E1, E2)` otherwise, which is what both compilers build (the slot expression is the callee; a bare-name slot keeps ADL, a written-parenthesized one gets `koenig_p=false` on GCC). The added parentheses never suppress ADL, because they appear only where `O` cannot be an *unqualified-id*; a note says so. p2 names its result a *type-conversion-expression*. Not measured in this pass: no compiler was at hand; the `*p` case is from the implementation notes above, and is worth adding to both test suites. The Unicode paper's one dependency was the phrase "the selected function call" in its [over.match.oper]/2 insertion, a term P4176 retired; reworded to the *function-call-expression* of the equivalent function-call notation.
+
 ### source-fidelity-node
 
 **Formerly:** `D7`.

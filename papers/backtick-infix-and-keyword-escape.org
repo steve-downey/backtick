@@ -108,6 +108,9 @@
 ** R2
 Wording for module names: the escape reaches each component of a module name
 or partition, in a module declaration and in an import.
+Wording rebased onto P4176R2, adopted at Buzios: [expr.backtick] names the
+/function-call-expression/ and /type-conversion-expression/ it is identical
+to, and parenthesizes an operator that is not a /postfix-expression/.
 ** R1
 Blank slate rewrite of prose.
 ** R0
@@ -599,7 +602,9 @@ support either answer, so EWG can still poll it.
 
 The following wording is pro forma. It is intended to make the grammar change
 concrete; it is not offered as final CWG wording. Wording is relative to the
-current working draft.
+current working draft, which includes P4176R2 [cite:@P4176R2]; the grammar
+terms /function-call-expression/ and /type-conversion-expression/ are the ones
+it introduced.
 
 ** [lex.operators]
 
@@ -691,16 +696,24 @@ backtick-operator:
 #+end_grammar
 
 #+begin_pnum 1
-An expression of the form ~E1 `O` E2~ is identical (by
-definition) to ~O(E1, E2)~ ([[sref:expr.call]]).
+An expression of the form ~E1 `O` E2~ is identical (by definition) to the
+/function-call-expression/ ([[sref:expr.call]]) ~O(E1, E2)~ if ~O~ is a
+/postfix-expression/, and to ~(O)(E1, E2)~ otherwise.
 #+end_pnum
+
+#+begin_note
+If ~O~ is an /unqualified-id/, it is the /postfix-expression/ of that
+/function-call-expression/, and argument-dependent lookup applies as in a
+call ([[sref:basic.lookup.argdep]]). The parentheses of the second form are
+added only where ~O~ is not a /postfix-expression/, so they never suppress it.
+#+end_note
 
 #+begin_pnum 2
 If the /backtick-operator/ is a /simple-type-specifier/ or
 /typename-specifier/ denoting a type ~T~ or a placeholder for a deduced class
 type, an expression of the form ~E1 `T` E2~ is identical (by definition) to
-~T(E1, E2)~ ([[sref:expr.type.conv]]). A /backtick-operator/ whose tokens
-can be interpreted both as an /assignment-expression/ and as a
+the /type-conversion-expression/ ([[sref:expr.type.conv]]) ~T(E1, E2)~. A
+/backtick-operator/ whose tokens can be interpreted both as an /assignment-expression/ and as a
 /simple-type-specifier/ or /typename-specifier/ is interpreted as a
 /simple-type-specifier/ or /typename-specifier/.
 #+end_pnum
