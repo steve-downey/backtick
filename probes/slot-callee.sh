@@ -3,10 +3,10 @@
 #
 # D4307R2's [expr.backtick] p1, rebased onto P4176R2, says E1 `O` E2 is the
 # function-call-expression O(E1, E2) if O is a postfix-expression, and
-# (O)(E1, E2) otherwise.  R1 said O(E1, E2) for every O, which as token
-# substitution misreads a slot that is not a postfix-expression:
-# x `*p` y would be *p(x, y), i.e. *(p(x, y)).  See desugaring-target in
-# docs/backtick-operator-design.md.
+# (O)(E1, E2) otherwise: the slot is evaluated and the result applied to the
+# operands.  That was always the intent; R1's O(E1, E2) left it implicit, and
+# pasted as tokens x `*p` y would read *p(x, y), i.e. *(p(x, y)).  See
+# desugaring-target in docs/backtick-operator-design.md.
 #
 # Each row is a pair of programs: one written with the operator, and the same
 # program with the operator spelled out as p1 now reads.  Both are compiled
@@ -22,7 +22,7 @@
 #                       same binary (the thesis: it is sugar for the call)
 #
 # Rows marked "postfix" are controls: O is a postfix-expression, so p1's two
-# readings coincide and R1's reading was already right.
+# readings coincide even if O(E1, E2) is pasted as tokens.
 #
 # Run it under bash; the arrays are bash arrays.
 #
