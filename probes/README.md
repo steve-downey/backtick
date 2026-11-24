@@ -1,8 +1,10 @@
 # Probes — the sweeps, checked in
 
-Three `bash` sweeps, plus one check with expected answers (`slot-callee.sh`, below), — **2.0 s, 5.0 s and 0.4 s** on this machine, best of
+Three `bash` scripts — **2.0 s, 5.0 s and 0.4 s** on this machine, best of
 three consecutive runs each, warm — that ask the questions this feature keeps
-getting wrong. **Re-run them after touching the keyword escape.**
+getting wrong. **Re-run them after touching the keyword escape.** A fourth
+script, `slot-callee.sh`, is a check rather than a sweep: it has expected
+answers. **Re-run it after touching how the slot becomes the callee.**
 They have found something on six of the seven occasions they have been run, and
 three of those five were after somebody had written down that the coverage was
 complete. **The sixth found nothing, and the run is recorded anyway**: it was
