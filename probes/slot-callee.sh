@@ -14,9 +14,8 @@
 # static_assert, so "accepts" means the value came out right and not merely
 # that it parsed.  The questions asked of each row:
 #
-#   expect   what the row should do: most should be accepted; the ADL-off
-#            rows should be rejected, because a written-parenthesized slot
-#            suppresses ADL exactly as (f)(x, y) does
+#   expect   what the row should do: every row is accepted except the two
+#            not-found-* rows, whose parenthesized name only ADL could find
 #   clang / gcc         the operator form, on each prototype
 #   =call               whether that verdict equals the spelled form's on the
 #                       same binary (the thesis: it is sugar for the call)
@@ -68,6 +67,14 @@ namespace N {
   constexpr int f(S, S) { return 1; }
 }
 struct Pair { int a, b; constexpr Pair(int x, int y) : a(x), b(y) { } };
+// pick is found by ordinary lookup (the template, 2) and also by ADL for
+// M::T (the non-template, 1, the better match), so which one a call reaches
+// shows whether ADL ran.
+template <class U> constexpr int pick(U, U) { return 2; }
+namespace M {
+  struct T { };
+  constexpr int pick(T, T) { return 1; }
+}
 '
 
 declare -a NAME=() KIND=() EXPECT=() OP=() CALL=()
@@ -120,16 +127,34 @@ add_row type-slot            type     accepts \
   'static_assert((Pair(2, 3)).b == 3);'
 
 # --- ADL: kept for a bare name, lost to written parentheses -----------------
+# A written-parenthesized slot is a postfix-expression, so p1 gives (O)(E1, E2)
+# with the user's parentheses, and P4176R2's [over.call.func]/3 makes that an
+# unqualified function call over what ordinary lookup found, without ADL.
+# The adl-off-* rows show it by value: (pick) reaches the template.  The
+# not-found-* rows are a different question: N::f is reachable only by ADL,
+# so (f) is not an expression on its own and is rejected for that reason.
 add_row adl-bare-name        postfix  accepts \
   'static_assert((N::S{} `f` N::S{}) == 1);' \
   'static_assert((f(N::S{}, N::S{})) == 1);'
 add_row adl-bare-in-template postfix  accepts \
   'template <class T> constexpr int t(T x) { return x `f` x; } static_assert(t(N::S{}) == 1);' \
   'template <class T> constexpr int t(T x) { return f(x, x); } static_assert(t(N::S{}) == 1);'
-add_row adl-off-parenthesized paren   REJECTS \
+add_row adl-picks-better     postfix  accepts \
+  'static_assert((M::T{} `pick` M::T{}) == 1);' \
+  'static_assert((pick(M::T{}, M::T{})) == 1);'
+add_row adl-picks-in-template postfix accepts \
+  'template <class T> constexpr int t(T x) { return x `pick` x; } static_assert(t(M::T{}) == 1);' \
+  'template <class T> constexpr int t(T x) { return pick(x, x); } static_assert(t(M::T{}) == 1);'
+add_row adl-off-parenthesized paren   accepts \
+  'static_assert((M::T{} `(pick)` M::T{}) == 2);' \
+  'static_assert(((pick)(M::T{}, M::T{})) == 2);'
+add_row adl-off-in-template  paren    accepts \
+  'template <class T> constexpr int t(T x) { return x `(pick)` x; } static_assert(t(M::T{}) == 2);' \
+  'template <class T> constexpr int t(T x) { return (pick)(x, x); } static_assert(t(M::T{}) == 2);'
+add_row not-found-parenthesized paren REJECTS \
   'static_assert((N::S{} `(f)` N::S{}) == 1);' \
   'static_assert(((f)(N::S{}, N::S{})) == 1);'
-add_row adl-off-in-template  paren    REJECTS \
+add_row not-found-in-template paren   REJECTS \
   'template <class T> constexpr int t(T x) { return x `(f)` x; } static_assert(t(N::S{}) == 1);' \
   'template <class T> constexpr int t(T x) { return (f)(x, x); } static_assert(t(N::S{}) == 1);'
 
@@ -150,12 +175,12 @@ echo "cc1plus : $CC1PLUS"
 echo "std     : $STD"
 [ "$SPELLED_ONLY" = 1 ] && echo "mode    : spelled half only, no -fbacktick"
 echo
-printf '%-22s %-8s %-8s %-8s %-6s %-8s %-6s\n' row kind expect clang =call gcc =call
+printf '%-24s %-8s %-8s %-8s %-6s %-8s %-6s\n' row kind expect clang =call gcc =call
 fail=0
 for ((i = 0; i < ${#NAME[@]}; i++)); do
     printf '%s\n%s\n' "$PRELUDE" "${OP[$i]}"   > "$TMP/op$i.cpp"
     printf '%s\n%s\n' "$PRELUDE" "${CALL[$i]}" > "$TMP/call$i.cpp"
-    line=$(printf '%-22s %-8s %-8s' "${NAME[$i]}" "${KIND[$i]}" "${EXPECT[$i]}")
+    line=$(printf '%-24s %-8s %-8s' "${NAME[$i]}" "${KIND[$i]}" "${EXPECT[$i]}")
     for kind in clang gcc; do
         call=$(compile $kind "$TMP/call$i.cpp" "")
         if [ "$SPELLED_ONLY" = 1 ]; then
