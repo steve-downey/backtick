@@ -702,6 +702,11 @@ An expression of the form ~E1 `O` E2~ is identical (by definition) to the
 #+end_pnum
 
 #+begin_note
+The /backtick-operator/ is the callee. It is not combined with the operands
+and reparsed: ~x `*p` y~ calls ~*p~ with the arguments ~x~ and ~y~, and is not
+~*p(x, y)~. As the /postfix-expression/ of the call, ~O~ is sequenced before
+~E1~ and ~E2~ ([[sref:expr.call]]), although it is written after ~E1~.
+
 If ~O~ is an /unqualified-id/, it is the /postfix-expression/ of that
 /function-call-expression/, and argument-dependent lookup applies as in a
 call ([[sref:basic.lookup.argdep]]). The parentheses of the second form are
