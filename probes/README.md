@@ -2,7 +2,9 @@
 
 Three `bash` scripts — **2.0 s, 5.0 s and 0.4 s** on this machine, best of
 three consecutive runs each, warm — that ask the questions this feature keeps
-getting wrong. **Re-run them after touching the keyword escape.**
+getting wrong. **Re-run them after touching the keyword escape.** A fourth
+script, `slot-callee.sh`, is a check rather than a sweep: it has expected
+answers. **Re-run it after touching how the slot becomes the callee.**
 They have found something on six of the seven occasions they have been run, and
 three of those five were after somebody had written down that the coverage was
 complete. **The sixth found nothing, and the run is recorded anyway**: it was
@@ -26,6 +28,7 @@ their contents into an interactive shell.
 | [`escape-positions.sh`](escape-positions.sh) | Where does the escape reach? | A name position nobody thought of. A hundred and ten one-line programs in six categories — declaration, use, qualified, escapes whose keyword is a *type* keyword, escapes of a word that is not a keyword at all, and module names — run against both compilers. Run it under `STD=c++17` as well as the default: category E must not move. Category F runs GCC with `-fmodules`; under `STD=c++17` Clang has no modules and rejects it, which is expected. One of its rows, `mod-line-collision`, is meant to be rejected. |
 | [`escape-errors.sh`](escape-errors.sh) | Does a bad escape diagnose **and stop**? | A parser loop. Thirty malformed or unresolvable escapes, seven of them in module names, each under `timeout`; a timeout is a failure, not a slow test. |
 | [`flag-off-parity.sh`](flag-off-parity.sh) | Does the flag change a program containing no backtick? | A leaked flag gate. Byte-identical comparison of flag-on against flag-off, and of flag-off against a pristine upstream binary, over `-fsyntax-only`, `-ast-print`, `-ast-dump` and generated assembly. |
+| [`slot-callee.sh`](slot-callee.sh) | Is the slot the callee, whatever kind of expression it is? | A slot that is not a *postfix-expression* (`*p`, `&f`, a conditional, an assignment, a cast) treated as tokens to paste into `O(E1, E2)` instead of as the callee, `(O)(E1, E2)`, evaluated and then applied (desugaring-target, 2026-11-24). Twenty-two rows, ADL among them (kept for a bare name; for a written-parenthesized slot, off where `(f)` is a valid expression and a rejection where only ADL could find `f`), each a program with the operator and the same program with p1's rewrite spelled out; answers pinned by `static_assert`, so `accepts` means the right callee was reached. Unlike the sweeps above it has expected verdicts and exits 1 on a mismatch, or when the operator form and its spelled form disagree on the same binary. `SPELLED_ONLY=1` checks the spelled half on stock compilers. |
 
 Defaults point at `~/src/llvm/build-backtick-trunk` and
 `~/bld/gcc/gcc-backtick-build`; override with `CLANG`, `CC1PLUS`,
